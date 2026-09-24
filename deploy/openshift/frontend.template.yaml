@@ -1,0 +1,124 @@
+# Application artifact only. Rendering does not establish deployment authorization
+# or qualify the supplied image, resources, routing, trust or availability.
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: appchi-frontend
+parameters:
+  - name: SERVICE_ACCOUNT
+    required: true
+  - name: FRONTEND_IMAGE_REPOSITORY
+    required: true
+    description: Approved registry/repository without a tag or digest
+  - name: FRONTEND_IMAGE_DIGEST
+    required: true
+    description: Verified immutable image digest, sha256 followed by colon and 64 hex digits
+  - name: API_INTERNAL_URL
+    required: true
+    description: Trusted internal API HTTP(S) origin; must equal image build argument APPCHI_BACKEND_URL
+  - name: REPLICAS
+    required: true
+    description: Qualified frontend replica allocation as a positive integer
+  - name: CPU_REQUEST
+    required: true
+  - name: CPU_LIMIT
+    required: true
+  - name: MEMORY_REQUEST
+    required: true
+  - name: MEMORY_LIMIT
+    required: true
+  - name: EPHEMERAL_STORAGE_REQUEST
+    required: true
+  - name: EPHEMERAL_STORAGE_LIMIT
+    required: true
+  - name: TMP_SIZE_LIMIT
+    required: true
+  - name: CACHE_SIZE_LIMIT
+    required: true
+objects:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: appchi-frontend
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app: appchi-frontend
+      template:
+        metadata:
+          labels:
+            app: appchi-frontend
+            app.kubernetes.io/part-of: appchi
+          annotations:
+            appchi.io/api-build-origin: ${API_INTERNAL_URL}
+        spec:
+          serviceAccountName: ${SERVICE_ACCOUNT}
+          automountServiceAccountToken: false
+          terminationGracePeriodSeconds: 60
+          containers:
+            - name: frontend
+              image: ${FRONTEND_IMAGE_REPOSITORY}@${FRONTEND_IMAGE_DIGEST}
+              imagePullPolicy: IfNotPresent
+              ports:
+                - name: http
+                  containerPort: 3000
+              env:
+                - name: NODE_ENV
+                  value: production
+                - name: PORT
+                  value: '3000'
+                - name: HOSTNAME
+                  value: 0.0.0.0
+                - name: NEXT_TELEMETRY_DISABLED
+                  value: '1'
+                - name: APPCHI_BACKEND_URL
+                  value: ${API_INTERNAL_URL}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: ${CPU_REQUEST}
+                  memory: ${MEMORY_REQUEST}
+                  ephemeral-storage: ${EPHEMERAL_STORAGE_REQUEST}
+                limits:
+                  cpu: ${CPU_LIMIT}
+                  memory: ${MEMORY_LIMIT}
+                  ephemeral-storage: ${EPHEMERAL_STORAGE_LIMIT}
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: http
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: http
+              volumeMounts:
+                - name: temporary
+                  mountPath: /tmp
+                - name: next-cache
+                  mountPath: /app/.next/cache
+          volumes:
+            - name: temporary
+              emptyDir:
+                sizeLimit: ${TMP_SIZE_LIMIT}
+            - name: next-cache
+              emptyDir:
+                sizeLimit: ${CACHE_SIZE_LIMIT}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: appchi-frontend
+    spec:
+      selector:
+        app: appchi-frontend
+      ports:
+        - name: http
+          port: 3000
+          targetPort: http

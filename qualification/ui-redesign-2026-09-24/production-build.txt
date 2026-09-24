@@ -1,0 +1,27 @@
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.ts took 301ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 23.9s
+  Running TypeScript ...
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next-codex-ui-build/types/**/*.ts'
+  	- include was updated to add '.next-codex-ui-build/dev/types/**/*.ts'
+
+  Finished TypeScript in 18.8s ...
+  Collecting page data using 4 workers ...
+  Generating static pages using 4 workers (0/2) ...
+✓ Generating static pages using 4 workers (2/2) in 2.1s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+└ ƒ /[[...path]]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

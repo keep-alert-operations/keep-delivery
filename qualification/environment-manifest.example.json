@@ -1,0 +1,17 @@
+{
+  "environment": "nonproduction",
+  "qualified": false,
+  "services": {
+    "postgresql": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null,"allocation_evidence": null,"durability_and_recovery_evidence": null},
+    "elasticsearch": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
+    "kafka": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
+    "redis": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
+    "keycloak": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
+    "ldap": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"schema_reference": null,"five_minute_evidence": null},
+    "kong": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"private_mtls_evidence": null},
+    "grafana": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"safe_writer_evidence": null},
+    "recovery_evidence": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"rollback_survival_evidence": null},
+    "openshift": {"endpoint": null,"version": null,"owner": null,"allocation_evidence": null,"secret_protection_evidence": null},
+    "observability": {"endpoint": null,"owner": null,"rolling_sli_evidence": null}
+  }
+}

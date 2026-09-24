@@ -1,0 +1,223 @@
+{
+  "apiVersion": "template.openshift.io/v1",
+  "kind": "Template",
+  "metadata": {
+    "name": "appchi-private-ingestion"
+  },
+  "parameters": [
+    {
+      "name": "BACKEND_IMAGE",
+      "required": true
+    },
+    {
+      "name": "CONFIG_SECRET",
+      "required": true
+    },
+    {
+      "name": "BINDING_SECRET",
+      "required": true
+    },
+    {
+      "name": "SERVICE_ACCOUNT",
+      "required": true
+    },
+    {
+      "name": "CPU_REQUEST",
+      "required": true
+    },
+    {
+      "name": "CPU_LIMIT",
+      "required": true
+    },
+    {
+      "name": "MEMORY_REQUEST",
+      "required": true
+    },
+    {
+      "name": "MEMORY_LIMIT",
+      "required": true
+    },
+    {
+      "name": "EPHEMERAL_STORAGE_REQUEST",
+      "required": true
+    },
+    {
+      "name": "EPHEMERAL_STORAGE_LIMIT",
+      "required": true
+    },
+    {
+      "name": "TMP_SIZE_LIMIT",
+      "required": true
+    },
+    {
+      "name": "REPLICAS",
+      "required": true
+    }
+  ],
+  "objects": [
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "appchi-private-ingestion"
+      },
+      "spec": {
+        "replicas": "${{REPLICAS}}",
+        "selector": {
+          "matchLabels": {
+            "app": "appchi-private-ingestion"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "appchi-private-ingestion",
+              "app.kubernetes.io/part-of": "appchi"
+            }
+          },
+          "spec": {
+            "serviceAccountName": "${SERVICE_ACCOUNT}",
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 60,
+            "containers": [
+              {
+                "name": "api",
+                "ports": [
+                  {
+                    "name": "tls",
+                    "containerPort": 8443
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "APPCHI_ROLE",
+                    "value": "private-ingestion"
+                  },
+                  {
+                    "name": "APPCHI_BIND_HOST",
+                    "value": "0.0.0.0"
+                  },
+                  {
+                    "name": "APPCHI_BIND_PORT",
+                    "value": "8443"
+                  }
+                ],
+                "livenessProbe": {
+                  "tcpSocket": {
+                    "port": "tls"
+                  },
+                  "timeoutSeconds": 5,
+                  "periodSeconds": 10,
+                  "failureThreshold": 3
+                },
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "python",
+                      "-m",
+                      "appchi.probes",
+                      "private-ingestion"
+                    ]
+                  },
+                  "timeoutSeconds": 8,
+                  "periodSeconds": 10,
+                  "failureThreshold": 1
+                },
+                "startupProbe": {
+                  "tcpSocket": {
+                    "port": "tls"
+                  },
+                  "timeoutSeconds": 5,
+                  "periodSeconds": 10,
+                  "failureThreshold": 30
+                },
+                "image": "${BACKEND_IMAGE}",
+                "envFrom": [
+                  {
+                    "secretRef": {
+                      "name": "${CONFIG_SECRET}"
+                    }
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "runAsNonRoot": true,
+                  "seccompProfile": {
+                    "type": "RuntimeDefault"
+                  },
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "${CPU_REQUEST}",
+                    "memory": "${MEMORY_REQUEST}",
+                    "ephemeral-storage": "${EPHEMERAL_STORAGE_REQUEST}"
+                  },
+                  "limits": {
+                    "cpu": "${CPU_LIMIT}",
+                    "memory": "${MEMORY_LIMIT}",
+                    "ephemeral-storage": "${EPHEMERAL_STORAGE_LIMIT}"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "bindings",
+                    "mountPath": "/etc/appchi",
+                    "readOnly": true
+                  }
+                ],
+                "command": [
+                  "python",
+                  "-m",
+                  "appchi.private_ingestion"
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "${TMP_SIZE_LIMIT}"
+                }
+              },
+              {
+                "name": "bindings",
+                "secret": {
+                  "secretName": "${BINDING_SECRET}"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "appchi-private-ingestion"
+      },
+      "spec": {
+        "selector": {
+          "app": "appchi-private-ingestion"
+        },
+        "ports": [
+          {
+            "name": "tls",
+            "port": 8443,
+            "targetPort": "tls"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "apiVersion": "template.openshift.io/v1",
+  "kind": "Template",
+  "metadata": {
+    "name": "appchi-network"
+  },
+  "parameters": [
+    {
+      "name": "WORKLOAD_NAME",
+      "required": true
+    },
+    {
+      "name": "INGRESS_PEERS",
+      "required": true
+    },
+    {
+      "name": "INGRESS_PORTS",
+      "required": true
+    },
+    {
+      "name": "EGRESS_RULES",
+      "required": true
+    }
+  ],
+  "objects": [
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "${WORKLOAD_NAME}"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "${WORKLOAD_NAME}"
+          }
+        },
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ],
+        "ingress": [
+          {
+            "from": "${{INGRESS_PEERS}}",
+            "ports": "${{INGRESS_PORTS}}"
+          }
+        ],
+        "egress": "${{EGRESS_RULES}}"
+      }
+    }
+  ]
+}

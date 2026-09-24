@@ -1,0 +1,93 @@
+{
+  "schema": "appchi-release-manifest-v1",
+  "release_id": null,
+  "source_revision": null,
+  "inventory": {
+    "path": null,
+    "sha256": null
+  },
+  "images": {
+    "backend": {
+      "reference": null,
+      "sbom": {
+        "path": null,
+        "sha256": null
+      },
+      "security_scan": {
+        "path": null,
+        "sha256": null
+      },
+      "build_provenance": {
+        "path": null,
+        "sha256": null
+      }
+    },
+    "frontend": {
+      "reference": null,
+      "sbom": {
+        "path": null,
+        "sha256": null
+      },
+      "security_scan": {
+        "path": null,
+        "sha256": null
+      },
+      "build_provenance": {
+        "path": null,
+        "sha256": null
+      }
+    }
+  },
+  "evidence": {
+    "service_manifest": {
+      "path": null,
+      "sha256": null
+    },
+    "capacity_profile": {
+      "path": null,
+      "sha256": null
+    },
+    "configuration_diff": {
+      "path": null,
+      "sha256": null
+    },
+    "correctness_results": {
+      "path": null,
+      "sha256": null
+    },
+    "qualification_results": {
+      "path": null,
+      "sha256": null
+    },
+    "security_review": {
+      "path": null,
+      "sha256": null
+    },
+    "rollout_rehearsal": {
+      "path": null,
+      "sha256": null
+    },
+    "rollback_rehearsal": {
+      "path": null,
+      "sha256": null
+    },
+    "support_handoff": {
+      "path": null,
+      "sha256": null
+    }
+  },
+  "compatibility": {
+    "schema_min": null,
+    "schema_max": null,
+    "event_versions": null,
+    "cel_profiles": [],
+    "rollback_images": {
+      "backend": null,
+      "frontend": null
+    },
+    "evidence": {
+      "path": null,
+      "sha256": null
+    }
+  }
+}

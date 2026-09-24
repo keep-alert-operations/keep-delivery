@@ -1,0 +1,145 @@
+{
+  "apiVersion": "template.openshift.io/v1",
+  "kind": "Template",
+  "metadata": {
+    "name": "appchi-migration"
+  },
+  "parameters": [
+    {
+      "name": "BACKEND_IMAGE",
+      "required": true
+    },
+    {
+      "name": "MIGRATION_SECRET",
+      "required": true
+    },
+    {
+      "name": "SERVICE_ACCOUNT",
+      "required": true
+    },
+    {
+      "name": "RELEASE_ID",
+      "required": true
+    },
+    {
+      "name": "CPU_REQUEST",
+      "required": true
+    },
+    {
+      "name": "CPU_LIMIT",
+      "required": true
+    },
+    {
+      "name": "MEMORY_REQUEST",
+      "required": true
+    },
+    {
+      "name": "MEMORY_LIMIT",
+      "required": true
+    },
+    {
+      "name": "EPHEMERAL_STORAGE_REQUEST",
+      "required": true
+    },
+    {
+      "name": "EPHEMERAL_STORAGE_LIMIT",
+      "required": true
+    },
+    {
+      "name": "TMP_SIZE_LIMIT",
+      "required": true
+    },
+    {
+      "name": "BINDING_SECRET",
+      "required": true
+    }
+  ],
+  "objects": [
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "appchi-migrate-${RELEASE_ID}"
+      },
+      "spec": {
+        "backoffLimit": 0,
+        "template": {
+          "spec": {
+            "serviceAccountName": "${SERVICE_ACCOUNT}",
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 60,
+            "containers": [
+              {
+                "name": "migrate",
+                "command": [
+                  "python",
+                  "-m",
+                  "appchi.migrate"
+                ],
+                "image": "${BACKEND_IMAGE}",
+                "envFrom": [
+                  {
+                    "secretRef": {
+                      "name": "${MIGRATION_SECRET}"
+                    }
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "runAsNonRoot": true,
+                  "seccompProfile": {
+                    "type": "RuntimeDefault"
+                  },
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "${CPU_REQUEST}",
+                    "memory": "${MEMORY_REQUEST}",
+                    "ephemeral-storage": "${EPHEMERAL_STORAGE_REQUEST}"
+                  },
+                  "limits": {
+                    "cpu": "${CPU_LIMIT}",
+                    "memory": "${MEMORY_LIMIT}",
+                    "ephemeral-storage": "${EPHEMERAL_STORAGE_LIMIT}"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "bindings",
+                    "mountPath": "/etc/appchi",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "${TMP_SIZE_LIMIT}"
+                }
+              },
+              {
+                "name": "bindings",
+                "secret": {
+                  "secretName": "${BINDING_SECRET}"
+                }
+              }
+            ],
+            "restartPolicy": "Never"
+          }
+        }
+      }
+    }
+  ]
+}

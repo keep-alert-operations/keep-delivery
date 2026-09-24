@@ -1,0 +1,43 @@
+[project]
+name = "appchi"
+version = "0.1.0"
+description = "Appchi alerts management"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.34,<1",
+  "pydantic-settings>=2.8,<3",
+  "psycopg[binary,pool]>=3.2,<4",
+  "cryptography>=44,<47",
+  "httpx>=0.28,<1",
+  "authlib>=1.5,<2",
+  "ldap3>=2.9,<3",
+  "elasticsearch>=9,<10",
+  "redis>=6,<7",
+  "confluent-kafka>=2.8,<3",
+  "tzdata==2025.2",
+  "cel-expr-python==0.1.3",
+  "protobuf==6.33.5",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<10", "pytest-asyncio>=0.25,<2", "ruff>=0.11,<1", "hypothesis>=6.130,<7"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["appchi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests/unit", "tests/integration"]
+markers = ["integration: requires real PostgreSQL", "compatibility: requires configured external services"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
