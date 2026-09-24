@@ -2,6 +2,23 @@
 
 Implementation authorized 2026-09-22. **The entire initial release is not complete.** Local core workflows run and tests have executed; integration qualification and production readiness are separate. The user will deploy nonproduction in a private network unavailable to this agent. Missing code is distinguished below from unavailable environment evidence.
 
+### User-selectable dark mode — 2026-09-24
+
+Added a Light/Dark switch to the account menu and Appchi sign-in screen (REV-20).
+The reference light palette remains the first-use default even when the OS prefers
+dark. An explicit choice is stored locally and applied before page content paints,
+including on navigation, reload and signed-out Appchi pages. Every reference CSS
+color now has a dark counterpart across the shared shell and feature styles;
+the preference stores no tenant or identity data. External Keycloak pages retain
+their separate appearance.
+
+TypeScript and the optimized production build passed. **6 focused Chrome browser
+checks passed** against controlled API responses: 2 theme checks cover both
+switch directions, signed-out use, colors, navigation and reload; 4 existing
+navigation checks cover session preservation, tenant isolation, expiry and
+expired-sign-in recovery. This is frontend verification, not production
+qualification or an accessibility audit.
+
 ### Persistent workspace during navigation — 2026-09-24
 
 Moved the session-owning workspace from the dynamic catch-all page to the shared
