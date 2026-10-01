@@ -71,6 +71,22 @@ Default repository-scoped `GITHUB_TOKEN` cannot read sibling private repositorie
 Bootstrap publishes source and workflows; it does not establish CI credentials or
 claim that remote checks, image builds or production qualification succeeded.
 
+The secret must be available to `appchi-api`, `appchi-ingestion`,
+`appchi-processor`, `appchi-correlation`, `appchi-indexer`, `appchi-domain`,
+`appchi-frontend` and `appchi-delivery`. Delivery bootstraps the pinned workspace,
+so the credential must cover all eleven private workspace repositories. Use a
+dedicated credential with read-only Contents permission. Configure its value
+directly in Actions secrets; do not paste it into chat, commit it, or substitute
+a developer's general-purpose GitHub login token. After configuring access,
+rerun the failed jobs and inspect their results: the credential preflight failure
+means the later checks have not executed on GitHub.
+
+The retained `appchi` monorepo's `application-checks` workflow was disabled on
+2026-10-01 at the user's request. Its backend/frontend jobs are retired following
+the repository split. Keep the independent repositories' owned checks active;
+historical failed monorepo runs remain in GitHub. See the
+[repository CI audit](../qualification/ci-repair-2026-10-01.md).
+
 `qualification/release_artifacts.py` and `legacy/` preserve historical monorepo
 evidence tooling. They validate that historical format, not a multi-repository
 release. Use `qualification/workspace_release.py` for the new source/image inventory.

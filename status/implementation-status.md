@@ -1,5 +1,20 @@
 # Implementation status
 
+## 2026-10-01 repository CI audit
+
+Reviewed all twelve organization repositories, including the retained monorepo.
+The design checker now accepts REV-38 and its repair branch passes GitHub Actions.
+The legacy monorepo workflow was disabled at the user's request. Contracts and
+the Alembic migrations branch already passed their hosted checks.
+
+Eight private-dependency workflows stop at the missing
+`APPCHI_REPOSITORIES_TOKEN` preflight. Their checks remain necessary. Separate
+locked local environments passed 545 Python tests, with 65 delivery tests skipped;
+lint, wheels, contracts, boundaries and documentation checks passed. A clean
+frontend fixture passed install, generation/drift, formatting, types and build.
+These local results do not establish that the eight hosted workflows passed.
+See [per-repository evidence and remaining credential setup](../qualification/ci-repair-2026-10-01.md).
+
 ## 2026-10-01 Alembic migration runner (REV-38)
 
 `appchi-migrations` now executes its unchanged 44 SQL files through one Alembic
