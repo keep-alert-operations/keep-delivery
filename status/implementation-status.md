@@ -7,13 +7,17 @@ The design checker now accepts REV-38 and its repair branch passes GitHub Action
 The legacy monorepo workflow was disabled at the user's request. Contracts and
 the Alembic migrations branch already passed their hosted checks.
 
-Eight private-dependency workflows stop at the missing
-`APPCHI_REPOSITORIES_TOKEN` preflight. Their checks remain necessary. Separate
-locked local environments passed 545 Python tests, with 65 delivery tests skipped;
-lint, wheels, contracts, boundaries and documentation checks passed. A clean
-frontend fixture passed install, generation/drift, formatting, types and build.
-These local results do not establish that the eight hosted workflows passed.
-See [per-repository evidence and remaining credential setup](../qualification/ci-repair-2026-10-01.md).
+Configured the approved read-only `APPCHI_REPOSITORIES_TOKEN` as a repository secret
+in all eight private-dependency consumers. Frontend also required disabling
+checkout credential persistence so npm uses the private contracts credential.
+All eleven active repositories now have successful hosted runs at the recorded
+revisions, including frontend's full build. Delivery main and its Alembic branch
+also passed. Frontend/design fixes remain on their published repair branches.
+
+Separate locked local environments passed 545 Python tests, with 65 delivery tests
+skipped; lint, wheels, contracts, boundaries and documentation checks passed.
+The credential expires 2026-12-30 and must be rotated in all eight consumers.
+See [per-repository hosted evidence and changes](../qualification/ci-repair-2026-10-01.md).
 
 ## 2026-10-01 Alembic migration runner (REV-38)
 
