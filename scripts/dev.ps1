@@ -19,8 +19,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repository = Split-Path -Parent $PSScriptRoot
-$backend = Join-Path $repository 'backend'
-$frontend = Join-Path $repository 'frontend'
+$backend = $repository
+$frontend = Join-Path (Split-Path -Parent $repository) 'appchi-frontend'
 $python = Join-Path $backend '.venv/Scripts/python.exe'
 $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
 $bundledNpm = if ($nodeCommand) { Join-Path (Split-Path -Parent $nodeCommand.Source) 'npm.cmd' } else { $null }
@@ -63,16 +63,14 @@ print('Configuration schema validated; service connectivity and readiness were n
 
 $previousPythonPath = $env:PYTHONPATH
 try {
-    $env:PYTHONPATH = $backend
+    $env:PYTHONPATH = $null
     Push-Location -LiteralPath $repository
     try {
         switch ($Action) {
             'Install' {
                 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) { throw 'Install uv and Python 3.13 through your approved development tooling.' }
                 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Install Node.js 22.17 or newer through your approved development tooling.' }
-                Invoke-Checked { & uv sync --project $backend --locked --all-groups } 'Locked backend install'
-                Push-Location -LiteralPath $frontend
-                try { Invoke-Checked { & $npm ci } 'Clean locked frontend install' } finally { Pop-Location }
+                Invoke-Checked { & uv run --locked scripts/workspace.py install --editable } 'Install workspace dependencies'
                 Write-Host 'Dependencies installed from committed locks. No services, migrations or identity fixtures were started.'
             }
             'Check' {
@@ -120,7 +118,9 @@ print('Ordered checksum-verified migrations applied.')
                     } else {
                         if ($WorkerRole -eq 'relay') { Require-Environment @('APPCHI_KAFKA_BOOTSTRAP') }
                         if ($WorkerRole -eq 'indexer') { Require-Environment @('APPCHI_ELASTICSEARCH_URL') }
-                        $workerArguments = @('-m', 'appchi.worker', $WorkerRole)
+                        $modules = @{ source='appchi.processor.main'; correlation='appchi.correlation.main'; indexer='appchi.search.main' }
+                        $workerArguments = if ($modules.ContainsKey($WorkerRole)) { @('-m', $modules[$WorkerRole]) } else { @('-m', 'appchi.worker', $WorkerRole) }
+                        if ($TenantId -and $modules.ContainsKey($WorkerRole)) { throw 'Kafka pipeline workers consume their assigned partitions; --tenant applies only to explicit helpers.' }
                         if ($TenantId) { $workerArguments += @('--tenant', $TenantId) }
                         if ($Once) { $workerArguments += '--once' }
                         Write-Host "Starting the $WorkerRole worker in this terminal. A successful process exit does not qualify an integration gate."

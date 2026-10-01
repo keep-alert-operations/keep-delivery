@@ -2,11 +2,11 @@
   "apiVersion": "template.openshift.io/v1",
   "kind": "Template",
   "metadata": {
-    "name": "appchi-worker"
+    "name": "appchi-correlation"
   },
   "parameters": [
     {
-      "name": "BACKEND_IMAGE",
+      "name": "CORRELATION_IMAGE",
       "required": true
     },
     {
@@ -54,11 +54,6 @@
       "required": true
     },
     {
-      "name": "WORKER_ROLE",
-      "required": true,
-      "description": "Active roles: source, indexer, correlation; explicit recovery/proof helpers remain. Live hint publishing runs in the Product API; the separate live worker is rejected at startup. Directory polling, maintenance, assignment-cleanup, inactivity, retention-family and operators automation are deferred and rejected at startup. Directory --once is an explicit publication action, not a deployed worker."
-    },
-    {
       "name": "HEARTBEAT_MAX_AGE_SECONDS",
       "required": true
     },
@@ -76,19 +71,19 @@
       "apiVersion": "apps/v1",
       "kind": "Deployment",
       "metadata": {
-        "name": "appchi-${WORKER_ROLE}"
+        "name": "appchi-correlation"
       },
       "spec": {
         "replicas": "${{REPLICAS}}",
         "selector": {
           "matchLabels": {
-            "app": "appchi-${WORKER_ROLE}"
+            "app": "appchi-correlation"
           }
         },
         "template": {
           "metadata": {
             "labels": {
-              "app": "appchi-${WORKER_ROLE}",
+              "app": "appchi-correlation",
               "app.kubernetes.io/part-of": "appchi"
             }
           },
@@ -102,8 +97,7 @@
                 "command": [
                   "python",
                   "-m",
-                  "appchi.worker",
-                  "${WORKER_ROLE}"
+                  "appchi.correlation.main"
                 ],
                 "env": [
                   {
@@ -153,7 +147,7 @@
                   "periodSeconds": 10,
                   "failureThreshold": 1
                 },
-                "image": "${BACKEND_IMAGE}",
+                "image": "${CORRELATION_IMAGE}",
                 "envFrom": [
                   {
                     "secretRef": {

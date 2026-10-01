@@ -1,7 +1,7 @@
 # Kafka-first implementation record
 
 Requested 2026-09-30. This is delivery tracking, not a runtime specification.
-The authoritative contract is [Kafka-first alert pipeline](../spec-kafka-alert-pipeline.md),
+The authoritative contract is [Kafka-first alert pipeline](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-kafka-alert-pipeline.md),
 registered as REV-33. Existing uncommitted application and design work was retained.
 
 - [x] Read handoff, project guidance and affected design contracts.

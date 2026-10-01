@@ -2,12 +2,12 @@
 
 **Later correction — REV-35:** automatic directory synchronization is now
 nice-to-have. The earlier REV-34 identity statements below are historical;
-[current worker scope](../spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)
+[current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)
 governs explicit publication and deferred propagation.
 
 Implemented 2026-09-30 following the user's corrections and explicit clarification
 that the next source update may clear ended maintenance suppression. This is
-delivery evidence, not a runtime contract. [Worker scope](../spec-worker-scope.md)
+delivery evidence, not a runtime contract. [Worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md)
 is authoritative and registered as REV-34. Existing uncommitted work was preserved.
 
 ## Delivered changes
@@ -103,7 +103,7 @@ was stopped. The user's running application stack was not restarted or migrated.
   identity guarantees still rely on the current directory integration.
 - Earlier Kafka/recovery and infrastructure qualification gaps remain in the
   [Kafka-first record](kafka-first-implementation.md) and
-  [delivery checklist](../delivery-readiness.md).
+  [delivery checklist](../status/delivery-readiness.md).
 
 The original temporary Kafka redesign handoff was already removed after its
 incorporation and verification recorded in the Kafka-first evidence. This later

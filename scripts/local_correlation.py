@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import sys
 from hashlib import sha256
 from pathlib import Path
 from urllib.parse import quote
@@ -14,31 +13,35 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / ".local/runtime/correlation-preview-profile.json"
 EVIDENCE = ROOT / ".local/runtime/correlation-preview-evidence.json"
 SOURCE_FILES = (
-    "backend/appchi/kafka_source.py",
-    "backend/appchi/kafka_changed.py",
-    "backend/appchi/kafka_cutover.py",
-    "backend/appchi/maintenance/temporal.py",
-    "backend/appchi/maintenance/processing.py",
-    "backend/appchi/alerts/repository.py",
-    "backend/appchi/correlation/repository.py",
-    "backend/appchi/correlation/runtime.py",
-    "backend/appchi/correlation/evidence.py",
-    "backend/appchi/correlation/routes.py",
-    "backend/appchi/maintenance/runtime.py",
-    "backend/appchi/worker.py",
-    "scripts/local_correlation.py",
-    "scripts/local_identity.py",
-    "scripts/local-runtime.ps1",
-    "scripts/local_runtime.py",
+    "appchi-domain/src/appchi/pipeline_runtime.py",
+    "appchi-processor/src/appchi/processor/main.py",
+    "appchi-correlation/src/appchi/correlation/consumer.py",
+    "appchi-correlation/src/appchi/correlation/main.py",
+    "appchi-indexer/src/appchi/search/main.py",
+    "appchi-processor/src/appchi/kafka_source.py",
+    "appchi-domain/src/appchi/kafka_changed.py",
+    "appchi-processor/src/appchi/kafka_cutover.py",
+    "appchi-domain/src/appchi/maintenance/temporal.py",
+    "appchi-domain/src/appchi/maintenance/processing.py",
+    "appchi-domain/src/appchi/alerts/repository.py",
+    "appchi-domain/src/appchi/correlation/repository.py",
+    "appchi-domain/src/appchi/correlation/runtime.py",
+    "appchi-domain/src/appchi/correlation/evidence.py",
+    "appchi-api/src/appchi/correlation/routes.py",
+    "appchi-domain/src/appchi/maintenance/runtime.py",
+    "appchi-delivery/src/appchi/worker.py",
+    "appchi-delivery/scripts/local_correlation.py",
+    "appchi-delivery/scripts/local_identity.py",
+    "appchi-delivery/scripts/local-runtime.ps1",
+    "appchi-delivery/scripts/local_runtime.py",
 )
-sys.path.insert(0, str(ROOT / "backend"))
 
 
 def source_digest():
     digest = sha256()
     for name in SOURCE_FILES:
         digest.update(name.encode())
-        digest.update((ROOT / name).read_bytes())
+        digest.update((ROOT.parent / name).read_bytes())
     return digest.hexdigest()
 
 

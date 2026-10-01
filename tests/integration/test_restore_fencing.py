@@ -299,8 +299,8 @@ def test_restore_keeps_protocol_selection_and_fences_kafka_workers(recovery):
         ).fetchone()["enabled"]
     for constructor in (
         lambda: SourceConsumer(runtime, SimpleNamespace(), None),
-        lambda: ChangedConsumer(runtime, SimpleNamespace(), None, "correlation"),
-        lambda: ChangedConsumer(runtime, SimpleNamespace(), None, "projection"),
+        lambda: ChangedConsumer(runtime, SimpleNamespace(), None, "correlation", lambda *_: None),
+        lambda: ChangedConsumer(runtime, SimpleNamespace(), None, "projection", lambda *_: None),
     ):
         with pytest.raises(AppError, match="restore_reconciliation_required"):
             constructor()

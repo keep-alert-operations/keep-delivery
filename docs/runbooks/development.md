@@ -1,20 +1,20 @@
 # Development and verification runbook
 
-**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](../../spec-worker-scope.md#6-live-updates-inside-the-product-api).
+**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api).
 
-**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](../../spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
 
-**2026-09-30 worker-scope update:** see [current worker scope](../../spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
 
 These commands start the implemented Appchi components from the repository root.
 They do not create an authentication bypass, qualify a company integration, enable
 capability gates, or authorize production deployment. Consult
-[implementation status](../../implementation-status.md) for current coverage.
+[implementation status](../../status/implementation-status.md) for current coverage.
 
 ## Prerequisites and configuration
 
 Install Python 3.13, `uv`, Node.js 22.17 or newer, npm, and PowerShell 7 through approved
-development tooling. The scripts use the committed `backend/uv.lock` and
+development tooling. The scripts use the committed `uv.lock` and
 `frontend/package-lock.json`. They do not install or administer shared PostgreSQL,
 Kafka, Elasticsearch, Redis, LDAP, Keycloak, Kong or Grafana services.
 
@@ -43,7 +43,7 @@ unavailable; do not open its gate to make a page look successful.
 For real human sign-in, supply the issuer, confidential-client secret, protected
 immutable-directory claim/scope, exact password-authentication ACR/AMR mapping, directory source,
 super-admin team and any approved CA binding described in
-[identity implementation](../identity-implementation.md#required-configuration).
+[identity implementation](https://github.com/appchi-alert-operations/appchi-api/blob/main/docs/identity-implementation.md#required-configuration).
 Use the actual configured Keycloak environment and exact callback/logout URLs.
 Company LDAP verification and the qualified directory bootstrap must publish
 trusted evidence before `human_auth` can become ready. The development launcher
@@ -177,7 +177,7 @@ That fixture creates and later drops only its randomized `appchi_browser_test_*`
 database, starts/stops its own unique-port API/UI process trees and uses synthetic
 database session evidence exclusively inside the test. It never adds a test login
 route or enables authentication on the ordinary application database. See the
-[frontend evidence](../frontend.md#real-browserapipostgresql-smoke) for exact assertions
+[frontend evidence](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/frontend.md#real-browserapipostgresql-smoke) for exact assertions
 and the distinction from company Keycloak/LDAP qualification.
 
 `-Suite All` runs Unit, Build and Browser, then includes Database and BrowserReal
@@ -188,7 +188,7 @@ and browser-channel changes and do not print secret configuration.
 
 ## Frontend image and OpenShift artifact
 
-The [frontend Dockerfile](../../frontend/Dockerfile) builds standalone Next.js output.
+The [frontend Dockerfile](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/Dockerfile) builds standalone Next.js output.
 Supply `APPCHI_BACKEND_URL` as a **build argument** containing the trusted internal
 API origin. Next.js resolves its rewrites during the build; changing a runtime
 environment variable does not rewrite an already-built image's API routing.
@@ -236,7 +236,7 @@ server validation.
 Actual PostgreSQL/Elasticsearch backend tests, controlled browser workflows and
 real HTTPS browser/API/PostgreSQL smoke checks have passed locally. Current totals,
 migration coverage and outstanding reruns are maintained in
-[implementation status](../../implementation-status.md). Packaging checks do not
+[implementation status](../../status/implementation-status.md). Packaging checks do not
 establish correctness of subsequent changes.
 
 No OpenShift deployment, container build, shared-service change, company identity

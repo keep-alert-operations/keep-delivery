@@ -40,7 +40,7 @@ def test_api_role_writes_and_reads_captured_history(configuration, real_db):
 @pytest.fixture(scope="module")
 def real_db(maintenance_db):
     db, _ = maintenance_db
-    draft = Path(__file__).resolve().parents[3] / ".local/0034_configuration_history_parents.sql"
+    draft = Path(__file__).resolve().parents[2] / ".local/0034_configuration_history_parents.sql"
     if draft.exists():
         with db.transaction() as conn:
             conn.execute(draft.read_text(encoding="utf-8"), prepare=False)

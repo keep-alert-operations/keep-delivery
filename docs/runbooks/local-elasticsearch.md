@@ -125,7 +125,7 @@ $previousSearch = $env:APPCHI_TEST_ELASTICSEARCH_URL
 try {
     $env:PYTHONPATH = (Join-Path (Get-Location) 'backend')
     $env:APPCHI_TEST_ELASTICSEARCH_URL = 'http://127.0.0.1:59200'
-    ./backend/.venv/Scripts/python.exe -m pytest backend/tests/compatibility -q
+    ./.venv/Scripts/python.exe -m pytest backend/tests/compatibility -q
     if ($LASTEXITCODE) { throw 'Real Elasticsearch compatibility failed' }
 } finally {
     [Environment]::SetEnvironmentVariable('PYTHONPATH', $previousPythonPath, 'Process')

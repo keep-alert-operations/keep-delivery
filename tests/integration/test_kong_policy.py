@@ -18,7 +18,7 @@ pytestmark = pytest.mark.integration
 def test_actual_kong_prepared_activation_revoke_expiry_and_generation():
     if os.getenv("APPCHI_TEST_LOCAL_KONG") != "1":
         pytest.skip("Requires configured isolated local Kong")
-    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
     from local_v2 import client, credentials, KONG, GATEWAY
 
     operator, tenant, credential = str(uuid4()), str(uuid4()), str(uuid4())
@@ -107,14 +107,14 @@ def test_actual_kong_prepared_activation_revoke_expiry_and_generation():
 def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
     if os.getenv("APPCHI_TEST_LOCAL_KONG") != "1":
         pytest.skip("Requires configured isolated local Kong")
-    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
     from local_v2 import client, credentials, KONG, GATEWAY
 
     operator, tenant, credential = str(uuid4()), str(uuid4()), str(uuid4())
     name = "clock-test-" + operator
     key = "vena_" + secrets.token_urlsafe(32)
     health_path = (
-        Path(__file__).resolve().parents[3]
+        Path(__file__).resolve().parents[2]
         / "deploy/kong/appchi-policy"
         / (".clock-test-" + operator + ".json")
     )

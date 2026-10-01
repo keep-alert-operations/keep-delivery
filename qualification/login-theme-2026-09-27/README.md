@@ -5,4 +5,4 @@ Appchi `/auth/login?fresh=true` endpoint in Chrome. It contains no credentials o
 tokens. This is a rendered-page observation, not an authentication acceptance run.
 
 The deployment/configuration actions and static checks are recorded in
-[implementation status](../../implementation-status.md#approved-login-theme--2026-09-27).
+[implementation status](../../status/implementation-status.md#approved-login-theme--2026-09-27).

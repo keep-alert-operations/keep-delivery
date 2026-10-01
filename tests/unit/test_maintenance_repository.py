@@ -42,7 +42,7 @@ def maintenance_db():
     params = conninfo_to_dict(admin)
     params["dbname"] = name
     dsn = make_conninfo(**params)
-    migrate(dsn, Path(__file__).resolve().parents[3] / "migrations")
+    migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
     db = Database(dsn)
     yield db, dsn
     db.close()

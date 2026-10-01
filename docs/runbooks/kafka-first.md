@@ -1,6 +1,6 @@
 # Kafka-first protocol cutover and recovery
 
-This runbook implements [the normative pipeline](../../spec-kafka-alert-pipeline.md).
+This runbook implements [the normative pipeline](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-kafka-alert-pipeline.md).
 Production/shared-service changes require separate authorization and service-owner
 evidence. Do not infer production readiness from local test results.
 

@@ -68,13 +68,13 @@ ingress, worker and network templates and their required owner-supplied inputs.
 They have been structurally checked locally, not admitted or run by a cluster.
 
 
-Search reconstruction has an executable [rebuild CLI](search-rebuild.md). Its
+Search reconstruction has an executable [rebuild CLI](https://github.com/appchi-alert-operations/appchi-indexer/blob/main/docs/runbooks/search-rebuild.md). Its
 owner-supplied alias/allocation binding is separate from connection credentials.
 Document parity and uncertain cutover have been exercised on isolated Elasticsearch
 9.0.0. This does not qualify the private service or complete rollback restore.
 
 The operators worker now accepts the explicit executable profile described in
-[operator integration](../operators-implementation.md). Mount its binding and
+[operator integration](https://github.com/appchi-alert-operations/appchi-api/blob/main/docs/operators-implementation.md). Mount its binding and
 separate Grafana, Kong and readiness-probe credentials. Missing or unsupported
 capabilities retain pending/needs-attention; an HTTP fixture is not installed
 Grafana/Kong compatibility evidence.

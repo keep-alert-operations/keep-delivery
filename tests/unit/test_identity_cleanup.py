@@ -28,7 +28,7 @@ pytestmark = pytest.mark.integration
 @pytest.fixture(autouse=True)
 def cleanup_schema(maintenance_db):
     db, _ = maintenance_db
-    draft = Path(__file__).resolve().parents[3] / "migrations/0019_identity_cleanup.sql.draft"
+    draft = Path(__file__).resolve().parents[2] / "migrations/0019_identity_cleanup.sql.draft"
     if draft.exists():
         with db.transaction() as conn:
             if not conn.execute("SELECT to_regclass('audit_retirement_jobs') AS name").fetchone()[

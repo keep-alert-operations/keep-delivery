@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from appchi.config import Settings
 from appchi.ingestion.kafka_admission import KafkaPublisher
-from appchi.main import create_app
+from appchi.ingestion.main import create_app
 
 
 def test_unavailable_broker_has_three_unconfirmed_attempts_without_database(monkeypatch, v1):
@@ -30,7 +30,7 @@ def test_unavailable_broker_has_three_unconfirmed_attempts_without_database(monk
                 calls.append((topic, key, value))
                 return await super().publish(topic, key, value)
 
-        monkeypatch.setattr("appchi.main.KafkaPublisher", CountedPublisher)
+        monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", CountedPublisher)
         monkeypatch.setattr(
             "appchi.main.Database", lambda *a, **k: pytest.fail("Ingress opened PG")
         )

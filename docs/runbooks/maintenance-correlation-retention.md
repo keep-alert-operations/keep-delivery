@@ -1,13 +1,17 @@
 # Maintenance and correlation retention
 
+Current scope: automated retention workers are deferred under REV-34. The
+procedures below preserve historical implementation context and do not authorize
+deploying those roles. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md).
+
 Apply migrations through 0033 and use the normal runtime deployment epoch and
 worker database role. Keep recovery readiness closed until the supplied
 independent evidence contract is qualified. These cleanup roles consume matching
 protected final deletion records; they do not bypass or create that qualification.
 
 ```powershell
-backend/.venv/Scripts/python.exe -m appchi.worker correlation-retention --once
-backend/.venv/Scripts/python.exe -m appchi.worker maintenance-retention --once
+.venv/Scripts/python.exe -m appchi.worker correlation-retention --once
+.venv/Scripts/python.exe -m appchi.worker maintenance-retention --once
 ```
 
 Each invocation performs a bounded page. Ongoing processes advance keyset pages

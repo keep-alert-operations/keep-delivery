@@ -141,11 +141,11 @@ async def test_v2_defaults_once_from_ingress_without_database():
 def test_http_ingress_has_no_postgresql_or_secret_dependency(monkeypatch, v1):
     from fastapi.testclient import TestClient
     from appchi.config import Settings
-    from appchi.main import create_app
+    from appchi.ingestion.main import create_app
 
     publisher = Publisher()
     publisher.close = lambda: None
-    monkeypatch.setattr("appchi.main.KafkaPublisher", lambda settings: publisher)
+    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda settings: publisher)
     monkeypatch.setattr(
         "appchi.main.Database", lambda *args, **kwargs: pytest.fail("Ingress opened PostgreSQL")
     )

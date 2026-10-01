@@ -6,7 +6,7 @@
   },
   "parameters": [
     {
-      "name": "BACKEND_IMAGE",
+      "name": "INGESTION_IMAGE",
       "required": true
     },
     {
@@ -137,7 +137,7 @@
                   "periodSeconds": 10,
                   "failureThreshold": 30
                 },
-                "image": "${BACKEND_IMAGE}",
+                "image": "${INGESTION_IMAGE}",
                 "envFrom": [
                   {
                     "secretRef": {

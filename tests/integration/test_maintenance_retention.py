@@ -24,7 +24,7 @@ pytestmark = pytest.mark.integration
 @pytest.fixture(scope="module", autouse=True)
 def retention_schema(maintenance_db):
     db, _ = maintenance_db
-    draft = Path(__file__).resolve().parents[3] / ".local/0033_maintenance_retention.sql"
+    draft = Path(__file__).resolve().parents[2] / ".local/0033_maintenance_retention.sql"
     if draft.exists():
         with db.transaction() as conn:
             conn.execute(draft.read_text(), prepare=False)

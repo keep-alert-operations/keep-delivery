@@ -1,11 +1,7 @@
 import os
-from pathlib import Path
 from uuid import uuid4
 import pytest
 
-from appchi.db import Database
-from appchi.migrate import migrate
-from appchi.shared.crypto import EnvelopeCipher
 
 
 @pytest.fixture(scope="session")
@@ -13,7 +9,9 @@ def real_db():
     dsn = os.environ.get("APPCHI_TEST_DATABASE_URL")
     if not dsn:
         pytest.skip("Set APPCHI_TEST_DATABASE_URL to an isolated real PostgreSQL database")
-    migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
+    from appchi.migrate import migrate, migration_directory
+    from appchi.db import Database
+    migrate(dsn, migration_directory())
     database = Database(dsn)
     yield database
     database.close()
@@ -36,6 +34,7 @@ def tenant(real_db):
 
 @pytest.fixture
 def cipher():
+    from appchi.shared.crypto import EnvelopeCipher
     return EnvelopeCipher({"test": b"k" * 32}, "test")
 
 

@@ -2,15 +2,15 @@
 
 This is a **non-normative, assistant-selected implementation proposal**, not an
 amendment to the accepted recovery contracts or a qualification result. The new
-[authority record models](../backend/appchi/recovery/authority_records.py) are
+[authority record models](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/recovery/authority_records.py) are
 unconnected to runtime writers, the independent evidence adapter, database
 migrations, restore collection and capability gates. Validating a record does not
 prove publication, durability, complete coverage or safe recovery.
 
-The governing requirements remain [shared system completion §20](../spec-system-completion.md),
-[identity configuration §§11–12](../spec-identity-configuration.md),
-[operator operations §28](../spec-operator-operations.md) and
-[reliability and operations](../spec-reliability-operations.md). In particular,
+The governing requirements remain [shared system completion §20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-system-completion.md),
+[identity configuration §§11–12](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-identity-configuration.md),
+[operator operations §28](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-operator-operations.md) and
+[reliability and operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-reliability-operations.md). In particular,
 permission uncertainty keeps human authorization gated; unproved credential
 state requires invalidation, and unproved operator existence remains fenced.
 Fresh directory data cannot reconstruct post-backup local grant revocations.

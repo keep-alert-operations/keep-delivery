@@ -6,6 +6,7 @@ binding against the installed local Uvicorn/OpenSSL, not any deployment profile.
 
 from datetime import UTC, datetime, timedelta
 import hashlib
+import base64
 import http.client
 import ipaddress
 import json
@@ -204,7 +205,13 @@ def tls_gateway(tmp_path_factory):
 
 
 def _headers():
-    return [("X-Consumer-Id", str(uuid4())), ("X-Credential-Identifier", str(uuid4()))]
+    return [
+        ("X-Consumer-Id", str(uuid4())), ("X-Credential-Identifier", str(uuid4())),
+        ("X-Appchi-Operator-Id", str(uuid4())), ("X-Appchi-Tenant-Id", str(uuid4())),
+        ("X-Appchi-Policy-Generation", "1"),
+        ("X-Appchi-Routing-Names", base64.b64encode(b'["Operator"]').decode()),
+        ("X-Appchi-Authorized-At", str(time.time())),
+    ]
 
 
 def _request(gateway, certificate="pinned", headers=None, *, mode="tls"):

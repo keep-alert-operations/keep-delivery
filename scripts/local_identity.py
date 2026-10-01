@@ -10,7 +10,6 @@ import os
 import secrets
 import struct
 import subprocess
-import sys
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -22,7 +21,6 @@ STATE = ROOT / ".local/keycloak"
 ISSUER = "https://localhost:58443/realms/appchi-local"
 ORIGIN = "https://localhost:3443"
 BACKCHANNEL = "https://host.docker.internal:3443/auth/backchannel-logout"
-sys.path.insert(0, str(ROOT / "backend"))
 
 
 def save(path, value):
@@ -345,13 +343,13 @@ def environment():
         "APPCHI_REDIS_URL": "redis://127.0.0.1:56380/0",
         "APPCHI_POOL_SIZE": "2",
         "APPCHI_BACKEND_URL": "http://127.0.0.1:58000",
-        "PYTHONPATH": str(ROOT / "backend"),
+        "PYTHONPATH": "",
     }
 
 
 def database():
     import psycopg
-    from appchi.migrate import migrate
+    from appchi.migrate import migrate, migration_directory
     from psycopg import sql
     from psycopg.conninfo import make_conninfo
 
@@ -411,7 +409,7 @@ def database():
             stdout=subprocess.DEVNULL,
             cwd=ROOT,
         )
-    migrate(make_conninfo(admin, dbname="appchi_local"), ROOT / "migrations")
+    migrate(make_conninfo(admin, dbname="appchi_local"), migration_directory())
     creds = json.loads((STATE / "credentials.json").read_text())
     with psycopg.connect(admin) as conn:
         for role, parent, field in (

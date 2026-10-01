@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 if ($Restart -and $Action -ne 'Start') { throw '-Restart is only valid with -Action Start.' }
 $repository = Split-Path -Parent $PSScriptRoot
 $state = Join-Path $repository '.local/keycloak'
-$python = Join-Path $repository 'backend/.venv/Scripts/python.exe'
+$python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
 $processFile = Join-Path $state 'processes.json'
 
@@ -88,7 +88,7 @@ try {
     $node = (Get-Command node).Source
     $definitions = @(
         @{ Role='Api'; File=$python; Directory=$repository; Arguments='-m uvicorn appchi.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
-        @{ Role='Frontend'; File=$node; Directory=(Join-Path $repository 'frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
+        @{ Role='Frontend'; File=$node; Directory=(Join-Path (Split-Path -Parent $repository) 'appchi-frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
     )
     $current = @()
     foreach ($definition in $definitions) {

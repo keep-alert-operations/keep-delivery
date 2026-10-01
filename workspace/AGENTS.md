@@ -5,7 +5,7 @@ repositories. Open that directory when working with an agent. Apply this guidanc
 across the system and read the scoped `AGENTS.md` files inside each repository
 before editing it, including when the agent does not load them automatically.
 
-The layout below is the repository split plan agreed for development. Verify the
+The layout below is the implemented repository split used for development. Verify the
 actual checkout: this file does not establish that extraction, package publishing,
 deployment, or production qualification has been completed.
 
@@ -32,12 +32,10 @@ do not initialize a parent Git repository, add submodules, or move repositories 
 an incidental part of a feature task. Directory names alone do not prove that a
 child is an independent checkout: verify its resolved Git root.
 
-Before extraction, the source of this file is `workspace/AGENTS.md` in the existing
-monorepo. After extraction, keep the canonical copy at
+Keep the canonical copy at
 `appchi-delivery/workspace/AGENTS.md` and have workspace setup copy it to
 `<workspace>/AGENTS.md`. Keep the canonical and installed copies consistent when
-changing these instructions. This is the selected placement convention; inspect
-the actual setup tooling before assuming the copy step exists.
+changing these instructions. Use `appchi-delivery/scripts/workspace.py bootstrap` to install the root copy.
 
 Repository instructions add commands and local conventions. Preserve system
 contracts across repository boundaries. Explicit user decisions and later scope
@@ -169,7 +167,9 @@ unhandled. Keep changes focused; unrelated cleanup is separate work.
   pinned package releases instead of importing sibling source trees or copying
   shared behavior. Extract shared helpers from route modules before moving code.
 - `appchi-domain` may depend on contracts. Put only shared behavior in
-  it; keep HTTP routes, consumer loops and startup in their service repositories.
+  it; keep HTTP routes, service-specific consumers and process entrypoints in their
+  service repositories. Shared bounded lifecycle mechanics may receive explicit
+  service-owned handlers without importing them.
 - Event/native definitions have one source in `appchi-contracts`. API and ingestion
   generate their HTTP schemas and publish snapshots with producer revisions.
   Regenerate derived schemas and frontend types with the actual repository tools;
@@ -282,3 +282,9 @@ versions, endpoints, credentials, allocations, named owners or recovery guarante
 Missing integration evidence keeps affected capability gates closed. Design
 completion, local execution, integration qualification and production readiness
 are separate states; report only what the current evidence establishes.
+
+Read [repository layout](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-repository-layout.md) for REV-37.
+From delivery, use `python scripts/workspace.py bootstrap`, then
+`python scripts/workspace.py install --editable` for coordinated local development.
+Git dependency pins and locks remain the release authority; local editable code
+is an explicit development override. Record per-repository status and revisions.

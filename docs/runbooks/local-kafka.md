@@ -21,7 +21,7 @@ Do not point normal CI at this failed local instance. Run the test against dispo
 ```powershell
 $env:APPCHI_IDENTITY_TEST_ADMIN_URL = '<isolated PostgreSQL admin DSN>'
 $env:APPCHI_TEST_KAFKA_BOOTSTRAP = '<disposable Kafka bootstrap addresses>'
-backend/.venv/Scripts/python.exe -m pytest backend/tests/integration/test_kafka_pipeline.py -q --basetemp=.local/pytest-kafka
+.venv/Scripts/python.exe -m pytest tests/integration/test_kafka_pipeline.py -q --basetemp=.local/pytest-kafka
 ```
 
 Review test privileges first: it creates/deletes a unique topic and creates/drops a unique PostgreSQL database. Unset the Kafka opt-in when no suitable broker is available; a skip is not a compatibility pass. Keep broker logs and actual service version alongside pytest evidence. Broker retention, storage, backup, HA and production topic allocation remain the operating team's responsibility.

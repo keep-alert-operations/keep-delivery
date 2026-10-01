@@ -1,6 +1,6 @@
 # Local Keycloak identities
 
-**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](../spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
 
 The local development environment uses a real Keycloak realm with custom users
 and nested groups, so sign-in does not need access to company LDAP. It preserves
@@ -82,7 +82,7 @@ Stop the locally managed processes with:
 ## Appchi login theme
 
 The approved form is in
-[`deploy/local/keycloak/themes/appchi`](../deploy/local/keycloak/themes/appchi).
+[`deploy/local/keycloak/themes/appchi`](https://github.com/appchi-alert-operations/appchi-frontend).
 Compose mounts that directory read-only into Keycloak. Fresh realm imports select
 it through the `appchi-web` client's `login_theme` attribute; the normal Start
 configuration step upgrades existing local clients and their saved imports while
@@ -93,8 +93,8 @@ the application processes:
 
 ```powershell
 docker compose -p appchi-local-stack -f deploy/local/compose.yaml up -d --no-deps keycloak
-backend/.venv/Scripts/python.exe scripts/local_identity.py wait
-backend/.venv/Scripts/python.exe scripts/local_identity.py configure
+.venv/Scripts/python.exe scripts/local_identity.py wait
+.venv/Scripts/python.exe scripts/local_identity.py configure
 ```
 
 Open `https://localhost:3443/` while signed out, or `/auth/login` to start an
@@ -127,7 +127,7 @@ the console factor has been enrolled and its local development seed is in the
 credential file. Get its current code with:
 
 ```powershell
-backend/.venv/Scripts/python.exe scripts/local_identity.py otp bootstrap-admin
+.venv/Scripts/python.exe scripts/local_identity.py otp bootstrap-admin
 ```
 
 On a fresh setup the console instead prompts for authenticator enrollment.
@@ -204,7 +204,7 @@ CA. It does not follow redirects or use a proxy from ambient environment values.
 For a one-off cycle after the launcher has supplied those environment bindings:
 
 ```powershell
-backend/.venv/Scripts/python.exe -m appchi.identity.local_keycloak_worker --config PATH --once
+.venv/Scripts/python.exe -m appchi.identity.local_keycloak_worker --config PATH --once
 ```
 
 Initial setup may also pass `--bootstrap`. This invokes the existing guarded
@@ -252,6 +252,6 @@ changed-file Prettier and Python Ruff checks passed.
 
 This local identity setup does not complete unfinished Appchi recovery,
 visibility measurement, ingestion or external-service qualification work. See
-[implementation status](../implementation-status.md) for the broader release
-status and [development instructions](./runbooks/development.md) for other
+[implementation status](../status/implementation-status.md) for the broader release
+status and [development instructions](runbooks/development.md) for other
 services and verification commands.

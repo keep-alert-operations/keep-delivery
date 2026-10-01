@@ -4,8 +4,9 @@ $ErrorActionPreference = 'Stop'
 if ($Restart -and $Action -ne 'Start') { throw '-Restart is only valid with -Action Start.' }
 $repository = Split-Path -Parent $PSScriptRoot
 $state = Join-Path $repository '.local/runtime'
-$python = Join-Path $repository 'backend/.venv/Scripts/python.exe'
+$python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
+$modules = @{ source='appchi.processor.main'; correlation='appchi.correlation.main'; indexer='appchi.search.main' }
 $recordFile = Join-Path $state 'workers.json'
 $stackMarker = Join-Path $state 'compose-stack.json'
 $env:APPCHI_LOCAL_KAFKA_PORT = '19093'
@@ -22,7 +23,7 @@ function Owned($record) {
 function Worker-Id($record) {
     # Windows venv python.exe is a launcher; its child writes the heartbeat.
     for ($attempt=0; $attempt -lt 20; $attempt++) {
-        $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$($record.Id)" | Where-Object { $_.CommandLine -and $_.CommandLine.EndsWith("appchi.worker $($record.Role)") } | Select-Object -First 1
+        $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$($record.Id)" | Where-Object { $_.CommandLine -and $_.CommandLine.EndsWith("$($modules[$record.Role])") } | Select-Object -First 1
         if ($child) { return $child.ProcessId }
         Start-Sleep -Milliseconds 100
     }
@@ -88,7 +89,7 @@ try {
             continue
         }
         $env:APPCHI_WORKER_HEALTH_PATH = Join-Path $state "$role.health.json"
-        $process = Start-Process -FilePath $python -ArgumentList "-m appchi.worker $role" -WorkingDirectory $repository -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$role.out.log") -RedirectStandardError (Join-Path $state "$role.err.log")
+        $process = Start-Process -FilePath $python -ArgumentList "-m $($modules[$role])" -WorkingDirectory $repository -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$role.out.log") -RedirectStandardError (Join-Path $state "$role.err.log")
         $record = [pscustomobject]@{ Role=$role; Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o'); WorkerId=0 }
         $record.WorkerId = Worker-Id $record
         $current += $record

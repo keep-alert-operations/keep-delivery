@@ -1,6 +1,6 @@
 # Delivery readiness
 
-Implementation, environment bindings and qualification evidence are separate from the selected system design. DEL records below remain open. Local implementation and executed correctness evidence now exist and are tracked in [Implementation status](./implementation-status.md); full release qualification is still unperformed. A closed design issue or passing local test does not establish production readiness.
+Implementation, environment bindings and qualification evidence are separate from the selected system design. DEL records below remain open. Local implementation and executed correctness evidence now exist and are tracked in [Implementation status](implementation-status.md); full release qualification is still unperformed. A closed design issue or passing local test does not establish production readiness.
 
 ## Service bindings
 
@@ -61,7 +61,7 @@ Link each technology team's authoritative service procedures and escalation rout
 ## Evidence register
 
 The 2026-09-30 Kafka-first redesign contributes code and local execution evidence to
-DEL-02/04/06; see [its implementation record](docs/kafka-first-implementation.md).
+DEL-02/04/06; see [its implementation record](../docs/kafka-first-implementation.md).
 It closes no production delivery gate. DEL-03 capacity, DEL-05 protected rollback
 reconstruction (including new Kafka replay fences), production serving-pool/clock
 bindings and DEL-08 observation remain open. Existing local application data requires
@@ -72,7 +72,7 @@ a separately executed offline cutover; the disposable test migration is not that
 | DEL-01 Service bindings | Appchi integration lead + each service owner | Service bindings manifest above with actual versions/endpoints/identity references, capabilities, allocation, owner contacts and recovery guarantees. |
 | DEL-02 Implementation | Appchi engineering | APIs/UI/workers/DDL/adapters implementing the selected contracts, generated schema checks and traceability to the 55 IDs. |
 | DEL-03 Capacity qualification | Appchi performance lead + service owners | Shared system section 23 measured combined profile, selected numeric budgets, actual pool/resource settings and sustained/recovery results. |
-| DEL-04 Correctness/security/UX | Appchi engineering and reviewers | [Verification plan](./verification-plan.md) acceptance executions, isolation/replay/permission tests, accessibility and redaction evidence. |
+| DEL-04 Correctness/security/UX | Appchi engineering and reviewers | [Verification plan](https://github.com/appchi-alert-operations/appchi-design/blob/main/verification/verification-plan.md) acceptance executions, isolation/replay/permission tests, accessibility and redaction evidence. |
 | DEL-05 Recovery protection | Evidence/service owners + Appchi | Independent intent/fence contract, backup-restore handoff, credential/permission/deletion reconciliation and full rebuild exercise. |
 | DEL-06 Identity and remote integration | Appchi Keycloak/integration owners + LDAP/Kong/Grafana owners | Installed-version configuration tests, nested membership/five-minute evidence, exact routing labels, safe external writer mode and credential lifecycle verification. |
 | DEL-07 Release and support | Appchi release/support owners | Immutable release bundle, compatible rollout/rollback rehearsal, staffed contacts and exercised runbooks. |
@@ -96,7 +96,7 @@ DEL-02/04/05/06 inputs; no DEL entry is closed by this checkpoint. Refer to
 
 ## REV-34 worker-scope evidence
 
-[Worker-scope implementation](docs/worker-scope-implementation.md) records actual
+[Worker-scope implementation](../docs/worker-scope-implementation.md) records actual
 local checks and outstanding qualification. Previous maintenance-expiry and
 background-worker capacity gates apply only if those nice-to-have components are
 reintroduced. Synchronous operator remote/proxy/privilege/concurrency qualification
@@ -109,7 +109,7 @@ with the nice-to-have worker. Explicit complete bootstrap/manual publication,
 immutable identity binding, nested membership, unknown-user/team refusal,
 last-trusted authorization and session/restore safeguards remain required. This
 does not close any DEL item or qualify company LDAP/Keycloak. See
-[worker scope](spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
+[worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
 
 ## REV-36 live publishing scope
 
@@ -117,5 +117,5 @@ The Product API owns Redis hint publication and SSE; remove the separate live
 worker allocation. Apply migration 0047, supply API Redis egress/bindings and
 qualify combined API SQL/Redis load, replica duplication, failures and drained
 shutdown. Existing two-second PostgreSQL reconciliation and tenant/session guards
-remain. Local checks are in [worker-scope evidence](docs/worker-scope-implementation.md);
+remain. Local checks are in [worker-scope evidence](../docs/worker-scope-implementation.md);
 no DEL item is closed by this scope change alone.

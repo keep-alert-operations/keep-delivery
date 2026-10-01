@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from test_identity_sessions import identity_db  # noqa: F401
-from test_local_keycloak_directory import Realm, config, uid  # noqa: F401
+from local_keycloak_fixture import Realm, config, uid  # noqa: F401
 
 from appchi.identity.local_keycloak_worker import run_cycle
 

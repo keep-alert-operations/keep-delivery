@@ -9,7 +9,7 @@
   },
   "parameters": [
     {
-      "name": "BACKEND_IMAGE",
+      "name": "PRODUCT_API_IMAGE",
       "required": true
     },
     {
@@ -136,7 +136,7 @@
                   "periodSeconds": 10,
                   "failureThreshold": 30
                 },
-                "image": "${BACKEND_IMAGE}",
+                "image": "${PRODUCT_API_IMAGE}",
                 "envFrom": [
                   {
                     "secretRef": {

@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 if ($Restart -and $Action -ne 'Start') { throw '-Restart requires Start.' }
 $repository = Split-Path -Parent $PSScriptRoot
 $state = Join-Path $repository '.local/operators'
-$python = Join-Path $repository 'backend/.venv/Scripts/python.exe'
+$python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
 $recordFile = Join-Path $state 'processes.json'
 function Checked([scriptblock]$Command) {

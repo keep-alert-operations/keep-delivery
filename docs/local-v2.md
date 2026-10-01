@@ -1,6 +1,6 @@
 # Native v2 in local development
 
-**2026-09-30 worker-scope update:** see [current worker scope](../spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
 
 The user authorized local v2 configuration on 2026-09-24. The assistant-selected
 setup runs isolated Kong 3.9.1, its dedicated PostgreSQL 16 database and Grafana
@@ -68,7 +68,7 @@ To send three new synthetic alerts and verify processing, search, request retry
 identity and cross-tenant concealment:
 
 ```powershell
-backend/.venv/Scripts/python.exe scripts/local_v2_verify.py send
+.venv/Scripts/python.exe scripts/local_v2_verify.py send
 ```
 
 This command obtains the current key through authenticated, audited Copy and
@@ -76,7 +76,7 @@ keeps it in memory. It deliberately leaves synthetic alerts in Local Demo. To
 rerun gateway checks without creating alerts:
 
 ```powershell
-backend/.venv/Scripts/python.exe scripts/local_v2_verify.py verify
+.venv/Scripts/python.exe scripts/local_v2_verify.py verify
 ```
 
 Secrets, certificates, generated bindings, process records and logs are under
@@ -91,7 +91,7 @@ capacity, recovery, or Grafana's scheduled alert evaluation/delivery.
 ## Synchronous provisioning startup (REV-34)
 
 The Product API now owns the management calls. For a fresh local v2 setup, run
-`backend/.venv/Scripts/python.exe scripts/local_v2.py prepare` before
+`.venv/Scripts/python.exe scripts/local_v2.py prepare` before
 `scripts/local-identity.ps1 -Action Start -Restart`, then run
 `scripts/local-v2.ps1 -Action Start`. The first step prepares local credentials;
 the API restart loads the new operator binding/token/DSN settings. Configuration

@@ -51,7 +51,7 @@ def webhook(name, label_value="true"):
 
 
 def test_grafana_provenance_partial_batch_and_idempotent_delivery(
-    operators, real_db, cipher, profile
+    operators, real_db, cipher, profile, monkeypatch
 ):
     op = ready(operators, real_db, cipher)
     tenant = operators[2]
@@ -91,20 +91,28 @@ def test_grafana_provenance_partial_batch_and_idempotent_delivery(
 
 
 def test_grafana_unverified_transport_and_wrong_literal_label_rejected(
-    operators, real_db, cipher, profile
+    operators, real_db, cipher, profile, monkeypatch
 ):
     op = ready(operators, real_db, cipher)
     raw = json.dumps(webhook(op["name"], "True")).encode()
     identity = gateway(real_db, op["id"])
-    response = operators[0].post(
-        "/api/ingest/v2/grafana",
-        content=raw,
-        headers={
-            "Content-Type": "application/json",
-            "X-Consumer-ID": identity.consumer_id,
-            "X-Credential-Identifier": identity.credential_id,
-        },
-    )
+    from types import SimpleNamespace
+    from fastapi.testclient import TestClient
+    from appchi.config import Settings
+    from appchi.ingestion.main import create_app
+    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda *_: SimpleNamespace(close=lambda: None))
+    settings = Settings(role="private-ingestion", deployment_epoch="test",
+                        kafka_bootstrap="unused:9092", global_tenant_id=op["tenant_id"])
+    with TestClient(create_app(settings)) as client:
+        response = client.post(
+            "/api/ingest/v2/grafana",
+            content=raw,
+            headers={
+                "Content-Type": "application/json",
+                "X-Consumer-ID": identity.consumer_id,
+                "X-Credential-Identifier": identity.credential_id,
+            },
+        )
     assert response.status_code == 401
     status, result = Admission(real_db, cipher, profile).admit_grafana(raw, None, identity)
     assert all(item["disposition"] == "rejected" for item in result["items"])

@@ -33,7 +33,7 @@ def real_db():
     dsn = make_conninfo(**params)
     db = None
     try:
-        migrate(dsn, Path(__file__).resolve().parents[3] / "migrations")
+        migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
         db = Database(dsn)
         yield db
     finally:

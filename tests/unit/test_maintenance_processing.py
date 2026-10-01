@@ -28,7 +28,7 @@ pytestmark = pytest.mark.integration
 @pytest.fixture(autouse=True)
 def processing_schema(maintenance_db):
     db, _ = maintenance_db
-    draft = Path(__file__).resolve().parents[3] / "migrations/0011_maintenance_processing.sql.draft"
+    draft = Path(__file__).resolve().parents[2] / "migrations/0011_maintenance_processing.sql.draft"
     if draft.exists():
         with db.transaction() as conn:
             if not conn.execute(
@@ -36,7 +36,7 @@ def processing_schema(maintenance_db):
             ).fetchone()["table"]:
                 conn.execute(draft.read_text(), prepare=False)
     draft = (
-        Path(__file__).resolve().parents[3] / "migrations/0014_maintenance_effect_outbox.sql.draft"
+        Path(__file__).resolve().parents[2] / "migrations/0014_maintenance_effect_outbox.sql.draft"
     )
     if draft.exists():
         with db.transaction() as conn:

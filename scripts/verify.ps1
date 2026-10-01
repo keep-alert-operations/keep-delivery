@@ -8,8 +8,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repository = Split-Path -Parent $PSScriptRoot
-$backend = Join-Path $repository 'backend'
-$frontend = Join-Path $repository 'frontend'
+$backend = $repository
+$frontend = Join-Path (Split-Path -Parent $repository) 'appchi-frontend'
 $python = Join-Path $backend '.venv/Scripts/python.exe'
 $npm = if (Get-Command npm.cmd -ErrorAction SilentlyContinue) { 'npm.cmd' } else { 'npm' }
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw 'Install locked dependencies with scripts/dev.ps1 -Action Install first.' }
@@ -27,7 +27,7 @@ function Frontend-Command([string[]]$Arguments) {
 function Run-Suite([string]$Name) {
     Write-Host "Running $Name checks."
     switch ($Name) {
-        'Unit' { Invoke-Checked { & $python -m pytest backend/tests/unit -q --basetemp=.local/pytest-unit } 'Backend unit suite' }
+        'Unit' { Invoke-Checked { & $python scripts/workspace.py test } 'Backend unit suite' }
         'Build' {
             Frontend-Command @('run', 'format:check')
             Frontend-Command @('run', 'typecheck')
@@ -35,7 +35,7 @@ function Run-Suite([string]$Name) {
         }
         'Database' {
             if ([string]::IsNullOrWhiteSpace($env:APPCHI_TEST_DATABASE_URL)) { throw 'Supply APPCHI_TEST_DATABASE_URL for an isolated test database; this suite applies migrations and writes synthetic records.' }
-            Invoke-Checked { & $python -m pytest backend/tests/integration -q --basetemp=.local/pytest-integration } 'Real PostgreSQL suite'
+            Invoke-Checked { & $python -m pytest tests/integration -q --basetemp=.local/pytest-integration } 'Real PostgreSQL suite'
         }
         'Browser' {
             # Normal browser regression uses synthetic routes, even if a caller
@@ -56,7 +56,7 @@ function Run-Suite([string]$Name) {
 $previousPythonPath = $env:PYTHONPATH
 $previousChannel = $env:PLAYWRIGHT_CHANNEL
 try {
-    $env:PYTHONPATH = $backend
+    $env:PYTHONPATH = $null
     if ($BrowserChannel) { $env:PLAYWRIGHT_CHANNEL = $BrowserChannel }
     Push-Location -LiteralPath $repository
     try {

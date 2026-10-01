@@ -22,7 +22,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture(scope="session")
 def registry_schema(real_db):
-    draft = Path(__file__).resolve().parents[3] / ".local/0031_visibility_registry.sql"
+    draft = Path(__file__).resolve().parents[2] / ".local/0031_visibility_registry.sql"
     with real_db.transaction() as conn:
         exists = conn.execute("SELECT to_regclass('visibility_views') AS name").fetchone()["name"]
         if not exists:

@@ -82,7 +82,7 @@ services:
     volumes:
       - ../../.local/keycloak/import:/opt/keycloak/data/import:ro
       - ../../.local/keycloak/tls:/tls:ro
-      - ./keycloak/themes:/opt/keycloak/themes:ro
+      - ../../../appchi-frontend/keycloak/themes:/opt/keycloak/themes:ro
       - keycloak_data:/opt/keycloak/data
     healthcheck:
       test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/8443'"]
@@ -114,7 +114,7 @@ services:
     environment:
       KONG_PLUGINS: bundled,appchi-policy
     volumes:
-      - ../kong/appchi-policy:/usr/local/share/lua/5.1/kong/plugins/appchi-policy:ro
+      - ../../../appchi-ingestion/kong/appchi-policy:/usr/local/share/lua/5.1/kong/plugins/appchi-policy:ro
     command: ["sh", "-ec", "kong migrations bootstrap && kong migrations up && kong migrations finish"]
     restart: "no"
 
@@ -145,7 +145,7 @@ services:
       - ../../.local/operators/tls/ca.crt:/tls/ca.crt:ro
       - ../../.local/operators/tls/server.crt:/tls/server.crt:ro
       - ../../.local/operators/tls/server.key:/tls/server.key:ro
-      - ../kong/appchi-policy:/usr/local/share/lua/5.1/kong/plugins/appchi-policy:ro
+      - ../../../appchi-ingestion/kong/appchi-policy:/usr/local/share/lua/5.1/kong/plugins/appchi-policy:ro
       - ../../.local/operators/tls/kong.crt:/tls/kong.crt:ro
       - ../../.local/operators/tls/kong.key:/tls/kong.key:ro
     healthcheck:

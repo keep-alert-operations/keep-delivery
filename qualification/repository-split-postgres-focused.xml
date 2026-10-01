@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="8.890" timestamp="2026-10-01T14:56:23.940195+03:00" hostname="guy_rozenbaum3"><testcase classname="tests.integration.test_product" name="test_invalid_cel_and_revision_are_validation_failures" time="4.401" /></testsuite></testsuites>

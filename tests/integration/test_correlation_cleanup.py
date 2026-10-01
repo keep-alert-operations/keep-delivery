@@ -24,7 +24,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def real_db(isolated_db):
-    root = Path(__file__).resolve().parents[3]
+    root = Path(__file__).resolve().parents[2]
     if not (root / "migrations/0032_correlation_retention.sql").exists():
         with isolated_db.transaction() as conn:
             conn.execute(

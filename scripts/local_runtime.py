@@ -2,13 +2,11 @@
 
 import argparse
 import json
-import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".local/runtime"
-sys.path.insert(0, str(ROOT / "backend"))
 
 
 def probe():

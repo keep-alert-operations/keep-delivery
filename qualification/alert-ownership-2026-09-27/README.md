@@ -1,6 +1,6 @@
 # Alert ownership redesign — 2026-09-27
 
-Scope: user-approved single assignment control and derived alert status, REV-27. Authoritative behavior is in [alert operations](../../spec-alert-operations.md#17-assignment-and-derived-acknowledgement).
+Scope: user-approved single assignment control and derived alert status, REV-27. Authoritative behavior is in [alert operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-operations.md#17-assignment-and-derived-acknowledgement).
 
 ## Executed evidence
 

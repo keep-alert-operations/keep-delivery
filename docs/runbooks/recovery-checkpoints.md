@@ -6,8 +6,8 @@ service. It does not establish that the company already supplies this endpoint,
 its durability/independence, a qualified recovery checkpoint, or restore readiness.
 The existing `append()` and single-page `checkpoint()` contracts remain unchanged.
 
-The normative basis is [alert-history technical §24](../../spec-alert-history-technical.md#24-protected-evidence-and-restore-readiness)
-and [system completion §20](../../spec-system-completion.md#20-cross-resource-deletion-replay-and-restore).
+The normative basis is [alert-history technical §24](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-history-technical.md#24-protected-evidence-and-restore-readiness)
+and [system completion §20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-system-completion.md#20-cross-resource-deletion-replay-and-restore).
 An unresolved protected intent must fence reconciliation; a final fence prevents
 resurrection. Enumeration alone does not interpret or apply these decisions.
 
@@ -169,7 +169,7 @@ Changing the supplied connection/qualification binding during enumeration also
 fails before a completion summary can be returned.
 
 ```powershell
-backend/.venv/Scripts/python.exe -m pytest backend/tests/unit/test_recovery_checkpoint.py -q
+.venv/Scripts/python.exe -m pytest backend/tests/unit/test_recovery_checkpoint.py -q
 ```
 
 These are controlled contract fixtures. No company recovery service was contacted,

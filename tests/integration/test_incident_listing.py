@@ -17,7 +17,7 @@ pytestmark = pytest.mark.integration
 @pytest.fixture(scope="module")
 def real_db(maintenance_db):
     db, _ = maintenance_db
-    draft = Path(__file__).resolve().parents[3] / ".local/0035_incident_list_indexes.sql"
+    draft = Path(__file__).resolve().parents[2] / ".local/0035_incident_list_indexes.sql"
     if draft.exists():
         with db.transaction() as conn:
             conn.execute(draft.read_text(), prepare=False)

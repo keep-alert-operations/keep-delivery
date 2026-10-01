@@ -6,7 +6,7 @@
   },
   "parameters": [
     {
-      "name": "BACKEND_IMAGE",
+      "name": "MIGRATIONS_IMAGE",
       "required": true
     },
     {
@@ -76,7 +76,7 @@
                   "-m",
                   "appchi.migrate"
                 ],
-                "image": "${BACKEND_IMAGE}",
+                "image": "${MIGRATIONS_IMAGE}",
                 "envFrom": [
                   {
                     "secretRef": {

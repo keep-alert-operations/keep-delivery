@@ -95,10 +95,11 @@ async def test_ingress_does_not_start_live_tasks_even_with_redis_configured(role
             pass
 
     monkeypatch.setattr("appchi.main.Database", forbidden)
-    monkeypatch.setattr("appchi.main.KafkaPublisher", lambda settings: Publisher())
+    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda settings: Publisher())
     monkeypatch.setattr("appchi.live.hint_publisher", forbidden)
     monkeypatch.setattr("appchi.live.redis_listener", forbidden)
-    app = create_app(settings(role))
+    from appchi.ingestion.main import create_app as create_ingestion_app
+    app = create_ingestion_app(settings(role))
     async with app.router.lifespan_context(app):
         assert app.state.db is None
 

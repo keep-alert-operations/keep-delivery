@@ -30,6 +30,7 @@ def settings(db):
     with db.transaction() as conn:
         tenant = conn.execute("SELECT id FROM tenants WHERE kind='global'").fetchone()["id"]
     clock = Path(".local/kafka-first-clock.json")
+    clock.parent.mkdir(parents=True, exist_ok=True)
     clock.write_text(
         json.dumps(
             {

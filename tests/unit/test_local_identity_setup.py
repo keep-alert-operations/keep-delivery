@@ -9,7 +9,7 @@ import pytest
 
 @pytest.fixture
 def setup(monkeypatch, tmp_path):
-    path = Path(__file__).resolve().parents[3] / "scripts/local_identity.py"
+    path = Path(__file__).resolve().parents[2] / "scripts/local_identity.py"
     spec = importlib.util.spec_from_file_location("local_identity_setup", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

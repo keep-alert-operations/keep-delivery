@@ -3,8 +3,8 @@
 Status: implementation plan with an isolated prerequisite implementation, **not a
 normative supplement, completed measurement feature, or qualification claim**.
 The interfaces below are assistant-selected implementation proposals. Normative
-requirements remain in [alerts/history technical section 21](../spec-alert-history-technical.md)
-and [reliability sections 4, 7 and 19](../spec-reliability-operations.md).
+requirements remain in [alerts/history technical section 21](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-history-technical.md)
+and [reliability sections 4, 7 and 19](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-reliability-operations.md).
 
 ## Measurement boundary and existing capabilities
 

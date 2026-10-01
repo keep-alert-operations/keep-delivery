@@ -54,7 +54,7 @@ def identity_db():
     params = conninfo_to_dict(admin_dsn)
     params["dbname"] = name
     dsn = make_conninfo(**params)
-    migrate(dsn, Path(__file__).resolve().parents[3] / "migrations")
+    migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
     database = Database(dsn, size=4)
     yield database, dsn
     database.close()

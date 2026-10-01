@@ -27,11 +27,10 @@ def test_rls_requires_scope_and_partition_is_not_a_bypass(real_db, cipher, profi
 
 
 def test_migrations_are_idempotent_and_detect_tampering(real_db, tmp_path):
-    from appchi.migrate import migrate
+    from appchi.migrate import migrate, migration_directory
     import os
-    from pathlib import Path
 
     dsn = os.environ["APPCHI_TEST_DATABASE_URL"]
-    migrate(dsn, Path(__file__).resolve().parents[3] / "migrations")
+    migrate(dsn, migration_directory())
     with pytest.raises(RuntimeError, match="absent"):
         migrate(dsn, tmp_path)

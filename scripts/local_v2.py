@@ -22,7 +22,6 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".local/operators"
-sys.path.insert(0, str(ROOT / "backend"))
 KONG = "https://localhost:58447"
 GATEWAY = "https://127.0.0.1:58445"
 GRAFANA = "https://localhost:58448"

@@ -35,7 +35,7 @@ def isolated_database():
     dsn = make_conninfo(**parameters)
     database = None
     try:
-        migrate(dsn, Path(__file__).resolve().parents[3] / "migrations")
+        migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
         database = Database(dsn, 1)
         yield database
     finally:
