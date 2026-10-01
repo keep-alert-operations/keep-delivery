@@ -1,0 +1,13 @@
+{
+  "contracts_revision": "42107e3814a07518878291929740f5fa120fbff1",
+  "product_revision": "0b8a1a351378d0a7952a405b6fac4db1d03c6096",
+  "ingestion_revision": "0d2ee23a7940c2c0866498aa0646587f101651bc",
+  "schemas": {
+    "alerts.changed.v1.schema.json": "1dc716a6a308cb76781e78dfaa1cfa4995bfaac731be548de4e395cdb6f98130",
+    "alerts.received.v1.schema.json": "8e6873ed8ea328303df3b1022b563456c234847bfd7967843076b6eed5319992",
+    "alerts.received.v2.schema.json": "0f6fbd48f7ab4ffb432a7af2699a60662f027c1222093e688e624e7a97a62ee3",
+    "ingestion.openapi.json": "8dd59c42ae85844e477ca817e4dfca4576902227dadc4430652262cf3be2931c",
+    "openapi.json": "50a096f1637ea51def582ec724115e7ee7534476ccbabf458b4355ad9e5b930c",
+    "product.openapi.json": "9d1d081670d76b1942aa22c1c5f32b0d35b54e5571c49d8414a66fbc4346eea6"
+  }
+}

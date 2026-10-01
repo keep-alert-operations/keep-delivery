@@ -23,6 +23,8 @@ system-wide `AGENTS.md` copied from delivery.
 - Individual locked unit suites: contracts 16, domain 365, API 70, ingestion 5,
   indexer 29 and migrations 1 passed. Processor and correlation entrypoint/handler
   behavior is covered by the boundary checks and delivery's system tests.
+  Delivery's own locked unit suite passed with 76 passed and 65 skipped after
+  running without the concurrent browser workload.
 - The delivery PostgreSQL run recorded 228 passed, 321 skipped and one CEL compiler
   deadline failure. That one case passed in an isolated rerun, without changing
   the one-second compiler deadline. Both XML reports are retained under
@@ -36,6 +38,11 @@ system-wide `AGENTS.md` copied from delivery.
   production build passed. npm audit reported zero vulnerabilities after the
   minimal Next.js 16.3.5 → 16.3.6 patch for the
   [maintainer's ImageResponse advisory](https://github.com/vercel/next.js/security/advisories/GHSA-vcvr-r3jv-pc5j).
+- Browser regression: the full run had 134 passed, six failures and seven skipped.
+  All six cases passed on targeted reruns after restoring three test files' UTF-8
+  text and correcting two old test assumptions about specific-tenant administration
+  and the accessible theme switch. The narrow-screen case passed on rerun without
+  a code change. No product UI behavior was changed for these test corrections.
 - Ingestion and migration Docker images built with temporary BuildKit credentials
   and passed imports in Linux containers with networking disabled. Other service
   images and cluster deployment have not been qualified by these checks.
