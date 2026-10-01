@@ -1,0 +1,10 @@
+{
+  "result": "passed",
+  "source": "installed wheel, outside checkout",
+  "sql_files": 44,
+  "alembic_head": "0047",
+  "interfaces": [
+    "migrate(dsn)",
+    "appchi-migrate"
+  ]
+}

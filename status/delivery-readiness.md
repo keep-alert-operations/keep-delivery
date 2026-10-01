@@ -2,6 +2,12 @@
 
 Implementation, environment bindings and qualification evidence are separate from the selected system design. DEL records below remain open. Local implementation and executed correctness evidence now exist and are tracked in [Implementation status](implementation-status.md); full release qualification is still unperformed. A closed design issue or passing local test does not establish production readiness.
 
+REV-38 adds [local Alembic conversion evidence](../qualification/alembic-migrations.md)
+and its [migration runbook](../docs/alembic-migrations.md). Verified legacy adoption
+and package/consumer checks contribute to DEL-02/04; no production gate is closed.
+Publish the pinned prerequisite commits, build the dedicated migration image, and
+execute the existing cutover prerequisites before the migration job/new writers.
+
 ## Service bindings
 
 Require a validated, versioned environment manifest with each service's supported endpoint/version, trust/auth identity references, namespace/resource permissions, client limits/allocation, durability/failure/restore behavior, owner contact and evidence link. Secrets themselves stay outside the manifest. The following are required capability checks, not claims of existing infrastructure settings:

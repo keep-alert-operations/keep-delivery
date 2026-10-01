@@ -2,7 +2,6 @@
 
 from contextlib import contextmanager
 import os
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -35,7 +34,7 @@ def isolated_database():
     dsn = make_conninfo(**parameters)
     database = None
     try:
-        migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
+        migrate(dsn)
         database = Database(dsn, 1)
         yield database
     finally:

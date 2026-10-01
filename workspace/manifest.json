@@ -12,7 +12,7 @@
     },
     "appchi-migrations": {
       "url": "https://github.com/appchi-alert-operations/appchi-migrations.git",
-      "revision": "6d5e0830ba9322423809015dcac4887d4f4f5b17"
+      "revision": "1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236"
     },
     "appchi-api": {
       "url": "https://github.com/appchi-alert-operations/appchi-api.git",
@@ -40,7 +40,7 @@
     },
     "appchi-design": {
       "url": "https://github.com/appchi-alert-operations/appchi-design.git",
-      "revision": "94454893ee9909e05dc4bccfb68d36839177b3d6"
+      "revision": "62e348b96b1b6dbe3024a89613db49edab6b914c"
     },
     "appchi-delivery": {
       "url": "https://github.com/appchi-alert-operations/appchi-delivery.git",

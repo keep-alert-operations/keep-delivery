@@ -9,7 +9,7 @@ dependencies = [
   "appchi-processor @ git+https://github.com/appchi-alert-operations/appchi-processor.git@4f7a3fc81483d193033c3eec9f54f6aaeb6a5392",
   "appchi-correlation @ git+https://github.com/appchi-alert-operations/appchi-correlation.git@ad68f9f4838848f5d318888be4b0e067d5b51e5b",
   "appchi-indexer @ git+https://github.com/appchi-alert-operations/appchi-indexer.git@ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3",
-  "appchi-migrations @ git+https://github.com/appchi-alert-operations/appchi-migrations.git@6d5e0830ba9322423809015dcac4887d4f4f5b17"
+  "appchi-migrations @ git+https://github.com/appchi-alert-operations/appchi-migrations.git@1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236"
 ]
 
 [dependency-groups]

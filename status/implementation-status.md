@@ -1,5 +1,20 @@
 # Implementation status
 
+## 2026-10-01 Alembic migration runner (REV-38)
+
+`appchi-migrations` now executes its unchanged 44 SQL files through one Alembic
+revision chain. Verified legacy adoption preserves checksum history/timestamps,
+uses the original transaction/advisory lock, and rejects inconsistent histories.
+Both migration ledgers deny API/worker access. Existing deployment entrypoints
+remain; four delivery test fixtures now use the packaged migration directory.
+
+Local verification passed 21 migration tests, 27 affected application SQL tests,
+wheel execution outside the checkout, lint/build and a separate locked delivery
+installation. The first consumer run's native-CEL availability failure and the
+successful isolated rerun are recorded in [conversion evidence](../qualification/alembic-migrations.md).
+Dependency/manifest pins identify the new migration and design commits. Publication,
+image build and rollout remain separate; no existing application database was migrated.
+
 ## 2026-10-01 independent repositories (REV-37)
 
 The application, packages, migrations, design and delivery tooling are split into
