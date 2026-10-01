@@ -249,7 +249,7 @@ def test_partial_collection_is_staged_but_never_ready_and_retry_uses_new_scan(re
             pytest.fail("Transport completeness cannot reopen business paths")
 
 
-def test_runtime_api_fences_native_v1_and_human_paths(recovery, tmp_path):
+def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(recovery, tmp_path):
     import base64
     from fastapi.testclient import TestClient
     from appchi.config import Settings
@@ -261,6 +261,7 @@ def test_runtime_api_fences_native_v1_and_human_paths(recovery, tmp_path):
         database_url="unused",
         wrapping_key=base64.b64encode(b"k" * 32).decode(),
         deployment_epoch="previous-test-epoch",
+        kafka_admission_enabled=False,
         capacity_profile=Path("qualification/development-capacity.json").resolve(),
     )
     with TestClient(create_app(settings, runtime)) as client:
@@ -277,5 +278,29 @@ def test_runtime_api_fences_native_v1_and_human_paths(recovery, tmp_path):
             },
         )
         assert result.status_code == 503, result.text
-        assert result.json()["error"]["code"] == "restore_reconciliation_required"
-        assert client.get("/auth/session").status_code == 503
+        assert result.json()["error"]["code"] == "kafka_cutover_required"
+        session = client.get("/auth/session")
+        assert session.status_code == 503
+        assert session.json()["error"]["code"] == "restore_reconciliation_required"
+
+
+def test_restore_keeps_protocol_selection_and_fences_kafka_workers(recovery):
+    from types import SimpleNamespace
+    from appchi.kafka_source import SourceConsumer
+    from appchi.kafka_changed import ChangedConsumer
+
+    admin, runtime = recovery
+    with admin.transaction() as conn:
+        conn.execute("UPDATE kafka_pipeline_control SET enabled=true WHERE singleton")
+    begin_restore(admin, **inputs())
+    with admin.transaction() as conn:
+        assert conn.execute(
+            "SELECT enabled FROM kafka_pipeline_control WHERE singleton"
+        ).fetchone()["enabled"]
+    for constructor in (
+        lambda: SourceConsumer(runtime, SimpleNamespace(), None),
+        lambda: ChangedConsumer(runtime, SimpleNamespace(), None, "correlation"),
+        lambda: ChangedConsumer(runtime, SimpleNamespace(), None, "projection"),
+    ):
+        with pytest.raises(AppError, match="restore_reconciliation_required"):
+            constructor()

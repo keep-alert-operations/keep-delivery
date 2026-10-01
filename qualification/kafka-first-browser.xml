@@ -1,0 +1,18 @@
+<testsuites id="" name="" tests="7" failures="0" skipped="0" errors="0" time="31.903260000000003">
+<testsuite name="cel-editor.spec.ts" timestamp="2026-09-29T23:21:48.520Z" hostname="chromium" tests="7" failures="0" skipped="0" time="46.998" errors="0">
+<testcase name="feed discovers only supported fields and completes receiver methods at the caret" classname="cel-editor.spec.ts" time="9.848">
+</testcase>
+<testcase name="validation uses the exact draft and CSRF, shows type errors and selects Unicode source positions" classname="cel-editor.spec.ts" time="9.445">
+</testcase>
+<testcase name="keyboard completion announces its list and Tab dismisses it without trapping focus" classname="cel-editor.spec.ts" time="5.297">
+</testcase>
+<testcase name="late validation cannot certify a changed draft and service failure preserves it" classname="cel-editor.spec.ts" time="5.361">
+</testcase>
+<testcase name="presets uses its published CEL context and keeps source after validation" classname="cel-editor.spec.ts" time="6.659">
+</testcase>
+<testcase name="maintenance uses its published CEL context and keeps source after validation" classname="cel-editor.spec.ts" time="6.396">
+</testcase>
+<testcase name="correlation-rules uses its published CEL context and keeps source after validation" classname="cel-editor.spec.ts" time="3.992">
+</testcase>
+</testsuite>
+</testsuites>

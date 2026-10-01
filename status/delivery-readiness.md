@@ -8,11 +8,11 @@ Require a validated, versioned environment manifest with each service's supporte
 
 | Owner/service | Required binding and application response to incompatibility |
 |---|---|
-| PostgreSQL team | Supported SQL/locking/RLS/partition/index behavior, durable-commit and failover contract, connections/storage allocation, backup/restore handoff. No durable acknowledgement if its authority is unavailable. |
+| PostgreSQL team | Supported SQL/locking/RLS/partition/index behavior, durable-commit and failover contract, connections/storage allocation, backup/restore handoff. Authority outage blocks application processing/commands; ingress Kafka admission remains independent. |
 | Elasticsearch team | Strict/wildcard mappings, external versions, PIT/msearch/search_after, exact totals/refresh visibility, index/alias/rebuild interfaces and allocation. Failed capability gates search; no script/full-scan fallback. |
-| Kafka team | Topic namespaces, tenant key/order semantics, idempotent producer support, message limits, consumer/replay/retention and allocation. PG pending scans remain the recovery path. |
+| Kafka team | Topic namespaces, logical-key received/tenant-key changed ordering, idempotent/transactional producer fencing, read_committed consumers, stable partition topology, message limits, offsets/replay/retention and allocation. No PG ingress queue; Kafka retention can lose accepted unprocessed inputs. |
 | Redis team | Authenticated Pub/Sub namespace and connection limits. Failure selects PG reconciliation/polling, not data loss. |
-| Kong/Grafana owners | Operator supplement's auth/private context, credential IDs, supported management APIs, exact Unicode routing-label round trip and external writer safety. Unsupported remote contract keeps operations pending. |
+| Kong/Grafana owners | Installed Appchi policy plugin, all-serving-node generation/digest/expiry proof, trusted host clocks, operator supplement's auth/private context, credential IDs, supported management APIs, exact Unicode routing-label round trip and external writer safety. Unsupported remote contract keeps operations pending. |
 | LDAP owner / Appchi Keycloak team | Immutable identity schema, nested/primary memberships, paged completeness, upstream visibility within the five-minute budget; installed OIDC/password sign-in/console MFA/refresh/logout behavior. Unknown facts never become trusted memberships. |
 | OpenShift/security/observability owners | Workload model/allocation, secret protection, trust, probes/grace, SSE flush/timeouts, metrics/traces/log interfaces and existing on-call routes. |
 | Recovery-evidence owner | Independently protected ordered append/checkpoint interface and demonstrable rollback survival for minimal fences. Deletion/restore gates remain enforced until verified. |
@@ -43,7 +43,7 @@ Deliver runbooks with the following selected containment and exit checks:
 
 | Situation | Application action and exit proof |
 |---|---|
-| Admission/PG authority failure | Return retryable rejection without acknowledgement; owner restores authority; verify durable inbox/order/credential gates before ready. |
+| Kafka admission / PG authority failure | Kafka admission requires broker confirmation and trusted gateway context; PG failure stops processing/commands but not healthy ingress. Verify Kafka offsets, retained proof and cutover/credential gates before reopening affected workers. |
 | Backlog or blocked head/proof | Preserve accepted work, expose scope/lag, inspect trusted event/control proof; repair with audited preconditions; never skip an accepted predecessor. |
 | Correlation blocked | Preserve incidents/alerts, show reason, correct validated configuration or use permitted fresh reset; never replay expired windows. |
 | Maintenance lag/error | Preserve cause truth and historical boundaries, fence unsafe evaluation, repair reducer/jobs; verify overlap union and searchable/rendered generation. |
@@ -59,6 +59,13 @@ For each runbook record trigger, scope, current evidence, safe action, recovery 
 Link each technology team's authoritative service procedures and escalation route; do not duplicate their failover, backup, capacity or clock-repair instructions. Restored infrastructure availability does not establish application readiness. Operational incident handling does not change product incident behavior.
 
 ## Evidence register
+
+The 2026-09-30 Kafka-first redesign contributes code and local execution evidence to
+DEL-02/04/06; see [its implementation record](docs/kafka-first-implementation.md).
+It closes no production delivery gate. DEL-03 capacity, DEL-05 protected rollback
+reconstruction (including new Kafka replay fences), production serving-pool/clock
+bindings and DEL-08 observation remain open. Existing local application data requires
+a separately executed offline cutover; the disposable test migration is not that cutover.
 
 | Delivery record | Owner | Required output / completion evidence |
 |---|---|---|
@@ -86,3 +93,29 @@ Kong/Grafana profile is connected to the worker and has controlled HTTP/PG tests
 but installed services and serving-pool proof remain unqualified. These are partial
 DEL-02/04/05/06 inputs; no DEL entry is closed by this checkpoint. Refer to
 [implementation status](implementation-status.md) for the current, evolving result.
+
+## REV-34 worker-scope evidence
+
+[Worker-scope implementation](docs/worker-scope-implementation.md) records actual
+local checks and outstanding qualification. Previous maintenance-expiry and
+background-worker capacity gates apply only if those nice-to-have components are
+reintroduced. Synchronous operator remote/proxy/privilege/concurrency qualification
+remains required before deployment; no DEL item is closed by documentation alone.
+
+## REV-35 directory scope
+
+Directory polling and its five-minute propagation evidence in DEL-06 are deferred
+with the nice-to-have worker. Explicit complete bootstrap/manual publication,
+immutable identity binding, nested membership, unknown-user/team refusal,
+last-trusted authorization and session/restore safeguards remain required. This
+does not close any DEL item or qualify company LDAP/Keycloak. See
+[worker scope](spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
+
+## REV-36 live publishing scope
+
+The Product API owns Redis hint publication and SSE; remove the separate live
+worker allocation. Apply migration 0047, supply API Redis egress/bindings and
+qualify combined API SQL/Redis load, replica duplication, failures and drained
+shutdown. Existing two-second PostgreSQL reconciliation and tenant/session guards
+remain. Local checks are in [worker-scope evidence](docs/worker-scope-implementation.md);
+no DEL item is closed by this scope change alone.

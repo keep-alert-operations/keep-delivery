@@ -2,7 +2,9 @@
 
 # ruff: noqa: F811
 from pathlib import Path
+from contextlib import contextmanager
 from types import SimpleNamespace
+from uuid import uuid4
 import pytest
 from appchi.live import LiveRegistry, BoundedStream, publish_hints
 from test_search_pipeline import real_db  # noqa: F401
@@ -93,3 +95,37 @@ def test_hint_outbox_is_atomic_and_keeps_newer_commit(real_db):
         assert conn.execute(
             "SELECT 1 FROM live_hint_outbox WHERE tenant_id=%s", (tenant,)
         ).fetchone()
+
+
+@pytest.mark.integration
+def test_api_role_publishes_cross_tenant_hints_without_domain_rls_bypass(real_db):
+    alert = uuid4()
+    with real_db.transaction() as conn:
+        tenant = conn.execute("SELECT id FROM tenants WHERE kind='global'").fetchone()["id"]
+        conn.execute("INSERT INTO alert_identities(id,tenant_id) VALUES(%s,%s)", (alert, tenant))
+        conn.execute("UPDATE tenant_view_state SET view_generation=view_generation+1 WHERE tenant_id=%s", (tenant,))
+
+    class ApiDatabase:
+        @contextmanager
+        def transaction(self):
+            with real_db.transaction() as conn:
+                conn.execute("SET LOCAL ROLE appchi_api")
+                yield conn
+
+    class Publisher:
+        calls = []
+
+        def publish(self, channel, data):
+            self.calls.append((channel, data))
+
+    publisher = Publisher()
+    assert publish_hints(ApiDatabase(), SimpleNamespace(environment="development"), publisher) >= 1
+    assert any(str(tenant) in channel for channel, _ in publisher.calls)
+    with real_db.transaction() as conn:
+        assert not conn.execute("SELECT 1 FROM live_hint_outbox WHERE tenant_id=%s", (tenant,)).fetchone()
+        conn.execute("SET LOCAL ROLE appchi_api")
+        assert not conn.execute("SELECT 1 FROM alert_identities WHERE id=%s", (alert,)).fetchone()
+        conn.execute("SELECT set_config('appchi.tenant_id',%s,true)", (str(tenant),))
+        assert conn.execute("SELECT 1 FROM alert_identities WHERE id=%s", (alert,)).fetchone()
+        policies = conn.execute("SELECT cmd,qual FROM pg_policies WHERE tablename='alert_identities' AND policyname='tenant_scope'").fetchall()
+        assert policies and "appchi.tenant_id" in policies[0]["qual"]

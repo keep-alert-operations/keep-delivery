@@ -7,7 +7,8 @@ $state = Join-Path $repository '.local/runtime'
 $python = Join-Path $repository 'backend/.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
 $recordFile = Join-Path $state 'workers.json'
-$env:APPCHI_LOCAL_KAFKA_PORT = '19092'
+$stackMarker = Join-Path $state 'compose-stack.json'
+$env:APPCHI_LOCAL_KAFKA_PORT = '19093'
 
 function Checked([scriptblock]$Command) {
     & $Command
@@ -27,43 +28,13 @@ function Worker-Id($record) {
     }
     throw "Cannot identify the owned $($record.Role) worker child."
 }
-function Listening([int]$Port) {
-    return [bool](Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue)
-}
-function Start-NativeStores {
-    if (-not (Listening 55432)) {
-        $pgControl = 'C:/Program Files/PostgreSQL/18/bin/pg_ctl.exe'
-        $pgData = Join-Path $repository '.local/pgdata'
-        if (-not (Test-Path -LiteralPath $pgControl) -or -not (Test-Path -LiteralPath (Join-Path $pgData 'PG_VERSION'))) {
-            throw 'The existing local PostgreSQL 18 installation/data directory is required; see docs/local-runtime.md.'
-        }
-        $arguments = 'start -D "' + $pgData + '" -o "-h 127.0.0.1 -p 55432" -l "' + (Join-Path $state 'postgres.log') + '" -w -t 30'
-        $process = Start-Process -FilePath $pgControl -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru
-        if ($process.ExitCode -ne 0) { throw 'Existing local PostgreSQL could not start; inspect .local/runtime/postgres.log.' }
-    }
-    if (-not (Listening 59200)) {
-        $runtime = Join-Path $repository '.local/elasticsearch-9.0.0'
-        $config = Join-Path $runtime 'config/elasticsearch.yml'
-        if (-not (Test-Path -LiteralPath $config)) { throw 'The existing local Elasticsearch runtime/configuration is required; see docs/runbooks/local-elasticsearch.md.' }
-        $content = Get-Content -LiteralPath $config -Raw
-        if ($content -notmatch '(?m)^network.host: 127\.0\.0\.1\s*$' -or $content -notmatch '(?m)^http.port: 59200\s*$') { throw 'Refusing to start Elasticsearch without the expected loopback binding.' }
-        $launcher = Join-Path $state 'start-elasticsearch.ps1'
-        Set-Content -LiteralPath $launcher -Value "& (Join-Path `$PSScriptRoot '../elasticsearch-9.0.0/bin/elasticsearch.bat')"
-        $previousOptions = $env:ES_JAVA_OPTS
-        try {
-            $env:ES_JAVA_OPTS = '-Xms512m -Xmx512m'
-            $process = Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList ('-NoProfile -NonInteractive -File "' + $launcher + '"') -WorkingDirectory $runtime -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state 'elasticsearch.out.log') -RedirectStandardError (Join-Path $state 'elasticsearch.err.log')
-            @{ Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o') } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $state 'elasticsearch-process.json')
-        } finally { [Environment]::SetEnvironmentVariable('ES_JAVA_OPTS',$previousOptions,'Process') }
-        for ($attempt=0; $attempt -lt 90 -and -not (Listening 59200); $attempt++) { Start-Sleep -Seconds 1 }
-        if (-not (Listening 59200)) { throw 'Elasticsearch did not start; inspect .local/runtime/elasticsearch.err.log.' }
-    }
-}
 Push-Location -LiteralPath $repository
 try {
     New-Item -ItemType Directory -Path $state -Force | Out-Null
+    $restartManaged = $Action -eq 'Start' -and ([bool]$Restart -or -not (Test-Path -LiteralPath $stackMarker))
     $records = if (Test-Path -LiteralPath $recordFile) { @(Get-Content -LiteralPath $recordFile -Raw | ConvertFrom-Json) } else { @() }
-    if ($Action -eq 'Stop' -or $Restart) {
+    if ($Action -eq 'Start' -and @($records | Where-Object { $_.Role -in @('assignment-cleanup','inactivity','maintenance','operators','live') -and (Owned $_) }).Count) { $restartManaged = $true }
+    if ($Action -eq 'Stop' -or ($Action -eq 'Start' -and $restartManaged)) {
         foreach ($record in $records) {
             $process = Owned $record
             if ($process) {
@@ -74,14 +45,19 @@ try {
         $records = @()
     }
     if ($Action -eq 'Stop') {
+        if (Test-Path -LiteralPath (Join-Path $repository '.local/operators/credentials.json')) {
+            Checked { & scripts/local-v2.ps1 -Action Stop }
+        }
         Checked { & scripts/local-identity.ps1 -Action Stop }
-        Checked { docker compose -p appchi-local-runtime -f $compose stop kafka redis }
-        Write-Host 'Appchi workers, UI/API, Keycloak, Kafka and Redis stopped. Existing native PostgreSQL/Elasticsearch and all data preserved.'
+        Checked { docker compose -p appchi-local-stack -f $compose stop }
+        Write-Host 'Appchi processes and all local Compose services stopped; credentials and volumes preserved.'
         return
     }
     if ($Action -eq 'Status') {
+        if (Test-Path -LiteralPath (Join-Path $repository '.local/operators/credentials.json')) {
+            Checked { & scripts/local-v2.ps1 -Action Status }
+        }
         Checked { & scripts/local-identity.ps1 -Action Status }
-        Checked { docker compose -p appchi-local-runtime -f $compose ps kafka redis }
         foreach ($record in $records) {
             $healthPath = Join-Path $state "$($record.Role).health.json"
             $ready = if (Test-Path -LiteralPath $healthPath) { (Get-Content -LiteralPath $healthPath -Raw | ConvertFrom-Json).ready } else { $false }
@@ -89,16 +65,20 @@ try {
         }
         return
     }
-    Start-NativeStores
-    Checked { docker compose -p appchi-local-runtime -f $compose up -d kafka redis }
-    Checked { & scripts/local-identity.ps1 -Action Start -Restart:$Restart }
+    Checked { & scripts/local-identity.ps1 -Action Start -Restart:$restartManaged }
     $values = Get-Content -LiteralPath '.local/keycloak/app-environment.json' -Raw | ConvertFrom-Json
     foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name,[string]$item.Value,'Process') }
     $env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
     $env:APPCHI_POOL_SIZE = '1'
+    Checked { & $python scripts/local_runtime.py require-kafka-cutover }
+    Checked { & $python scripts/local_runtime.py migrate-search }
     Checked { & $python scripts/local_runtime.py probe }
     Checked { & $python -m appchi.search.local_bootstrap --evidence qualification/pytest-local-runtime-es.xml }
-    $roles = @('source','indexer','relay','source-hints','indexer-hints','correlation-hints','live','assignment-cleanup','inactivity')
+    if (Test-Path -LiteralPath '.local/runtime/correlation-preview-profile.json') {
+        Checked { & $python scripts/local_correlation.py activate }
+    }
+    $roles = @('source','indexer')
+    if (Test-Path -LiteralPath '.local/runtime/correlation-preview-profile.json') { $roles += 'correlation' }
     $current = @()
     foreach ($role in $roles) {
         $existing = @($records | Where-Object { $_.Role -eq $role -and (Owned $_) })
@@ -116,6 +96,14 @@ try {
     }
     $current | ConvertTo-Json -AsArray | Set-Content -LiteralPath $recordFile -Encoding utf8
     Checked { & $python scripts/local_runtime.py wait-workers }
+    if (Test-Path -LiteralPath (Join-Path $repository '.local/operators/verification.json')) {
+        Checked { & scripts/local-v2.ps1 -Action Start -Restart:$restartManaged }
+    }
+    @{ compose_project='appchi-local-stack'; initialized_at=[datetime]::UtcNow.ToString('o'); postgres_port=55433; elasticsearch_port=59201 } | ConvertTo-Json | Set-Content -LiteralPath $stackMarker
     Write-Host 'Core local Appchi is running: https://localhost:3443'
-    Write-Host 'Maintenance, automatic correlation, v2/Kong/Grafana and protected recovery remain gated; see docs/local-runtime.md.'
+    if (Test-Path -LiteralPath '.local/runtime/correlation-preview-profile.json') {
+        Write-Host 'Local correlation preview is configured; production qualification remains pending.'
+    } else {
+        Write-Host 'Maintenance, automatic correlation and protected recovery remain gated; optional local v2 uses scripts/local-v2.ps1.'
+    }
 } finally { Pop-Location }

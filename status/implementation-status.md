@@ -1,6 +1,131 @@
 # Implementation status
 
+## 2026-09-30 Product API live publishing (REV-36)
+
+The Product API now owns background live hint publishing alongside its existing
+Redis subscriber and SSE delivery. The separate live CLI role is rejected and
+launchers/deployment guidance exclude it. Migration 0047 adds only minimal hint
+outbox SELECT/DELETE policies for the API role; domain RLS remains unchanged.
+Bounded publication runs outside the HTTP event loop and drains before pool
+shutdown. Tests and remaining rollout qualification are recorded in
+[worker-scope evidence](docs/worker-scope-implementation.md). The running stack
+was not restarted or migrated for this change.
+
+## 2026-09-30 directory worker deferral (REV-35)
+
+Automatic directory synchronization is nice-to-have. Continuous company/local
+directory startup is rejected; local launchers start API/UI with a one-off trusted
+identity bootstrap and provide an explicit Refresh action. The worker deployment
+guidance, identity/access design and decision records now defer the automatic
+five-minute LDAP-change propagation gate. Identity evidence, OIDC, current grants,
+known revocations and session/restore safeguards remain in force. Executed checks
+and limitations are recorded in [worker-scope evidence](docs/worker-scope-implementation.md).
+The running stack was not restarted and no company service was changed.
+
+## 2026-09-30 worker scope correction
+
+User-requested worker deferrals and synchronous operator provisioning are tracked
+in [the implementation record](docs/worker-scope-implementation.md), with the
+normative correction in [worker scope](spec-worker-scope.md). Earlier Kafka-first
+qualification remains historical evidence, not verification of this later change.
+No shared service or running local application rollout was performed for this change.
+
+
+### Kafka-first alert redesign — 2026-09-30
+
+REV-33 implements stateless Kafka admission, per-receipt UUID/time preservation,
+transactional changed-event/offset publication after PostgreSQL application,
+Kafka-triggered correlation, inline maintenance effects, manual resolve invalidation,
+versioned search reconciliation, packaged Kong policy enforcement and fenced offline
+cutover. Forward migrations and generated HTTP/event/frontend contracts accompany
+the code. All eight previously open technical decisions are explicitly labelled
+assistant-selected in [the normative pipeline](spec-kafka-alert-pipeline.md).
+
+Executed evidence includes **530 backend unit passes (65 optional-service skips)**,
+7 real Kafka/PG/ES protocol checks, 3 cutover checks, 8 search/rebuild checks,
+69 operator/Kong checks, 57 recovery checks and 7 Chrome CEL checks. Maintenance
+and API regression reports, later focused checks, actual failures/reruns and static
+verification are listed in the [implementation record](docs/kafka-first-implementation.md).
+These suites overlap and are not a single aggregate test count.
+
+Production qualification remains unperformed. Protected rollback reconstruction
+was already incomplete and remains fenced, now explicitly requiring independent
+Kafka delivery/retired-key evidence. Maintenance retention holds remain conservative
+until replay boundaries are verified. Capacity, multi-node gateway propagation,
+production clock/ACL/service bindings and the full fault matrix still need evidence.
+The existing local application database was **not automatically cut over**; its
+launcher requires the [offline cutover and renewed local evidence](docs/runbooks/kafka-first.md).
+Earlier dated runtime entries below describe their historical pipeline and must
+not be read as current Kafka-first startup evidence. No production or shared company
+service was changed.
+
+### Quick sorting in alert and preset results — 2026-09-28
+
+REV-32 adds a transient ascending/descending/regular-order cycle to server-sortable column headings in All alerts and saved preset results. The preset override sends a read-only candidate preview with one sort field and returns to the saved definition on the third click; neither path saves a preset. Sort changes restart pagination and clear selection. Derived and composite headings without a supported server sort remain static.
+
+Frontend TypeScript and changed-file formatting passed. **13 focused Chrome browser checks passed** across preset columns and alert redesign, including request-cycle and cursor-reset regressions with controlled API responses. This is frontend verification; production qualification remains unperformed.
+
+### Local correlation preview — 2026-09-27
+
+The user asked to make correlation rule creation work in the isolated local stack. Assistant-selected REV-30 adds a finite, explicitly unqualified development preview profile. The API and correlation worker accept it only in `development`; source/evidence/epoch bindings and an audited local activation protect startup. The current local profile limits each tenant to two enabled rules, ten live groups per rule, 50 evidence rows per rule and 100 per tenant, plus finite CEL and digest ceilings. Maintenance remains gated and activation refuses any retained maintenance window or effect.
+
+The focused disposable-PostgreSQL run passed **31 checks** covering configuration and automatic runtime, including a rule created and processed with the local-preview opt-in. Its JUnit report and scope/limit record are in `.local/runtime/correlation-preview-tests.xml` and `.local/runtime/correlation-preview-evidence.json`. Ruff and PowerShell parsing passed. The actual local database gate was activated with an audit entry; the API `/readyz` returned 200 and the source and correlation workers reported ready. No rule was created in the user's existing tenants during setup. The `indexer-hints` and `correlation-hints` Kafka consumers remain degraded on a quarantined historical `changed` offset whose authoritative outbox proof is missing; the PostgreSQL scan workers remain ready, and the local launcher reports these optional hints separately.
+
+This preview is not DEL-03 capacity qualification: the 250/s 24-hour run, 500/s recovery, combined maintenance replay, supplied production allocation and service-failure evidence remain unperformed. Production/staging still reject the unqualified preview profile.
+
+### Bare CEL field identifiers — 2026-09-27
+
+CEL accepts allow-listed fields as bare identifiers such as `application` and `has(application)`. Assistant-selected compatibility keeps `alert.application` accepted for saved source; new editor suggestions, field chips, string-method signatures, `has()` completion, quick views and examples use bare names. Unknown identifiers and context-disallowed fields remain rejected. The change is additive within `appchi-cel-v1`; saved source is not rewritten and no data/index migration is needed (REV-29).
+
+Frontend TypeScript checking, scoped Python lint and Markdown link/fence plus REV-number checks passed. Runtime test suites were not run for this request.
+
+### Current alert JSON viewer — 2026-09-27
+
+Added **View alert** to alert detail. It opens a native modal with the already loaded alert detail response in formatted, scrollable JSON. Readers can inspect it without editing permissions. Close, Escape and backdrop dismissal use native dialog behavior; showing JSON performs no fetch or state change. Updated alert/system/UI design, verification plan, decision history/register (REV-28). Scoped TypeScript checking passed; visual/browser runtime checks have not been run for this addition.
+
 Implementation authorized 2026-09-22. **The entire initial release is not complete.** Local core workflows run and tests have executed; integration qualification and production readiness are separate. The user will deploy nonproduction in a private network unavailable to this agent. Missing code is distinguished below from unavailable environment evidence.
+
+### Assignment-based alert status — 2026-09-27
+
+Implemented REV-27 across alert detail, feeds/presets, bulk actions, incident links and maintenance summaries. One detail Assign menu offers self, eligible other users and unassignment. Current Status is Firing when unassigned and firing, Acknowledged when assigned and firing, and Resolved whenever resolved. Separate acknowledgement commands/fields are retired from current presentation. New occurrences clear assignment; resolution preserves it. Current command/replay presentation applies eligibility masking without rewriting receipts.
+
+The API exposes virtual `display_status`; feed CEL lowers it to the existing lifecycle/assignee index fields. Legacy snapshots, history, physical fields and saved CEL/sort meanings remain compatible. New preset defaults and current legacy-column adaptation use a single Status column. No schema migration or index rebuild is required. Updated authoritative specifications, UI mapping, verification plan, decision history/register and generated OpenAPI/TypeScript contracts. See [verification evidence](qualification/alert-ownership-2026-09-27/README.md).
+
+Executed checks: TypeScript and scoped Python lint passed; 12 design documents passed 82 local-link checks, fence checks and sequential REV-01–REV-27 checks. The initial focused backend run had **114 passed, 4 failed** in 66.89 seconds: four existing CEL expression cases exceeded the configured one-second compiler deadline. All 11 new ownership cases passed in that run. Later response eligibility masking and updated browser/integration cases received static review; they were not rerun as runtime tests. A final read-only review reported no remaining findings. The recorded local API was restarted and `/livez` succeeded; the running frontend uses development reload. Browser, real PostgreSQL/Elasticsearch end-to-end and production qualification are not established by this change.
+
+### Return to a saved preset from alert detail — 2026-09-27
+
+Saved preset results now record their alert-list context before opening a row. The alert detail shows a Presets breadcrumb and Back to preset action, while Previous/Next follows the visible result page (REV-25). No runtime tests or production qualification were performed for this correction.
+
+### Clickable preset list rows — 2026-09-27
+
+The existing primary link on each preset row now covers the full row. Edit, History and the actions menu retain independent controls (REV-26). No runtime tests were performed for this correction.
+
+### Unified local dependency Compose stack — 2026-09-27
+
+Consolidated PostgreSQL 18.2, Elasticsearch 9.0.0, Redis 7.4.2, Kafka 4.0.0, Keycloak 26.7.4, Kong 3.9.1, Kong's PostgreSQL 16 database and Grafana 11.6.0 under [`deploy/local/compose.yaml`](deploy/local/compose.yaml). The Python API, Next.js UI and workers remain editable host processes started by the local launcher. All container ports bind to loopback.
+
+The existing Appchi database was exported locally and restored into the Compose PostgreSQL volume; 24 documents were copied from the prior local Elasticsearch projection. The previous native database and Elasticsearch data files remain available as rollback copies. All eight long-running Compose services report healthy and the Kong migration job completed. The API `/livez` returned HTTP 200; an unauthenticated session check returned its expected HTTP 401 instead of `database_unavailable`, all nine workers completed healthy turns, and the existing 16 local v2 gateway checks passed. The Appchi login page is at https://localhost:3443. This local stack does not qualify production or the initial release.
+
+### Local authenticated v2 ingress — 2026-09-24
+
+User-authorized local v2 setup now runs dedicated Kong 3.9.1/Grafana 11.6.0 containers and the existing pinned mTLS ingestion/provisioning paths. The local launcher creates `Local Demo Sender` through authenticated operator APIs, verifies the remote resources and serving-member identity, and bootstraps only the initial development gate. Production/shared databases and restore fences are rejected. The [local v2 guide](docs/local-v2.md) records commands and bindings (REV-22).
+
+Executed: **17 focused tests passed** (15 local bootstrap/proof tests and two real TLS transport tests; two existing dependency deprecation warnings), with JUnit at `qualification/pytest-local-v2.xml`. Ruff passed. **16 live gateway checks passed** after restart, covering missing/invalid/duplicate keys, query/body credentials, forged identity, public listener rejection, client-certificate enforcement, worker-only proof and Grafana Bearer conversion. Initial activation also verified that a prepared key remained rejected until normal saga completion.
+
+Five synthetic native v2 alerts reached Local Demo. The final three-item batch was checked through authenticated receipt polling, authoritative detail and Elasticsearch-backed feed APIs; repeated submission returned the same receipt, and Global detail access returned 404. An earlier third sample was correctly rejected for an unsupported severity before the sample was fixed. Repeated Start and restart preserved the operator/key and remote volumes. Nonsecret live results are under `.local/operators`; no company service was contacted. This does not qualify production, fleet propagation, capacity, recovery or scheduled Grafana notification delivery.
+
+### Stable dashboard refresh — 2026-09-24
+
+Reproduced the user's incoming-alert layout jump: the tenant search-lag banner moved panels down 49 pixels before the count batch could add another warning. Routine search/count/suppression progress now uses existing status areas, and an in-flight count request no longer gives every retained panel a stale pattern (REV-21). The narrow status layout keeps the label readable. Actual search failures and blocked source processing retain explicit errors.
+
+**28 Chrome browser checks passed in 40.2 seconds**, covering dashboard counts, live recovery, loading states and themes with controlled API responses. The new regression failed before the fix and now checks unchanged panel bounds through held refreshes, indexing lag, suppression progress and recovery in desktop, narrow and fullscreen views. TypeScript and changed-file formatting passed.
+
+### Clickable alert rows — 2026-09-24
+
+Expanded existing alert links across their rows in feeds, preset results/previews, incident linked alerts and maintenance summaries. Selection, row actions and incident links remain independently clickable; keyboard focus outlines the row.
+
+TypeScript and changed-file formatting passed. **22 existing Chrome browser checks passed in 43.6 seconds** across redesign, preset columns, navigation, incident filters and maintenance editing with controlled API responses. A direct browser interaction check also verified non-link cells and row padding, selection, middle-click opening a new tab, keyboard Enter, incident-link navigation and preset rows both with and without a Message column. The default bundled Chromium run could not launch; the successful run used installed Chrome.
 
 ### User-selectable dark mode — 2026-09-24
 
@@ -346,3 +471,34 @@ Fresh executed evidence after the correction:
 | Generated contracts | OpenAPI and internal event schemas match the current application models. |
 
 The browser suite reused the controlled server on loopback port 3100. Manual preset/editor review used the existing isolated synthetic API/frontend on port 3190 and the mock screenshots recovered from the attached session's scratch files. Fresh 1440 × 900 screenshots, the [browser output](qualification/ui-redesign-2026-09-24/browser-tests.txt) and [build output](qualification/ui-redesign-2026-09-24/production-build.txt) are retained with the [review evidence](qualification/ui-redesign-2026-09-24/README.md). This supersedes the earlier UI browser checkpoint above. These fixtures do not qualify real integrations or production behavior, and this continuation did not repeat a certified pixel comparison of every artboard. REV-13's incident-activity actor-name gap remains: captured historical names are not present and are not reconstructed from today's directory.
+
+## Approved login theme — 2026-09-27
+
+Implemented the approved Appchi password form as a client-specific Keycloak 26.7.4
+theme (REV-23), with local Geist, light/dark appearance, password visibility,
+provider errors and directory-support help. The unified local Compose file mounts
+the theme read-only; fresh imports and the existing-installation configuration
+step select it only for `appchi-web`. Initial unauthenticated entry starts the
+OIDC flow with the requested local path. Signed-out and expired-sign-in recovery
+remain explicit; authenticated workspace navigation retains its mounted session.
+
+Executed evidence for this change:
+
+- Recreated only the isolated local Keycloak service and applied the client theme;
+  its HTTPS discovery and configuration step completed successfully.
+- Opened `/auth/login?fresh=true` in Chrome and observed the rendered branded
+  Keycloak form. [Rendered form](qualification/login-theme-2026-09-27/login.png).
+- Frontend `tsc --noEmit --incremental false`, Python Ruff lint for
+  `scripts/local_identity.py`, and changed-file diff whitespace checks passed.
+- Formatted the changed frontend component, theme CSS/JavaScript and Python helper.
+
+No automated tests were added or run for this change, and no credential submission
+was performed during the visual preview. End-to-end authentication regression and
+production qualification remain unperformed for this theme. Shared company
+Keycloak infrastructure was not modified.
+
+## Appearance switch — 2026-09-27
+
+Replaced the signed-out and account-menu text appearance buttons with one
+accessible sun/moon switch component. It retains the user's saved theme and the
+light default. Automated tests were not run for this UI update.

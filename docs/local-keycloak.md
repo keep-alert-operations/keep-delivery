@@ -1,15 +1,17 @@
 # Local Keycloak identities
 
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](../spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+
 The local development environment uses a real Keycloak realm with custom users
 and nested groups, so sign-in does not need access to company LDAP. It preserves
 the application's ordinary OIDC username/password login, sessions and permission checks.
 Production LDAP configuration is unchanged.
 
 This workspace runs Keycloak 26.7.4 in the pinned Docker image from
-[Keycloak](https://www.keycloak.org/downloads). The separate Compose project
-publishes only `127.0.0.1:58443`; its development database persists in its own
-Docker volume. Docker Desktop, the installed backend/frontend dependencies and
-the existing local PostgreSQL service are prerequisites.
+[Keycloak](https://www.keycloak.org/downloads). It is part of the unified local
+Compose project and publishes only `127.0.0.1:58443`; its development database
+persists in a Docker volume. Docker Desktop and the installed backend/frontend
+dependencies are prerequisites.
 
 ## Start and sign in
 
@@ -20,10 +22,11 @@ From the repository root in PowerShell:
 ```
 
 The application origin is `https://localhost:3443`; the isolated Keycloak issuer
-is `https://localhost:58443/realms/appchi-local`. Start manages Keycloak, the
-Product API on loopback port 58000, the HTTPS UI and the directory polling
-worker. It uses the dedicated `appchi_local` database on the existing local
-PostgreSQL instance at port 55432. Local generated credentials are
+is `https://localhost:58443/realms/appchi-local`. Start launches the unified
+Compose stack and manages the Product API on loopback port 58000, the HTTPS UI
+and performs one trusted identity publication before API/UI startup. It does not
+start a directory polling worker. It uses the dedicated `appchi_local` database
+on the Compose PostgreSQL instance at port 55433. Local generated credentials are
 stored in `.local/keycloak/credentials.json`, outside version control. Read that
 file locally for the credentials instead of copying passwords into issue reports
 or terminal logs. Appchi sign-in needs only a username and password; no one-time
@@ -57,8 +60,8 @@ Remove-Item -LiteralPath 'Cert:\CurrentUser\Root\3FFC616039134C802F5AAECEC737B91
 ```
 
 The launcher preserves generated credentials and checks API/UI startup before
-reporting success. It runs the API and directory worker with separate database
-login roles rather than the migration identity. Repeating Start reuses the
+reporting success. It runs the API and the one-off trusted identity publication with separate
+database login roles rather than the migration identity. Repeating Start reuses the
 managed processes. Status is available with `-Action Status`. Keep the local
 credential files and Keycloak volume together when retaining this environment.
 
@@ -75,6 +78,42 @@ Stop the locally managed processes with:
 ```powershell
 .\scripts\local-identity.ps1 -Action Stop
 ```
+
+## Appchi login theme
+
+The approved form is in
+[`deploy/local/keycloak/themes/appchi`](../deploy/local/keycloak/themes/appchi).
+Compose mounts that directory read-only into Keycloak. Fresh realm imports select
+it through the `appchi-web` client's `login_theme` attribute; the normal Start
+configuration step upgrades existing local clients and their saved imports while
+preserving credentials, groups, client settings and console administration.
+
+To apply the theme to an already-running local installation without restarting
+the application processes:
+
+```powershell
+docker compose -p appchi-local-stack -f deploy/local/compose.yaml up -d --no-deps keycloak
+backend/.venv/Scripts/python.exe scripts/local_identity.py wait
+backend/.venv/Scripts/python.exe scripts/local_identity.py configure
+```
+
+Open `https://localhost:3443/` while signed out, or `/auth/login` to start an
+explicit sign-in. The username/password form is hosted by Keycloak and posts to
+its generated action URL. OIDC code flow, PKCE, the one-use callback and the
+server-side Appchi session remain in use. Other Keycloak authentication pages
+inherit the installed parent theme. The separate console uses its existing UI.
+
+The form includes password visibility, actual provider errors and expandable
+company-support guidance. Light is the default; the appearance choice persists
+under `appchi-theme` on the Keycloak origin, separately from the application's
+origin. Form fields are never copied to browser storage. Geist is served locally
+with its bundled SIL Open Font License; no external font or script host is needed.
+
+On Keycloak upgrades, review the overridden form against the installed
+`theme/base/login/login.ftl` and session scripts. The current implementation is
+based on 26.7.4 and uses its `authChecker.js` for authentication-session checks.
+Theme inheritance and installation follow the
+[official theme guide](https://www.keycloak.org/ui-customization/themes).
 
 ## Users, teams and permissions
 
@@ -113,22 +152,28 @@ The deployment configuration names the global-super-admin group's immutable
 UUID. Membership there grants Appchi global administration; normal tenant roles
 remain Appchi grants selected in its administration screens.
 
-The directory worker polls about every 60 seconds. It reads complete bounded
+Automatic directory polling is nice-to-have under REV-35. Explicit refresh reads complete bounded
 pages of users, groups, subgroups and members, then publishes through the same
 PostgreSQL authorization guard used by the LDAP worker. Disabled users become
 ineligible. Deleting and recreating a username creates a different principal and
 does not transfer old grants. A failed refresh retains the last complete trusted
 state; positively observed disablements still apply.
 
-After a change, allow the next successful directory cycle before expecting the
-application's directory picker or group permissions to reflect it. A user with
+After a change, run an explicit publication before expecting the application's
+directory picker or group permissions to reflect it:
+
+```powershell
+.\scripts\local-identity.ps1 -Action Refresh
+```
+
+Refresh performs one verified publication and starts no worker. A user with
 no verified directory binding cannot sign in until that binding is published.
 Do not change the directory source or global group's UUID merely to repair a
 login; correct the realm membership or configuration instead.
 
-## Directory worker configuration
+## Explicit directory publication configuration
 
-The development-only worker uses a separate `appchi-directory` confidential
+The development-only publication helper uses a separate `appchi-directory` confidential
 client with a service account. Its realm-management permissions are read-only:
 `view-users`, `query-users` and `query-groups`. The browser client `appchi-web`
 does not use service-account credentials.
@@ -151,7 +196,7 @@ local limits and must fit the local realm size:
 }
 ```
 
-The worker requires explicit `APPCHI_ENVIRONMENT=development`, the named secret
+The publication helper requires explicit `APPCHI_ENVIRONMENT=development`, the named secret
 environment variable, and the normal Appchi database/wrapping-key/deployment
 settings. It rejects non-loopback issuers and verifies TLS using the configured
 CA. It does not follow redirects or use a proxy from ambient environment values.

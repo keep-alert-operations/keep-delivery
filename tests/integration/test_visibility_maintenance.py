@@ -15,7 +15,8 @@ from appchi.maintenance.models import Create
 from appchi.shared.transactions import coordinator
 from appchi.visibility import maintenance as producers
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.skip(
+    reason="REV-34: timer-driven expiry visibility is a deferred component, not a current release SLO")]
 
 
 def visibility_profile():

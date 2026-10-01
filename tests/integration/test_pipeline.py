@@ -47,6 +47,23 @@ def test_leases_exclude_competitors_and_fence_stale_ack(pipeline_db, cipher, pro
     assert head(db, successor)["stream_order"] == first["stream_order"] + 1
 
 
+def test_alert_relay_ignores_unrelated_resource_outbox(pipeline_db, cipher, profile, v1):
+    db = pipeline_db
+    seed(db, cipher, profile, v1)
+    with db.transaction() as conn:
+        tenant = conn.execute("SELECT id FROM tenants WHERE kind='global'").fetchone()["id"]
+        conn.execute(
+            "INSERT INTO application_outbox(id,tenant_id,stream,stream_order,envelope) VALUES(%s,%s,%s,1,%s)",
+            (uuid4(), tenant, "resource:correlation:" + str(uuid4()), b"{}"),
+        )
+    lease = claim(db, "epoch")
+    assert lease and lease.stream == "received"
+    with db.transaction() as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM pipeline_leases WHERE stream NOT IN ('received','changed')"
+        ).fetchone()["n"] == 0
+
+
 class Producer:
     def __init__(self, fail=False):
         self.fail, self.values, self.callback = fail, [], None

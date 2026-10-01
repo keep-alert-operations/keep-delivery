@@ -1,0 +1,15 @@
+{
+  "documents": 27,
+  "local_link_targets": 290,
+  "markdown_fences": "passed",
+  "review_ids": "REV-01..REV-33 contiguous",
+  "original_issue_ids": 55,
+  "original_decision_sequences": [
+    20,
+    18,
+    30
+  ],
+  "original_decision_total": 68,
+  "local_anchors_checked": 47,
+  "scope": "local file/link/anchor existence and numbering; no external-link or runtime claim"
+}

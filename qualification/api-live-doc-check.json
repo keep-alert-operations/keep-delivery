@@ -1,0 +1,11 @@
+{
+  "documents": 27,
+  "local_links_checked": 354,
+  "local_anchors_checked": 81,
+  "markdown_fences": "passed",
+  "review_ids": "REV-01..REV-36 contiguous",
+  "original_issue_ids": 55,
+  "original_decision_total": 68,
+  "errors": [],
+  "scope": "Local document checks; no external-link or runtime claim"
+}

@@ -68,14 +68,14 @@ def admit_alert(real_db, cipher, profile, v1):
 
 
 def test_alert_command_replay_noop_and_notes(browser, real_db, cipher, profile, v1):
-    client, _ = browser
+    client, principal = browser
     tenant, alert = admit_alert(real_db, cipher, profile, v1)
     base = f"/api/tenants/{tenant}/alerts/{alert}"
     body = {
         "command_id": str(uuid4()),
         "expected_revision": "1",
-        "kind": "set_acknowledged",
-        "value": True,
+        "kind": "set_assignee",
+        "value": str(principal),
     }
     response = client.post(base + "/commands", json=body)
     assert response.status_code == 200, response.text

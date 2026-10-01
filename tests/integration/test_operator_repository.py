@@ -2,10 +2,10 @@
 """Real PostgreSQL workflow tests; verified remote facts are isolated adapter fixtures."""
 
 import json
-from uuid import uuid4, uuid5, NAMESPACE_URL
+from uuid import uuid4
 import pytest
 from appchi.operators.routes import router
-from appchi.operators.worker import run_one, VerifiedResult
+from appchi.operators.worker import run_one as single_turn, VerifiedResult
 from appchi.operators.remote import CapabilityManifest, REQUIRED_CAPABILITIES
 from appchi.operators.repository import routing
 from test_product import browser  # noqa: F401
@@ -42,13 +42,57 @@ class VerifiedFixture:
             True,
             True,
             True,
-            str(uuid5(NAMESPACE_URL, work.operator_id)),
+            work.operator_id,
             work.candidate_id,
+            work.policy_generation,
+            True,
         )
 
 
+def run_one(db, cipher, adapter=None):
+    """Drive the explicit activation/final-policy phases in legacy workflow tests."""
+    target = None
+    for _ in range(4):
+        result = single_turn(db, cipher, adapter)
+        if adapter is None or not hasattr(adapter, "last_work"):
+            return result
+        target = target or adapter.last_work.operation_id
+        with db.transaction() as conn:
+            job = conn.execute("SELECT * FROM operator_operations WHERE id=%s", (target,)).fetchone()
+        if job["state"] == "completed":
+            return True
+        if job["completed_at"] or job["error_code"] or job["step"] not in ("gateway-activation", "gateway-final-policy"):
+            return False
+        due(db, target)
+    raise AssertionError("Gateway phases did not converge")
+
+
+def test_cancel_after_authoritative_rename_cannot_restore_old_labels(operators, real_db, cipher):
+    client, base, _ = operators
+    operator = ready(operators, real_db, cipher)
+    path = base + "/" + operator["id"]
+    changed = client.patch(path, json={**command(operator["revision"]), "name":"renamed-" + str(uuid4())}).json()["data"]
+    job = changed["operation"]
+    due(real_db, job["id"])
+    assert not single_turn(real_db, cipher, VerifiedFixture())
+    current = client.get(path).json()["data"]
+    with real_db.transaction() as conn:
+        pending = conn.execute("SELECT progress FROM operator_operations WHERE id=%s", (job["id"],)).fetchone()
+    assert pending["progress"]["final_policy_pending"]
+    cancelled = client.post(path + "/operations/" + job["id"] + "/cancel", json=command(current["revision"]))
+    assert cancelled.status_code == 409
+    due(real_db, job["id"])
+    assert single_turn(real_db, cipher, VerifiedFixture())
+    assert client.get(path).json()["data"]["name"] == current["name"]
+
+
 @pytest.fixture
-def operators(browser, real_db, tenant):
+def operators(browser, real_db, tenant, monkeypatch):
+    # State-machine tests deliberately step the retained engine themselves.
+    # The unmodified HTTP lifecycle is tested in test_operator_synchronous.py.
+    from fastapi.responses import JSONResponse
+    monkeypatch.setattr("appchi.operators.routes.finish",
+                        lambda request, tenant, result: JSONResponse(result, status_code=202))
     client, actor = browser
     if not any(
         getattr(r, "path", "") == "/api/tenants/{tenant_id}/operators" for r in client.app.routes
@@ -150,7 +194,7 @@ def test_activation_copy_rotation_overlap_and_revoke_erase(operators, real_db, c
         assert (old["expires_at"] - new["activated_at"]).total_seconds() == 86400
     assert client.post(path + "/keys/rotate", json=command(op["revision"])).status_code == 409
     revoke = client.post(path + "/keys/revoke-all", json=command(op["revision"]))
-    assert revoke.status_code == 200, revoke.text
+    assert revoke.status_code == 202, revoke.text
     with real_db.transaction() as conn:
         assert all(
             r["ciphertext"] is None and r["state"] == "revoked"
@@ -173,7 +217,7 @@ def test_revoke_during_external_attempt_fences_activation(operators, real_db, ci
     def revoke():
         # Proves remote execute holds neither coordinator nor operator SQL lock.
         response = client.post(base + "/" + op["id"] + "/keys/revoke-all", json=command(1))
-        assert response.status_code == 200, response.text
+        assert response.status_code == 202, response.text
 
     adapter.callback = revoke
     due(real_db, job["id"])
@@ -389,7 +433,9 @@ def test_keyless_cancellation_can_prepare_replacement_without_losing_restoration
     gated = client.get(path).json()["data"]
     assert gated["deletion_pending"] is original.startswith("delete")
     assert not gated["current_key_available"] and gated["name"] == old_name
-    assert complete(real_db, replacement_job, evidence)
+    assert not complete(real_db, replacement_job, evidence)
+    due(real_db, result["operation"]["id"])
+    assert run_one(real_db, cipher, VerifiedFixture())
     finished = client.get(path).json()["data"]
     assert finished["current_key_available"] and not finished["deletion_pending"]
     assert finished["name"] == old_name and finished["pending_name"] is None
@@ -554,11 +600,19 @@ def test_pending_native_input_blocks_delete_without_changing_keys(
         "impact": "test",
         "runbook_url": "https://example.invalid",
     }
-    Admission(real_db, cipher, profile).admit(
-        canonical(payload),
-        "v2",
-        gateway=GatewayIdentity(key["kong_consumer_id"], key["kong_credential_id"]),
-    )
+    # Retained legacy work still blocks deletion across cutover. Seed it through
+    # the legacy adapter only while this disposable fixture's legacy gate is on.
+    with real_db.transaction() as conn:
+        enabled = conn.execute("SELECT enabled FROM kafka_pipeline_control WHERE singleton").fetchone()["enabled"]
+        conn.execute("UPDATE kafka_pipeline_control SET enabled=false WHERE singleton")
+    try:
+        Admission(real_db, cipher, profile).admit(
+            canonical(payload), "v2",
+            gateway=GatewayIdentity(key["kong_consumer_id"], key["kong_credential_id"]),
+        )
+    finally:
+        with real_db.transaction() as conn:
+            conn.execute("UPDATE kafka_pipeline_control SET enabled=%s WHERE singleton", (enabled,))
     result = client.delete(
         base + "/" + op["id"],
         headers={"Idempotency-Key": str(uuid4()), "If-Match": '"' + op["revision"] + '"'},

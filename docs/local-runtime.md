@@ -1,5 +1,27 @@
 # Running the local Appchi workspace
 
+**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](../spec-worker-scope.md#6-live-updates-inside-the-product-api).
+
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](../spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+
+**2026-09-30 worker-scope update:** see [current worker scope](../spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+
+**2026-09-30 Kafka cutover required:** the historical local checks below describe the earlier pipeline. The updated launcher requires the [offline Kafka cutover](runbooks/kafka-first.md), a reconciled Kong binding, and refreshed local correlation preview evidence before the new workers run. This redesign was tested in disposable databases; the existing application database has not been cut over automatically.
+
+**2026-09-30 partial startup:** the dependency containers, API, HTTPS UI and directory
+worker are running. Real local-admin sign-in and the Global alerts feed returned
+success. Alert admission and processing remain unavailable: five legacy changed
+messages are behind an existing `pipeline_authoritative_proof_missing` fence, so
+the Kafka cutover has not run. A backup is preserved in
+`.local/runtime/pre-kafka-cutover-20260930.dump`. The stale correlation profile was
+preserved as `correlation-preview-profile.stale-20260930.json`; the application now
+uses the ordinary development capacity profile. Renewed preview evidence is saved
+under `.local/runtime` with `renewed`/`pending` filenames and is not activated.
+The 31 correlation checks and five relay checks passed in disposable databases.
+The user's authorized deletion of the demo rule `fdsfa` was refused by the normal
+API with `recovery_not_ready`; the rule and all readiness fences remain preserved.
+The alert relay was corrected to ignore unrelated resource outbox streams.
+
 Open **https://localhost:3443**. The core local services were started and verified
 on 2026-09-23. Sign in as `local-admin`; its generated password is under
 `users.local-admin.password` in `.local/keycloak/credentials.json`. Appchi now
@@ -17,7 +39,8 @@ Select **Global → Alerts** to find the synthetic `Appchi local demo` alert. Th
 live browser check received this alert through native v1, waited for processing
 and Elasticsearch search, then acknowledged it and added a note through the UI.
 `Local Demo` is a separate tenant with admin/editor/viewer group grants. Native
-v1 always routes to Global, so its alert will not appear in Local Demo.
+v1 always routes to Global. [Local v2 setup](local-v2.md) now provides authenticated
+ingestion into Local Demo through its managed `Local Demo Sender` operator.
 
 ## Start, inspect and stop
 
@@ -30,40 +53,47 @@ From this workspace's root in PowerShell:
 .\scripts\local-runtime.ps1 -Action Stop
 ```
 
-Start preserves credentials and data and reuses owned running processes.
-`-Restart` restarts managed application processes to reload configuration.
-Stop stops the UI, API, workers, Keycloak, Kafka and Redis; it leaves the existing
-native PostgreSQL and Elasticsearch processes and all data in place. Services
-run as local background processes; they are not installed as Windows services.
+Start prepares local-only credentials, starts all dependency technologies from
+one Docker Compose project, applies the Appchi database migrations, then starts
+the API, UI and workers on Windows. `-Restart` reloads the managed Appchi
+processes. Stop halts those processes and Compose containers without removing
+their volumes. Nothing is installed as a Windows service.
 
-This launcher uses the dependencies and stores already installed in **this
-workspace**: Docker Desktop, PowerShell 7, backend virtualenv, frontend Node
-dependencies, PostgreSQL 18 at its existing installation and `.local/pgdata`,
-and `.local/elasticsearch-9.0.0` with its existing loopback configuration/data.
-It can start these existing native stores when their ports are absent; the
-cold-start-after-reboot path has not been exercised. For a new machine, follow
-the [development runbook](runbooks/development.md) and
-[Elasticsearch runbook](runbooks/local-elasticsearch.md) first.
+The single dependency definition is [`deploy/local/compose.yaml`](../deploy/local/compose.yaml).
+It includes PostgreSQL, Elasticsearch, Redis, Kafka, Keycloak, Kong, Kong's
+dedicated PostgreSQL database, and Grafana. The Python API,
+processing workers and Next.js development server still run as local processes
+so the workspace's editable source and installed developer dependencies are used.
+This is a local development setup, not the production OpenShift deployment.
+
+On this workspace, the first startup imports the existing Appchi PostgreSQL
+database from a local logical backup and copies its serving Elasticsearch
+projection. The previous native stores and their files are retained as rollback
+sources. Fresh workspaces start with new Compose volumes. Keep `.local` and the
+Docker volumes together; do not remove volumes to troubleshoot startup.
 
 | Service | Local address |
 |---|---|
 | Appchi HTTPS UI | https://localhost:3443 |
 | FastAPI | http://127.0.0.1:58000 |
 | Keycloak / console | https://localhost:58443/admin/ |
-| PostgreSQL 18.2 | 127.0.0.1:55432 |
-| Elasticsearch 9.0.0 | http://127.0.0.1:59200 |
-| Kafka 4.0.0 | 127.0.0.1:19092 |
-| Redis 7.4.2 | 127.0.0.1:56379 |
+| Appchi PostgreSQL 18.2 (Compose) | 127.0.0.1:55433 |
+| Elasticsearch 9.0.0 (Compose) | http://127.0.0.1:59201 |
+| Kafka 4.0.0 (Compose) | 127.0.0.1:19093 |
+| Redis 7.4.2 (Compose) | 127.0.0.1:56380 |
+| Kong 3.9.1 (Compose) | https://localhost:58445 |
+| Kong Admin API (Compose) | https://localhost:58447 |
+| Grafana 11.6.0 (Compose) | https://localhost:58448 |
 
-Kafka uses port 19092 because this machine reserves the original default port.
-The launcher starts only Kafka/Redis from the runtime Compose file; do not start
-its PostgreSQL/Elasticsearch containers over the existing native stores.
-Container recreation is not a tested persistence/recovery procedure. Preserve
-the `.local` directory and Keycloak volume; credentials must match persisted data.
+The previous native PostgreSQL and Elasticsearch remain on ports 55432 and
+59200 as rollback sources; Appchi uses the Compose-managed ports above. All
+published dependency ports bind to loopback. Docker volumes persist Appchi data,
+Keycloak identities, Kong configuration, Kafka state and Grafana configuration.
 
-The directory worker refreshes native Keycloak users/groups about every minute.
-Nine additional workers handle source processing, indexing, event relay,
-source/indexer/correlation hints, live updates, assignment cleanup and inactivity.
+Local startup publishes trusted Keycloak users/groups once. Later changes require
+`./scripts/local-identity.ps1 -Action Refresh`; directory polling is nice-to-have.
+After cutover, workers handle Kafka source processing, correlation and search
+consumption/reconciliation. The Product API publishes live hints and serves SSE. The legacy alert relay and hint-consumer roles are retired.
 Their logs, process records and heartbeats are in `.local/runtime`; identity,
 API and frontend process state/logs are in `.local/keycloak`.
 
@@ -79,16 +109,43 @@ initial search gate. It cannot clear restore fences. Initial activation and
 repeated Start were exercised against the actual services.
 
 **This is a usable core development environment, not the complete initial
-release.** The following remain unavailable in this local deployment:
+release.** Additional capability status:
 
-- Maintenance and automatic correlation require their processing/capacity gates.
-- Managed operators and native v2 require configured Kong/Grafana integration.
+- Maintenance remains gated. Automatic correlation is available through the
+  bounded local preview described below.
+- Managed operators/native v2 are available with the optional
+  [local Kong/Grafana setup](local-v2.md); company integration remains unqualified.
 - Protected retention/recovery require independent evidence and remaining
   recovery implementation.
 
-The development capacity profile remains unqualified. No production readiness
-or company-service compatibility is claimed. See
+The development capacity profile remains unqualified. The correlation preview
+uses a separate local file and does not establish release capacity. No production
+readiness or company-service compatibility is claimed. See
 [implementation status](../implementation-status.md) for the complete gaps.
+
+## Local correlation preview
+
+The local preview permits creating correlation rules and running the PostgreSQL
+correlation worker in this development stack. It uses at most two enabled rules
+per tenant, ten live groups per rule, 50 live evidence rows per rule and 100 per
+tenant, with finite CEL cost and digest limits in
+`.local/runtime/correlation-preview-profile.json`. Its `qualified` value remains
+`false`. The profile and check report in `.local/runtime` are bound to this
+deployment epoch and the relevant backend source digest. A changed source or
+missing evidence makes the next startup refuse the preview until it is checked
+again.
+
+`scripts/local_correlation.py activate` checks tenant source order, the
+maintenance state, profile evidence and the existing gate binding before an
+audited local activation. The launcher starts the correlation worker when the
+profile exists. `scripts/local-runtime.ps1 -Action Start -Restart` rechecks the
+binding on a normal restart. This preview was exercised in a disposable
+PostgreSQL database; sustained release workloads, maintenance replay and
+production allocations are still unqualified. Do not copy this profile into a
+staging or production deployment.
+
+Kafka hint workers are optional accelerators; the launcher reports their degraded
+state separately while authoritative PostgreSQL workers continue to reconcile.
 
 The opt-in real browser check runs from `frontend` and leaves a synthetic alert:
 

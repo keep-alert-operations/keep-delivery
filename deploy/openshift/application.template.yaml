@@ -2,7 +2,10 @@
   "apiVersion": "template.openshift.io/v1",
   "kind": "Template",
   "metadata": {
-    "name": "appchi-product-api"
+    "name": "appchi-product-api",
+    "annotations": {
+      "description": "Product API owns synchronous operator provisioning and background live hint publishing. CONFIG_SECRET supplies APPCHI_REDIS_URL; apply migration 0047 for minimal hint-outbox publication privileges. No separate live worker or worker database credential is needed. CONFIG_SECRET supplies APPCHI_OPERATOR_DATABASE_URL and operator management tokens; BINDING_SECRET supplies the verified operator binding. Qualify a 100-second operator-route gateway timeout; other routes retain their own budgets."
+    }
   },
   "parameters": [
     {
@@ -52,6 +55,10 @@
     {
       "name": "REPLICAS",
       "required": true
+    },
+    {
+      "name": "CLOCK_HEALTH_CONFIGMAP",
+      "required": true
     }
   ],
   "objects": [
@@ -78,7 +85,7 @@
           "spec": {
             "serviceAccountName": "${SERVICE_ACCOUNT}",
             "automountServiceAccountToken": false,
-            "terminationGracePeriodSeconds": 60,
+            "terminationGracePeriodSeconds": 105,
             "containers": [
               {
                 "name": "api",
@@ -92,6 +99,14 @@
                   {
                     "name": "APPCHI_ROLE",
                     "value": "product-api"
+                  },
+                  {
+                    "name": "APPCHI_CLOCK_HEALTH_FILE",
+                    "value": "/run/appchi-clock/health.json"
+                  },
+                  {
+                    "name": "APPCHI_DATABASE_CLOCK_HEALTH_FILE",
+                    "value": "/run/appchi-clock/pg-health.json"
                   }
                 ],
                 "livenessProbe": {
@@ -163,6 +178,11 @@
                     "name": "bindings",
                     "mountPath": "/etc/appchi",
                     "readOnly": true
+                  },
+                  {
+                    "name": "clock-health",
+                    "mountPath": "/run/appchi-clock",
+                    "readOnly": true
                   }
                 ]
               }
@@ -178,6 +198,12 @@
                 "name": "bindings",
                 "secret": {
                   "secretName": "${BINDING_SECRET}"
+                }
+              },
+              {
+                "name": "clock-health",
+                "configMap": {
+                  "name": "${CLOCK_HEALTH_CONFIGMAP}"
                 }
               }
             ]

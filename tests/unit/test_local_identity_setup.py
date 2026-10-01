@@ -14,6 +14,8 @@ def setup(monkeypatch, tmp_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "STATE", tmp_path)
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    (tmp_path / ".local").mkdir()
     monkeypatch.setattr(module, "tls", lambda: None)
     return module
 

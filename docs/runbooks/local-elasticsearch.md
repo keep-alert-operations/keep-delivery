@@ -1,9 +1,11 @@
-# Disposable local Elasticsearch compatibility
+# Legacy native Elasticsearch compatibility source
 
-This runbook starts the pinned development Elasticsearch 9.0.0 Windows ZIP on
-loopback ports 59200 (HTTP) and 59300 (transport). It is for synthetic compatibility
-tests only. Authentication is disabled only on this isolated local instance; do
-not bind it to a network interface or point these commands at company services.
+The normal Appchi local runtime uses the Elasticsearch 9.0.0 container from the
+unified [local Compose stack](../local-runtime.md) on port 59201. This runbook
+describes the retained Windows ZIP instance on ports 59200/59300, used as the
+local migration source/rollback copy. It is not needed to start Appchi. Its
+authentication is disabled; keep it bound to loopback and do not point it at
+company services.
 
 Elastic's Windows distribution includes OpenJDK, so a separate Java installation
 is unnecessary. Use the [official Windows installation documentation](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/install-elasticsearch-with-zip-on-windows).

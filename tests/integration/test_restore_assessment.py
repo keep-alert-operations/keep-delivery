@@ -98,10 +98,16 @@ def test_empty_complete_collection_never_implies_family_coverage(recovery):
     body = collected(db)
     result = assess(db, body)
     assert not result.reopen_permitted and result.collected_records == 0
-    assert {"authority_baseline_unestablished", "producer_coverage_unestablished"} <= set(
-        result.blockers
-    )
+    assert {
+        "authority_baseline_unestablished",
+        "producer_coverage_unestablished",
+        "kafka_delivery_and_retired_key_baseline_unverified",
+    } <= set(result.blockers)
     assert all(not item.ready and item.blockers for item in result.capabilities)
+    assert all(
+        "kafka_delivery_and_retired_key_baseline_unverified" in item.blockers
+        for item in result.capabilities
+    )
     assert all(
         item.records == 0 and "producer_coverage_unestablished" in item.blockers
         for item in result.families

@@ -2,8 +2,9 @@
 
 import json
 from pathlib import Path
-from appchi.main import app
+
 from appchi.event_models import EVENT_MODELS
+from appchi.main import app
 
 root = Path(__file__).resolve().parents[1]
 expected = json.loads((root / "contracts/openapi.json").read_text(encoding="utf-8-sig"))
@@ -17,8 +18,10 @@ for name, model in EVENT_MODELS.items():
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         **model.model_json_schema(),
     }
+    version = model.model_fields["schema_version"].annotation.__args__[0]
+    kind = model.model_fields["kind"].annotation.__args__[0]
     actual = json.loads(
-        (root / "contracts" / f"{name}.v1.schema.json").read_text(encoding="utf-8")
+        (root / "contracts" / f"{kind}.v{version}.schema.json").read_text(encoding="utf-8")
     )
     if actual != expected:
         raise SystemExit(f"Event schema drift: {name}")

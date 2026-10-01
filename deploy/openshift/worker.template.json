@@ -55,10 +55,19 @@
     },
     {
       "name": "WORKER_ROLE",
-      "required": true
+      "required": true,
+      "description": "Active roles: source, indexer, correlation; explicit recovery/proof helpers remain. Live hint publishing runs in the Product API; the separate live worker is rejected at startup. Directory polling, maintenance, assignment-cleanup, inactivity, retention-family and operators automation are deferred and rejected at startup. Directory --once is an explicit publication action, not a deployed worker."
     },
     {
       "name": "HEARTBEAT_MAX_AGE_SECONDS",
+      "required": true
+    },
+    {
+      "name": "CLOCK_HEALTH_CONFIGMAP",
+      "required": true
+    },
+    {
+      "name": "GLOBAL_TENANT_ID",
       "required": true
     }
   ],
@@ -100,6 +109,18 @@
                   {
                     "name": "APPCHI_WORKER_HEALTH_PATH",
                     "value": "/tmp/worker-health.json"
+                  },
+                  {
+                    "name": "APPCHI_CLOCK_HEALTH_FILE",
+                    "value": "/run/appchi-clock/health.json"
+                  },
+                  {
+                    "name": "APPCHI_GLOBAL_TENANT_ID",
+                    "value": "${GLOBAL_TENANT_ID}"
+                  },
+                  {
+                    "name": "APPCHI_DATABASE_CLOCK_HEALTH_FILE",
+                    "value": "/run/appchi-clock/pg-health.json"
                   }
                 ],
                 "livenessProbe": {
@@ -174,6 +195,11 @@
                     "name": "bindings",
                     "mountPath": "/etc/appchi",
                     "readOnly": true
+                  },
+                  {
+                    "name": "clock-health",
+                    "mountPath": "/run/appchi-clock",
+                    "readOnly": true
                   }
                 ]
               }
@@ -189,6 +215,12 @@
                 "name": "bindings",
                 "secret": {
                   "secretName": "${BINDING_SECRET}"
+                }
+              },
+              {
+                "name": "clock-health",
+                "configMap": {
+                  "name": "${CLOCK_HEALTH_CONFIGMAP}"
                 }
               }
             ]

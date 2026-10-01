@@ -4,7 +4,7 @@ param(
     [string]$Action = 'Check',
     [ValidateSet('Api', 'Worker', 'Frontend')]
     [string]$Role = 'Api',
-    [ValidateSet('source', 'relay', 'indexer', 'inactivity', 'directory', 'maintenance', 'maintenance-warmup', 'maintenance-proof', 'correlation', 'operators', 'live', 'assignment-cleanup', 'retention', 'incident-retention', 'audit-retention', 'protected-deletions', 'command-retention', 'configuration-retention', 'correlation-retention', 'maintenance-retention', 'operator-retention', 'visibility-capture', 'source-hints', 'indexer-hints', 'correlation-hints')]
+    [ValidateSet('source', 'relay', 'indexer', 'maintenance-warmup', 'maintenance-proof', 'correlation', 'protected-deletions', 'visibility-capture', 'source-hints', 'indexer-hints', 'correlation-hints')]
     [string]$WorkerRole = 'source',
     [string]$TenantId,
     [ValidateRange(1024, 65535)][int]$ApiPort = 8000,

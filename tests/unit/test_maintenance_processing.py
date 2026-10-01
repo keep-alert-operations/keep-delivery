@@ -127,13 +127,16 @@ def test_delayed_source_after_disable_retains_original_interval(
     current, effects = apply(
         db, catalog, None, alert, receipt, 2, now=boundary.at + timedelta(minutes=1)
     )
-    assert not current["suppressed"] and effects.qualifiers[0][1] == boundary.at
+    assert current["suppressed"] and not effects.qualifiers
+    release = boundary.at + timedelta(minutes=2)
+    current, effects = apply(db, catalog, alert, alert, release, 3)
+    assert not current["suppressed"] and effects.qualifiers[0][1] == release
     with db.transaction(tenant) as conn:
         cause = conn.execute(
             "SELECT * FROM alert_maintenance_causes WHERE tenant_id=%s", (tenant,)
         ).fetchone()
-        assert cause["opened_at"] == receipt and cause["closed_at"] == boundary.at
-        assert cause["recorded_at"] > cause["closed_at"]
+        assert cause["opened_at"] == receipt and cause["closed_at"] == release
+        assert cause["recorded_at"] <= cause["closed_at"]
 
 
 def test_activation_no_backfill_and_source_overlap(maintenance_browser, maintenance_db):
@@ -159,7 +162,7 @@ def test_activation_no_backfill_and_source_overlap(maintenance_browser, maintena
         current, effects = reconcile_alert(
             conn, source_off, ending + timedelta(minutes=10), catalog=catalog
         )
-        assert not current["suppressed"] and effects.qualifiers[0][1] == ending
+        assert current["suppressed"] and not effects.qualifiers
 
 
 def test_two_windows_union_closes_only_at_last_end(maintenance_browser, maintenance_db):
@@ -179,7 +182,7 @@ def test_two_windows_union_closes_only_at_last_end(maintenance_browser, maintena
             max(s.end for s in catalog.segments) + timedelta(minutes=1),
             catalog=catalog,
         )
-        assert len(effects.qualifiers) == 1
+        assert not effects.qualifiers
         assert (
             conn.execute(
                 "SELECT count(*) AS n FROM alert_maintenance_causes WHERE tenant_id=%s", (tenant,)
@@ -251,6 +254,7 @@ def test_journal_baseline_works_while_capability_is_disabled(maintenance_browser
         assert not current["suppressed"]
 
 
+@pytest.mark.skip(reason="REV-34: deferred scheduler prototype; current source-driven release is tested separately")
 def test_job_lease_fencing_atomic_publish_and_cursor(maintenance_browser, maintenance_db):
     db, client, tenant, window, catalog, base = setup(maintenance_browser, maintenance_db)
     alert = snapshot(tenant)
@@ -313,6 +317,7 @@ def test_job_lease_fencing_atomic_publish_and_cursor(maintenance_browser, mainte
         assert job["required_projection_seq"] == 1 and job["lease_until"] is None
 
 
+@pytest.mark.skip(reason="REV-34: deferred scheduler prototype; current source-driven release is tested separately")
 def test_scheduled_end_publishes_one_generation_and_obsolete_job_is_fenced(
     maintenance_browser, maintenance_db
 ):
@@ -442,60 +447,24 @@ def test_runtime_source_repeat_revisions_effect_queue_and_withdrawal(
         )
 
 
-def test_runtime_worker_publishes_real_projection_and_read_only_release(
-    maintenance_browser, maintenance_db
-):
+def test_runtime_keeps_suppression_until_source_update(maintenance_browser, maintenance_db):
     from appchi.maintenance.processing import derive_current
     from appchi.maintenance.runtime import prepare_for_tenant, worker_turn
 
     db, client, tenant, window, _, _ = setup(maintenance_browser, maintenance_db)
     catalog = prepare_for_tenant(db, tenant, PROFILE)
     before, _, _ = publish_source(db, tenant, None, catalog)
-    response = client.post(
-        f"/api/tenants/{tenant}/maintenance/{window['id']}/disable",
-        json={"command_id": str(uuid4()), "expected_revision": "1"},
-    )
+    response = client.post(f"/api/tenants/{tenant}/maintenance/{window['id']}/disable",
+        json={"command_id": str(uuid4()), "expected_revision": "1"})
     assert response.status_code == 200
     with db.transaction(tenant) as conn:
         now = conn.execute("SELECT clock_timestamp() AS now").fetchone()["now"]
-        assert derive_current(conn, before, now) == (False, True)
-        from appchi.maintenance.processing import _snapshot
-
-        actual = conn.execute(
-            "SELECT * FROM alerts WHERE tenant_id=%s AND id=%s", (tenant, before["id"])
-        ).fetchone()
-        assert _snapshot(before) == _snapshot(actual)
-    assert worker_turn(db, tenant, PROFILE) == 1
-    worker_turn(db, tenant, PROFILE)
-    with db.transaction(tenant) as conn:
-        after = conn.execute(
-            "SELECT * FROM alerts WHERE tenant_id=%s AND id=%s", (tenant, before["id"])
-        ).fetchone()
-        assert (
-            not after["suppressed"] and after["revision"] == 2 and after["projection_version"] == 2
-        )
-        assert (
-            conn.execute(
-                "SELECT count(*) AS n FROM projection_work WHERE tenant_id=%s", (tenant,)
-            ).fetchone()["n"]
-            == 2
-        )
-        assert (
-            conn.execute(
-                "SELECT count(*) AS n FROM maintenance_effect_outbox WHERE tenant_id=%s", (tenant,)
-            ).fetchone()["n"]
-            == 1
-        )
-        assert (
-            conn.execute(
-                "SELECT count(*) AS n FROM maintenance_alert_inputs WHERE tenant_id=%s", (tenant,)
-            ).fetchone()["n"]
-            == 1
-        )
-        assert not conn.execute(
-            "SELECT 1 FROM maintenance_fanout_jobs WHERE tenant_id=%s AND state='pending' AND kind='control'",
-            (tenant,),
-        ).fetchone()
+        assert derive_current(conn, before, now) == (True, False)
+    assert worker_turn(db, tenant, PROFILE) == 0
+    catalog = prepare_for_tenant(db, tenant, PROFILE)
+    after, _, _ = publish_source(db, tenant, before, catalog)
+    assert not after["suppressed"]
+    assert after["revision"] == 2 and after["projection_version"] == 2
 
 
 def test_runtime_requires_qualified_profile_and_context_lock_hook(
@@ -518,17 +487,19 @@ def test_runtime_requires_qualified_profile_and_context_lock_hook(
     assert prepare_for_tenant(db, tenant, None) is None
 
 
-def test_enabled_alert_api_ack_notes_noop_and_inactivity(maintenance_browser, maintenance_db):
+def test_enabled_alert_api_assignment_notes_noop_and_inactivity(
+    maintenance_browser, maintenance_db
+):
     from appchi.alerts.routes import router as alert_router
     from appchi.inactivity import expire_alert
     from appchi.maintenance.runtime import prepare_for_tenant
 
-    client, tenant, _, app = maintenance_browser
+    client, tenant, editor, app = maintenance_browser
     db, _ = maintenance_db
     app.include_router(alert_router)
     app.state.profile.update(PROFILE)
     definition = body(past=True)
-    definition["cel"] = "alert.acknowledged == false && alert.status == 'firing'"
+    definition["cel"] = "alert.assignee_id == null && alert.status == 'firing'"
     create(client, tenant, definition)
     catalog = prepare_for_tenant(db, tenant, PROFILE)
     current, _, _ = publish_source(db, tenant, None, catalog)
@@ -537,8 +508,8 @@ def test_enabled_alert_api_ack_notes_noop_and_inactivity(maintenance_browser, ma
     command = {
         "command_id": str(uuid4()),
         "expected_revision": "1",
-        "kind": "set_acknowledged",
-        "value": True,
+        "kind": "set_assignee",
+        "value": str(editor),
     }
     response = client.post(base + "/commands", json=command)
     assert response.status_code == 200, response.text

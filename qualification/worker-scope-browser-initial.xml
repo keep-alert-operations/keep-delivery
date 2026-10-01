@@ -1,0 +1,52 @@
+<testsuites id="" name="" tests="6" failures="1" skipped="0" errors="0" time="276.22699600000004">
+<testsuite name="maintenance-editor.spec.ts" timestamp="2026-09-30T12:54:04.881Z" hostname="" tests="4" failures="1" skipped="0" time="15.565" errors="0">
+<testcase name="create uses server timezone catalog, reports DST gaps and requires an explicit fold choice" classname="maintenance-editor.spec.ts" time="4.672">
+</testcase>
+<testcase name="started schedule edits omit locked fields, preview authoritative UTC and preserve conflict drafts" classname="maintenance-editor.spec.ts" time="2.081">
+</testcase>
+<testcase name="ended windows allow metadata and timezone only and uncertain retries keep the tagged command" classname="maintenance-editor.spec.ts" time="1.882">
+</testcase>
+<testcase name="deleting a window confirms its suppression release and sends a conditional delete" classname="maintenance-editor.spec.ts" time="6.93">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\.local\worker-scope-browser-results\maintenance-editor-deletin-02a1c--sends-a-conditional-delete\error-context.md]]
+]]>
+</system-out>
+<failure message="expect(locator).toContainText(expected) failed" type="expect.toContainText">
+<![CDATA[  maintenance-editor.spec.ts:400:5 › deleting a window confirms its suppression release and sends a conditional delete 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alertdialog', { name: 'Delete maintenance window “Synthetic maintenance”?' })
+    Expected substring: "Its active suppression will be released."
+    Received string:    "Delete maintenance window “Synthetic maintenance”?Existing suppression remains until each alert receives another source update. Retained history stays available for review. This cannot be undone.CancelDelete window"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByRole('alertdialog', { name: 'Delete maintenance window “Synthetic maintenance”?' }) with timeout 5000ms
+      - waiting for getByRole('alertdialog', { name: 'Delete maintenance window “Synthetic maintenance”?' })
+        14 × locator resolved to <div class="dlg" aria-modal="true" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">…</div>
+           - unexpected value "Delete maintenance window “Synthetic maintenance”?Existing suppression remains until each alert receives another source update. Retained history stays available for review. This cannot be undone.CancelDelete window"
+
+
+      415 |     name: "Delete maintenance window “Synthetic maintenance”?",
+      416 |   });
+    > 417 |   await expect(dialog).toContainText(
+          |                        ^
+      418 |     "Its active suppression will be released.",
+      419 |   );
+      420 |   await dialog
+        at C:\Users\guyr2\Documents\vena\new alerts service\frontend\tests\maintenance-editor.spec.ts:417:24
+
+    Error Context: ..\..\.local\worker-scope-browser-results\maintenance-editor-deletin-02a1c--sends-a-conditional-delete\error-context.md
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="worker-scope.spec.ts" timestamp="2026-09-30T12:54:04.881Z" hostname="" tests="2" failures="0" skipped="0" time="4.274" errors="0">
+<testcase name="operator creation waits for completion and shows verified success" classname="worker-scope.spec.ts" time="2.174">
+</testcase>
+<testcase name="partial setup failure exposes original operator recovery without a second create" classname="worker-scope.spec.ts" time="2.1">
+</testcase>
+</testsuite>
+</testsuites>

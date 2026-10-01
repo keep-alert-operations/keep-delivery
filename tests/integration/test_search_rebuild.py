@@ -84,7 +84,7 @@ def test_rebuild_copy_catchup_cutover_and_postcutover_queue(
     index, browser, real_db, cipher, profile, v1
 ):
     es, binding, source = index
-    api, _ = browser
+    api, principal = browser
     settings = api.app.state.settings
     tenant, alert = admit_alert(real_db, cipher, profile, v1)
     base = f"/api/tenants/{tenant}/alerts"
@@ -101,8 +101,8 @@ def test_rebuild_copy_catchup_cutover_and_postcutover_queue(
         json={
             "command_id": str(uuid4()),
             "expected_revision": "1",
-            "kind": "set_acknowledged",
-            "value": True,
+            "kind": "set_assignee",
+            "value": str(principal),
         },
     )
     assert response.status_code == 200, response.text
@@ -125,7 +125,7 @@ def test_rebuild_copy_catchup_cutover_and_postcutover_queue(
     assert not job["hold_active"]
     assert set(es.indices.get_alias(name=binding.alias)) == {job["target_index"]}
     assert es.indices.exists(index=source)
-    projected = api.get(base, params={"cel": "alert.acknowledged == true"})
+    projected = api.get(base, params={"cel": 'alert.display_status == "acknowledged"'})
     assert projected.status_code == 200, projected.text
     assert projected.json()["meta"]["updating"] is True
     assert projected.json()["meta"]["total"] == "1"
@@ -196,7 +196,7 @@ def test_retired_alert_before_indexing_is_covered_by_final_tombstone(
     from test_incident_retirement import Store
 
     es, binding, source = index
-    api, _ = browser
+    api, principal = browser
     tenant, alert = admit_alert(real_db, cipher, profile, v1)
     result = api.post(
         f"/api/tenants/{tenant}/alerts/{alert}/commands",

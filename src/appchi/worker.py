@@ -85,14 +85,14 @@ def maintenance_turn(db, profile):
         worker_turn(db, tenant, profile)
 
 
-def correlation_turn(db, profile):
+def correlation_turn(db, profile, *, allow_local_preview=False):
     from appchi.correlation.runtime import worker_turn
 
     with db.transaction() as conn:
         rows = conn.execute("""SELECT c.tenant_id FROM correlation_consumer_state c JOIN tenant_work_state w USING(tenant_id)
             WHERE c.pending OR w.change_order>c.change_order ORDER BY c.updated_at,c.tenant_id LIMIT 100""").fetchall()
     for row in rows:
-        worker_turn(db, row["tenant_id"], profile)
+        worker_turn(db, row["tenant_id"], profile, allow_local_preview=allow_local_preview)
 
 
 def projection_turn(db, settings):
@@ -258,6 +258,13 @@ def main():
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--tenant")
     args = parser.parse_args()
+    if args.role == "live":
+        parser.error("live hint publishing runs in the Product API; no separate worker")
+    from appchi.release_scope import DEFERRED_WORKERS
+
+    # Explicit trusted publication remains available for bootstrap and manual refresh.
+    if args.role in DEFERRED_WORKERS and not (args.role == "directory" and args.once):
+        parser.error(f"{args.role} automation is deferred; see spec-worker-scope.md")
     if args.role in ("maintenance-warmup", "maintenance-proof"):
         from uuid import UUID
 
@@ -265,7 +272,7 @@ def main():
             parser.error("Maintenance proof/warmup requires --tenant with a canonical UUID")
     elif args.tenant:
         parser.error("--tenant is used only for maintenance proof/warmup roles")
-    settings = Settings()
+    settings = Settings(role=args.role)
     from appchi.worker_health import WorkerHealth
 
     health = WorkerHealth(settings.worker_health_path, args.role)
@@ -284,6 +291,9 @@ def main():
 
     capture_profile(profile, deployment_epoch=settings.deployment_epoch)
     hints = None
+    transport = None
+    from appchi.alert_notifications import configure
+    configure(settings)
     cleanup_cursor = None
     warmup_cursor = None
     retirement_cursor = None
@@ -311,9 +321,20 @@ def main():
     signal.signal(signal.SIGTERM, stop)
     try:
         while not stopping:
+            transport_progress = 0
+            turn_failed = False
             try:
+                from appchi.clock_health import require_clock_health
+                require_clock_health(settings)
+                if args.role == "relay" or args.role.endswith("-hints"):
+                    with db.transaction() as conn:
+                        if conn.execute("SELECT enabled FROM kafka_pipeline_control WHERE singleton").fetchone()["enabled"]:
+                            raise unavailable("legacy_pipeline_fenced")
                 if args.role == "source":
-                    source_turn(db, profile)
+                    from appchi.kafka_source import SourceConsumer
+                    if transport is None:
+                        transport = SourceConsumer(db, settings, profile)
+                    transport_progress = transport.turn()
                 elif args.role == "visibility-capture":
                     from appchi.visibility.runtime import capture_turn
 
@@ -321,7 +342,18 @@ def main():
                 elif args.role == "relay":
                     relay_turn(db, settings)
                 elif args.role == "indexer":
-                    projection_turn(db, settings)
+                    from appchi.kafka_changed import ChangedConsumer
+                    from appchi.search.reconciliation import reconciliation_turn
+                    reconciliation_turn(db, settings)
+                    try:
+                        if transport is None:
+                            transport = ChangedConsumer(db, settings, profile, "indexer")
+                        transport_progress = transport.turn()
+                    except Exception:
+                        if transport:
+                            transport.close()
+                            transport = None
+                        log.warning("search_kafka_degraded_reconciliation_active")
                 elif args.role.endswith("-hints"):
                     from appchi.pipeline import consume_once
 
@@ -389,10 +421,6 @@ def main():
                         retirement_progress_pending = page.progress_pending
                     else:
                         purge_audit_batch(db, evidence_store)
-                elif args.role == "live":
-                    from appchi.live import publish_hints
-
-                    publish_hints(db, settings)
                 elif args.role == "operators":
                     from appchi.operators.worker import run_one
 
@@ -413,10 +441,14 @@ def main():
                             settings.operator_binding,
                             db,
                             PlatformCredentials(*(token.get_secret_value() for token in tokens)),
+                            settings=settings,
                         )
                     run_one(db, settings.cipher(), operator_executor)
                 elif args.role == "correlation":
-                    correlation_turn(db, profile)
+                    from appchi.kafka_changed import ChangedConsumer
+                    if transport is None:
+                        transport = ChangedConsumer(db, settings, profile, "correlation")
+                    transport_progress = transport.turn()
                 elif args.role in ("maintenance-warmup", "maintenance-proof"):
                     from dataclasses import asdict
                     from appchi.maintenance.warmup import warmup_page, warmup_status
@@ -440,15 +472,24 @@ def main():
                     from appchi.identity.worker import load_directory_config, run_cycle
 
                     config = load_directory_config(Path(os.environ["APPCHI_DIRECTORY_CONFIG"]))
-                    run_cycle(
+                    _, publication = run_cycle(
                         db,
                         config,
                         PrincipalKey(config.source, os.environ["APPCHI_SUPERADMIN_OBJECT_ID"]),
                         bootstrap_qualified=os.getenv("APPCHI_DIRECTORY_BOOTSTRAP_QUALIFIED")
                         == "true",
                     )
+                    if not publication.accepted:
+                        raise unavailable("directory_publication_incomplete")
                 health.publish(ready=True)
             except Exception:
+                turn_failed = True
+                if transport is not None:
+                    try:
+                        transport.close()
+                    except Exception:
+                        pass
+                    transport = None
                 health.publish(ready=False)
                 log.warning("worker_capability_unavailable")
                 if args.once:
@@ -456,6 +497,10 @@ def main():
             if args.once or args.role == "maintenance-proof":
                 break
             delay = 30 if args.role == "directory" else 1
+            if args.role in ("source", "correlation", "indexer"):
+                # The consumers already bound idle polling. Do not cap a busy
+                # tenant at 100 records/s with a fixed per-record sleep.
+                delay = 1 if turn_failed else 0 if transport_progress else 0.01
             if args.role == "inactivity":
                 delay = 3600
             if (
@@ -487,6 +532,8 @@ def main():
         health.publish(draining=True)
         if hints:
             hints[1].close()
+        if transport:
+            transport.close()
         if evidence_store:
             evidence_store.close()
         if operator_executor:

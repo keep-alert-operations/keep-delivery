@@ -46,7 +46,7 @@ def real_db():
 def test_durable_source_projection_search_and_manual_refresh(browser, real_db, cipher, profile, v1):
     if not os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"):
         pytest.skip("Requires real Elasticsearch URL")
-    client, _ = browser
+    client, principal = browser
     settings = client.app.state.settings
     settings.elasticsearch_url = os.environ["APPCHI_TEST_ELASTICSEARCH_URL"]
     settings.elasticsearch_index = "appchi-pipeline-test-" + uuid4().hex
@@ -71,14 +71,14 @@ def test_durable_source_projection_search_and_manual_refresh(browser, real_db, c
             assert initial.json()["meta"]["total"] == "1"
             assert initial.json()["meta"]["updating"] is False
             assert initial.json()["data"][0]["id"] == alert
-            assert initial.json()["data"][0]["acknowledged"] is False
+            assert initial.json()["data"][0]["display_status"] == "firing"
             response = client.post(
                 base + "/" + alert + "/commands",
                 json={
                     "command_id": str(uuid4()),
                     "expected_revision": "1",
-                    "kind": "set_acknowledged",
-                    "value": True,
+                    "kind": "set_assignee",
+                    "value": str(principal),
                 },
             )
             assert response.status_code == 200, response.text
@@ -86,11 +86,11 @@ def test_durable_source_projection_search_and_manual_refresh(browser, real_db, c
             assert lagging.status_code == 200, lagging.text
             assert lagging.json()["meta"]["updating"] is True
             projection_turn(real_db, settings)
-            current = client.get(base, params={"cel": "alert.acknowledged == true"})
+            current = client.get(base, params={"cel": 'alert.display_status == "acknowledged"'})
             assert current.status_code == 200, current.text
             assert current.json()["meta"]["total"] == "1"
             assert current.json()["meta"]["updating"] is False
-            assert current.json()["data"][0]["acknowledged"] is True
+            assert current.json()["data"][0]["display_status"] == "acknowledged"
             note = client.post(
                 base + "/" + alert + "/notes",
                 json={

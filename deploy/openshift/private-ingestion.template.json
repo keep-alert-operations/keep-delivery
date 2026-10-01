@@ -10,11 +10,11 @@
       "required": true
     },
     {
-      "name": "CONFIG_SECRET",
+      "name": "INGRESS_CONFIG_SECRET",
       "required": true
     },
     {
-      "name": "BINDING_SECRET",
+      "name": "INGRESS_BINDING_SECRET",
       "required": true
     },
     {
@@ -51,6 +51,14 @@
     },
     {
       "name": "REPLICAS",
+      "required": true
+    },
+    {
+      "name": "GLOBAL_TENANT_ID",
+      "required": true
+    },
+    {
+      "name": "CLOCK_HEALTH_CONFIGMAP",
       "required": true
     }
   ],
@@ -100,6 +108,14 @@
                   {
                     "name": "APPCHI_BIND_PORT",
                     "value": "8443"
+                  },
+                  {
+                    "name": "APPCHI_GLOBAL_TENANT_ID",
+                    "value": "${GLOBAL_TENANT_ID}"
+                  },
+                  {
+                    "name": "APPCHI_CLOCK_HEALTH_FILE",
+                    "value": "/run/appchi-clock/health.json"
                   }
                 ],
                 "livenessProbe": {
@@ -135,7 +151,7 @@
                 "envFrom": [
                   {
                     "secretRef": {
-                      "name": "${CONFIG_SECRET}"
+                      "name": "${INGRESS_CONFIG_SECRET}"
                     }
                   }
                 ],
@@ -173,6 +189,11 @@
                     "name": "bindings",
                     "mountPath": "/etc/appchi",
                     "readOnly": true
+                  },
+                  {
+                    "name": "clock-health",
+                    "mountPath": "/run/appchi-clock",
+                    "readOnly": true
                   }
                 ],
                 "command": [
@@ -192,7 +213,13 @@
               {
                 "name": "bindings",
                 "secret": {
-                  "secretName": "${BINDING_SECRET}"
+                  "secretName": "${INGRESS_BINDING_SECRET}"
+                }
+              },
+              {
+                "name": "clock-health",
+                "configMap": {
+                  "name": "${CLOCK_HEALTH_CONFIGMAP}"
                 }
               }
             ]

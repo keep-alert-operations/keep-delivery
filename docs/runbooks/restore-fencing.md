@@ -13,6 +13,17 @@ operator workers: the SQL guard cannot cancel an HTTP request already sent to
 Kong or Grafana. This procedure does not authorize a company deployment or remote
 configuration change.
 
+For Kafka-first deployments, disable `APPCHI_KAFKA_ADMISSION_ENABLED` on every
+native v1/v2 and Grafana ingress process and remove incoming traffic before
+`begin`. Stop or drain requests already inside the admission path and wait for
+their bounded Kafka publication attempts to settle; include the ten-second v2
+gateway authorization lifetime and the configured clock uncertainty. Confirm
+admission is quiescent before stopping source/changed consumers. The PostgreSQL
+restore guard cannot stop stateless ingress or remove already accepted Kafka
+records. Keep those topic/group boundaries for recovery. Do not change
+`kafka_pipeline_control.enabled` as a restore fence: it selects the active protocol
+and changing it could reopen legacy writer paths.
+
 Use a separately controlled database identity with the migration-created
 `appchi_recovery` role. Runtime API/worker identities cannot change restore control
 or enumerate staged evidence. `APPCHI_RECOVERY_DATABASE_URL` belongs only to the
@@ -42,8 +53,9 @@ Fresh SSO is still unavailable until the later identity recovery checks exist.
 The runtime guard uses a bounded preliminary transaction and shared session
 advisory lock around the business transaction. This retains existing repeatable
 read semantics. Recovery takes the matching exclusive lock before changing
-control. Failed/uncertain lock release discards the connection. Readiness probes,
-native v1/v2 admission, human paths and SQL workers use this boundary. Its extra
+control. Failed/uncertain lock release discards the connection. Human paths and
+SQL workers use this boundary. Kafka-first native v1/v2 and Grafana admission do
+not read PostgreSQL and require the explicit quiescence above. The guard's extra
 database round trips need inclusion in capacity qualification.
 
 `collect` requires the normal supplied recovery binding/credential settings and
@@ -81,6 +93,12 @@ The current automatic reopening blockers are:
   original jobs or scoped command receipts are absent from the backup.
 - Independently established accepted-work boundaries, pending-order/consumer
   reconciliation, trusted clocks, current retention, and search rebuild/verification.
+- Independent reconstruction of Kafka delivery UUID/digest/first-coordinate and
+  changed-event fences, retired logical-key receipt timestamps, and current
+  projection sequence boundaries. Existing minimal evidence tuples do not contain
+  enough information to reconstruct these after database rollback. Assessment
+  always reports `kafka_delivery_and_retired_key_baseline_unverified`; collecting
+  more existing tuples cannot clear it.
 
 An empty complete checkpoint does not prove any unsupported family had no
 changes. Do not manually set a capability to ready: a database trigger also blocks
@@ -88,9 +106,9 @@ that while recovery is active. Do not clear restore control to bypass missing
 proof. The later coordinator must implement the missing reconciliation before
 this runbook gains a reopening procedure.
 
-Six local PostgreSQL cases verify transaction draining, replay/conflict checks,
-epoch rejection, lock release, role separation, session invalidation, native-v1
-and human HTTP fencing, and incomplete/complete evidence staging without reopening.
+Local PostgreSQL cases verify transaction draining, replay/conflict checks,
+epoch rejection, lock release, role separation, session invalidation, human HTTP
+fencing, disabled Kafka admission, and incomplete/complete evidence staging without reopening.
 These use synthetic databases and controlled evidence; no infrastructure rollback,
 private evidence service or company recovery guarantee has been qualified.
 

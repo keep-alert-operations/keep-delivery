@@ -1,3 +1,5 @@
+# Legacy project definition retained only to stop containers from older local setups.
+# New and active local services are all defined in compose.yaml.
 name: appchi-local-identity
 services:
   keycloak:

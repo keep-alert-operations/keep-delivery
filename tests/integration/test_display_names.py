@@ -99,9 +99,9 @@ def test_feed_and_preset_preview_label_rows_without_crossing_tenants(
         for index, item in enumerate(displays)
     ]
     expected = [
-        ("Synthetic user", "Departed operator", "Checkout latency"),
-        (None, None, None),
-        (None, None, None),
+        ("Synthetic user", "Checkout latency"),
+        (None, None),
+        (None, None),
     ]
 
     def labels(response):
@@ -109,7 +109,6 @@ def test_feed_and_preset_preview_label_rows_without_crossing_tenants(
         return [
             (
                 row["assignee_display_name"],
-                row["acknowledged_by_display_name"],
                 row["active_incident_title"],
             )
             for row in response.json()["data"]
@@ -117,11 +116,11 @@ def test_feed_and_preset_preview_label_rows_without_crossing_tenants(
 
     feed = client.get(f"/api/tenants/{tenant}/alerts")
     assert labels(feed) == expected
-    # Stored search display data is returned unchanged apart from the added labels.
+    # Current responses omit retired fields; stored search snapshots remain untouched.
     assert [
         {k: v for k, v in row.items() if k in displays[i]}
         for i, row in enumerate(feed.json()["data"])
-    ] == displays
+    ] == [{k: v for k, v in row.items() if k != "acknowledged_by"} for row in displays]
     preview = client.post(
         f"/api/tenants/{tenant}/presets/preview",
         json={"preset_id": preset["id"], "expected_revision": "1", "limit": 10},
@@ -267,9 +266,7 @@ def test_maintenance_reads_label_stored_actor_ids(maintenance_browser):
     assert item["updated_by_display_name"] == "Test editor"
 
 
-def test_alert_detail_labels_assignee_acknowledger_and_owned_incident(
-    maintenance_browser, maintenance_db
-):
+def test_alert_detail_labels_assignee_and_owned_incident(maintenance_browser, maintenance_db):
     db, client, tenant, _, catalog, _ = setup(maintenance_browser, maintenance_db)
     _, _, editor, app = maintenance_browser
     app.include_router(alert_routes.router)
@@ -281,12 +278,9 @@ def test_alert_detail_labels_assignee_acknowledger_and_owned_incident(
         key: plain.json()["data"][key]
         for key in (
             "assignee_display_name",
-            "acknowledged_by_display_name",
             "active_incident_title",
         )
-    } == dict.fromkeys(
-        ("assignee_display_name", "acknowledged_by_display_name", "active_incident_title")
-    )
+    } == dict.fromkeys(("assignee_display_name", "active_incident_title"))
     assert plain.json()["data"]["active_incident_id"] is None
     # Labels are read-time only, so stored state is arranged directly here;
     # the detail revision and every stored field stay exactly as persisted.
@@ -307,7 +301,9 @@ def test_alert_detail_labels_assignee_acknowledger_and_owned_incident(
     labelled = client.get(path)
     assert labelled.status_code == 200, labelled.text
     data = labelled.json()["data"]
-    assert data["assignee_display_name"] == data["acknowledged_by_display_name"] == "Test editor"
+    assert data["assignee_display_name"] == "Test editor"
+    assert data["display_status"] == "acknowledged"
+    assert "acknowledged_by_display_name" not in data
     assert data["active_incident_title"] == "Payments degraded"
     assert labelled.json()["meta"] == plain.json()["meta"]
     assert data["active_incident_id"] == owner
@@ -327,5 +323,6 @@ def test_alert_detail_labels_assignee_acknowledger_and_owned_incident(
         )
         conn.execute("DELETE FROM alert_active_ownership WHERE tenant_id=%s", (tenant,))
     data = client.get(path).json()["data"]
-    assert data["acknowledged_by_display_name"] == "Retired acknowledger"
+    assert "acknowledged_by_display_name" not in data
+    assert "acknowledged_by" not in data
     assert data["active_incident_title"] is None and data["active_incident_id"] is None

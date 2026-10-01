@@ -1,5 +1,11 @@
 # Development and verification runbook
 
+**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](../../spec-worker-scope.md#6-live-updates-inside-the-product-api).
+
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](../../spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+
+**2026-09-30 worker-scope update:** see [current worker scope](../../spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+
 These commands start the implemented Appchi components from the repository root.
 They do not create an authentication bypass, qualify a company integration, enable
 capability gates, or authorize production deployment. Consult
@@ -42,8 +48,10 @@ Use the actual configured Keycloak environment and exact callback/logout URLs.
 Company LDAP verification and the qualified directory bootstrap must publish
 trusted evidence before `human_auth` can become ready. The development launcher
 does not seed users/sessions or set that gate. The directory adapter's `run_cycle`
-and its 60-second scheduling/qualification requirements are documented there;
-the launcher's `directory` worker role runs that configured verifier. Other
+remains available for explicit trusted publication. Directory polling and its
+five-minute propagation qualification are nice-to-have under REV-35. Run the
+configured company verifier explicitly with `python -m appchi.worker directory
+--once`; the development worker launcher excludes continuous directory startup. Other
 implemented roles are listed in `scripts/dev.ps1` and the relevant domain runbooks;
 each requires its own explicit binding, capacity and readiness prerequisites.
 
@@ -102,23 +110,32 @@ files may instead be passed with `-TlsCertificate` and `-TlsKey`. The API port a
 `APPCHI_BACKEND_URL` must agree. Without verified identity/bootstrap, sign-in is
 gated, rather than replaced with a local password or synthetic user.
 
-When separately supplied and qualified, `APPCHI_KAFKA_BOOTSTRAP` enables launching
-the relay role, and `APPCHI_ELASTICSEARCH_URL` supplies the indexer binding:
+Complete the [Kafka cutover](kafka-first.md) before starting new alert workers. Supply `APPCHI_KAFKA_BOOTSTRAP` and `APPCHI_ELASTICSEARCH_URL` for the separate source, correlation and indexer roles:
 
 ```powershell
-./scripts/dev.ps1 -Action Start -Role Worker -WorkerRole relay
+./scripts/dev.ps1 -Action Start -Role Worker -WorkerRole source
+./scripts/dev.ps1 -Action Start -Role Worker -WorkerRole correlation
 ./scripts/dev.ps1 -Action Start -Role Worker -WorkerRole indexer
 ```
+
+Live hint publishing starts automatically inside Redis-configured Product API
+processes; there is no `live` worker command. Supply the normal API Redis binding
+and approved Redis egress. Apply migration 0047 with the migration identity before
+new API processes start; it grants API SELECT/DELETE on the minimal hint outbox
+without worker credentials or domain RLS changes. Stop old live workers before
+rollout and include publishing in API pool/concurrency qualification.
 
 `-Once` requests one bounded worker turn. The current worker intentionally records
 dependency failure and preserves pending work; exit code zero alone does not mean
 search, publication or any capability gate is ready. Check API health, durable
 progress and the corresponding verification evidence.
 
-The provided [local Compose file](../../deploy/local/compose.yaml) is a development
-service scaffold. Its complete multi-service startup, connectivity and compatibility
-have **not** been verified in this environment. Do not infer a working full-release
-stack from that file or these launch commands.
+For the isolated local dependency stack, use the single
+[local Compose definition](../../deploy/local/compose.yaml) through
+[`scripts/local-runtime.ps1`](../../scripts/local-runtime.ps1). It runs the local
+PostgreSQL, Elasticsearch, Kafka, Redis, Keycloak, Kong and Grafana services;
+the API, UI and workers remain host development processes. This local profile
+does not replace the separately supplied and qualified company services.
 
 ## Verification commands
 
@@ -225,3 +242,24 @@ establish correctness of subsequent changes.
 No OpenShift deployment, container build, shared-service change, company identity
 login, sustained capacity or coordinated infrastructure restore has been
 qualified. The private-environment runbook records the corresponding gates.
+
+## Worker scope rollout
+
+Stop deferred roles before applying migration 0046. Deploy matching Product API,
+source/correlation/indexer code together: the immutable source-release cutover
+preserves old history while later ends wait for source updates. Do not start old
+workers against the new schema. No application worker is required solely to end a
+maintenance window or age a resource out of this release.
+
+The Product API CONFIG_SECRET supplies `APPCHI_OPERATOR_DATABASE_URL`,
+`APPCHI_OPERATOR_GRAFANA_TOKEN`, `APPCHI_OPERATOR_KONG_TOKEN` and
+`APPCHI_OPERATOR_PROBE_TOKEN`. `APPCHI_OPERATOR_BINDING` references the mounted
+verified binding. Use provisioning-role privileges on its separate bounded pool;
+ordinary API RLS remains separate. Confirm operator-route proxy timeouts (100s),
+per-replica pool allocation and required remote egress before rollout. The network policy template takes explicit egress rules; supplied
+Product API policies must include the approved Kong/Grafana/proof destinations.
+
+Failed operations need explicit Retry from their detail page. A deleted operator
+with unfinished final verification remains visible to tenant admins for recovery;
+it disappears after completion. Cancellation can resume initial setup in the same
+request. No process restarts or shared service changes are implied by these steps.

@@ -175,7 +175,7 @@ def test_create_replay_duplicate_names_no_backfill_and_history(maintenance_brows
                 "SELECT count(*) AS n FROM maintenance_fanout_jobs WHERE tenant_id=%s AND kind='control' AND state='complete'",
                 (tenant,),
             ).fetchone()["n"]
-            == 2
+            == 0
         )
     history = client.get(f"/api/tenants/{tenant}/maintenance/{first['id']}/history").json()["data"]
     assert len(history) == 1 and history[0]["action"] == "create"
@@ -293,7 +293,7 @@ def test_started_lock_timezone_only_and_end_extension_keep_activation(
         assert all(current[k] == v for k, v in old.items()) and len(current["end_revisions"]) == 2
 
 
-def test_disable_enable_new_segment_durable_fanout_and_capacity(
+def test_disable_enable_new_segment_without_fanout_and_capacity(
     maintenance_browser, maintenance_db
 ):
     client, tenant, _, app = maintenance_browser
@@ -328,7 +328,7 @@ def test_disable_enable_new_segment_durable_fanout_and_capacity(
                 "SELECT count(*) AS n FROM maintenance_fanout_jobs WHERE tenant_id=%s AND state='pending' AND kind='control'",
                 (tenant,),
             ).fetchone()["n"]
-            == 2
+            == 0
         )
 
 

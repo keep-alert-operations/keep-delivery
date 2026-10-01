@@ -75,6 +75,30 @@ def drain(db, tenant, capacity=TEST_CAPACITY):
     pytest.fail("consumer did not become idle")
 
 
+def test_local_preview_rule_runs_only_with_development_opt_in(running, real_db, v1):
+    client, _, tenant, _ = running
+    preview = {
+        **TEST_CAPACITY,
+        "qualified": False,
+        "scope": "local-development",
+        "correlation_preview": True,
+    }
+    client.app.state.profile = preview
+    body = {
+        **definition(),
+        "conditions": [{"id": str(uuid4()), "label": "Match", "cel": "true"}],
+    }
+    create(running, body)
+    source(real_db, tenant, v1)
+    with pytest.raises(AppError, match="correlation_capacity_profile_required"):
+        runtime.worker_turn(real_db, tenant, preview)
+    assert runtime.worker_turn(real_db, tenant, preview, allow_local_preview=True) == 1
+    with real_db.transaction() as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM incidents WHERE tenant_id=%s", (tenant,)
+        ).fetchone()["n"] == 1
+
+
 def test_delayed_qualifier_replays_changed_fields_and_original_window(running, real_db, v1):
     client, _, tenant, _ = running
     capacity = {
