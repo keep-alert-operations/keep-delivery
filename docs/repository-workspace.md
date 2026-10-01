@@ -81,6 +81,12 @@ a developer's general-purpose GitHub login token. After configuring access,
 rerun the failed jobs and inspect their results: the credential preflight failure
 means the later checks have not executed on GitHub.
 
+The organization was verified on GitHub Free on 2026-10-01. On that plan,
+organization secrets are unavailable to private repositories, so configure this
+as a **repository secret in each of the eight consumers**. An organization secret
+alone will not unblock these jobs. See
+[GitHub's secret availability rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets#creating-secrets-for-an-organization).
+
 The retained `appchi` monorepo's `application-checks` workflow was disabled on
 2026-10-01 at the user's request. Its backend/frontend jobs are retired following
 the repository split. Keep the independent repositories' owned checks active;
