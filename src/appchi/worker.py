@@ -1,3 +1,5 @@
+from appchi.correlation.consumer import correlate_record
+from appchi.search.consumer import index_record
 import argparse
 import logging
 import signal
@@ -105,7 +107,8 @@ def projection_turn(db, settings):
 def _project(db, settings, physical_index):
     from appchi.search.control import check_writer
     from elasticsearch import Elasticsearch
-    from appchi.search import Projection, ProjectionWriter
+    from appchi.search import Projection
+    from appchi.search.writer import ProjectionWriter
 
     with db.transaction() as conn:
         gate = conn.execute(
@@ -293,6 +296,7 @@ def main():
     hints = None
     transport = None
     from appchi.alert_notifications import configure
+
     configure(settings)
     cleanup_cursor = None
     warmup_cursor = None
@@ -325,13 +329,17 @@ def main():
             turn_failed = False
             try:
                 from appchi.clock_health import require_clock_health
+
                 require_clock_health(settings)
                 if args.role == "relay" or args.role.endswith("-hints"):
                     with db.transaction() as conn:
-                        if conn.execute("SELECT enabled FROM kafka_pipeline_control WHERE singleton").fetchone()["enabled"]:
+                        if conn.execute(
+                            "SELECT enabled FROM kafka_pipeline_control WHERE singleton"
+                        ).fetchone()["enabled"]:
                             raise unavailable("legacy_pipeline_fenced")
                 if args.role == "source":
                     from appchi.kafka_source import SourceConsumer
+
                     if transport is None:
                         transport = SourceConsumer(db, settings, profile)
                     transport_progress = transport.turn()
@@ -344,10 +352,13 @@ def main():
                 elif args.role == "indexer":
                     from appchi.kafka_changed import ChangedConsumer
                     from appchi.search.reconciliation import reconciliation_turn
+
                     reconciliation_turn(db, settings)
                     try:
                         if transport is None:
-                            transport = ChangedConsumer(db, settings, profile, "indexer")
+                            transport = ChangedConsumer(
+                                db, settings, profile, "indexer", index_record
+                            )
                         transport_progress = transport.turn()
                     except Exception:
                         if transport:
@@ -446,8 +457,11 @@ def main():
                     run_one(db, settings.cipher(), operator_executor)
                 elif args.role == "correlation":
                     from appchi.kafka_changed import ChangedConsumer
+
                     if transport is None:
-                        transport = ChangedConsumer(db, settings, profile, "correlation")
+                        transport = ChangedConsumer(
+                            db, settings, profile, "correlation", correlate_record
+                        )
                     transport_progress = transport.turn()
                 elif args.role in ("maintenance-warmup", "maintenance-proof"):
                     from dataclasses import asdict

@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.kafka_changed import correlate_record
+from appchi.correlation.consumer import correlate_record
 from appchi.kafka_source import apply_record
 from test_correlation_configuration import TEST_CAPACITY, create, definition, rules  # noqa: F401
 from test_kafka_first import receipt

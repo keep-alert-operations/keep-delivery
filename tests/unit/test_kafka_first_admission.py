@@ -6,7 +6,8 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.ingestion.kafka_admission import KafkaAdmission, received_key
+from appchi.ingestion.kafka_admission import KafkaAdmission
+from appchi.ingestion.keys import received_key
 from appchi.ingestion.native import canonical, parse_json
 
 

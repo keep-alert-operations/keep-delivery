@@ -13,7 +13,7 @@ import pytest
 from test_product import browser  # noqa: F401
 from test_permission_revision import RestrictedDatabase
 
-from appchi.visibility.registry import RegistryLimits
+from appchi.visibility.limits import RegistryLimits
 from appchi.visibility.repository import snapshot_at
 from appchi.visibility.routes import router
 

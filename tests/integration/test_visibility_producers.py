@@ -14,7 +14,7 @@ from appchi.ingestion.native import canonical
 from appchi.ingestion.service import Admission
 from appchi.shared.errors import AppError
 from appchi.visibility.inputs import InputLimits, record_input, registry_checkpoint
-from appchi.visibility.registry import RegistryLimits
+from appchi.visibility.limits import RegistryLimits
 from appchi.visibility.runtime import capture_profile, capture_turn
 from test_search_pipeline import real_db  # noqa: F401
 from test_product import browser  # noqa: F401

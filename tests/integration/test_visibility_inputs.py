@@ -26,7 +26,7 @@ from appchi.visibility.inputs import (
     registry_checkpoint,
     seal_expiry_boundary,
 )
-from appchi.visibility.registry import RegistryLimits
+from appchi.visibility.limits import RegistryLimits
 from appchi.visibility.routes import router
 
 pytestmark = pytest.mark.integration
