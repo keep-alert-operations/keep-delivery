@@ -1,0 +1,33 @@
+{
+  "run": "scale-907ff47dbfdf432998d3326646d714bc",
+  "passed": false,
+  "failure_type": "FixtureClockAtomicReplacePermissionError",
+  "stage": "preload; measured cohort not started",
+  "profile": {
+    "seconds": 60,
+    "rate": 83.33333333333333,
+    "users": 100,
+    "tenants": 50,
+    "seed": 5000,
+    "partitions": 16,
+    "processors": 16,
+    "indexers": 4,
+    "api_pool": 32
+  },
+  "failure_detail": "Windows WinError5 replacing complete synthetic clock sample; publisher thread stopped. Run interrupted after failure. Phase timings were not recovered.",
+  "interrupted": true,
+  "preload_applied": 2710,
+  "fault_codes": [
+    [
+      "source",
+      "source_processing_failed",
+      7
+    ]
+  ],
+  "cleanup_errors": [
+    "KafkaException",
+    "KafkaException"
+  ],
+  "cleanup_complete": true,
+  "cleanup_errors_resolved": "Exact owned Kafka topics deleted successfully by persistent admin client retry."
+}

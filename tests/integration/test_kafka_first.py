@@ -253,12 +253,14 @@ def test_lost_manual_hint_reconciles_current_authority_and_watermark(real_db, v1
             "UPDATE tenant_view_state SET index_epoch=%s WHERE tenant_id=%s", (epoch, tenant)
         )
     with Elasticsearch(endpoint, request_timeout=5, max_retries=0) as es:
-        es.indices.create(
-            index=index,
-            mappings=index_mapping(),
-            settings={"number_of_shards": 1, "number_of_replicas": 0},
-        )
         try:
+            # Fixture administration is outside the projection request budget;
+            # an uncertain create still needs exact-owned-index cleanup.
+            es.options(request_timeout=30).indices.create(
+                index=index,
+                mappings=index_mapping(),
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+            )
             assert not reconcile_page(real_db, es, index, tenant, epoch)
             # A later manual mutation is deliberately not delivered to Kafka.
             with real_db.transaction(tenant) as conn:
@@ -300,13 +302,12 @@ def test_lost_manual_hint_reconciles_current_authority_and_watermark(real_db, v1
                     (tenant, str(alert_id)),
                 ).fetchone()
         finally:
-            es.indices.delete(index=index)
+            es.options(request_timeout=30).indices.delete(index=index, ignore_unavailable=True)
 
 
 def test_real_broker_low_watermark_gap_is_recorded_and_fenced(real_db, v1):
     from confluent_kafka import Consumer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
-    from appchi.shared.errors import AppError
 
     config = settings(real_db)
     if not config.kafka_bootstrap:
@@ -341,8 +342,10 @@ def test_real_broker_low_watermark_gap_is_recorded_and_fenced(real_db, v1):
         )
     worker = SourceConsumer(real_db, config, None)
     try:
-        with pytest.raises(AppError, match="kafka_retention_gap"):
-            worker._assigned(worker.client, [TopicPartition(topic, 0)])
+        worker._assigned(worker.client, [TopicPartition(topic, 0)])
+        point, retry_at = worker.retries.failed[(topic, 0)]
+        assert point.offset == 1 and retry_at == float("inf")
+        assert worker.client.committed([TopicPartition(topic, 0)], timeout=5)[0].offset == 0
         with real_db.transaction() as conn:
             fault = conn.execute(
                 "SELECT reason,input_offset FROM kafka_pipeline_faults WHERE consumer='source' AND topic=%s",

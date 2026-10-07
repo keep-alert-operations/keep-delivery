@@ -1,0 +1,174 @@
+{
+  "run": "scale-4e1c3405d10a4fa58ede074232c88825",
+  "profile": {
+    "seconds": 10,
+    "rate": 10.0,
+    "users": 10,
+    "tenants": 5,
+    "seed": 100,
+    "partitions": 8,
+    "processors": 4,
+    "indexers": 2,
+    "api_pool": 16,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 120,
+    "output": "status\\evidence\\scalability-smoke-processes-optimized.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "setup_index_seconds": 4.155,
+  "stage": "drain_and_verify",
+  "startup_seconds": 4.956,
+  "startup_read_p99_ms": 3689.475,
+  "startup_ready_users": 10,
+  "startup_pit_closed": 0,
+  "minimum_active_sse": 10,
+  "measured_from": "2026-10-06 20:57:43.066822+00:00",
+  "arrivals_complete_seconds": 9.924,
+  "applied_at_arrivals_complete": 179,
+  "combined_elapsed_seconds": 12.984,
+  "applied_at_combined_end": 199,
+  "applied": 200,
+  "searchable": 200,
+  "final_tenants_exact_counts": 5,
+  "authority": {
+    "receipts": 200,
+    "applied": 200,
+    "rejected": 0
+  },
+  "processing_p99_ms": 3679.54595,
+  "pipeline_faults": {},
+  "watermark_lag_tenants": 0,
+  "search_visibility_sample_p99_ms": 15114.396,
+  "search_visibility_sampled": 100,
+  "search_visibility_observed": 100,
+  "worker_memory": [
+    {
+      "pid": 1372,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62808064
+    },
+    {
+      "pid": 9088,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62377984
+    },
+    {
+      "pid": 45852,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62500864
+    },
+    {
+      "pid": 35408,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62431232
+    },
+    {
+      "pid": 40060,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 76087296
+    },
+    {
+      "pid": 23148,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 75149312
+    }
+  ],
+  "accepted": 100,
+  "offered": 100,
+  "read_requests": 60,
+  "admission_p99_ms": 49.646,
+  "read_p99_ms": 2183.535,
+  "generator_late_p99_ms": 16.167,
+  "errors": {},
+  "worker_turns": {
+    "source": 200,
+    "indexer": 200
+  },
+  "sse_connections": 10,
+  "sse_messages": 61,
+  "pit_closed": 0,
+  "source_phases_ms": {
+    "seed:source_idle_turn": {
+      "count": 731,
+      "p50": 107.218,
+      "p99": 232.779,
+      "total_ms": 81308.428
+    },
+    "seed:queue_age": {
+      "count": 100,
+      "p50": 6512.04,
+      "p99": 13009.301,
+      "total_ms": 695213.333
+    },
+    "seed:postgres_apply": {
+      "count": 100,
+      "p50": 186.005,
+      "p99": 734.434,
+      "total_ms": 21807.555
+    },
+    "seed:source_active_turn": {
+      "count": 100,
+      "p50": 326.883,
+      "p99": 885.089,
+      "total_ms": 35796.607
+    },
+    "measured:source_idle_turn": {
+      "count": 581,
+      "p50": 107.023,
+      "p99": 112.324,
+      "total_ms": 62254.652
+    },
+    "measured:queue_age": {
+      "count": 100,
+      "p50": 1072.873,
+      "p99": 3696.561,
+      "total_ms": 128132.585
+    },
+    "measured:postgres_apply": {
+      "count": 100,
+      "p50": 208.624,
+      "p99": 632.26,
+      "total_ms": 23921.654
+    },
+    "measured:source_active_turn": {
+      "count": 100,
+      "p50": 357.425,
+      "p99": 898.782,
+      "total_ms": 38502.531
+    },
+    "seed:indexer_idle_turn": {
+      "count": 32,
+      "p50": 107.965,
+      "p99": 115.11,
+      "total_ms": 3455.484
+    },
+    "seed:indexer_active_turn": {
+      "count": 18,
+      "p50": 891.315,
+      "p99": 1911.314,
+      "total_ms": 17823.656
+    },
+    "measured:indexer_active_turn": {
+      "count": 22,
+      "p50": 1037.369,
+      "p99": 2568.035,
+      "total_ms": 22823.974
+    },
+    "measured:indexer_idle_turn": {
+      "count": 30,
+      "p50": 107.951,
+      "p99": 115.025,
+      "total_ms": 3238.117
+    }
+  },
+  "correctness_passed": true,
+  "latency_passed": false,
+  "passed": false,
+  "source_sql": {}
+}

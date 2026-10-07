@@ -1,5 +1,39 @@
 # Implementation status
 
+## 2026-10-01 repository CI audit
+
+Reviewed all twelve organization repositories, including the retained monorepo.
+The design checker now accepts REV-38 and its repair branch passes GitHub Actions.
+The legacy monorepo workflow was disabled at the user's request. Contracts and
+the Alembic migrations branch already passed their hosted checks.
+
+Configured the approved read-only `APPCHI_REPOSITORIES_TOKEN` as a repository secret
+in all eight private-dependency consumers. Frontend also required disabling
+checkout credential persistence so npm uses the private contracts credential.
+All eleven active repositories now have successful hosted runs at the recorded
+revisions, including frontend's full build. Delivery main and its Alembic branch
+also passed. Frontend/design fixes remain on their published repair branches.
+
+Separate locked local environments passed 545 Python tests, with 65 delivery tests
+skipped; lint, wheels, contracts, boundaries and documentation checks passed.
+The credential expires 2026-12-30 and must be rotated in all eight consumers.
+See [per-repository hosted evidence and changes](../qualification/ci-repair-2026-10-01.md).
+
+## 2026-10-01 Alembic migration runner (REV-38)
+
+`appchi-migrations` now executes its unchanged 44 SQL files through one Alembic
+revision chain. Verified legacy adoption preserves checksum history/timestamps,
+uses the original transaction/advisory lock, and rejects inconsistent histories.
+Both migration ledgers deny API/worker access. Existing deployment entrypoints
+remain; four delivery test fixtures now use the packaged migration directory.
+
+Local verification passed 21 migration tests, 27 affected application SQL tests,
+wheel execution outside the checkout, lint/build and a separate locked delivery
+installation. The first consumer run's native-CEL availability failure and the
+successful isolated rerun are recorded in [conversion evidence](../qualification/alembic-migrations.md).
+Dependency/manifest pins identify the new migration and design commits. Publication,
+image build and rollout remain separate; no existing application database was migrated.
+
 ## 2026-10-01 independent repositories (REV-37)
 
 The application, packages, migrations, design and delivery tooling are split into
@@ -509,3 +543,36 @@ Keycloak infrastructure was not modified.
 Replaced the signed-out and account-menu text appearance buttons with one
 accessible sun/moon switch component. It retains the user's saved theme and the
 light default. Automated tests were not run for this UI update.
+
+## Scalability implementation handoff — 2026-10-07
+
+The user requested implementation of the system review for 5,000 alert deliveries
+per minute, 100 active users and 50 tenants. The current uncommitted editable
+source combination adds bounded bulk indexing, delta reconciliation with separate
+repair-audit progress, tenant retry isolation, incremental maintenance continuation,
+scoped/differential correlation work, batched quick counts, PIT disposal, stable
+activity/live behavior, off-thread authorization SQL and aggregate request budgets.
+Forward migrations 0048 through 0050 are required before the updated writers. Original
+published migration bytes remain unchanged.
+
+The [implementation evidence](../qualification/scalability-implementation-2026-10-06.md)
+records commands, successful checks, corrected regressions and measured limits.
+Testing stopped at the user's request. Coordinated units passed 780 cases with
+65 skips; the final narrow clock correction passed 14 focused cases. Migration
+and real-search checks passed 26 cases, and controlled browser checks passed
+144 cases with seven opt-in skips. The production frontend build passed. Final
+local startup completed, including 17 live gateway/authorization checks. The
+planned real-browser OIDC/alert/note scenarios were not run before testing stopped.
+The requested-rate cohort failed latency, and the final 100-user/50-tenant
+diagnostic at two alerts/second still returned 195 errors in 382 reads despite
+exact final alert counts. No sustainable maximum or passing target capacity was
+established. All temporarily paused BI containers were restored.
+No DEL gate, immutable release, company-service qualification or production
+readiness is claimed. The existing 250/second sustained and 500/second recovery
+requirements and deferred worker scope remain.
+
+Source publication was subsequently authorized. Coordinated
+`codex/scalability-hardening` branches, immutable dependency pins and the workspace
+manifest are recorded in [publication evidence](evidence/scalability-publication.json).
+Pre-existing unrelated work remains local. No additional tests were run; this is
+source publication, not a merged or qualified deployment.

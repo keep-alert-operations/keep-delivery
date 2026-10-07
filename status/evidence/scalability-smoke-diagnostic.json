@@ -1,0 +1,22 @@
+{
+  "run": "scale-7b94e0605bd54caf8ff67d5c2d0f0d46",
+  "profile": {
+    "seconds": 5,
+    "rate": 2.0,
+    "users": 1,
+    "tenants": 1,
+    "seed": 10,
+    "partitions": 2,
+    "processors": 1,
+    "indexers": 1,
+    "read_pause": 2,
+    "drain_seconds": 60,
+    "output": "status\\evidence\\scalability-smoke-diagnostic.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "passed": false,
+  "failure_type": "RuntimeError",
+  "errors": {
+    "warmup_counts_503_cel_unavailable": 1
+  }
+}

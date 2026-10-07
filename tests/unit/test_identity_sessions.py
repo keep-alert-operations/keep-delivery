@@ -10,7 +10,6 @@ import hashlib
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
-from pathlib import Path
 from uuid import uuid4
 
 import psycopg
@@ -54,7 +53,7 @@ def identity_db():
     params = conninfo_to_dict(admin_dsn)
     params["dbname"] = name
     dsn = make_conninfo(**params)
-    migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
+    migrate(dsn)
     database = Database(dsn, size=4)
     yield database, dsn
     database.close()

@@ -66,6 +66,11 @@ processing workers and Next.js development server still run as local processes
 so the workspace's editable source and installed developer dependencies are used.
 This is a local development setup, not the production OpenShift deployment.
 
+Both local PostgreSQL containers use Compose `init: true` so orphaned container
+exec or healthcheck processes are reaped by the init process instead of the
+database postmaster. Recreating these containers to apply configuration changes
+preserves their named data volumes; do not remove the volumes.
+
 On this workspace, the first startup imports the existing Appchi PostgreSQL
 database from a local logical backup and copies its serving Elasticsearch
 projection. The previous native stores and their files are retained as rollback

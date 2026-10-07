@@ -6,7 +6,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -42,7 +41,7 @@ def maintenance_db():
     params = conninfo_to_dict(admin)
     params["dbname"] = name
     dsn = make_conninfo(**params)
-    migrate(dsn, Path(__file__).resolve().parents[2] / "migrations")
+    migrate(dsn)
     db = Database(dsn)
     yield db, dsn
     db.close()

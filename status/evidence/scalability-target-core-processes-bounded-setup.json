@@ -1,0 +1,161 @@
+{
+  "host_memory_at_start": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1983242240
+  },
+  "run": "scale-d5f11da55cf048eeb65db532f032ea78",
+  "profile": {
+    "seconds": 60,
+    "rate": 83.3333333333333,
+    "users": 100,
+    "tenants": 50,
+    "seed": 5000,
+    "seed_batch": 10,
+    "partitions": 16,
+    "processors": 8,
+    "indexers": 2,
+    "api_pool": 32,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 600,
+    "output": "status\\evidence\\scalability-target-core-processes-bounded-setup.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "setup_index_seconds": 2.754,
+  "setup_api_seconds": 3.388,
+  "host_memory_before_workers": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1787805696
+  },
+  "worker_startup_seconds": 8.621,
+  "stage": "preload",
+  "passed": false,
+  "failure_type": "RuntimeError",
+  "errors": {
+    "authority_probe_ConnectionTimeout": 2,
+    "fixture_worker_forced_stop": 1,
+    "worker_source_KafkaException": 11,
+    "source_apply_LockNotAvailable": 2
+  },
+  "accepted": 0,
+  "offered": 0,
+  "seed_offered": 5000,
+  "seed_accepted": 5000,
+  "worker_memory": [
+    {
+      "pid": 29200,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68317184
+    },
+    {
+      "pid": 39568,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67923968
+    },
+    {
+      "pid": 13060,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68509696
+    },
+    {
+      "pid": 23060,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68431872
+    },
+    {
+      "pid": 23256,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67956736
+    },
+    {
+      "pid": 24820,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67657728
+    },
+    {
+      "pid": 40764,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67977216
+    },
+    {
+      "pid": 14412,
+      "role": "source",
+      "peak_sampled_rss_bytes": 69181440
+    },
+    {
+      "pid": 39196,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 83476480
+    },
+    {
+      "pid": 42564,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 82182144
+    }
+  ],
+  "correctness_passed": false,
+  "source_sql": {},
+  "source_phases_ms": {
+    "seed:source_idle_turn": {
+      "count": 4062,
+      "p50": 107.957,
+      "p99": 885.748,
+      "total_ms": 600632.252
+    },
+    "seed:queue_age": {
+      "count": 3891,
+      "p50": 91256.374,
+      "p99": 248997.768,
+      "total_ms": 397707349.452
+    },
+    "seed:postgres_apply": {
+      "count": 3891,
+      "p50": 227.772,
+      "p99": 3198.204,
+      "total_ms": 1474049.236
+    },
+    "seed:source_active_turn": {
+      "count": 3882,
+      "p50": 353.058,
+      "p99": 5817.303,
+      "total_ms": 2486286.175
+    },
+    "seed:indexer_idle_turn": {
+      "count": 22,
+      "p50": 111.048,
+      "p99": 175.83,
+      "total_ms": 2508.706
+    },
+    "seed:indexer_active_turn": {
+      "count": 198,
+      "p50": 886.2,
+      "p99": 60793.396,
+      "total_ms": 537637.077
+    }
+  },
+  "last_observed_applied": 3887,
+  "failure_detail": "Processing drain exceeded 600s; applied=3887, expected=5000",
+  "migration_head": {
+    "filename": "0050_alert_notes_projection_lookup.sql",
+    "sha256": "a8c22652cc097fe54685841145db8cc63fcf994387afa473780bdb22863d7f33"
+  },
+  "worker_health_sha256": "D80AD32AFD1483F8A451C78CF946A3A6DC28A5EB2A9AB7483682C41582A39599",
+  "cleanup_completed": true,
+  "preload_bound_limitation": "This run applied 600s after seed offering; subsequent harness uses one shared preload deadline.",
+  "host_resource_sample_during_preload": {
+    "free_physical_kib": 981912,
+    "postgres_cpu_percent": 95.69,
+    "postgres_ram_mib": 249.9,
+    "kafka_cpu_percent": 155.4,
+    "kafka_ram_gib": 1.274,
+    "elasticsearch_cpu_percent": 4.55,
+    "elasticsearch_ram_gib": 1.032,
+    "unrelated_bi_running": true,
+    "interpretation": "Single observation, not causal proof"
+  }
+}

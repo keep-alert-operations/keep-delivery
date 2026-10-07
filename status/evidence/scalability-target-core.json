@@ -1,0 +1,27 @@
+{
+  "run": "scale-081d01d1c88140cdbb3bd9644e8037ad",
+  "profile": {
+    "seconds": 60,
+    "rate": 83.3333333333333,
+    "users": 100,
+    "tenants": 50,
+    "seed": 5000,
+    "partitions": 16,
+    "processors": 16,
+    "indexers": 4,
+    "api_pool": 32,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 600,
+    "output": "status\\evidence\\scalability-target-core.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Explicit Connection.execute calls inside source apply; pipeline calls measure enqueue time, excluding sync/transaction boundaries. Overall postgres_apply includes those waits.",
+  "worker_topology": "Independent consumer/database clients in harness threads; API runs as a separate uvicorn process. Consumer count is not a claim of equivalent production pod resources.",
+  "passed": false,
+  "failure_type": "ConnectionTimeout",
+  "errors": {},
+  "source_sql": {},
+  "source_phases_ms": {}
+}

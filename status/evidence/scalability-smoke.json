@@ -1,0 +1,23 @@
+{
+  "run": "scale-5edb842ed5a7403d928dad9149e83c85",
+  "profile": {
+    "seconds": 10,
+    "rate": 10.0,
+    "users": 10,
+    "tenants": 5,
+    "seed": 100,
+    "partitions": 4,
+    "processors": 2,
+    "indexers": 2,
+    "read_pause": 2,
+    "drain_seconds": 60,
+    "output": "status\\evidence\\scalability-smoke.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "passed": false,
+  "failure_type": "RuntimeError",
+  "errors": {
+    "admission_TypeError": 100,
+    "worker_source_clock_untrusted": 2
+  }
+}

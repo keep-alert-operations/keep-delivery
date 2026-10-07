@@ -21,6 +21,10 @@ function Get-OwnedProcess($record) {
 
 Push-Location -LiteralPath $repository
 try {
+    $portJson = & $python scripts/local_v2.py ports
+    if ($LASTEXITCODE -ne 0) { throw 'Invalid local port configuration; no services changed.' }
+    $portValues = $portJson | ConvertFrom-Json
+    foreach ($item in $portValues.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
     $records = if (Test-Path -LiteralPath $processFile) { @(Get-Content -LiteralPath $processFile -Raw | ConvertFrom-Json) } else { @() }
     if ($Action -eq 'Stop') {
         foreach ($record in $records) {

@@ -1,0 +1,56 @@
+{
+  "run": "scale-5f1481420b2a40dba84b976cf82eeb29",
+  "profile": {
+    "seconds": 10,
+    "rate": 10.0,
+    "users": 10,
+    "tenants": 5,
+    "seed": 100,
+    "partitions": 4,
+    "processors": 2,
+    "indexers": 2,
+    "read_pause": 2,
+    "drain_seconds": 60,
+    "output": "status\\evidence\\scalability-smoke-fixed.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "measured_from": "2026-10-06 18:59:39.401960+00:00",
+  "combined_elapsed_seconds": 12.6,
+  "applied_at_combined_end": 132,
+  "applied": 200,
+  "searchable": 200,
+  "final_tenants_exact_counts": 0,
+  "authority": {
+    "receipts": 200,
+    "applied": 200,
+    "rejected": 0
+  },
+  "processing_p99_ms": 19786.604460000002,
+  "pipeline_faults": {
+    "indexer:changed_processing_failed": 1
+  },
+  "watermark_lag_tenants": 0,
+  "search_visibility_sample_p99_ms": 24329.654,
+  "search_visibility_sampled": 100,
+  "search_visibility_observed": 100,
+  "accepted": 100,
+  "offered": 100,
+  "read_requests": 40,
+  "admission_p99_ms": 244.24,
+  "read_p99_ms": 1832.793,
+  "generator_late_p99_ms": 347.198,
+  "errors": {
+    "read_503": 40,
+    "final_exact_counts_mismatch": 5
+  },
+  "worker_turns": {
+    "source": 200,
+    "indexer": 301
+  },
+  "sse_connections": 10,
+  "sse_messages": 43,
+  "pit_closed": 0,
+  "correctness_passed": false,
+  "latency_passed": false,
+  "passed": false
+}

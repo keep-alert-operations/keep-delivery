@@ -1,0 +1,38 @@
+[
+  {
+    "repository": "appchi-contracts",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-domain",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-migrations",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-api",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-ingestion",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-processor",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-correlation",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-indexer",
+    "exit_code": 0
+  },
+  {
+    "repository": "appchi-delivery",
+    "exit_code": 0
+  }
+]

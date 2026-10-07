@@ -1,0 +1,145 @@
+{
+  "run": "scale-9d6510600e4145699e99d4049b139f93",
+  "profile": {
+    "seconds": 5,
+    "rate": 2.0,
+    "users": 1,
+    "tenants": 1,
+    "seed": 10,
+    "partitions": 2,
+    "processors": 1,
+    "indexers": 1,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 60,
+    "output": "status\\evidence\\scalability-smoke-subprocess.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "measured_from": "2026-10-06 19:30:02.808372+00:00",
+  "combined_elapsed_seconds": 6.086,
+  "applied_at_combined_end": 20,
+  "applied": 20,
+  "searchable": 20,
+  "final_tenants_exact_counts": 1,
+  "authority": {
+    "receipts": 20,
+    "applied": 20,
+    "rejected": 0
+  },
+  "processing_p99_ms": 229.66243,
+  "pipeline_faults": {},
+  "watermark_lag_tenants": 1,
+  "search_visibility_sample_p99_ms": 2097.73,
+  "search_visibility_sampled": 10,
+  "search_visibility_observed": 10,
+  "accepted": 10,
+  "offered": 10,
+  "read_requests": 4,
+  "admission_p99_ms": 45.874,
+  "read_p99_ms": 774.961,
+  "generator_late_p99_ms": 16.163,
+  "errors": {},
+  "worker_turns": {
+    "source": 20,
+    "indexer": 36
+  },
+  "sse_connections": 1,
+  "sse_messages": 6,
+  "pit_closed": 0,
+  "source_phases_ms": {
+    "seed:idle_turn": {
+      "count": 81,
+      "p50": 108.48,
+      "p99": 274.95,
+      "total_ms": 8977.66
+    },
+    "seed:assignment": {
+      "count": 1,
+      "p50": 260.457,
+      "p99": 260.457,
+      "total_ms": 260.457
+    },
+    "seed:queue_age": {
+      "count": 10,
+      "p50": 1426.654,
+      "p99": 2104.874,
+      "total_ms": 12460.644
+    },
+    "seed:postgres_apply": {
+      "count": 10,
+      "p50": 160.915,
+      "p99": 356.236,
+      "total_ms": 1661.982
+    },
+    "seed:send_offsets_to_transaction": {
+      "count": 10,
+      "p50": 6.512,
+      "p99": 17.655,
+      "total_ms": 75.48
+    },
+    "seed:commit_transaction": {
+      "count": 10,
+      "p50": 5.692,
+      "p99": 25.614,
+      "total_ms": 82.729
+    },
+    "seed:applied_turn": {
+      "count": 10,
+      "p50": 214.808,
+      "p99": 540.577,
+      "total_ms": 2296.839
+    },
+    "seed:index_handler": {
+      "count": 3,
+      "p50": 568.969,
+      "p99": 888.706,
+      "total_ms": 1571.67
+    },
+    "measured:queue_age": {
+      "count": 10,
+      "p50": 6.525,
+      "p99": 15.526,
+      "total_ms": 71.131
+    },
+    "measured:postgres_apply": {
+      "count": 10,
+      "p50": 225.22,
+      "p99": 259.35,
+      "total_ms": 1928.369
+    },
+    "measured:send_offsets_to_transaction": {
+      "count": 10,
+      "p50": 9.488,
+      "p99": 37.035,
+      "total_ms": 125.921
+    },
+    "measured:commit_transaction": {
+      "count": 10,
+      "p50": 6.575,
+      "p99": 49.612,
+      "total_ms": 106.501
+    },
+    "measured:applied_turn": {
+      "count": 10,
+      "p50": 368.272,
+      "p99": 472.736,
+      "total_ms": 3422.709
+    },
+    "measured:idle_turn": {
+      "count": 32,
+      "p50": 108.676,
+      "p99": 114.772,
+      "total_ms": 3479.824
+    },
+    "measured:index_handler": {
+      "count": 5,
+      "p50": 587.334,
+      "p99": 785.111,
+      "total_ms": 2944.229
+    }
+  },
+  "correctness_passed": true,
+  "latency_passed": true,
+  "passed": true
+}

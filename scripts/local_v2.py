@@ -22,9 +22,36 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".local/operators"
-KONG = "https://localhost:58447"
+PORT_DEFAULTS = {"kong_admin": 58447, "grafana": 58448}
+PORT_ENVIRONMENT = {
+    "kong_admin": "APPCHI_LOCAL_KONG_ADMIN_PORT",
+    "grafana": "APPCHI_LOCAL_GRAFANA_PORT",
+}
+# Other listeners in the unified local stack keep their existing contracts.
+FIXED_PORTS = {3443, 55433, 56380, 58000, 58001, 58443, 58444, 58445, 58446, 59201, 19093}
+
+
+def load_ports(path=None):
+    path = STATE / "ports.json" if path is None else path
+    values = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
+    if not isinstance(values, dict) or values.keys() - PORT_DEFAULTS.keys():
+        raise ValueError("Local ports accepts only kong_admin and grafana keys")
+    ports = {**PORT_DEFAULTS, **values}
+    if any(type(port) is not int or not 1024 <= port <= 65535 for port in ports.values()):
+        raise ValueError("Local ports must be integer TCP ports from 1024 to 65535")
+    if len(set(ports.values())) != len(ports) or set(ports.values()) & FIXED_PORTS:
+        raise ValueError("Local ports must be distinct from each other and fixed local listeners")
+    return ports
+
+
+def compose_ports():
+    return {PORT_ENVIRONMENT[key]: str(value) for key, value in load_ports().items()}
+
+
+PORTS = load_ports()
+KONG = f"https://localhost:{PORTS['kong_admin']}"
 GATEWAY = "https://127.0.0.1:58445"
-GRAFANA = "https://localhost:58448"
+GRAFANA = f"https://localhost:{PORTS['grafana']}"
 ORIGIN = "https://localhost:3443"
 MEMBER = "local-kong-1"
 REASON = "local_kong_grafana_verified"
@@ -677,6 +704,7 @@ def main():
     parser.add_argument(
         "action",
         choices=(
+            "ports",
             "prepare",
             "configure",
             "private",
@@ -686,7 +714,9 @@ def main():
         ),
     )
     args = parser.parse_args()
-    if args.action in {"private", "proof", "worker"}:
+    if args.action == "ports":
+        print(json.dumps(compose_ports()))
+    elif args.action in {"private", "proof", "worker"}:
         serve(args.action)
     else:
         {"prepare": prepare, "configure": configure, "setup-operator": setup_operator}[
