@@ -21,7 +21,13 @@ def pre_cutover_release_compatibility(real_db):
     # Exercise retained pre-0046 history semantics. Current source-driven behavior
     # is covered in test_source_driven_maintenance.py, which does not use this fixture.
     with real_db.transaction() as conn:
+        previous = conn.execute("SELECT source_release_since FROM application_scope WHERE singleton").fetchone()["source_release_since"]
         conn.execute("UPDATE application_scope SET source_release_since=clock_timestamp()+interval '100 years'")
+    try:
+        yield
+    finally:
+        with real_db.transaction() as conn:
+            conn.execute("UPDATE application_scope SET source_release_since=%s WHERE singleton", (previous,))
 
 
 CAPACITY = {**TEST_CAPACITY, "maintenance_max_work": 10000,

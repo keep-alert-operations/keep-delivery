@@ -1,0 +1,326 @@
+{
+  "host_memory_at_start": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1558261760
+  },
+  "run": "scale-71605850839e4bc9857716c38f337b43",
+  "profile": {
+    "seconds": 30,
+    "rate": 2.0,
+    "users": 100,
+    "tenants": 50,
+    "seed": 50,
+    "seed_batch": 10,
+    "seed_rate": 2.0,
+    "preload_seconds": 600,
+    "partitions": 8,
+    "processors": 4,
+    "indexers": 2,
+    "api_pool": 32,
+    "response_timings": true,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": false,
+    "read_pause": 2.0,
+    "drain_seconds": 120,
+    "output": "status\\evidence\\scalability-baseline-100-users-clock-offload.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "migration_head": {
+    "filename": "0050_alert_notes_projection_lookup.sql",
+    "sha256": "a8c22652cc097fe54685841145db8cc63fcf994387afa473780bdb22863d7f33"
+  },
+  "worker_health_sha256": "8a9094785272b4d6fa210f58e5cf456b39392dd6a1bcbc87272273cb2dac12a3",
+  "setup_index_seconds": 0.393,
+  "response_timing_scope": "Test-only outer ASGI wrapper header measures scope entry to response start; client headers/complete durations also include transport, scheduling and body delivery. Production application, lifespan, authorization and budgets are unchanged.",
+  "setup_api_seconds": 1.74,
+  "host_memory_before_workers": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1472606208
+  },
+  "worker_startup_seconds": 3.879,
+  "stage": "drain_and_verify",
+  "last_observed_applied": 110,
+  "last_observed_searchable": 50,
+  "preload_elapsed_seconds": 29.115,
+  "startup_seconds": 37.844,
+  "startup_read_p99_ms": 3026.996,
+  "startup_ready_users": 100,
+  "startup_pit_closed": 0,
+  "minimum_active_sse": 100,
+  "measured_from": "2026-10-06 22:25:50.980841+00:00",
+  "host_memory_at_measurement": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 951799808
+  },
+  "arrivals_complete_seconds": 29.535,
+  "applied_at_arrivals_complete": 109,
+  "combined_elapsed_seconds": 44.258,
+  "applied_at_combined_end": 110,
+  "host_memory_after_measurement": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 685019136
+  },
+  "applied": 110,
+  "searchable": 110,
+  "final_tenants_exact_counts": 50,
+  "authority": {
+    "receipts": 110,
+    "applied": 110,
+    "rejected": 0
+  },
+  "processing_p99_ms": 397.2888699999992,
+  "pipeline_faults": {},
+  "watermark_lag_tenants": 0,
+  "search_visibility_sample_p99_ms": 4894.921,
+  "search_visibility_sampled": 60,
+  "search_visibility_observed": 60,
+  "worker_memory": [
+    {
+      "pid": 27316,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62418944
+    },
+    {
+      "pid": 23128,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62218240
+    },
+    {
+      "pid": 24956,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62275584
+    },
+    {
+      "pid": 38456,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62382080
+    },
+    {
+      "pid": 32940,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 74768384
+    },
+    {
+      "pid": 29128,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 74747904
+    }
+  ],
+  "accepted": 60,
+  "offered": 60,
+  "read_requests": 382,
+  "admission_p99_ms": 188.732,
+  "read_p99_ms": 19459.97,
+  "generator_late_p99_ms": 56.44,
+  "errors": {
+    "read_503_request_timeout": 167,
+    "read_503_clock_untrusted": 28
+  },
+  "worker_turns": {
+    "source": 110,
+    "indexer": 110
+  },
+  "sse_connections": 100,
+  "sse_messages": 224,
+  "pit_closed": 0,
+  "source_phases_ms": {
+    "seed:source_idle_turn": {
+      "count": 2160,
+      "p50": 107.027,
+      "p99": 114.289,
+      "total_ms": 234278.212
+    },
+    "seed:queue_age": {
+      "count": 50,
+      "p50": 6.441,
+      "p99": 4039.424,
+      "total_ms": 20471.186
+    },
+    "seed:postgres_apply": {
+      "count": 50,
+      "p50": 97.95,
+      "p99": 303.651,
+      "total_ms": 5653.508
+    },
+    "seed:source_active_turn": {
+      "count": 50,
+      "p50": 179.203,
+      "p99": 421.122,
+      "total_ms": 9973.926
+    },
+    "measured:source_idle_turn": {
+      "count": 2152,
+      "p50": 106.585,
+      "p99": 114.486,
+      "total_ms": 229641.299
+    },
+    "measured:queue_age": {
+      "count": 60,
+      "p50": 8.447,
+      "p99": 52.529,
+      "total_ms": 672.907
+    },
+    "measured:postgres_apply": {
+      "count": 60,
+      "p50": 133.705,
+      "p99": 550.243,
+      "total_ms": 9598.642
+    },
+    "measured:source_active_turn": {
+      "count": 60,
+      "p50": 241.884,
+      "p99": 626.255,
+      "total_ms": 16373.016
+    },
+    "seed:indexer_idle_turn": {
+      "count": 321,
+      "p50": 107.726,
+      "p99": 115.206,
+      "total_ms": 34627.983
+    },
+    "seed:indexer_active_turn": {
+      "count": 35,
+      "p50": 889.426,
+      "p99": 1260.855,
+      "total_ms": 29559.511
+    },
+    "measured:indexer_idle_turn": {
+      "count": 261,
+      "p50": 108.153,
+      "p99": 115.509,
+      "total_ms": 28178.702
+    },
+    "measured:indexer_active_turn": {
+      "count": 53,
+      "p50": 772.108,
+      "p99": 1324.82,
+      "total_ms": 39074.3
+    }
+  },
+  "correctness_passed": false,
+  "latency_passed": false,
+  "passed": false,
+  "read_diagnostics": {
+    "startup_read:feed": {
+      "statuses": {
+        "200": 100
+      },
+      "errors": {},
+      "missing_asgi_header": 0,
+      "timings": {
+        "client_headers_ms": {
+          "count": 100,
+          "p50": 1737.993,
+          "p99": 3183.494
+        },
+        "client_complete_ms": {
+          "count": 100,
+          "p50": 1741.799,
+          "p99": 3186.776
+        },
+        "asgi_response_start_ms": {
+          "count": 100,
+          "p50": 1725.448,
+          "p99": 3167.808
+        }
+      }
+    },
+    "startup_read:count": {
+      "statuses": {
+        "200": 100
+      },
+      "errors": {},
+      "missing_asgi_header": 0,
+      "timings": {
+        "client_headers_ms": {
+          "count": 100,
+          "p50": 654.294,
+          "p99": 1130.787
+        },
+        "client_complete_ms": {
+          "count": 100,
+          "p50": 664.977,
+          "p99": 1139.475
+        },
+        "asgi_response_start_ms": {
+          "count": 100,
+          "p50": 645.883,
+          "p99": 1113.202
+        }
+      }
+    },
+    "read:feed": {
+      "statuses": {
+        "200": 42,
+        "503": 149
+      },
+      "errors": {
+        "request_timeout": 149
+      },
+      "missing_asgi_header": 0,
+      "timings": {
+        "client_headers_ms": {
+          "count": 191,
+          "p50": 10127.528,
+          "p99": 19514.606
+        },
+        "client_complete_ms": {
+          "count": 191,
+          "p50": 10159.223,
+          "p99": 19522.949
+        },
+        "asgi_response_start_ms": {
+          "count": 191,
+          "p50": 10009.469,
+          "p99": 10234.25
+        }
+      }
+    },
+    "read:count": {
+      "statuses": {
+        "503": 46,
+        "200": 145
+      },
+      "errors": {
+        "request_timeout": 18,
+        "clock_untrusted": 28
+      },
+      "missing_asgi_header": 0,
+      "timings": {
+        "client_headers_ms": {
+          "count": 191,
+          "p50": 7909.425,
+          "p99": 10394.255
+        },
+        "client_complete_ms": {
+          "count": 191,
+          "p50": 7970.914,
+          "p99": 10415.181
+        },
+        "asgi_response_start_ms": {
+          "count": 191,
+          "p50": 7888.818,
+          "p99": 10036.056
+        }
+      }
+    }
+  },
+  "seed_offered": 50,
+  "seed_accepted": 50,
+  "source_sql": {},
+  "cleanup_completed": true,
+  "environment_notes": {
+    "bi_containers": "Three original BI containers running",
+    "services": "Appchi core healthy; unused Keycloak/KongDB stopped before this run",
+    "deadlines": "Production request/admission/compiler limits unchanged",
+    "clock_followup": "This run used offloaded clock validation with frozen request received_at; a subsequent deterministic race fix is separate evidence"
+  },
+  "diagnostic_source_sha256": {
+    "qualification/scalability_load.py": "9799054d968a2f013a0f8566bc286883c6cfae3a75cc55bb2313103c457dfef6",
+    "qualification/scalability_api.py": "9a06bf4811123c1b4be366599fc258954ae666839e039a56cc11829b494d8609"
+  }
+}

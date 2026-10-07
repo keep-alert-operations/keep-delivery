@@ -1,0 +1,214 @@
+{
+  "host_memory_at_start": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 573960192
+  },
+  "run": "scale-efce520f0a9e4c069a4ed133372eb977",
+  "profile": {
+    "seconds": 30,
+    "rate": 2.0,
+    "users": 100,
+    "tenants": 50,
+    "seed": 50,
+    "seed_batch": 10,
+    "seed_rate": 2.0,
+    "preload_seconds": 600,
+    "partitions": 8,
+    "processors": 4,
+    "indexers": 2,
+    "api_pool": 32,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": false,
+    "read_pause": 2.0,
+    "drain_seconds": 120,
+    "output": "status\\evidence\\scalability-baseline-100-users-paced.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "migration_head": {
+    "filename": "0050_alert_notes_projection_lookup.sql",
+    "sha256": "a8c22652cc097fe54685841145db8cc63fcf994387afa473780bdb22863d7f33"
+  },
+  "worker_health_sha256": "8a9094785272b4d6fa210f58e5cf456b39392dd6a1bcbc87272273cb2dac12a3",
+  "setup_index_seconds": 0.641,
+  "setup_api_seconds": 3.593,
+  "host_memory_before_workers": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 510767104
+  },
+  "worker_startup_seconds": 4.397,
+  "stage": "drain_and_verify",
+  "last_observed_applied": 110,
+  "last_observed_searchable": 50,
+  "preload_elapsed_seconds": 28.089,
+  "startup_seconds": 38.307,
+  "startup_read_p99_ms": 2762.992,
+  "startup_ready_users": 100,
+  "startup_pit_closed": 0,
+  "minimum_active_sse": 100,
+  "measured_from": "2026-10-06 22:11:42.358586+00:00",
+  "host_memory_at_measurement": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 366657536
+  },
+  "arrivals_complete_seconds": 29.533,
+  "applied_at_arrivals_complete": 109,
+  "combined_elapsed_seconds": 46.219,
+  "applied_at_combined_end": 110,
+  "host_memory_after_measurement": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 807395328
+  },
+  "applied": 110,
+  "searchable": 110,
+  "final_tenants_exact_counts": 50,
+  "authority": {
+    "receipts": 110,
+    "applied": 110,
+    "rejected": 0
+  },
+  "processing_p99_ms": 364.14545999999984,
+  "pipeline_faults": {},
+  "watermark_lag_tenants": 0,
+  "search_visibility_sample_p99_ms": 4467.602,
+  "search_visibility_sampled": 60,
+  "search_visibility_observed": 60,
+  "worker_memory": [
+    {
+      "pid": 44092,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62484480
+    },
+    {
+      "pid": 23984,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62226432
+    },
+    {
+      "pid": 40056,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62246912
+    },
+    {
+      "pid": 24052,
+      "role": "source",
+      "peak_sampled_rss_bytes": 62484480
+    },
+    {
+      "pid": 34328,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 74608640
+    },
+    {
+      "pid": 46304,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 74772480
+    }
+  ],
+  "accepted": 60,
+  "offered": 60,
+  "read_requests": 400,
+  "admission_p99_ms": 156.791,
+  "read_p99_ms": 19071.516,
+  "generator_late_p99_ms": 61.104,
+  "errors": {
+    "read_503_request_timeout": 197
+  },
+  "worker_turns": {
+    "source": 110,
+    "indexer": 110
+  },
+  "sse_connections": 100,
+  "sse_messages": 234,
+  "pit_closed": 0,
+  "source_phases_ms": {
+    "seed:source_idle_turn": {
+      "count": 2142,
+      "p50": 106.981,
+      "p99": 114.889,
+      "total_ms": 232355.612
+    },
+    "seed:queue_age": {
+      "count": 50,
+      "p50": 8.084,
+      "p99": 3600.833,
+      "total_ms": 17016.327
+    },
+    "seed:postgres_apply": {
+      "count": 50,
+      "p50": 104.002,
+      "p99": 334.96,
+      "total_ms": 5739.266
+    },
+    "seed:source_active_turn": {
+      "count": 50,
+      "p50": 179.343,
+      "p99": 546.345,
+      "total_ms": 9897.138
+    },
+    "measured:source_idle_turn": {
+      "count": 2182,
+      "p50": 106.689,
+      "p99": 114.64,
+      "total_ms": 233111.667
+    },
+    "measured:queue_age": {
+      "count": 60,
+      "p50": 9.359,
+      "p99": 47.771,
+      "total_ms": 724.728
+    },
+    "measured:postgres_apply": {
+      "count": 60,
+      "p50": 137.225,
+      "p99": 415.096,
+      "total_ms": 9717.995
+    },
+    "measured:source_active_turn": {
+      "count": 60,
+      "p50": 255.592,
+      "p99": 606.46,
+      "total_ms": 16875.073
+    },
+    "seed:indexer_idle_turn": {
+      "count": 316,
+      "p50": 107.365,
+      "p99": 115.868,
+      "total_ms": 34089.93
+    },
+    "seed:indexer_active_turn": {
+      "count": 37,
+      "p50": 880.438,
+      "p99": 1011.381,
+      "total_ms": 30186.59
+    },
+    "measured:indexer_idle_turn": {
+      "count": 257,
+      "p50": 108.033,
+      "p99": 115.498,
+      "total_ms": 27676.522
+    },
+    "measured:indexer_active_turn": {
+      "count": 51,
+      "p50": 774.091,
+      "p99": 1485.671,
+      "total_ms": 41430.13
+    }
+  },
+  "correctness_passed": false,
+  "latency_passed": false,
+  "passed": false,
+  "seed_offered": 50,
+  "seed_accepted": 50,
+  "source_sql": {},
+  "cleanup_completed": true,
+  "environment_notes": {
+    "bi_containers": "Three original BI containers running; no pause for this baseline",
+    "services": "Lead verified PostgreSQL init-enabled and restarted Appchi Kafka/Elasticsearch before run",
+    "deadlines": "Application/compiler/admission acceptance unchanged"
+  },
+  "harness_sha256": "0666c7c27e144259d8d5b91597bca49867421249df66ecc304874a2ef4a8e82a"
+}

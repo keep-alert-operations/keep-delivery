@@ -18,6 +18,10 @@ function Owned($record) {
 }
 Push-Location -LiteralPath $repository
 try {
+    $portJson = & $python scripts/local_v2.py ports
+    if ($LASTEXITCODE -ne 0) { throw 'Invalid local port configuration; no services changed.' }
+    $portValues = $portJson | ConvertFrom-Json
+    foreach ($item in $portValues.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
     $records = if (Test-Path -LiteralPath $recordFile) { @(Get-Content -LiteralPath $recordFile -Raw | ConvertFrom-Json) } else { @() }
     if ($Action -eq 'Start' -and @($records | Where-Object { $_.Role -eq 'worker' -and (Owned $_) }).Count) { $Restart = $true }
     if ($Action -eq 'Stop' -or $Restart) {

@@ -5,7 +5,6 @@ from uuid import uuid4
 from psycopg.types.json import Jsonb
 import pytest
 
-from appchi.configuration import count_routes
 from test_product import browser  # noqa: F401 -- shared authenticated session fixture
 
 pytestmark = pytest.mark.integration
@@ -107,7 +106,7 @@ def environment(request, real_db, tenant, monkeypatch):
             (tenant, actor),
         )
     elastic = SearchResponses()
-    monkeypatch.setattr(count_routes, "Elasticsearch", lambda *args, **kwargs: elastic)
+    client.app.state.search_client = elastic
     return client, actor, tenant, preset, dashboard.json()["data"], elastic
 
 

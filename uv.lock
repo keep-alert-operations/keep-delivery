@@ -103,7 +103,7 @@ wheels = [
 [[package]]
 name = "appchi-api"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-api.git?rev=0b8a1a351378d0a7952a405b6fac4db1d03c6096#0b8a1a351378d0a7952a405b6fac4db1d03c6096" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-api.git?rev=e2de23d0b70bb52f8180eebb396d927567705eaf#e2de23d0b70bb52f8180eebb396d927567705eaf" }
 dependencies = [
     { name = "appchi-domain", extra = ["runtime"] },
     { name = "uvicorn" },
@@ -112,7 +112,7 @@ dependencies = [
 [[package]]
 name = "appchi-contracts"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-contracts.git?rev=42107e3814a07518878291929740f5fa120fbff1#42107e3814a07518878291929740f5fa120fbff1" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-contracts.git?rev=eb555e8bd307c2dbc3f20a9134351696a4f5eba2#eb555e8bd307c2dbc3f20a9134351696a4f5eba2" }
 dependencies = [
     { name = "pydantic" },
 ]
@@ -120,7 +120,7 @@ dependencies = [
 [[package]]
 name = "appchi-correlation"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-correlation.git?rev=ad68f9f4838848f5d318888be4b0e067d5b51e5b#ad68f9f4838848f5d318888be4b0e067d5b51e5b" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-correlation.git?rev=7a408f990021c2f4531c1cd90c52641c80e1bc90#7a408f990021c2f4531c1cd90c52641c80e1bc90" }
 dependencies = [
     { name = "appchi-domain", extra = ["runtime"] },
 ]
@@ -149,12 +149,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "appchi-api", git = "https://github.com/appchi-alert-operations/appchi-api.git?rev=0b8a1a351378d0a7952a405b6fac4db1d03c6096" },
-    { name = "appchi-correlation", git = "https://github.com/appchi-alert-operations/appchi-correlation.git?rev=ad68f9f4838848f5d318888be4b0e067d5b51e5b" },
-    { name = "appchi-indexer", git = "https://github.com/appchi-alert-operations/appchi-indexer.git?rev=ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3" },
-    { name = "appchi-ingestion", git = "https://github.com/appchi-alert-operations/appchi-ingestion.git?rev=0d2ee23a7940c2c0866498aa0646587f101651bc" },
-    { name = "appchi-migrations", git = "https://github.com/appchi-alert-operations/appchi-migrations.git?rev=1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236" },
-    { name = "appchi-processor", git = "https://github.com/appchi-alert-operations/appchi-processor.git?rev=4f7a3fc81483d193033c3eec9f54f6aaeb6a5392" },
+    { name = "appchi-api", git = "https://github.com/appchi-alert-operations/appchi-api.git?rev=e2de23d0b70bb52f8180eebb396d927567705eaf" },
+    { name = "appchi-correlation", git = "https://github.com/appchi-alert-operations/appchi-correlation.git?rev=7a408f990021c2f4531c1cd90c52641c80e1bc90" },
+    { name = "appchi-indexer", git = "https://github.com/appchi-alert-operations/appchi-indexer.git?rev=a56e94c8f07c6d98342c809e05ebc8b5ac780538" },
+    { name = "appchi-ingestion", git = "https://github.com/appchi-alert-operations/appchi-ingestion.git?rev=3515ac96bd1958483b5583d59afc13d9782e6111" },
+    { name = "appchi-migrations", git = "https://github.com/appchi-alert-operations/appchi-migrations.git?rev=016d0f554de570a96e4da1cf054c9b1c70b5c768" },
+    { name = "appchi-processor", git = "https://github.com/appchi-alert-operations/appchi-processor.git?rev=c4bb2225505453b7fd6bfea20283355da79958cf" },
 ]
 
 [package.metadata.requires-dev]
@@ -169,7 +169,7 @@ dev = [
 [[package]]
 name = "appchi-domain"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-domain.git?rev=830d4f65556d93692cca60695fafb522769fe122#830d4f65556d93692cca60695fafb522769fe122" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-domain.git?rev=b8461620318c5dff6197094cfc9ea967c7073b01#b8461620318c5dff6197094cfc9ea967c7073b01" }
 dependencies = [
     { name = "appchi-contracts" },
     { name = "cryptography" },
@@ -194,7 +194,7 @@ runtime = [
 [[package]]
 name = "appchi-indexer"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-indexer.git?rev=ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3#ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-indexer.git?rev=a56e94c8f07c6d98342c809e05ebc8b5ac780538#a56e94c8f07c6d98342c809e05ebc8b5ac780538" }
 dependencies = [
     { name = "appchi-domain", extra = ["runtime"] },
 ]
@@ -202,7 +202,7 @@ dependencies = [
 [[package]]
 name = "appchi-ingestion"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-ingestion.git?rev=0d2ee23a7940c2c0866498aa0646587f101651bc#0d2ee23a7940c2c0866498aa0646587f101651bc" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-ingestion.git?rev=3515ac96bd1958483b5583d59afc13d9782e6111#3515ac96bd1958483b5583d59afc13d9782e6111" }
 dependencies = [
     { name = "appchi-domain" },
     { name = "confluent-kafka" },
@@ -212,7 +212,7 @@ dependencies = [
 [[package]]
 name = "appchi-migrations"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-migrations.git?rev=1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236#1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-migrations.git?rev=016d0f554de570a96e4da1cf054c9b1c70b5c768#016d0f554de570a96e4da1cf054c9b1c70b5c768" }
 dependencies = [
     { name = "alembic" },
     { name = "psycopg", extra = ["binary"] },
@@ -222,7 +222,7 @@ dependencies = [
 [[package]]
 name = "appchi-processor"
 version = "0.1.0"
-source = { git = "https://github.com/appchi-alert-operations/appchi-processor.git?rev=4f7a3fc81483d193033c3eec9f54f6aaeb6a5392#4f7a3fc81483d193033c3eec9f54f6aaeb6a5392" }
+source = { git = "https://github.com/appchi-alert-operations/appchi-processor.git?rev=c4bb2225505453b7fd6bfea20283355da79958cf#c4bb2225505453b7fd6bfea20283355da79958cf" }
 dependencies = [
     { name = "appchi-domain", extra = ["runtime"] },
 ]

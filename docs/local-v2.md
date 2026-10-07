@@ -43,6 +43,39 @@ recovery; setup does not silently adopt or recreate an existing remote fleet.
 | Kong Admin API | `https://localhost:58447` |
 | Dedicated Grafana | `https://localhost:58448` |
 
+The table shows the defaults. If Windows reserves either host port, choose two
+unused loopback ports outside `netsh interface ipv4 show excludedportrange protocol=tcp`
+and the corresponding IPv6 ranges. Persist only the needed overrides in ignored
+`.local/operators/ports.json`, for example:
+
+```json
+{"kong_admin":58647,"grafana":58648}
+```
+
+Only these two keys are accepted, with distinct integer ports from 1024 through
+65535 that do not collide with the other fixed local listeners. Both launchers
+load the file before any service action; Python configuration and verification
+read the same values. Missing keys retain the defaults. TLS and loopback binding
+remain unchanged. For direct Compose commands, load the validated environment
+first in the same PowerShell session:
+
+```powershell
+$ports = & .venv/Scripts/python.exe scripts/local_v2.py ports
+if ($LASTEXITCODE -ne 0) { throw 'Invalid local port configuration' }
+($ports | ConvertFrom-Json).PSObject.Properties | ForEach-Object {
+    [Environment]::SetEnvironmentVariable($_.Name, [string]$_.Value, 'Process')
+}
+```
+
+After changing ports on an existing installation, start the containers with those
+values, run `.venv/Scripts/python.exe scripts/local_v2.py configure` to refresh
+the verified binding, then restart the managed API with
+`scripts/local-identity.ps1 -Action Start -Restart` before
+`scripts/local-v2.ps1 -Action Start -Restart`. Existing API processes and helper
+processes do not hot-load the binding or ports file. Preserve credentials and
+volumes throughout; deleting the overrides restores the documented defaults on
+the next coordinated restart.
+
 Published container ports are bound to loopback. Kong's community Admin API is
 accessible to local processes; this is an isolated development control plane.
 Grafana has a generated bootstrap password and a dedicated provisioning service

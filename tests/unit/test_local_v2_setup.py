@@ -1,7 +1,9 @@
 """Development bootstrap cannot change nonlocal/recovery authority or leak probe keys."""
 
 import importlib
+import json
 from pathlib import Path
+import runpy
 import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -14,6 +16,68 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 local = importlib.import_module("local_v2")
 verification = importlib.import_module("local_v2_verify")
+
+
+def test_local_ports_default_and_partial_override(tmp_path):
+    path = tmp_path / "ports.json"
+    assert local.load_ports(path) == {"kong_admin": 58447, "grafana": 58448}
+    path.write_text('{"kong_admin":58647}', encoding="utf-8")
+    assert local.load_ports(path) == {"kong_admin": 58647, "grafana": 58448}
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        [],
+        {"kong": 58647},
+        {"kong_admin": True},
+        {"grafana": "58648"},
+        {"grafana": None},
+        {"grafana": 1023},
+        {"grafana": 65536},
+        {"grafana": 58447},
+        {"grafana": 58445},
+    ],
+)
+def test_local_ports_reject_invalid_or_conflicting_configuration(tmp_path, value):
+    path = tmp_path / "ports.json"
+    path.write_text(json.dumps(value), encoding="utf-8")
+    with pytest.raises(ValueError):
+        local.load_ports(path)
+
+
+def test_local_ports_malformed_json_fails_closed(tmp_path):
+    path = tmp_path / "ports.json"
+    path.write_text('{"grafana":', encoding="utf-8")
+    with pytest.raises(ValueError):
+        local.load_ports(path)
+
+
+def test_persisted_ports_drive_python_and_compose_endpoints(tmp_path, monkeypatch):
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    copied = scripts / "local_v2.py"
+    copied.write_bytes(Path(local.__file__).read_bytes())
+    state = tmp_path / ".local/operators"
+    state.mkdir(parents=True)
+    (state / "ports.json").write_text(
+        '{"kong_admin":58647,"grafana":58648}', encoding="utf-8-sig"
+    )
+    # A stale shell variable must not split Python and launcher configuration.
+    monkeypatch.setenv("APPCHI_LOCAL_KONG_ADMIN_PORT", "60000")
+    loaded = runpy.run_path(str(copied))
+    assert loaded["KONG"] == "https://localhost:58647"
+    assert loaded["GRAFANA"] == "https://localhost:58648"
+    assert loaded["compose_ports"]() == {
+        "APPCHI_LOCAL_KONG_ADMIN_PORT": "58647",
+        "APPCHI_LOCAL_GRAFANA_PORT": "58648",
+    }
+    compose = (local.ROOT / "deploy/local/compose.yaml").read_text()
+    assert "127.0.0.1:${APPCHI_LOCAL_KONG_ADMIN_PORT:-58447}:8444" in compose
+    assert "127.0.0.1:${APPCHI_LOCAL_GRAFANA_PORT:-58448}:3000" in compose
+    for launcher in ("local-v2.ps1", "local-identity.ps1"):
+        source = (local.ROOT / "scripts" / launcher).read_text()
+        assert source.index("scripts/local_v2.py ports") < source.index("docker compose")
 
 
 @pytest.mark.parametrize(

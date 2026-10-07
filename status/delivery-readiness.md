@@ -125,3 +125,26 @@ qualify combined API SQL/Redis load, replica duplication, failures and drained
 shutdown. Existing two-second PostgreSQL reconciliation and tenant/session guards
 remain. Local checks are in [worker-scope evidence](../docs/worker-scope-implementation.md);
 no DEL item is closed by this scope change alone.
+
+## Scalability handoff — 2026-10-07
+
+Application corrections and local verification for 5,000 deliveries/minute,
+100 active users and 50 tenants are recorded in the
+[implementation report](../qualification/scalability-implementation-2026-10-06.md).
+The combination remains uncommitted editable source, with migrations 0048 through 0050
+and additive API contracts. Release preparation must publish immutable artifacts
+and update all affected consumer pins and the delivery manifest together.
+Local unit/component/build evidence does not close DEL-03 or other production
+gates. Testing stopped at the user's request. Requested-scale latency did not
+pass; even the final low-arrival-rate 100-user diagnostic had read failures.
+The final clock race correction has focused regression evidence but no later
+load run. Controlled browser tests passed; planned final real-browser identity
+and alert workflows were not run. Local startup and 17 gateway checks completed.
+All three temporarily paused BI containers were restored. See the report for
+exact suite counts, revision limits and remaining retained-data growth cases.
+
+Source publication was subsequently authorized. Coordinated
+`codex/scalability-hardening` branches, immutable dependency pins and the workspace
+manifest are recorded in [publication evidence](evidence/scalability-publication.json).
+Pre-existing unrelated work remains local. No additional tests were run; this is
+source publication, not a merged or qualified deployment.

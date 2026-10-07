@@ -1,0 +1,135 @@
+{
+  "host_memory_at_start": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 2067828736
+  },
+  "run": "scale-4689bc67e9ab4334a955a1b7d2489fd4",
+  "profile": {
+    "seconds": 60,
+    "rate": 83.3333333333333,
+    "users": 100,
+    "tenants": 50,
+    "seed": 5000,
+    "partitions": 16,
+    "processors": 8,
+    "indexers": 2,
+    "api_pool": 32,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 600,
+    "output": "status\\evidence\\scalability-target-core-processes-staged-start.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "setup_index_seconds": 3.958,
+  "setup_api_seconds": 5.837,
+  "host_memory_before_workers": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1940258816
+  },
+  "worker_startup_seconds": 9.384,
+  "stage": "preload",
+  "passed": false,
+  "failure_type": "ConnectionTimeout",
+  "errors": {
+    "source_apply_LockNotAvailable": 1
+  },
+  "accepted": 0,
+  "offered": 0,
+  "worker_memory": [
+    {
+      "pid": 8080,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68284416
+    },
+    {
+      "pid": 19772,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68136960
+    },
+    {
+      "pid": 15044,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68177920
+    },
+    {
+      "pid": 38548,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67911680
+    },
+    {
+      "pid": 24900,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67502080
+    },
+    {
+      "pid": 4228,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67493888
+    },
+    {
+      "pid": 33300,
+      "role": "source",
+      "peak_sampled_rss_bytes": 67735552
+    },
+    {
+      "pid": 5828,
+      "role": "source",
+      "peak_sampled_rss_bytes": 68079616
+    },
+    {
+      "pid": 18916,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 75108352
+    },
+    {
+      "pid": 24416,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 74723328
+    }
+  ],
+  "correctness_passed": false,
+  "source_sql": {},
+  "source_phases_ms": {
+    "seed:source_idle_turn": {
+      "count": 345,
+      "p50": 107.608,
+      "p99": 1179.055,
+      "total_ms": 56634.58
+    },
+    "seed:queue_age": {
+      "count": 249,
+      "p50": 13394.15,
+      "p99": 32350.084,
+      "total_ms": 3309461.082
+    },
+    "seed:postgres_apply": {
+      "count": 249,
+      "p50": 442.62,
+      "p99": 8067.771,
+      "total_ms": 170301.068
+    },
+    "seed:source_active_turn": {
+      "count": 248,
+      "p50": 739.578,
+      "p99": 8920.712,
+      "total_ms": 313990.506
+    },
+    "seed:indexer_idle_turn": {
+      "count": 7,
+      "p50": 108.519,
+      "p99": 210.597,
+      "total_ms": 851.485
+    },
+    "seed:indexer_active_turn": {
+      "count": 7,
+      "p50": 2208.093,
+      "p99": 8399.122,
+      "total_ms": 23000.742
+    }
+  }
+}

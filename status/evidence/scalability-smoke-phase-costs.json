@@ -1,0 +1,231 @@
+{
+  "run": "scale-ce03f71821ac4a99821ce3548fa4c856",
+  "profile": {
+    "seconds": 10,
+    "rate": 10.0,
+    "users": 10,
+    "tenants": 5,
+    "seed": 100,
+    "partitions": 4,
+    "processors": 2,
+    "indexers": 2,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 120,
+    "output": "status\\evidence\\scalability-smoke-phase-costs.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "measured_from": "2026-10-06 19:33:10.069355+00:00",
+  "combined_elapsed_seconds": 13.216,
+  "applied_at_combined_end": 137,
+  "applied": 200,
+  "searchable": 200,
+  "final_tenants_exact_counts": 5,
+  "authority": {
+    "receipts": 200,
+    "applied": 200,
+    "rejected": 0
+  },
+  "processing_p99_ms": 21847.34542,
+  "pipeline_faults": {
+    "indexer:changed_processing_failed": 1
+  },
+  "watermark_lag_tenants": 0,
+  "search_visibility_sample_p99_ms": 29437.965,
+  "search_visibility_sampled": 100,
+  "search_visibility_observed": 100,
+  "accepted": 100,
+  "offered": 100,
+  "read_requests": 54,
+  "admission_p99_ms": 801.109,
+  "read_p99_ms": 3053.534,
+  "generator_late_p99_ms": 15.657,
+  "errors": {
+    "index_handler_projection_unavailable": 1
+  },
+  "worker_turns": {
+    "source": 200,
+    "indexer": 294
+  },
+  "sse_connections": 10,
+  "sse_messages": 50,
+  "pit_closed": 0,
+  "source_phases_ms": {
+    "seed:idle_turn": {
+      "count": 180,
+      "p50": 108.053,
+      "p99": 658.289,
+      "total_ms": 20647.797
+    },
+    "seed:assignment": {
+      "count": 2,
+      "p50": 684.11,
+      "p99": 684.11,
+      "total_ms": 1341.855
+    },
+    "seed:queue_age": {
+      "count": 100,
+      "p50": 9063.451,
+      "p99": 16591.092,
+      "total_ms": 951722.571
+    },
+    "seed:postgres_apply": {
+      "count": 100,
+      "p50": 172.133,
+      "p99": 488.078,
+      "total_ms": 19097.826
+    },
+    "seed:send_offsets_to_transaction": {
+      "count": 100,
+      "p50": 6.513,
+      "p99": 86.589,
+      "total_ms": 849.814
+    },
+    "seed:commit_transaction": {
+      "count": 100,
+      "p50": 5.513,
+      "p99": 37.23,
+      "total_ms": 681.542
+    },
+    "seed:applied_turn": {
+      "count": 100,
+      "p50": 250.249,
+      "p99": 575.043,
+      "total_ms": 26459.99
+    },
+    "seed:index_handler": {
+      "count": 18,
+      "p50": 842.496,
+      "p99": 1492.263,
+      "total_ms": 15405.869
+    },
+    "measured:queue_age": {
+      "count": 100,
+      "p50": 9561.5,
+      "p99": 21804.044,
+      "total_ms": 997918.704
+    },
+    "measured:idle_turn": {
+      "count": 282,
+      "p50": 108.167,
+      "p99": 111.585,
+      "total_ms": 30535.275
+    },
+    "measured:postgres_apply": {
+      "count": 100,
+      "p50": 197.473,
+      "p99": 3250.039,
+      "total_ms": 31826.749
+    },
+    "measured:send_offsets_to_transaction": {
+      "count": 100,
+      "p50": 6.519,
+      "p99": 1184.738,
+      "total_ms": 2516.499
+    },
+    "measured:commit_transaction": {
+      "count": 100,
+      "p50": 5.839,
+      "p99": 108.423,
+      "total_ms": 963.364
+    },
+    "measured:applied_turn": {
+      "count": 100,
+      "p50": 315.98,
+      "p99": 3430.886,
+      "total_ms": 51297.619
+    },
+    "measured:index_handler": {
+      "count": 22,
+      "p50": 1478.078,
+      "p99": 5565.059,
+      "total_ms": 37005.327
+    }
+  },
+  "correctness_passed": false,
+  "latency_passed": false,
+  "passed": false,
+  "source_sql": {
+    "seed:session_settings": {
+      "count": 2100,
+      "total_ms": 3119.2670001182705,
+      "max_ms": 25.78020002692938
+    },
+    "seed:restore_guard": {
+      "count": 900,
+      "total_ms": 1332.6535009546205,
+      "max_ms": 17.243599984794855
+    },
+    "seed:source_receipt": {
+      "count": 300,
+      "total_ms": 590.507700922899,
+      "max_ms": 37.76149998884648
+    },
+    "seed:alert_identity": {
+      "count": 500,
+      "total_ms": 815.5853017233312,
+      "max_ms": 20.998100051656365
+    },
+    "seed:other": {
+      "count": 2300,
+      "total_ms": 4324.347801622935,
+      "max_ms": 89.27940006833524
+    },
+    "seed:correlation": {
+      "count": 300,
+      "total_ms": 602.552700554952,
+      "max_ms": 35.11419997084886
+    },
+    "seed:alert_state": {
+      "count": 200,
+      "total_ms": 428.81920048967004,
+      "max_ms": 4.441800061613321
+    },
+    "seed:maintenance": {
+      "count": 500,
+      "total_ms": 829.326699487865,
+      "max_ms": 5.1818001084029675
+    },
+    "measured:session_settings": {
+      "count": 2100,
+      "total_ms": 3883.305003750138,
+      "max_ms": 78.24830000754446
+    },
+    "measured:restore_guard": {
+      "count": 900,
+      "total_ms": 1667.6055991556495,
+      "max_ms": 45.73349992278963
+    },
+    "measured:source_receipt": {
+      "count": 300,
+      "total_ms": 988.7973017757758,
+      "max_ms": 245.17800007015467
+    },
+    "measured:alert_identity": {
+      "count": 500,
+      "total_ms": 1032.4216003064066,
+      "max_ms": 65.95319998450577
+    },
+    "measured:other": {
+      "count": 2300,
+      "total_ms": 5608.676699921489,
+      "max_ms": 174.61059999186546
+    },
+    "measured:correlation": {
+      "count": 300,
+      "total_ms": 730.4115999722853,
+      "max_ms": 107.25699993781745
+    },
+    "measured:alert_state": {
+      "count": 200,
+      "total_ms": 656.8130002124235,
+      "max_ms": 70.0714000267908
+    },
+    "measured:maintenance": {
+      "count": 500,
+      "total_ms": 1329.0264997631311,
+      "max_ms": 108.31609996967018
+    }
+  }
+}

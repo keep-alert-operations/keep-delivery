@@ -5,7 +5,6 @@ from uuid import uuid4
 
 import pytest
 
-from appchi import search_routes
 from appchi.alerts import routes as alert_routes
 from test_product import browser  # noqa: F401
 from test_configuration_counts import environment  # noqa: F401
@@ -65,7 +64,7 @@ def test_feed_and_preset_preview_label_rows_without_crossing_tenants(
     environment, real_db, monkeypatch
 ):
     client, actor, tenant, preset, _, elastic = environment
-    monkeypatch.setattr(search_routes, "Elasticsearch", lambda *args, **kwargs: elastic)
+    client.app.state.search_client = elastic
     departed = principal(real_db, "Departed operator", deleted=True)
     own = incident(real_db, str(tenant), "Checkout latency")
     foreign = incident(real_db, other_tenant(real_db), "Foreign tenant secret")

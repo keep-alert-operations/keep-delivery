@@ -543,3 +543,36 @@ Keycloak infrastructure was not modified.
 Replaced the signed-out and account-menu text appearance buttons with one
 accessible sun/moon switch component. It retains the user's saved theme and the
 light default. Automated tests were not run for this UI update.
+
+## Scalability implementation handoff — 2026-10-07
+
+The user requested implementation of the system review for 5,000 alert deliveries
+per minute, 100 active users and 50 tenants. The current uncommitted editable
+source combination adds bounded bulk indexing, delta reconciliation with separate
+repair-audit progress, tenant retry isolation, incremental maintenance continuation,
+scoped/differential correlation work, batched quick counts, PIT disposal, stable
+activity/live behavior, off-thread authorization SQL and aggregate request budgets.
+Forward migrations 0048 through 0050 are required before the updated writers. Original
+published migration bytes remain unchanged.
+
+The [implementation evidence](../qualification/scalability-implementation-2026-10-06.md)
+records commands, successful checks, corrected regressions and measured limits.
+Testing stopped at the user's request. Coordinated units passed 780 cases with
+65 skips; the final narrow clock correction passed 14 focused cases. Migration
+and real-search checks passed 26 cases, and controlled browser checks passed
+144 cases with seven opt-in skips. The production frontend build passed. Final
+local startup completed, including 17 live gateway/authorization checks. The
+planned real-browser OIDC/alert/note scenarios were not run before testing stopped.
+The requested-rate cohort failed latency, and the final 100-user/50-tenant
+diagnostic at two alerts/second still returned 195 errors in 382 reads despite
+exact final alert counts. No sustainable maximum or passing target capacity was
+established. All temporarily paused BI containers were restored.
+No DEL gate, immutable release, company-service qualification or production
+readiness is claimed. The existing 250/second sustained and 500/second recovery
+requirements and deferred worker scope remain.
+
+Source publication was subsequently authorized. Coordinated
+`codex/scalability-hardening` branches, immutable dependency pins and the workspace
+manifest are recorded in [publication evidence](evidence/scalability-publication.json).
+Pre-existing unrelated work remains local. No additional tests were run; this is
+source publication, not a merged or qualified deployment.

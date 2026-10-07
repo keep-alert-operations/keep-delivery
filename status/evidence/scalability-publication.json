@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-07",
+  "scope": "Coordinated source branches; not merged, deployed or capacity-qualified",
+  "branch": "codex/scalability-hardening",
+  "repositories": {
+    "appchi-contracts": {
+      "branch": "codex/scalability-hardening",
+      "commit": "eb555e8bd307c2dbc3f20a9134351696a4f5eba2",
+      "remote_verified": true
+    },
+    "appchi-domain": {
+      "branch": "codex/scalability-hardening",
+      "commit": "b8461620318c5dff6197094cfc9ea967c7073b01",
+      "remote_verified": true
+    },
+    "appchi-migrations": {
+      "branch": "codex/scalability-hardening",
+      "commit": "016d0f554de570a96e4da1cf054c9b1c70b5c768",
+      "remote_verified": true
+    },
+    "appchi-design": {
+      "branch": "codex/scalability-hardening",
+      "commit": "99c5def93c761386e7d5161c44f482ae4cbd7539",
+      "remote_verified": true
+    },
+    "appchi-api": {
+      "branch": "codex/scalability-hardening",
+      "commit": "e2de23d0b70bb52f8180eebb396d927567705eaf",
+      "remote_verified": true
+    },
+    "appchi-ingestion": {
+      "branch": "codex/scalability-hardening",
+      "commit": "3515ac96bd1958483b5583d59afc13d9782e6111",
+      "remote_verified": true
+    },
+    "appchi-processor": {
+      "branch": "codex/scalability-hardening",
+      "commit": "c4bb2225505453b7fd6bfea20283355da79958cf",
+      "remote_verified": true
+    },
+    "appchi-correlation": {
+      "branch": "codex/scalability-hardening",
+      "commit": "7a408f990021c2f4531c1cd90c52641c80e1bc90",
+      "remote_verified": true
+    },
+    "appchi-indexer": {
+      "branch": "codex/scalability-hardening",
+      "commit": "a56e94c8f07c6d98342c809e05ebc8b5ac780538",
+      "remote_verified": true
+    },
+    "appchi-frontend": {
+      "branch": "codex/scalability-hardening",
+      "commit": "5c1bfd052042b0df8538cd73f2395e2fd7f70a82",
+      "remote_verified": true
+    }
+  },
+  "delivery_revision": "self; this file and workspace/manifest.json identify the same delivery commit",
+  "dependency_resolution": "Python uv.lock and frontend package-lock.json regenerated against immutable Appchi commits; external package records unchanged",
+  "verification_limits": "No local tests rerun after the user stopped testing. Prior evidence used the documented dirty editable source combination, which included pre-existing work excluded from this publication. Final clock fix has focused tests only. Dependency lock generation is not runtime qualification.",
+  "excluded": "Unrelated pre-existing deployment images, cluster bootstrap, operator proof, local-startup repair and agent setup changes remain local; credentials, ignored .local state, node_modules and build outputs excluded."
+}

@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "Workspace setup, local dependencies, deployments, release inventory and system verification."
 requires-python = ">=3.13,<3.14"
 dependencies = [
-  "appchi-api @ git+https://github.com/appchi-alert-operations/appchi-api.git@0b8a1a351378d0a7952a405b6fac4db1d03c6096",
-  "appchi-ingestion @ git+https://github.com/appchi-alert-operations/appchi-ingestion.git@0d2ee23a7940c2c0866498aa0646587f101651bc",
-  "appchi-processor @ git+https://github.com/appchi-alert-operations/appchi-processor.git@4f7a3fc81483d193033c3eec9f54f6aaeb6a5392",
-  "appchi-correlation @ git+https://github.com/appchi-alert-operations/appchi-correlation.git@ad68f9f4838848f5d318888be4b0e067d5b51e5b",
-  "appchi-indexer @ git+https://github.com/appchi-alert-operations/appchi-indexer.git@ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3",
-  "appchi-migrations @ git+https://github.com/appchi-alert-operations/appchi-migrations.git@1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236"
+  "appchi-api @ git+https://github.com/appchi-alert-operations/appchi-api.git@e2de23d0b70bb52f8180eebb396d927567705eaf",
+  "appchi-ingestion @ git+https://github.com/appchi-alert-operations/appchi-ingestion.git@3515ac96bd1958483b5583d59afc13d9782e6111",
+  "appchi-processor @ git+https://github.com/appchi-alert-operations/appchi-processor.git@c4bb2225505453b7fd6bfea20283355da79958cf",
+  "appchi-correlation @ git+https://github.com/appchi-alert-operations/appchi-correlation.git@7a408f990021c2f4531c1cd90c52641c80e1bc90",
+  "appchi-indexer @ git+https://github.com/appchi-alert-operations/appchi-indexer.git@a56e94c8f07c6d98342c809e05ebc8b5ac780538",
+  "appchi-migrations @ git+https://github.com/appchi-alert-operations/appchi-migrations.git@016d0f554de570a96e4da1cf054c9b1c70b5c768"
 ]
 
 [dependency-groups]

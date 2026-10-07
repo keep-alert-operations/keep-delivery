@@ -1,0 +1,111 @@
+{
+  "host_memory_at_start": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1607737344
+  },
+  "run": "scale-e81616c273cc4ae6af882432795b2e26",
+  "profile": {
+    "seconds": 60,
+    "rate": 83.3333333333333,
+    "users": 100,
+    "tenants": 50,
+    "seed": 5000,
+    "partitions": 16,
+    "processors": 8,
+    "indexers": 2,
+    "api_pool": 32,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": false,
+    "read_pause": 2,
+    "drain_seconds": 600,
+    "output": "status\\evidence\\scalability-target-core-processes.json"
+  },
+  "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+  "feature_profile": null,
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "setup_index_seconds": 8.792,
+  "host_memory_before_workers": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 1614389248
+  },
+  "passed": false,
+  "failure_type": "RuntimeError",
+  "errors": {
+    "worker_start_PoolTimeout": 5,
+    "worker_source_KafkaException": 5,
+    "reconciliation_LockNotAvailable": 1,
+    "worker_indexer_KafkaException": 2
+  },
+  "accepted": 0,
+  "offered": 0,
+  "worker_memory": [
+    {
+      "pid": 47412,
+      "role": "source",
+      "peak_sampled_rss_bytes": 60583936
+    },
+    {
+      "pid": 43240,
+      "role": "source",
+      "peak_sampled_rss_bytes": 60579840
+    },
+    {
+      "pid": 21948,
+      "role": "source",
+      "peak_sampled_rss_bytes": 61280256
+    },
+    {
+      "pid": 20980,
+      "role": "source",
+      "peak_sampled_rss_bytes": 61169664
+    },
+    {
+      "pid": 9476,
+      "role": "source",
+      "peak_sampled_rss_bytes": 60633088
+    },
+    {
+      "pid": 29568,
+      "role": "source",
+      "peak_sampled_rss_bytes": 60542976
+    },
+    {
+      "pid": 32540,
+      "role": "source",
+      "peak_sampled_rss_bytes": 61652992
+    },
+    {
+      "pid": 29624,
+      "role": "source",
+      "peak_sampled_rss_bytes": 60485632
+    },
+    {
+      "pid": 29968,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 73080832
+    },
+    {
+      "pid": 27816,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 73072640
+    }
+  ],
+  "correctness_passed": false,
+  "source_sql": {},
+  "source_phases_ms": {
+    "seed:source_idle_turn": {
+      "count": 870,
+      "p50": 106.404,
+      "p99": 640.212,
+      "total_ms": 112052.713
+    },
+    "seed:indexer_idle_turn": {
+      "count": 27,
+      "p50": 108.475,
+      "p99": 220.507,
+      "total_ms": 3190.303
+    }
+  }
+}

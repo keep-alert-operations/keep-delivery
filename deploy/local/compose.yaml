@@ -5,6 +5,8 @@ name: appchi-local-stack
 services:
   postgres:
     image: postgres:18.2
+    # Reap orphaned exec/healthcheck children separately from the postmaster.
+    init: true
     environment:
       POSTGRES_DB: appchi
       POSTGRES_USER: appchi_migrator
@@ -93,6 +95,7 @@ services:
 
   kong-db:
     image: postgres:16-alpine
+    init: true
     environment:
       POSTGRES_DB: kong
       POSTGRES_USER: kong
@@ -140,7 +143,7 @@ services:
       KONG_LOG_LEVEL: warn
       KONG_NGINX_WORKER_PROCESSES: "1"
       KONG_ADMIN_GUI_LISTEN: "off"
-    ports: ["127.0.0.1:58445:8443", "127.0.0.1:58447:8444"]
+    ports: ["127.0.0.1:58445:8443", "127.0.0.1:${APPCHI_LOCAL_KONG_ADMIN_PORT:-58447}:8444"]
     volumes:
       - ../../.local/operators/tls/ca.crt:/tls/ca.crt:ro
       - ../../.local/operators/tls/server.crt:/tls/server.crt:ro
@@ -170,7 +173,7 @@ services:
       GF_LOG_LEVEL: warn
       SSL_CERT_FILE: /tls/ca.crt
     secrets: [grafana_password]
-    ports: ["127.0.0.1:58448:3000"]
+    ports: ["127.0.0.1:${APPCHI_LOCAL_GRAFANA_PORT:-58448}:3000"]
     volumes:
       - grafana_data:/var/lib/grafana
       - ../../.local/operators/tls/ca.crt:/tls/ca.crt:ro
