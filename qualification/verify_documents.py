@@ -3,14 +3,32 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
+import sys
 from urllib.parse import unquote
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 IGNORED = {'.git', '.venv', 'node_modules', '.next', 'dist', 'legacy', '.local'}
 
 
+def entrypoint_errors(workspace):
+    """Installed entrypoints must reflect their canonical delivery sources."""
+    errors = []
+    for name in ('AGENTS.md', 'CLAUDE.md'):
+        canonical = workspace / 'appchi-delivery' / 'workspace' / name
+        installed = workspace / name
+        if not canonical.is_file() or not installed.is_file():
+            errors.append([name, 'Missing canonical or installed workspace entrypoint; run bootstrap'])
+        elif canonical.read_bytes() != installed.read_bytes():
+            errors.append([name, 'Installed entrypoint differs from delivery canonical copy; reconcile before bootstrap'])
+    claude = workspace / 'CLAUDE.md'
+    if claude.is_file() and '@AGENTS.md' not in claude.read_text(encoding='utf-8-sig').splitlines():
+        errors.append(['CLAUDE.md', 'Expected a standalone @AGENTS.md import of shared guidance'])
+    return errors
+
+
 def main():
-    errors, documents = [], 0
+    errors, documents = entrypoint_errors(WORKSPACE), 0
     for repository in WORKSPACE.glob('appchi-*'):
         for directory, children, files in os.walk(repository):
             children[:] = [name for name in children if name not in IGNORED]
@@ -47,6 +65,10 @@ def main():
                       'review_ids': 'REV-01..REV-38', 'errors': errors}, indent=2))
     if errors:
         raise SystemExit(1)
+    subprocess.run(
+        [sys.executable, str(WORKSPACE / 'appchi-delivery/qualification/check_context.py')],
+        cwd=WORKSPACE / 'appchi-delivery', check=True,
+    )
 
 
 if __name__ == '__main__':
