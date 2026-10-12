@@ -93,10 +93,11 @@ def inventory(root, manifest):
 
 
 def install(root, manifest, editable):
-    run(["uv", "sync", "--locked"], DELIVERY)
+    run(["poetry", "check", "--lock"], DELIVERY)
+    run(["poetry", "sync", "--all-extras"], DELIVERY)
     python = DELIVERY / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
     if editable:
-        args = ["uv", "pip", "install", "--no-deps", "--python", str(python)]
+        args = [str(python), "-m", "pip", "install", "--no-deps"]
         for name in manifest["repositories"]:
             path = repository(root, name)
             if (path / "pyproject.toml").exists():

@@ -288,3 +288,9 @@ From delivery, use `python scripts/workspace.py bootstrap`, then
 `python scripts/workspace.py install --editable` for coordinated local development.
 Git dependency pins and locks remain the release authority; local editable code
 is an explicit development override. Record per-repository status and revisions.
+Python repositories use Poetry 2.3.1, committed `poetry.lock` and in-project
+`.venv` environments. Validate with `poetry check --lock` before
+`poetry sync --all-extras`. Normal setup must not use `--all-groups`: the optional
+`lock-constraints` group preserves global version constraints without installing
+dormant packages. Coordinated editable overrides use the environment's Python
+with `pip install --no-deps --editable`; subsequent sync restores release pins.

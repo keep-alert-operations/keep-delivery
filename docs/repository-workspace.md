@@ -11,7 +11,7 @@ python scripts/workspace.py install --editable
 python scripts/workspace.py inventory --output .local/workspace-inventory.json
 ```
 
-On Linux/macOS use `.venv/bin/python`. Install Python 3.13, uv 0.10.8, Node.js
+On Linux/macOS use `.venv/bin/python`. Install Python 3.13, Poetry 2.3.1, Node.js
 22.17 or newer, npm and Git first. Authenticate Git for the private organization
 repositories using your approved credential helper. Open the **parent directory**
 in your agent/editor; `AGENTS.md` there covers the complete system.
@@ -24,9 +24,42 @@ each affected child separately. Use `codex/` for new work branches.
 `install` resolves the committed delivery lock. `--editable` then installs local
 Python sources from every sibling into delivery's environment without changing
 release pins. Use this environment for coordinated development and system tests.
-Each Python repository also supports `uv sync --locked --all-extras` and its own
+Each Python repository also supports `poetry check --lock` followed by
+`poetry sync --all-extras` and its own
 unit suite. Without `--editable`, delivery uses the pinned Git packages even when
 sibling source files have been edited. Frontend always uses its committed npm lock.
+
+Committed `poetry.toml` files keep environments in `.venv` and use the system Git
+client, so existing Git credential helpers and scoped mirror rewrites still apply.
+Install Poetry 2.3.1 as a separate tool; the application environments keep pip
+available for the explicit `--no-deps --editable` development overrides. The helper
+first validates the lock with `poetry check --lock`, then runs `poetry sync --all-extras`.
+Sync restores the release pins and removes editable overrides; rerun
+`python scripts/workspace.py install --editable` when restoring local development.
+Use delivery's `.venv` Python directly after overrides for coordinated checks and
+service launchers. `poetry run` selects an environment without synchronizing it,
+but a later `poetry sync` or `poetry install` can replace the local sources.
+
+Delivery's development group also includes pinned Poetry 2.3.1 for the native
+lock metadata API used by the private build helper and its regression tests.
+This does not replace the separate Poetry bootstrap tool, and runtime images
+install only their main dependencies.
+
+Dependency maintenance uses the committed Poetry lock. A separate optional
+`lock-constraints` Poetry group preserves the previous exact version constraints,
+including transitive packages, without adding them to published PEP 621 runtime
+requirements. Poetry resolves this group together with the application graph;
+ordinary sync installs the main and development groups, leaving dormant constraint
+packages uninstalled. Do not use `--all-groups` for normal setup or runtime images.
+Change constraints deliberately, run `poetry lock`, review the version/source/hash
+diff and run `poetry check --lock` before syncing. Hatchling remains the build
+backend, and Poetry is the dependency and command tool.
+
+On Windows, keep checkout and temporary environment paths short: the upstream
+native CEL wheel includes deep Bazel directories. The migration's first deep
+test environments exceeded Windows MAX_PATH; shallow disposable environments
+installed the same locked wheel successfully. See the
+[Poetry migration evidence](../qualification/poetry-migration-2026-10-12.md).
 
 After changing an HTTP producer, regenerate contracts with
 `qualification/generate_contracts.py`. Commit contracts, advance affected Python

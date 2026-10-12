@@ -576,3 +576,17 @@ Source publication was subsequently authorized. Coordinated
 manifest are recorded in [publication evidence](evidence/scalability-publication.json).
 Pre-existing unrelated work remains local. No additional tests were run; this is
 source publication, not a merged or qualified deployment.
+
+## Python tooling migration — 2026-10-12
+
+At the user's request, all nine Python repositories, active scripts, documentation,
+CI and service container builds now use Poetry 2.3.1. Native-generated locks preserve
+the prior versions, Git pins and original artifact hashes. All nine isolated installs,
+wheel builds and Ruff checks passed; final owned units report 813 passed and 65
+unbound real-service skips. Contracts, import boundaries, documents and Docker
+static checks passed. Existing running environments and unrelated work were preserved.
+The [migration evidence](../qualification/poetry-migration-2026-10-12.md) records
+initial harness/environment failures and corrected reruns. Source publication was subsequently authorized; the workspace manifest identifies
+the coordinated sibling revisions. Runtime package pins, DEL gates and production
+qualification remain unchanged. The report distinguishes full working-tree tests
+from exact staged-tree publication checks.

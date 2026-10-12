@@ -13,8 +13,8 @@ capability gates, or authorize production deployment. Consult
 
 ## Prerequisites and configuration
 
-Install Python 3.13, `uv`, Node.js 22.17 or newer, npm, and PowerShell 7 through approved
-development tooling. The scripts use the committed `uv.lock` and
+Install Python 3.13, `Poetry 2.3.1`, Node.js 22.17 or newer, npm, and PowerShell 7 through approved
+development tooling. The scripts use the committed `poetry.lock` and
 `frontend/package-lock.json`. They do not install or administer shared PostgreSQL,
 Kafka, Elasticsearch, Redis, LDAP, Keycloak, Kong or Grafana services.
 
@@ -67,8 +67,9 @@ qualification; no example hostname or development version represents that eviden
 ./scripts/dev.ps1 -Action Check -CheckConfiguration
 ```
 
-`Install` runs `uv sync --project backend --locked --all-groups` and `npm ci` from
-the frontend directory. `Check` verifies imports and runtime versions without
+`Install` runs `python scripts/workspace.py install --editable`, which validates
+the Poetry lock, syncs dependencies, applies local Python sources and runs `npm ci`
+in the sibling frontend. `Check` verifies imports and runtime versions without
 contacting services. `-CheckConfiguration` additionally validates the backend
 configuration schema and DSN syntax without exposing values or claiming connectivity.
 `-RequireIdentityConfiguration` checks that the real identity binding variables

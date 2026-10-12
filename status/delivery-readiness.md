@@ -148,3 +148,13 @@ Source publication was subsequently authorized. Coordinated
 manifest are recorded in [publication evidence](evidence/scalability-publication.json).
 Pre-existing unrelated work remains local. No additional tests were run; this is
 source publication, not a merged or qualified deployment.
+
+## Python tooling migration — 2026-10-12
+
+Active Python setup, CI, containers and guidance use Poetry 2.3.1 following the
+user's decision. [Local verification](../qualification/poetry-migration-2026-10-12.md)
+covers nine locked installations/builds, 813 passing owned unit cases, 65
+unbound-service skips, contract/import/document checks and static container checks.
+Existing runtime Git pins are preserved. Source publication was subsequently
+authorized; the workspace manifest records the coordinated sibling revisions. Complete image builds, company-service integration and production
+rollout are unexecuted, so no DEL capability gate is closed by this tooling change.
