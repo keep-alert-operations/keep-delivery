@@ -1,0 +1,118 @@
+<section id="identity-security" aria-labelledby="identity-security-title">
+  <h2 id="identity-security-title">Identity, authorization and security boundaries</h2>
+  <p>Appchi separates the question “Who is this person?” from “What may this person do here?” Keycloak authenticates human users. The Product API authorizes their requests using a valid application session, trusted directory evidence and current Appchi grants. A successful login alone does not give access to every tenant, and hiding a frontend button never replaces a server-side permission check.</p>
+
+  <h3>Follow a human request across the boundary</h3>
+  <ol>
+    <li>The browser starts at <code>/auth/login</code>. The API creates a one-use login transaction and redirects to the configured Keycloak issuer.</li>
+    <li>The user enters credentials on Keycloak's Appchi theme. The theme submits to Keycloak; Appchi does not introduce its own password endpoint.</li>
+    <li>The API handles the authorization-code callback using PKCE, validates the transaction and identity evidence, and creates an opaque application session. OAuth tokens stay on the server.</li>
+    <li>For each protected request, the API combines that session with the accepted directory checkpoint and current grants. Mutations recheck authorization through their commit boundary; live subscriptions enforce the same tenant access.</li>
+  </ol>
+  <p>The application origin serves the UI, <code>/api</code> and <code>/auth</code>. Environment configuration supplies exact callback URLs, issuer, trust and client credentials. The browser's protected cookie, same-origin checks and CSRF protection are part of the contract. Do not place tokens in browser storage, invent an alternate issuer from user input, or bypass OIDC to simplify a local test.</p>
+
+  <h3>Directory evidence and tenant roles</h3>
+  <p>Company LDAP remains authoritative for people and nested teams. Immutable directory identities bind accounts and grants; display names and email addresses are not identities. Appchi grants combine direct and team membership using the highest role: <code>view</code>, <code>edit</code>, then <code>admin</code>. Assignment gives responsibility, not permission. Global is a fixed tenant with its own universal eligible-user edit policy; tenant administration and global administration remain distinct.</p>
+  <p><strong>Current scope uses explicit trusted publication.</strong> There is no continuously polling directory worker and no current five-minute propagation promise. Complete bootstrap or manual publication supplies trusted identity evidence. Existing eligible users may continue from the last trusted checkpoint without an age cutoff, while known revocations, current grant changes, logout and session expiry still apply. A first-time identity without required evidence cannot be admitted by guessing membership from a token or username.</p>
+  <details>
+    <summary>Why partial identity refreshes cannot replace the trusted view</summary>
+    <p>A directory timeout is not proof that a person left every team. Publication separates complete positive evidence from independently verified negative facts and prevents older observations overwriting newer ones. Unknown or incomplete evidence can block a new grant or admission without stripping existing valid access. Read <code>appchi.identity.publication</code> for the transaction and generation checks before changing this behavior.</p>
+    <p>Isolated development can use native Keycloak users and groups with immutable UUIDs, normal OIDC and explicit publication. That exception removes the local LDAP dependency; it does not qualify company LDAP integration or create a login bypass. Session expiry and restore gates still apply.</p>
+  </details>
+
+  <h3>Tenant isolation belongs in every data path</h3>
+  <p>Authorization selects the accessible tenant before listing, searching or counting. Nested resource IDs, selectors, cursors and subscription targets must belong to that tenant. An inaccessible resource uses the non-disclosing unavailable response; insufficient write permission on a visible resource is a different error.</p>
+  <p>PostgreSQL row-level security adds a database boundary for the API role. The shared transaction helper sets transaction-local <code>appchi.tenant_id</code>; tenant policies check it for reads and writes. Use the existing helper and the appropriate runtime identity. Worker privileges are deliberately different because workers process multiple tenants, so domain queries and composite tenant references remain essential. A passing test under a privileged database login is not evidence that API-role isolation works.</p>
+  <p>For an authorization change, cover at least the permitted action, an insufficient role, a cross-tenant reference and permission loss during a concurrent command. Include counts, errors and live hints in the review: a hidden name or count can still disclose another tenant's data.</p>
+
+  <h3>Human credentials and ingestion credentials are different</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Path</th><th>Authority</th><th>Developer consequence</th></tr></thead>
+    <tbody>
+      <tr><td>Product API</td><td>Human session plus directory evidence and product grants.</td><td>An operator key cannot grant product permissions.</td></tr>
+      <tr><td>Native v1</td><td>Unauthenticated admission to fixed Global.</td><td>A payload cannot choose another tenant.</td></tr>
+      <tr><td>Native v2 / Grafana</td><td>Kong key validation, Appchi policy and trusted private routing.</td><td>The operator's owning tenant is immutable; public payload fields cannot override it.</td></tr>
+    </tbody>
+  </table></div>
+  <p>The Product API owns synchronous operator provisioning against Kong and Grafana. A failed request can leave durable partial progress; it is not proof of rollback. Retry the recorded operation with its existing identity and revision. All-serving-member proof, credential generations and revocation fences prevent an obsolete key becoming valid again. Ingestion itself receives only its Kafka and private transport bindings; it has no Appchi PostgreSQL, Elasticsearch or Redis dependency.</p>
+  <div class="sources"><strong>Sources:</strong> <a href="../../../appchi-design/specs/spec-identity-configuration.md">Identity specification</a>; <a href="../../../appchi-design/specs/spec-tenant-access.md">Tenant access</a>; <a href="../../../appchi-design/specs/spec-worker-scope.md">Current worker scope</a>; <a href="../../../appchi-api/src/appchi/identity/session.py">API session routes</a>; <a href="../../../appchi-domain/src/appchi/identity/publication.py">Trusted publication</a>; <a href="../../../appchi-domain/src/appchi/db.py">Transaction helper</a>; <a href="../../../appchi-migrations/src/appchi/migration_sql/0001_foundation.sql">Foundation RLS policies</a>.</div>
+</section>
+
+<section id="operations" aria-labelledby="operations-title">
+  <h2 id="operations-title">Operate the system without losing its guarantees</h2>
+  <p>Start diagnosis by identifying which guarantee failed: admission, authoritative processing, automatic decisions, search visibility or browser refresh. A healthy pod proves only its readiness contract. It does not prove that a received alert reached SQL, became searchable or appeared in a browser. Trace one synthetic delivery across those boundaries before increasing traffic.</p>
+
+  <h3>Know what success means at each stage</h3>
+  <p>A successful ingestion <code>202</code> means Kafka acknowledged admission. It does not mean PostgreSQL processing, correlation or indexing completed. The processor commits canonical alert state and immutable replay proof in PostgreSQL, then publishes changed events together with received-input offsets in a Kafka transaction. Those are two coordinated commits, not a distributed transaction spanning PostgreSQL and Kafka.</p>
+  <p>If the Kafka transaction fails after the SQL commit, replay uses the recorded proof rather than applying the business change twice. Preserve its event identity, bytes and ordering. Correlation consumes tenant-ordered changes; indexing consumes independently and reconciles against PostgreSQL. Elasticsearch is rebuildable current-alert search data. Redis carries refresh hints; PostgreSQL reconciliation repairs missing hints.</p>
+
+  <h3>Apply one migration chain before dependent writers</h3>
+  <p><code>appchi-migrations</code> owns the complete ordered PostgreSQL chain and the dedicated migration image. REV-38 wraps immutable SQL in Alembic while preserving the checksum ledger. Runtime services never migrate on startup. Migration SQL, revision wrappers and checksums must agree; numbering gaps are intentional historical facts.</p>
+  <ol>
+    <li>Identify the exact release combination and inspect pending migrations, their prerequisites and the supported starting schema. Preserve applied bytes and add a forward migration for corrections.</li>
+    <li>Complete required drains and fences. The current 0048–0051 changes require the stopped-writer migration window; older cutover and stopped-scheduler prerequisites still apply when those migrations are pending.</li>
+    <li>Run the dedicated migration Job using its separate migration identity before dependent writers. Require successful completion and verified ledgers before startup.</li>
+    <li>Start only the compatible application combination and execute the relevant replay, authorization, maintenance and search checks. An available older image does not establish rollback compatibility.</li>
+  </ol>
+  <details>
+    <summary>Read-only migration inspection and legacy adoption</summary>
+    <p>From the <code>appchi-migrations</code> checkout, the documented commands below inspect packaged history without connecting to PostgreSQL. They are navigation aids, not an executed migration.</p>
+    <pre><code>poetry run alembic history
+poetry run alembic heads</code></pre>
+    <p>A legacy database with only <code>schema_migrations</code> is adopted only after its checksums form an exact prefix of the known chain. Pending changes and adoption share a transaction and advisory lock. The existing ledger and <code>alembic_version</code> must agree. Investigate an integrity error; never manually stamp a database, edit old checksums or drop a ledger to make it pass. There is no automatic downgrade or database-rewind rollback.</p>
+  </details>
+
+  <h3>Cutover, rebuild and restore are separate operations</h3>
+  <p>Kafka protocol cutover fences old admission, drains accepted work using compatible consumers, stops legacy workers, captures topic boundaries and initializes the new consumer groups under explicit stopped-workload prerequisites. Never mix incompatible generations or reset groups on a live installation. A command flag declaring writers stopped does not stop them; establish the real state first.</p>
+  <p>Fresh search activation verifies an empty authority/index and supplied Elasticsearch capabilities before recording the initial binding. Populated data requires the fenced rebuild procedure: preserve the current authority, copy and catch up under the selected index epoch, then switch through the verified alias protocol. Do not run empty-install bootstrap against a populated deployment.</p>
+  <p>A database restore has broader obligations. Independently protected credential, deletion and replay evidence must survive the database recovery point. Keep affected paths fenced until current deployment authority, tenant order, clocks, offsets and search epochs are reconciled. Restoring SQL availability alone cannot prove that a revoked key stays revoked or that retired content remains inaccessible.</p>
+  <details>
+    <summary>When a Kafka offset is below the retained low watermark</summary>
+    <p>Kafka can expire acknowledged but unprocessed inputs. Preserve the lost interval and stop unsafe source or correlation recovery. The service owner establishes available retained data; a reviewed reset records loss and establishes fresh correlation boundaries. Do not silently choose earliest/latest or claim PostgreSQL can recreate source inputs it never received. Search can rebuild committed SQL state; that is a narrower guarantee. A producer resubmission is a new delivery.</p>
+  </details>
+
+  <h3>Use failure symptoms to choose the next evidence</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Symptom</th><th>Check</th><th>Preserve</th></tr></thead>
+    <tbody>
+      <tr><td>Admission unavailable</td><td>Kafka acknowledgement, credentials, routing and clock evidence.</td><td>Uncertain publication identity; do not interpret a timeout as definite absence.</td></tr>
+      <tr><td>Accepted work is delayed</td><td>Consumer positions, lag age, SQL availability and blocking proof.</td><td>Accepted predecessors and replay evidence; do not skip a blocked head.</td></tr>
+      <tr><td>Detail is current, Feed is stale</td><td>Indexer diagnostics, reconciliation progress and searchable watermark.</td><td>Canonical SQL and honest stale/error display; failure is not an empty result.</td></tr>
+      <tr><td>Live refresh is delayed</td><td>API SSE connections, Redis hints and SQL reconciliation.</td><td>Tenant/session guards; reconnection does not widen access.</td></tr>
+      <tr><td>Correlation is blocked</td><td>Rule revision, diagnostics, eligibility and capacity/recovery gates.</td><td>Existing incidents and fresh-evidence rules; do not replay expired windows.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Collect outcomes and latency, consumer lag and retention risk, SQL pool/lock pressure, search progress and resource growth. Keep request or event references for investigation without logging secrets or alert bodies. Avoid unbounded source values as metric labels. Operational alerts use existing company on-call channels; Appchi is not its own sole outage notifier. Infrastructure telemetry and application evidence complement each other.</p>
+  <p>Current scope has no maintenance expiry timer, automatic assignment cleanup, inactivity or retention sweeps, directory polling worker, operator retry worker or separate live worker. The Product API owns live publishing and synchronous provisioning. Existing source updates can release ended maintenance causes. Retained algorithms or old scheduler wording do not authorize deploying those deferred roles.</p>
+  <div class="sources"><strong>Sources:</strong> <a href="../../docs/alembic-migrations.md">Migration execution</a>; <a href="../../../appchi-migrations/README.md">Migration commands and prerequisites</a>; <a href="../../docs/runbooks/kafka-first.md">Kafka cutover/recovery</a>; <a href="../../docs/runbooks/cluster-initialization.md">Fresh cluster initialization</a>; <a href="../../docs/runbooks/recovery-checkpoints.md">Protected recovery evidence</a>; <a href="../../../appchi-design/specs/spec-reliability-operations.md">Reliability requirements</a>; <a href="../../../appchi-design/specs/spec-worker-scope.md">Superseding worker scope</a>.</div>
+</section>
+
+<section id="release-readiness" aria-labelledby="release-readiness-title">
+  <h2 id="release-readiness-title">Release readiness is evidence about a specific combination</h2>
+  <p>Appchi spans independent repositories but remains a coordinated system release. Matching branch names do not establish compatibility. Record repository revisions, package/contract versions, image digests, migration checksums, configuration, design revision and executed evidence. Local editable packages are useful development overrides; release locks must resolve immutable artifacts without sibling checkout assumptions.</p>
+
+  <h3>Prepare a concrete deployment candidate</h3>
+  <ol>
+    <li>Identify changed producers, consumers, shared packages, schema and UI. Publish prerequisite artifacts and update dependent pins and the delivery manifest together.</li>
+    <li>Build the selected images and record digests. Validate generated contracts, affected tests and actual-version integration requirements. Distinguish controlled API fixtures from real browser/identity evidence.</li>
+    <li>Obtain real environment bindings: endpoints, versions, trust, identity references, namespace/topic/index allocations, service capabilities and owner contacts. Keep secrets outside reports and source control.</li>
+    <li>Prepare the compatible rollout and rollback procedures, including drains, migration Job and startup order. Execute only within the environment's authorization and isolation boundaries.</li>
+    <li>Run initialization and end-to-end synthetic checks before load qualification. Measure the full workload and retained-data growth, then record limitations instead of converting partial success into readiness.</li>
+  </ol>
+  <p>The private OpenShift bundle is an isolated-test handoff. Its example allocations, external service placeholders and native test identities are inputs for a supplied environment, not company defaults. Namespace separation alone does not isolate shared Kafka topic names. Appchi owns application behavior and Keycloak; dedicated teams own LDAP, PostgreSQL, Elasticsearch, Kafka, Redis, OpenShift, Kong and Grafana infrastructure, including capacity, retention, backups and service recovery.</p>
+
+  <h3>Read the current gates before making a claim</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Gate</th><th>Evidence still required</th></tr></thead>
+    <tbody>
+      <tr><td>DEL-01 / DEL-06</td><td>Actual service bindings and qualified identity/remote integration, with the directory polling target deferred.</td></tr>
+      <tr><td>DEL-02 / DEL-04</td><td>Implementation plus correctness, security and UX evidence for the delivered combination.</td></tr>
+      <tr><td>DEL-03</td><td>Combined capacity, latency, growth and recovery measurements.</td></tr>
+      <tr><td>DEL-05</td><td>Protected recovery contract and exercised reconstruction/rebuild.</td></tr>
+      <tr><td>DEL-07 / DEL-08</td><td>Release/support rehearsal and operational observation; a local run cannot prove a production 30-day SLO.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>The current delivery register leaves DEL-01 through DEL-08 open.</strong> The October scalability report does not establish requested capacity. Its 5,000-deliveries/minute, 100-user, 50-tenant attempt failed source/search/read latency. The final 100-user diagnostic at two arrivals/second retained every alert but returned 195 HTTP 503s in 382 reads. A later focused clock correction passed regression tests without another load run. Those results also do not establish the design's 250-deliveries/second sustained requirement.</p>
+  <p>Source publication, successful unit suites and controlled browser tests are useful evidence with explicit scope. They are not a merged release, target-cluster qualification or production deployment. Preserve that distinction in handovers so the next developer knows which work can proceed and which capability still needs proof.</p>
+  <div class="sources"><strong>Sources:</strong> <a href="../../status/delivery-readiness.md">Current DEL register</a>; <a href="../../status/implementation-status.md">Implementation status</a>; <a href="../../qualification/scalability-implementation-2026-10-06.md">Measured scalability result and limits</a>; <a href="../../docs/runbooks/openshift-load-testing.md">Isolated OpenShift handoff</a>; <a href="../../docs/repository-workspace.md">Workspace and release workflow</a>.</div>
+</section>

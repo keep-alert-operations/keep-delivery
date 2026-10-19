@@ -107,6 +107,11 @@ where applicable. Read the following sections when their trigger applies:
 - Source authority: `appchi-design/specs/spec-alerts-management-system.md` (Specification map).
 - Setup and context commands: `appchi-delivery/docs/repository-workspace.md`.
 - Requirements: `appchi-design/verification/verification-plan.md`.
+- Verification procedure: `appchi-delivery/docs/runbooks/development.md`, section
+  "Repeatable verification workflow". Application changes run the agreed smoke
+  baseline plus impact-based checks; backend changes affecting UI also require
+  browser journeys. Report blocked/skipped checks and repair/retest failures.
+  Documentation-only changes use documentation/discovery checks.
 - Executed evidence: `appchi-delivery/status/implementation-status.md` and `appchi-delivery/status/delivery-readiness.md`.
 - Context checks: `python qualification/check_context.py` in delivery.
 - Documentation checks: `python qualification/verify_documents.py` in delivery;

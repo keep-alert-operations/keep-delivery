@@ -234,7 +234,8 @@ def certificates():
 
 
 def prepare():
-    environment()
+    # File preparation runs before the local database/environment is bootstrapped.
+    # Database-bound actions validate the isolated environment when they execute.
     STATE.mkdir(parents=True, exist_ok=True)
     path = STATE / "credentials.json"
     if not path.exists():

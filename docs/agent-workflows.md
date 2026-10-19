@@ -268,6 +268,15 @@ Keep secrets and local state outside version control and out of logs/reports.
 
 ## Documentation and verification
 
+Use the [repeatable verification procedure](runbooks/development.md#repeatable-verification-workflow)
+for startup, readiness, test data, the user-agreed four-journey smoke baseline,
+expected outcomes, evidence and cleanup. For application changes, run that baseline
+plus checks selected by impact below. Exercise affected UI journeys in a real
+browser even when the change is in a backend. Missing environments, skipped tests
+and capability fences are explicit coverage gaps, never passing results. For
+documentation-only changes, run the documentation/discovery checks instead.
+Fix introduced defects, then repeat failed scenarios and affected regressions.
+
 Keep service implementation notes with their service, system runbooks and delivery
 evidence in delivery, and specifications/approved design references in design.
 Executable styles/theme assets belong to frontend. Store screenshots with the

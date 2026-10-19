@@ -42,6 +42,13 @@ their canonical copies and that the Claude import resolves to the root AGENTS.md
 The context catalog is project navigation; it adds no model configuration, plugin,
 personal runtime or second requirements authority.
 
+Both agents must follow the [repeatable verification workflow](runbooks/development.md#repeatable-verification-workflow).
+It records the user-agreed critical smoke journeys, startup/readiness, isolated
+fixtures, assertions, coverage gaps and cleanup. File/import validation establishes
+discoverability, not proof that a new Codex or Claude session followed the guidance.
+Keep actual command results in dated delivery evidence; the setup validation is
+recorded in [the 2026-10-12 setup report](../qualification/agent-verification-setup-2026-10-12.md).
+
 For future updates, ask: "Use eng-project-setup to refresh this workspace's agent
 guidance from current requirements and CI; preserve existing instructions and keep
 the delivery canonical copies and installed root files consistent."

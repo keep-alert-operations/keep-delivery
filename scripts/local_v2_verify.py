@@ -147,12 +147,17 @@ def verify():
             )
             expect(
                 http.post(
-                    "http://127.0.0.1:58000/api/ingest/v2/alerts",
+                    "http://127.0.0.1:58001/api/ingest/v2/alerts",
                     json={},
                     headers=forged,
                 ),
-                401,
-                "public_listener_rejects_identity_headers",
+                404,
+                "public_listener_has_no_v2_route",
+            )
+            expect(
+                app.post(local.ORIGIN + "/api/ingest/v2/alerts", json={}),
+                404,
+                "product_api_has_no_ingestion_route",
             )
             try:
                 http.post(
@@ -281,7 +286,7 @@ def send():
                 ("queue", "Local Demo: background queue needs review", "high"),
             )
         ]
-        headers = {"X-API-Key": key, "Idempotency-Key": run}
+        headers = {"X-API-Key": key}
         body = {
             "alerts": [
                 {"payload": p, "event_id": f"{run}-{i}"} for i, p in enumerate(payloads)
@@ -290,35 +295,29 @@ def send():
         response = http.post(
             local.GATEWAY + "/api/ingest/v2/alerts", headers=headers, json=body
         )
-        receipt = local.checked(response)
+        admission = local.checked(response)
         if response.status_code != 202 or any(
-            item["disposition"] != "accepted" for item in receipt["items"]
-        ):
+            item["disposition"] != "accepted" for item in admission["results"]
+        ) or len(admission["results"]) != len(payloads):
             raise RuntimeError("Test batch was not fully admitted")
-        repeated = local.checked(
-            http.post(
-                local.GATEWAY + "/api/ingest/v2/alerts", headers=headers, json=body
-            )
-        )
-        if repeated != receipt:
-            raise RuntimeError("Idempotent batch retry changed its receipt")
+        # Kafka acknowledgement is admission; application and indexing are asynchronous.
+        # The current contract has no receipt lookup or client-key deduplication.
+        base = local.ORIGIN + f"/api/tenants/{demo['tenant_id']}/alerts"
+        ids = []
         for _ in range(45):
-            actual = local.checked(
-                http.get(
-                    local.GATEWAY + receipt["receipt_url"],
-                    headers={
-                        "X-API-Key": key,
-                        "X-Receipt-Token": receipt["receipt_token"],
-                    },
-                )
+            response = app.get(
+                base, params={"cel": 'alert.node_name == "' + run + '"'}
             )
-            if all(i["processing_status"] == "applied" for i in actual["items"]):
-                break
+            if response.status_code == 200:
+                rows = response.json()["data"]
+                if len(rows) == len(payloads) and {row["component"] for row in rows} == {
+                    payload["component"] for payload in payloads
+                }:
+                    ids = [row["id"] for row in rows]
+                    break
             time.sleep(1)
         else:
-            raise RuntimeError("Test alerts did not finish processing")
-        ids = [item["alert_id"] for item in actual["items"]]
-        base = local.ORIGIN + f"/api/tenants/{demo['tenant_id']}/alerts"
+            raise RuntimeError("Test alerts did not become searchable")
         for identifier in ids:
             local.checked(app.get(base + "/" + identifier))
         global_id = next(t["id"] for t in session["tenants"] if t["kind"] == "global")
@@ -330,15 +329,6 @@ def send():
                 != 404
             ):
                 raise RuntimeError("Cross-tenant alert detail was not concealed")
-        for _ in range(45):
-            response = app.get(base, params={"cel": 'alert.node_name == "' + run + '"'})
-            if response.status_code == 200 and set(ids) <= {
-                i["id"] for i in response.json()["data"]
-            }:
-                break
-            time.sleep(1)
-        else:
-            raise RuntimeError("Test alerts did not become searchable")
         evidence = {
             "tenant_id": demo["tenant_id"],
             "operator_id": demo["operator_id"],
@@ -348,12 +338,12 @@ def send():
             "applied": True,
             "searchable": True,
             "global_detail_denied": True,
-            "idempotent_retry": True,
+            "kafka_admitted": True,
             "verified_at": datetime.now(UTC).isoformat(),
         }
         local.save(local.STATE / "alerts-evidence.json", evidence)
         print(
-            f"Sent and verified {len(ids)} v2 alerts in Local Demo; idempotent retry and tenant isolation passed."
+            f"Sent and verified {len(ids)} v2 alerts in Local Demo; Kafka admission, search and tenant isolation passed."
         )
 
 

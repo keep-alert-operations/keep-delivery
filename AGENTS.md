@@ -25,3 +25,7 @@ not proof for this revision. Production qualification remains separate.
 Delivery coordinates all runtime packages for local tooling and system tests;
 its explicit dependencies may include services. Production services must never
 import delivery. Bootstrap sibling repositories before workspace-wide checks.
+
+For verification setup and execution, use the [development runbook](docs/runbooks/development.md#repeatable-verification-workflow):
+the agreed smoke suite, readiness, isolated data, expected results and cleanup.
+Keep procedure/coverage descriptions separate from dated executed evidence.

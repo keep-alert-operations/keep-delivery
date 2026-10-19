@@ -1,0 +1,10 @@
+{
+  "admin_url": "https://appchi-kong-0.appchi-kong-members:8444",
+  "admin_ca_file": "/etc/appchi/kong-admin-ca.crt",
+  "admin_token_file": null,
+  "upstream_host": "appchi-private-ingestion",
+  "upstream_port": 8443,
+  "upstream_ca_file": "/etc/appchi/private-ingestion-ca.crt",
+  "probe_token_file": "/etc/appchi/probe-token",
+  "clock_health_file": "/run/appchi-clock/health.json"
+}

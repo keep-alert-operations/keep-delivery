@@ -1,0 +1,7 @@
+*
+!*.js
+!lib
+!lib/*.js
+!lib/*.mjs
+!profiles
+!profiles/*.json

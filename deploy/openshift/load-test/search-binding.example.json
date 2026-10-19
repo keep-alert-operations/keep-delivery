@@ -1,0 +1,10 @@
+{
+  "profile": "appchi-es-rebuild-v1",
+  "alias": "appchi-test-alerts",
+  "index_prefix": "appchi-test-alerts-",
+  "capability_evidence": "REQUIRED_ES_ALLOCATION_AND_EXCLUSIVE_ALIAS_WRITER_REFERENCE",
+  "atomic_alias_switch": true,
+  "exclusive_alias_writer": true,
+  "max_document_bytes": 1048576,
+  "index_settings": {"number_of_shards": 1, "number_of_replicas": 0}
+}

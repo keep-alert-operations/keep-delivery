@@ -6,6 +6,10 @@ See [system design](https://github.com/appchi-alert-operations/appchi-design), [
 
 ## Workspace
 
+For daily product use, read the [illustrated Appchi client guide](docs/client-guide/README.md).
+It covers alerts, incidents, shared views, maintenance and correlation, with
+step-by-step workflows and an offline reading edition.
+
 Start with [workspace setup](docs/repository-workspace.md). Open the parent directory
 containing all eleven Git checkouts. Canonical system instructions are in
 [workspace/AGENTS.md](workspace/AGENTS.md).
@@ -16,7 +20,16 @@ delivery, `python scripts/context.py plan --route incidents` prints a reading pl
 `python scripts/context.py read --source SOURCE_ID` reads its authoritative sections.
 Run `python qualification/check_context.py` after changing the catalog or its sources.
 
+For an isolated private-cluster deployment with supplied Elasticsearch, Kafka and
+Grafana, start with the [OpenShift deployment and load-testing guide](docs/runbooks/openshift-load-testing.md).
+It includes image transfer, service configuration/resources, dedicated Keycloak
+test users, staged startup and executable load-generator assets.
+
 ## Development
+
+Start onboarding with the [interactive developer guide](docs/developer-guide/index.html).
+It covers architecture, source processing and replay, domain behavior, local setup,
+tests, security and operations, with explorable scenarios and knowledge checks.
 
 Use Python 3.13, Poetry 2.3.1 and the committed `poetry.lock`. Configure Git authentication for the
 private organization repositories before resolving internal dependencies.

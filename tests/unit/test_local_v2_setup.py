@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+import httpx
 from pydantic import SecretStr
 import pytest
 
@@ -78,6 +79,65 @@ def test_persisted_ports_drive_python_and_compose_endpoints(tmp_path, monkeypatc
     for launcher in ("local-v2.ps1", "local-identity.ps1"):
         source = (local.ROOT / "scripts" / launcher).read_text()
         assert source.index("scripts/local_v2.py ports") < source.index("docker compose")
+
+
+def test_prepare_before_database_bootstrap_preserves_credentials(monkeypatch, tmp_path):
+    state = tmp_path / "operators"
+    monkeypatch.setattr(local, "STATE", state)
+    monkeypatch.setattr(local, "ROOT", tmp_path)
+    monkeypatch.setattr(local, "certificates", lambda: None)
+
+    def unavailable_environment():
+        raise AssertionError("Preparation must not require a database environment")
+
+    monkeypatch.setattr(local, "environment", unavailable_environment)
+    local.prepare()
+    expected = local.credentials()
+    assert not (tmp_path / ".local/keycloak/app-environment.json").exists()
+    assert (state / "kong-password.txt").read_text().strip() == expected["kong_password"]
+    assert (state / "grafana-password.txt").read_text().strip() == expected["grafana_password"]
+    local.prepare()
+    assert local.credentials() == expected
+
+
+def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
+    demo = {"tenant_id": str(uuid4()), "operator_id": str(uuid4())}
+    global_id = str(uuid4())
+    rows, calls, evidence = [], [], {}
+
+    def respond(request):
+        calls.append((request.method, request.url.path))
+        if request.method == "POST":
+            assert request.url.path == "/api/ingest/v2/alerts"
+            assert "Idempotency-Key" not in request.headers
+            payloads = json.loads(request.content)["alerts"]
+            rows.extend({"id": str(uuid4()), **item["payload"]} for item in payloads)
+            return httpx.Response(202, json={
+                "request_id": str(uuid4()),
+                "results": [{"index": index, "status": 202, "disposition": "accepted"}
+                            for index in range(len(payloads))],
+            })
+        if request.url.path == f"/api/tenants/{demo['tenant_id']}/alerts":
+            assert request.url.params["cel"] == 'alert.node_name == "' + rows[0]["node_name"] + '"'
+            return httpx.Response(200, json={"data": rows})
+        identifier = request.url.path.rsplit("/", 1)[-1]
+        assert identifier in {row["id"] for row in rows}
+        if request.url.path.startswith(f"/api/tenants/{global_id}/"):
+            return httpx.Response(404)
+        assert request.url.path.startswith(f"/api/tenants/{demo['tenant_id']}/")
+        return httpx.Response(200, json={"data": {"id": identifier}})
+
+    monkeypatch.setattr(local, "environment", lambda: None)
+    monkeypatch.setattr(local, "client", lambda **kwargs: httpx.Client(transport=httpx.MockTransport(respond)))
+    monkeypatch.setattr(local, "login", lambda _: {"tenants": [{"id": global_id, "kind": "global"}]})
+    monkeypatch.setattr(verification, "demo_key", lambda _: (demo, "vena_test"))
+    monkeypatch.setattr(local, "save", lambda _, value: evidence.update(value))
+    verification.send()
+    assert len([call for call in calls if call[0] == "POST"]) == 1
+    assert evidence["count"] == 3 and evidence["kafka_admitted"] and evidence["searchable"]
+    assert evidence["global_detail_denied"]
+    assert "idempotent_retry" not in evidence
+    assert "vena_test" not in json.dumps(evidence)
 
 
 @pytest.mark.parametrize(

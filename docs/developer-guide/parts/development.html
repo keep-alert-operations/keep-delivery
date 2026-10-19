@@ -1,0 +1,164 @@
+<section id="local-development" aria-labelledby="local-development-title">
+  <h2 id="local-development-title">Prepare a local development workspace</h2>
+  <p>Develop from the parent directory containing the eleven independent Appchi repositories. Delivery supplies the coordinated Python environment, workspace inventory and local launchers; each repository still owns its source, Git history and checks. The commands below are instructions for a developer to run when their prerequisites are satisfied. They are not a record of checks executed while preparing this guide.</p>
+
+  <h3>1. Establish the tools and checkout state</h3>
+  <p>The documented prerequisites are Python 3.13, Poetry 2.3.1, Node.js 22.17 or newer, npm and Git. Private repository access must already work through your approved Git credential helper. Docker and the documented local identity/TLS setup are additional prerequisites for the full local stack; they are not required merely to read source. Check versions without printing credentials:</p>
+  <pre><code class="language-powershell"># Working directory: workspace root
+python --version
+poetry --version
+node --version
+npm --version
+git --version
+git -C appchi-delivery rev-parse --show-toplevel
+git -C appchi-delivery status --short --branch
+git -C appchi-delivery diff --stat
+git -C appchi-delivery diff --cached --stat</code></pre>
+  <p>Read the root <code>AGENTS.md</code>, then the affected repository's instructions and README. Repeat the Git inspection for every repository you will change, including untracked files. Preserve existing work. Matching branch names do not establish compatible revisions, and an existing directory is not proof of an independent checkout.</p>
+
+  <h3>2. Bootstrap and install the coordinated environment</h3>
+  <p>For a new workspace, first obtain the delivery checkout through the organization's approved repository access. Run the following from <code>appchi-delivery</code>, located directly under the intended workspace root:</p>
+  <pre><code class="language-powershell"># Working directory: appchi-delivery
+python scripts/workspace.py bootstrap
+python scripts/workspace.py install --editable
+.\scripts\dev.ps1 -Action Check
+python scripts/workspace.py inventory --output .local/workspace-inventory.json</code></pre>
+  <p>Bootstrap clones missing siblings at the manifest's immutable commits. It preserves existing repositories and their branches rather than resetting them. New sibling checkouts can therefore be detached at a pinned commit; create a task branch before making changes there. Bootstrap also installs the canonical workspace instructions. If a different root instruction file and an earlier backup both exist, it stops for reconciliation instead of overwriting them.</p>
+  <p>Installation first resolves the committed delivery lock, then replaces installed Python packages with editable local sources and runs the frontend's locked npm installation. It does not start services or apply migrations. <code>dev.ps1 -Action Check</code> checks Python/imports and frontend dependency/runtime availability; without its explicit configuration flags, it does not validate service connectivity or readiness.</p>
+  <p>The inventory records each checkout's commit, dirty state and manifest match, plus migration checksums. Keep this with your test evidence. It describes the files you have, not a qualified release.</p>
+
+  <div class="table-scroll"><table>
+    <thead><tr><th>Development mode</th><th>Which source is exercised?</th><th>Use it for</th></tr></thead>
+    <tbody>
+      <tr><td>Delivery install with <code>--editable</code></td><td>Local Python sibling checkouts, with dependencies from the delivery lock.</td><td>A coordinated change spanning services or shared packages.</td></tr>
+      <tr><td>Delivery install without <code>--editable</code></td><td>Immutable Git dependencies selected by the committed lock.</td><td>Checking the pinned combination; sibling edits alone do not change it.</td></tr>
+      <tr><td>Repository-owned <code>poetry check --lock</code> then <code>poetry sync --all-extras</code></td><td>That repository and its own pinned dependency graph.</td><td>Its independent package and CI checks.</td></tr>
+      <tr><td>Frontend <code>npm ci</code></td><td>The frontend checkout and committed npm lock, including its pinned contracts package.</td><td>Frontend development and generation against the selected contract artifact.</td></tr>
+    </tbody>
+  </table></div>
+  <p>After preparing editable dependencies, use delivery's <code>.venv/Scripts/python.exe</code> directly for coordinated Python checks. A later dependency synchronization can restore pinned packages, so do not assume an earlier editable install still describes the active environment. If dependency metadata changes, resolve and review the appropriate lock changes before reinstalling; <code>--no-deps</code> editable overrides do not resolve new dependencies for you. Never commit machine-specific editable paths.</p>
+
+  <details><summary>Portable commands and an individual Python repository</summary>
+    <p>The workspace guide documents <code>.venv/bin/python</code> instead of <code>.venv/Scripts/python.exe</code> on Linux/macOS. The Python workspace script provides bootstrap, install, inventory and test actions there too. The PowerShell runtime launchers describe the Windows local environment; do not assume every local-stack step has a portable equivalent.</p>
+    <pre><code class="language-powershell"># Working directory: the affected Python repository
+poetry check --lock
+poetry sync --all-extras
+poetry run ruff check src tests
+poetry run pytest tests/unit -q
+poetry build --format wheel</code></pre>
+    <p>Use the repository's actual test layout and workflow. This sequence is the common package CI pattern, not a substitute for its integration tests.</p>
+  </details>
+
+  <h3>3. Choose the right local execution path</h3>
+  <p>Inspect the existing environment before starting anything. Delivery coordinates one Compose project and managed local application processes. A second processor or launcher pointed at the same stores can compete with the first. Historical startup notes show past evidence; they do not establish that services are running now.</p>
+  <pre><code class="language-powershell"># Working directory: appchi-delivery
+.\scripts\local-runtime.ps1 -Action Status</code></pre>
+  <p>Follow <a href="../local-runtime.md">the local runtime guide</a> and <a href="../local-keycloak.md">local identity setup</a> before Start. Establish the intended isolated stores, matching local credentials, TLS trust and required cutover/evidence gates. Start is consequential local setup: it can prepare credentials, launch dependencies and apply migrations before writers. Keep existing volumes and their matching <code>.local</code> material.</p>
+  <pre><code class="language-powershell"># Working directory: appchi-delivery
+# Only after the local-runtime prerequisites and existing processes are checked.
+.\scripts\local-runtime.ps1 -Action Start
+# Later, for an intentional managed application reload:
+.\scripts\local-runtime.ps1 -Action Start -Restart
+# When finished with this managed stack:
+.\scripts\local-runtime.ps1 -Action Stop</code></pre>
+  <p>Stop preserves volumes. Do not remove them as a startup repair. The documented browser entry is <code>https://localhost:3443</code>. Local startup publishes trusted identities once; subsequent local identity changes use the documented explicit refresh, not a directory poller. Correlation has a separately bound preview gate; a successful API start does not prove it is enabled.</p>
+</section>
+
+<section id="change-workflow" aria-labelledby="change-workflow-title">
+  <h2 id="change-workflow-title">Make a change without breaking its neighbors</h2>
+  <h3>Begin with behavior and ownership</h3>
+  <p>Read the system design, current worker scope and the supplement governing the behavior. Define the observable acceptance condition before coding: the triggering input, the expected state and what must remain unchanged. Resolve a source/specification conflict rather than quietly choosing whichever is easier. Current user decisions can supersede older examples and retained implementation algorithms.</p>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Change belongs in</th><th>Examples and boundary</th></tr></thead>
+    <tbody>
+      <tr><td><code>appchi-contracts</code></td><td>Native/event definitions, shared serialization, generated HTTP schemas and compatibility fixtures. No service orchestration or database access.</td></tr>
+      <tr><td><code>appchi-domain</code></td><td>Shared transactional business behavior, CEL semantics and persistence/lock helpers. No HTTP routes or server entrypoint; it may depend on contracts.</td></tr>
+      <tr><td>The owning service</td><td>HTTP routes, process entrypoints, service-specific consumption and orchestration. Shared packages must not import these modules.</td></tr>
+      <tr><td><code>appchi-frontend</code></td><td>Next.js/TypeScript UI, generated client, browser tests and executable theme assets.</td></tr>
+      <tr><td>Design, migrations or delivery</td><td>Normative behavior in design; the single PostgreSQL chain in migrations; coordinated environment, release inventory and system evidence in delivery.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Trace affected producers and consumers before editing a shared field or helper. Services use installed pinned packages in releases, not imports from neighboring directories. Coordinated development uses the explicit editable environment; copying shared code into consumers creates competing authorities.</p>
+
+  <h3>A small first change: strengthen an alert ownership regression</h3>
+  <ol>
+    <li>Read alert operations section 17 and the frontend UI design. The invariant is that assigning a firing alert displays Acknowledged; removing assignment displays Firing. Suppression is separate.</li>
+    <li>Inspect <code>src/lib/alert-status.ts</code>, <code>src/components/alert-table.tsx</code>, <code>src/components/alerts.tsx</code> and the existing synthetic scenarios in <code>tests/redesign.spec.ts</code>. Identify a genuinely missing assertion or edge case; do not duplicate existing coverage.</li>
+    <li>Check the frontend branch and local changes. Reuse the relevant task branch, or create a suitable <code>codex/</code> branch from the verified starting revision. Add one focused regression using existing fixture conventions.</li>
+    <li>Run the targeted browser file in the isolated synthetic test environment below. If it exposes a defect, implement the smallest correction consistent with the invariant and rerun that scenario.</li>
+    <li>Review the rendered result and diff. Run affected frontend checks, then describe precisely whether you added coverage, changed behavior, or both. This exercise does not authorize a production release.</li>
+  </ol>
+  <pre><code class="language-powershell"># Working directory: appchi-frontend
+# Existing installed Chrome, prepared npm dependencies, test port available.
+# Ensure APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL is not set for this run.
+$env:PLAYWRIGHT_CHANNEL = 'chrome'
+$env:APPCHI_NEXT_DIST_DIR = '.next-onboarding-check'
+npm test -- tests/redesign.spec.ts
+Remove-Item Env:APPCHI_NEXT_DIST_DIR
+Remove-Item Env:PLAYWRIGHT_CHANNEL</code></pre>
+  <p>Preserve and restore any pre-existing environment values instead of discarding them. The ordinary Playwright configuration uses port 3100 and can reuse an existing server; check what owns that port before the run. A separate build directory avoids overwriting the ordinary server's output, but does not provide a separate port by itself.</p>
+
+  <h3>Regenerate contracts in dependency order</h3>
+  <p>For an HTTP change, update the owning Product API or Ingestion API source first. The delivery generator imports those installed applications and writes separate producer OpenAPI documents plus the aggregate into contracts. It also generates event schemas from the shared event models. Use the editable environment when the intended producers are local modified sources:</p>
+  <pre><code class="language-powershell"># Working directory: appchi-delivery
+.venv/Scripts/python.exe qualification/generate_contracts.py
+.venv/Scripts/python.exe qualification/check_contracts.py
+.venv/Scripts/python.exe qualification/verify_boundaries.py
+git -C ../appchi-contracts diff -- schemas</code></pre>
+  <p>Review changed schemas as compatibility changes. Never patch only a generated file. Commit the contract authority and advance affected immutable dependency references and locks in dependency order. Frontend generation reads its installed <code>@appchi/contracts</code> package, not the sibling schemas directory. After updating its package reference and lock through the normal package workflow:</p>
+  <pre><code class="language-powershell"># Working directory: appchi-frontend
+npm ci
+npm run generate
+git diff -- src/lib/generated.ts</code></pre>
+  <p>Complete affected consumer tests before advancing delivery's workspace manifest and lock. Record prerequisite commits, merge order and the tested combination. Several repository PRs do not form an atomic release; compatibility must cover the supported mixed state or the documented coordinated cutover.</p>
+
+  <details><summary>When a change needs PostgreSQL schema work</summary>
+    <p>Use only <code>appchi-migrations</code>. Inspect the current chain before selecting a new number:</p>
+    <pre><code class="language-powershell"># Working directory: appchi-migrations; locked dependencies already installed
+poetry run alembic history
+poetry run alembic heads</code></pre>
+    <p>These commands do not connect to PostgreSQL. Preserve published SQL bytes, checksums and numbering gaps; corrections use a new forward migration and one linear chain. Follow the migration README for the wrapper, SQL file and new checksum. Runtime services never migrate on startup. Migration execution needs its dedicated identity before dependent writers and any documented offline prerequisites; a new application image alone cannot make an incompatible rollback safe.</p>
+  </details>
+</section>
+
+<section id="verification" aria-labelledby="verification-title">
+  <h2 id="verification-title">Prove the changed behavior</h2>
+  <p>Choose checks from the acceptance condition and affected boundaries. A narrow UI copy change needs less verification than a lock-order, schema or pipeline change. Finish required checks; broaden when a failure, new scope or unresolved concern justifies it. Serialize heavy native CEL suites, frontend builds and browser suites on this workstation so resource contention does not become a false failure.</p>
+
+  <h3>Run the relevant checks from their owner</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Scope</th><th>Command and working directory</th><th>What it establishes</th></tr></thead>
+    <tbody>
+      <tr><td>Coordinated Python units</td><td>Delivery: <code>.venv/Scripts/python.exe scripts/workspace.py test</code></td><td>Runs each sibling's existing <code>tests/unit</code> using the selected interpreter. Prepare editable overrides first when testing local sibling edits.</td></tr>
+      <tr><td>Contracts</td><td>Delivery: <code>.venv/Scripts/python.exe qualification/check_contracts.py</code></td><td>Generated OpenAPI/event schemas agree with installed runtime models; it does not contact services.</td></tr>
+      <tr><td>Import boundaries</td><td>Delivery: <code>.venv/Scripts/python.exe qualification/verify_boundaries.py</code></td><td>The workspace satisfies its implemented ownership/import checks.</td></tr>
+      <tr><td>Workspace Markdown</td><td>Delivery: <code>python qualification/verify_documents.py</code></td><td>Links, fences and source ownership targets across available siblings.</td></tr>
+      <tr><td>Design documents</td><td>Design: <code>python scripts/check_docs.py</code></td><td>The design repository's documentation checks.</td></tr>
+      <tr><td>Frontend static/build</td><td>Frontend: <code>npm run format:check</code>, <code>npm run typecheck</code>, <code>npm run build</code></td><td>Formatting, TypeScript and production-build checks; not runtime integration.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Delivery also exposes the following wrappers after its Python and frontend dependencies are prepared. Each begins with the development import/runtime check:</p>
+  <pre><code class="language-powershell"># Working directory: appchi-delivery
+.\scripts\verify.ps1 -Suite Unit
+.\scripts\verify.ps1 -Suite Build
+.\scripts\verify.ps1 -Suite Browser -BrowserChannel chrome</code></pre>
+
+  <h3>Separate synthetic browser coverage from real integration</h3>
+  <p>The ordinary browser suite intercepts API traffic with synthetic fixtures. It is useful for rendering, navigation, forms, conflicts and visible permission states. It does not establish real authorization, database transactions, search consistency, Kafka processing or company service compatibility. Inspect the relevant desktop/narrow behavior and actual user interaction, not just a successful build.</p>
+  <p>The opt-in real browser fixture uses an actual HTTPS frontend, API and a disposable PostgreSQL database. It requires <code>APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL</code> for an isolated cluster whose identity can create and drop test databases, prepared delivery dependencies and a supported browser. Supply that binding through the local secret/configuration process before running:</p>
+  <pre><code class="language-powershell"># Working directory: appchi-delivery
+# Prerequisite: explicitly supplied isolated disposable PostgreSQL admin binding.
+.\scripts\verify.ps1 -Suite BrowserReal -BrowserChannel chrome
+# Separate integration suite; requires APPCHI_TEST_DATABASE_URL.
+.\scripts\verify.ps1 -Suite Database</code></pre>
+  <p>The Database suite applies migrations and writes synthetic records to its configured isolated test database. Real browser evidence still does not qualify real Keycloak sign-in or the complete Kafka/search pipeline. The local-runtime browser configuration exercises a different, explicitly opt-in environment; follow its runbook instead of interchanging these tests.</p>
+
+  <h3>Understand CI and finish with honest evidence</h3>
+  <p>The common Python workflow performs locked install, Ruff, owned unit tests and wheel build. Delivery additionally bootstraps the pinned workspace and checks contracts, boundaries and documentation. Frontend CI regenerates its client, fails on generated-file drift, then checks formatting, types and build. Its current workflow does not run Playwright, so a green frontend CI result alone is not browser verification.</p>
+  <p>Private dependency workflows require the configured read-only repository credential. A credential preflight failure means subsequent checks did not run. Refer to the current workspace setup instructions for access arrangements; never copy token values into commands, code or reports.</p>
+  <p>For handoff, record affected repositories and exact revisions, local modifications or editable overrides, commands and working directories, outcomes, screenshots where relevant, and skipped checks with their missing prerequisite. Distinguish an assertion failure from an unavailable service. Keep runtime evidence in delivery and normative behavior in design. Passing tests on one local combination does not qualify another set of dependency pins, production capacity or deployment readiness.</p>
+
+  <div class="sources">
+    <p>Sources: <a href="../repository-workspace.md">workspace setup</a>; <a href="../../scripts/workspace.py">workspace command implementation</a>; <a href="../../scripts/dev.ps1">development launcher</a>; <a href="../../scripts/verify.ps1">verification wrapper</a>; <a href="../local-runtime.md">local runtime</a>; <a href="../../qualification/generate_contracts.py">contract generation</a>; <a href="../../.github/workflows/checks.yml">delivery CI</a>; <a href="../../../appchi-frontend/package.json">frontend scripts</a>; <a href="../../../appchi-frontend/playwright.config.ts">browser configuration</a>; <a href="../../../appchi-frontend/.github/workflows/checks.yml">frontend CI</a>; <a href="../../../appchi-migrations/README.md">migration procedure</a>; <a href="../../../appchi-design/specs/spec-repository-layout.md">repository boundaries</a>; <a href="../../../appchi-design/specs/spec-worker-scope.md">current worker scope</a>.</p>
+  </div>
+</section>

@@ -1,0 +1,36 @@
+{
+  "namespace": "REQUIRED_TEST_NAMESPACE",
+  "release_id": "REQUIRED_RELEASE_ID",
+  "global_tenant_id": null,
+  "search_bootstrap": {
+    "physical_index": "REQUIRED_RESERVED_PHYSICAL_INDEX",
+    "index_epoch": "REQUIRED_NEW_UUID_PRESERVED_ON_RETRY",
+    "operation_reference": "REQUIRED_NONSECRET_CHANGE_REFERENCE"
+  },
+  "storage_class": "REQUIRED_STORAGE_CLASS",
+  "image_pull_secret": "REQUIRED_EXISTING_REGISTRY_SECRET",
+  "router_namespace_labels": {"kubernetes.io/metadata.name": "REQUIRED_ROUTER_NAMESPACE"},
+  "hosts": {
+    "application": "REQUIRED_APPLICATION_DNS_NAME",
+    "keycloak": "REQUIRED_KEYCLOAK_DNS_NAME",
+    "v1": "REQUIRED_V1_DNS_NAME",
+    "v2": "REQUIRED_V2_DNS_NAME"
+  },
+  "images": {
+    "api": "REQUIRED_REGISTRY/api@sha256:REQUIRED_DIGEST",
+    "ingestion": "REQUIRED_REGISTRY/ingestion@sha256:REQUIRED_DIGEST",
+    "processor": "REQUIRED_REGISTRY/processor@sha256:REQUIRED_DIGEST",
+    "indexer": "REQUIRED_REGISTRY/indexer@sha256:REQUIRED_DIGEST",
+    "correlation": "REQUIRED_REGISTRY/correlation@sha256:REQUIRED_DIGEST",
+    "frontend": "REQUIRED_REGISTRY/frontend@sha256:REQUIRED_DIGEST",
+    "migrations": "REQUIRED_REGISTRY/migrations@sha256:REQUIRED_DIGEST",
+    "postgres": "REQUIRED_REGISTRY/postgres@sha256:REQUIRED_DIGEST",
+    "keycloak_postgres": "REQUIRED_REGISTRY/keycloak-postgres@sha256:REQUIRED_DIGEST",
+    "kong_postgres": "REQUIRED_REGISTRY/kong-postgres@sha256:REQUIRED_DIGEST",
+    "redis": "REQUIRED_REGISTRY/redis@sha256:REQUIRED_DIGEST",
+    "keycloak": "REQUIRED_REGISTRY/keycloak@sha256:REQUIRED_DIGEST",
+    "kong": "REQUIRED_REGISTRY/kong@sha256:REQUIRED_DIGEST"
+  },
+  "storage": {"postgres": "20Gi", "keycloak-db": "5Gi", "kong-db": "5Gi"},
+  "resource_overrides": {}
+}
