@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 from datetime import UTC, datetime, timedelta
-from time import monotonic
+from time import monotonic, sleep
 from types import SimpleNamespace
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -13,7 +13,12 @@ import pytest
 
 from appchi.ingestion.kafka_admission import KafkaAdmission, KafkaPublisher
 from appchi.ingestion.native import canonical
-from appchi.kafka_source import apply_record, SourceConsumer
+from appchi.kafka_source import (
+    RECEIVE_LEAD_MARGIN,
+    ReceiveTimeAhead,
+    SourceConsumer,
+    apply_record,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -58,9 +63,20 @@ def receipt(config, payload, *, publisher=None, at=None):
     return publisher.records[-1] if isinstance(publisher, Capture) else body
 
 
+def apply_waiting(db, **kwargs):
+    # Receipts here are stamped from this host's clock, which may lead the
+    # database clock. Wait out the lead as SourceConsumer does.
+    for _ in range(3):
+        try:
+            return apply_record(db, **kwargs)
+        except ReceiveTimeAhead as ahead:
+            sleep(ahead.lead + RECEIVE_LEAD_MARGIN)
+    return apply_record(db, **kwargs)
+
+
 def apply(db, config, record, offset=0):
     topic, key, value = record
-    return apply_record(
+    return apply_waiting(
         db,
         topic=topic,
         key=key,
@@ -142,6 +158,43 @@ def test_application_order_preserved_when_receive_timestamps_reverse(real_db, v1
         assert row["message"] == "append second"
 
 
+def test_receipt_ahead_of_database_clock_rolls_back_then_applies_unmoved(real_db, v1):
+    config = settings(real_db)
+    tenant = config.global_tenant_id
+    with real_db.transaction() as conn:
+        database_now = conn.execute("SELECT clock_timestamp() AS now").fetchone()["now"]
+    at = database_now.astimezone(UTC) + timedelta(milliseconds=500)
+    topic, key, value = receipt(config, v1, at=at)
+    event_id = json.loads(value)["event_id"]
+    arguments = dict(
+        topic=topic, key=key, value=value, partition=0, offset=0, settings=config, profile=None
+    )
+
+    def state():
+        with real_db.transaction(tenant) as conn:
+            work = conn.execute(
+                "SELECT admission_order,last_clock FROM tenant_work_state WHERE tenant_id=%s",
+                (tenant,),
+            ).fetchone()
+            result = conn.execute(
+                "SELECT received_at FROM kafka_source_results WHERE delivery_id=%s", (event_id,)
+            ).fetchone()
+        return work, result
+
+    before, _ = state()
+    with pytest.raises(ReceiveTimeAhead) as raised:
+        apply_record(real_db, **arguments)
+    assert 0 < raised.value.lead <= 0.5
+    # The clock and admission-order write rolled back with everything else.
+    assert state() == (before, None)
+    sleep(raised.value.lead + RECEIVE_LEAD_MARGIN)
+    assert apply_record(real_db, **arguments)
+    work, result = state()
+    assert work["admission_order"] == before["admission_order"] + 1
+    assert work["last_clock"] >= at
+    assert result["received_at"] == at  # receipt is never moved
+
+
 def test_actual_broker_ack_and_transactional_output_offset(real_db, v1):
     from confluent_kafka import Consumer, TopicPartition, KafkaException
     from confluent_kafka.admin import AdminClient, NewTopic
@@ -170,7 +223,7 @@ def test_actual_broker_ack_and_transactional_output_offset(real_db, v1):
         incoming = output.poll(5)
         assert incoming is not None and not incoming.error()
         # Simulate death immediately after PG commit and before begin_transaction.
-        original = apply_record(
+        original = apply_waiting(
             real_db,
             topic=incoming.topic(),
             partition=0,

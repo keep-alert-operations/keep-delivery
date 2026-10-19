@@ -50,13 +50,18 @@ are revoked, retained OAuth tokens erased, refresh generations advanced and
 pending login transactions removed in the same transaction as the gate closure.
 Fresh SSO is still unavailable until the later identity recovery checks exist.
 
-The runtime guard uses a bounded preliminary transaction and shared session
-advisory lock around the business transaction. This retains existing repeatable
-read semantics. Recovery takes the matching exclusive lock before changing
-control. Failed/uncertain lock release discards the connection. Human paths and
-SQL workers use this boundary. Kafka-first native v1/v2 and Grafana admission do
-not read PostgreSQL and require the explicit quiescence above. The guard's extra
-database round trips need inclusion in capacity qualification.
+The runtime guard has two forms. Tenant-scoped units, and unscoped units that
+pass `read_committed=True`, are pinned to READ COMMITTED and take a shared
+transaction-level advisory lock, then read restore control, inside the business
+transaction's setup pipeline. Commit or rollback releases that lock, so this form
+adds no transactions. Other unscoped units may select REPEATABLE READ, so they keep
+a bounded preliminary transaction and shared session advisory lock around the
+business transaction; failed/uncertain release of that lock discards the
+connection. Recovery takes the matching exclusive lock before changing control,
+which conflicts with both forms. Human paths and SQL workers use this boundary.
+Kafka-first native v1/v2 and Grafana admission do not read PostgreSQL and require
+the explicit quiescence above. The session form's extra database round trips need
+inclusion in capacity qualification.
 
 `collect` requires the normal supplied recovery binding/credential settings and
 the explicit [paged checkpoint contract](recovery-checkpoints.md). It freezes the

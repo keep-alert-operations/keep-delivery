@@ -74,6 +74,11 @@ Owners supply endpoints, topology and ACLs; templates do not prescribe allocatio
   recent sanitized rejections, shared partition faults/observed positions and that
   tenant's search passes. It exposes no source payload or secret. Broker committed
   offsets remain authoritative; PG observed positions may lag them.
+- A source receipt ahead of the database clock is held, not faulted: only that
+  partition waits for the measured lead, logged as `source_receive_time_ahead` (a
+  warning above 100 ms). A lead over 1 second records that partition fault and retries
+  after 5 seconds; it means ingress and database clocks differ beyond the health
+  contract, which the clock owner repairs.
 - On an offset below the low watermark, preserve the loss interval and stop source
   or correlation recovery. Owners establish what retained data remains. A reviewed
   reset requires an explicit lost-input assessment, preservation of delivery/key

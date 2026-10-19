@@ -453,7 +453,8 @@ def test_source_rechecks_reused_maintenance_gate_before_commit(real_db, tenant, 
     config = configuration(tenant)
     record = receipt(config, v1)
     offset = uuid4().int >> 66
-    coordinator = kafka_source.coordinator
+    # The source path takes the tenant coordinator lock once, in lock_coordinator.
+    coordinator = kafka_source.lock_coordinator
     with real_db.transaction() as conn:
         prior = conn.execute(
             "SELECT ready FROM capability_gates WHERE capability='maintenance'"
@@ -467,7 +468,7 @@ def test_source_rechecks_reused_maintenance_gate_before_commit(real_db, tenant, 
             )
         return coordinator(conn, selected_tenant)
 
-    monkeypatch.setattr(kafka_source, "coordinator", raced_coordinator)
+    monkeypatch.setattr(kafka_source, "lock_coordinator", raced_coordinator)
     try:
         with pytest.raises(Exception) as failure:
             apply(real_db, config, record, offset)
@@ -479,7 +480,7 @@ def test_source_rechecks_reused_maintenance_gate_before_commit(real_db, tenant, 
             ).fetchone()
             assert not conn.execute("SELECT 1 FROM alerts WHERE tenant_id=%s", (tenant,)).fetchone()
             conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
-        monkeypatch.setattr(kafka_source, "coordinator", coordinator)
+        monkeypatch.setattr(kafka_source, "lock_coordinator", coordinator)
         # The same immutable delivery remains retryable after the gate settles.
         assert json.loads(apply(real_db, config, record, offset))["alert_id"]
     finally:

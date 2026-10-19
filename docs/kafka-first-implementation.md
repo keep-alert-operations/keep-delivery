@@ -28,9 +28,11 @@ attempts, and acknowledges only broker confirmation. Legacy sender IDs are synta
 receipt endpoints are removed. The generated received schema is version 2.
 
 Source workers apply delivery UUIDs once in PostgreSQL, retain immutable publication
-bytes and first input coordinates, then publish changed plus the consumed offset in
-a Kafka transaction. Stable partition producer IDs fence prior owners. Correlation
-consumes tenant-keyed changed events with its own Kafka sequence. Manual commands no
+bytes and first input coordinates, then publish each input partition's bounded batch
+of changed events plus the next offset in one Kafka transaction (at most 100 inputs,
+closed after 100 ms of application). Stable partition producer IDs fence prior
+owners. Correlation consumes tenant-keyed changed events record by record with its
+own Kafka sequence, independent of how source transactions group them. Manual commands no
 longer reject queued source work; resolve clears evidence atomically. Inline
 maintenance retains source provenance and returns the final committed command revision.
 

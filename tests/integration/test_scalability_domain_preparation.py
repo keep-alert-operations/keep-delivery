@@ -6,11 +6,11 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.kafka_source import apply_record
 from appchi.maintenance import preparation, processing
 from appchi.shared.errors import AppError
 from test_correlation_configuration import rules
-from test_kafka_first import receipt
+# Host-clock receipts may lead the database clock; wait it out like the consumer.
+from test_kafka_first import apply_waiting, receipt
 from test_kafka_maintenance_inline import CAPACITY, setup
 from test_product import browser
 from test_search_pipeline import real_db
@@ -22,7 +22,7 @@ PROFILE = {**CAPACITY, "maintenance_max_inputs": 3}
 
 def receive(db, config, payload, offset, *, at=None):
     topic, key, value = receipt(config, payload, at=at)
-    return apply_record(
+    return apply_waiting(
         db,
         topic=topic,
         key=key,
