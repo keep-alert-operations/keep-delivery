@@ -2,6 +2,11 @@
 
 Implementation, environment bindings and qualification evidence are separate from the selected system design. DEL records below remain open. Local implementation and executed correctness evidence now exist and are tracked in [Implementation status](implementation-status.md); full release qualification is still unperformed. A closed design issue or passing local test does not establish production readiness.
 
+The [2026-10-04 local startup repair](../qualification/local-startup-2026-10-04.md)
+establishes working core development execution, local Kafka cutover and v1/v2
+admission/search against the preserved local stores. It does not close DEL-01
+through DEL-08 or qualify shared company services, capacity or recovery.
+
 REV-38 adds [local Alembic conversion evidence](../qualification/alembic-migrations.md)
 and its [migration runbook](../docs/alembic-migrations.md). Verified legacy adoption
 and package/consumer checks contribute to DEL-02/04; no production gate is closed.
@@ -85,7 +90,7 @@ a separately executed offline cutover; the disposable test migration is not that
 | DEL-08 Operational observation | Appchi + observability owner | Live SLI measurement/coverage and ongoing rolling-window results after deployment; preproduction tests alone cannot prove a production 30-day SLO. |
 
 
-### Local implementation checkpoint — 2026-09-23
+### Local implementation checkpoint â€” 2026-09-23
 
 The integrated backend run through migration 0030 passed 606 tests, with one
 Kafka-dependent test skipped and six dependency deprecation warnings. A further
@@ -126,7 +131,19 @@ shutdown. Existing two-second PostgreSQL reconciliation and tenant/session guard
 remain. Local checks are in [worker-scope evidence](../docs/worker-scope-implementation.md);
 no DEL item is closed by this scope change alone.
 
-## Scalability handoff — 2026-10-07
+## Private OpenShift load-test preparation â€” 2026-10-05
+
+The [isolated deployment and load-test handoff](../docs/runbooks/openshift-load-testing.md)
+assumes supplied Elasticsearch, Kafka and Grafana, an internal image registry and
+dedicated native Keycloak test users. It provides container/deployment assets,
+starting allocations and executable workload scripts. See the
+[local evidence](../qualification/openshift-load-test-handoff.md) for actual checks
+and unbuilt/unexecuted coverage. The
+[initialization tools](../qualification/cluster-initialization-2026-10-05.md) are now
+implemented; actual search activation, operator proof integration, capability
+evidence and target-cluster execution remain required. No DEL item or production
+readiness gate is closed by this preparation.
+## Scalability handoff â€” 2026-10-07
 
 Application corrections and local verification for 5,000 deliveries/minute,
 100 active users and 50 tenants are recorded in the
@@ -148,3 +165,13 @@ Source publication was subsequently authorized. Coordinated
 manifest are recorded in [publication evidence](evidence/scalability-publication.json).
 Pre-existing unrelated work remains local. No additional tests were run; this is
 source publication, not a merged or qualified deployment.
+
+## Python tooling migration — 2026-10-12
+
+Active Python setup, CI, containers and guidance use Poetry 2.3.1 following the
+user's decision. [Local verification](../qualification/poetry-migration-2026-10-12.md)
+covers nine locked installations/builds, 813 passing owned unit cases, 65
+unbound-service skips, contract/import/document checks and static container checks.
+Existing runtime Git pins are preserved. Source publication was subsequently
+authorized; the workspace manifest records the coordinated sibling revisions. Complete image builds, company-service integration and production
+rollout are unexecuted, so no DEL capability gate is closed by this tooling change.

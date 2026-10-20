@@ -68,9 +68,9 @@ try {
     try {
         switch ($Action) {
             'Install' {
-                if (-not (Get-Command uv -ErrorAction SilentlyContinue)) { throw 'Install uv and Python 3.13 through your approved development tooling.' }
+                if (-not (Get-Command poetry -ErrorAction SilentlyContinue)) { throw 'Install Poetry 2.3.1 and Python 3.13 through your approved development tooling.' }
                 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Install Node.js 22.17 or newer through your approved development tooling.' }
-                Invoke-Checked { & uv run --locked scripts/workspace.py install --editable } 'Install workspace dependencies'
+                Invoke-Checked { & python scripts/workspace.py install --editable } 'Install workspace dependencies'
                 Write-Host 'Dependencies installed from committed locks. No services, migrations or identity fixtures were started.'
             }
             'Check' {

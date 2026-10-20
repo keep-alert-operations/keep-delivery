@@ -1,5 +1,16 @@
 # Running the local Appchi workspace
 
+**2026-10-04 startup repaired:** the core development system and local v2 gateway
+are running from the independent repositories. Original local credentials and
+persistent data were recovered, the legacy changed stream was drained after
+reference verification, and the documented offline Kafka cutover completed.
+Repeated Start succeeded. Real browser sign-in, v1 processing/search, assignment
+and persisted notes passed; 17 gateway checks and a three-alert v2 batch passed.
+See [executed repair evidence](../qualification/local-startup-2026-10-04.md).
+Maintenance, protected recovery and refreshed automatic correlation preview
+remain unqualified. The preserved historical correlation gate is not evidence
+for running a new correlation worker.
+
 **2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api).
 
 **2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
@@ -8,7 +19,7 @@
 
 **2026-09-30 Kafka cutover required:** the historical local checks below describe the earlier pipeline. The updated launcher requires the [offline Kafka cutover](runbooks/kafka-first.md), a reconciled Kong binding, and refreshed local correlation preview evidence before the new workers run. This redesign was tested in disposable databases; the existing application database has not been cut over automatically.
 
-**2026-09-30 partial startup:** the dependency containers, API, HTTPS UI and directory
+**Historical 2026-09-30 partial startup (resolved by the 2026-10-04 repair):** the dependency containers, API, HTTPS UI and directory
 worker are running. Real local-admin sign-in and the Global alerts feed returned
 success. Alert admission and processing remain unavailable: five legacy changed
 messages are behind an existing `pipeline_authoritative_proof_missing` fence, so
@@ -44,7 +55,7 @@ ingestion into Local Demo through its managed `Local Demo Sender` operator.
 
 ## Start, inspect and stop
 
-From this workspace's root in PowerShell:
+From `appchi-delivery` in PowerShell:
 
 ```powershell
 .\scripts\local-runtime.ps1 -Action Start
@@ -55,7 +66,7 @@ From this workspace's root in PowerShell:
 
 Start prepares local-only credentials, starts all dependency technologies from
 one Docker Compose project, applies the Appchi database migrations, then starts
-the API, UI and workers on Windows. `-Restart` reloads the managed Appchi
+the Product API, public Ingestion API, UI and workers on Windows. `-Restart` reloads the managed Appchi
 processes. Stop halts those processes and Compose containers without removing
 their volumes. Nothing is installed as a Windows service.
 
@@ -77,10 +88,19 @@ projection. The previous native stores and their files are retained as rollback
 sources. Fresh workspaces start with new Compose volumes. Keep `.local` and the
 Docker volumes together; do not remove volumes to troubleshoot startup.
 
+When moving an existing local stack to a new checkout, recover its matching
+password files, application encryption credentials, identities and TLS material
+before Start. Check the stopped containers' mount paths to locate the original
+ignored `.local` directory. Regenerate checkout-specific environment paths;
+do not copy process records or reuse stale qualification/profile files. A new
+password file does not change the password already stored in a PostgreSQL volume.
+
 | Service | Local address |
 |---|---|
 | Appchi HTTPS UI | https://localhost:3443 |
-| FastAPI | http://127.0.0.1:58000 |
+| Product API | http://127.0.0.1:58000 |
+| Public Ingestion API / native v1 | http://127.0.0.1:58001/api/ingest/v1/alerts |
+| Private Ingestion API (mTLS) | https://127.0.0.1:58444 |
 | Keycloak / console | https://localhost:58443/admin/ |
 | Appchi PostgreSQL 18.2 (Compose) | 127.0.0.1:55433 |
 | Elasticsearch 9.0.0 (Compose) | http://127.0.0.1:59201 |
@@ -97,8 +117,9 @@ Keycloak identities, Kong configuration, Kafka state and Grafana configuration.
 
 Local startup publishes trusted Keycloak users/groups once. Later changes require
 `./scripts/local-identity.ps1 -Action Refresh`; directory polling is nice-to-have.
-After cutover, workers handle Kafka source processing, correlation and search
-consumption/reconciliation. The Product API publishes live hints and serves SSE. The legacy alert relay and hint-consumer roles are retired.
+After cutover, the required workers handle Kafka source processing and search
+consumption/reconciliation. Correlation starts only with a freshly verified local
+preview profile. The Product API publishes live hints and serves SSE. The legacy alert relay and hint-consumer roles are retired.
 Their logs, process records and heartbeats are in `.local/runtime`; identity,
 API and frontend process state/logs are in `.local/keycloak`.
 
@@ -149,10 +170,7 @@ PostgreSQL database; sustained release workloads, maintenance replay and
 production allocations are still unqualified. Do not copy this profile into a
 staging or production deployment.
 
-Kafka hint workers are optional accelerators; the launcher reports their degraded
-state separately while authoritative PostgreSQL workers continue to reconcile.
-
-The opt-in real browser check runs from `frontend` and leaves a synthetic alert:
+The opt-in real browser check runs from `appchi-frontend` and leaves a synthetic alert:
 
 ```powershell
 $env:APPCHI_LOCAL_RUNTIME_TEST='1'

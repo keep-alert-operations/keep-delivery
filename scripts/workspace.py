@@ -64,14 +64,19 @@ def bootstrap(root, manifest):
             continue
         run(["git", "clone", "--no-checkout", item["url"], str(path)], root)
         run(["git", "checkout", "--detach", item["revision"]], path)
-    canonical = DELIVERY / "workspace/AGENTS.md"
-    installed = root / "AGENTS.md"
-    if installed.exists() and installed.read_bytes() != canonical.read_bytes():
-        backup = root / "AGENTS.md.before-bootstrap"
-        if backup.exists():
-            raise ValueError("Root AGENTS.md differs; reconcile it with delivery before bootstrap")
-        shutil.copyfile(installed, backup)
-    shutil.copyfile(canonical, installed)
+    instructions = []
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        canonical = DELIVERY / "workspace" / name
+        installed = root / name
+        backup = root / f"{name}.before-bootstrap"
+        differs = installed.exists() and installed.read_bytes() != canonical.read_bytes()
+        if differs and backup.exists():
+            raise ValueError(f"Root {name} differs; reconcile it with delivery before bootstrap")
+        instructions.append((canonical, installed, backup, differs))
+    for canonical, installed, backup, differs in instructions:
+        if differs:
+            shutil.copyfile(installed, backup)
+        shutil.copyfile(canonical, installed)
     print("Workspace prepared; existing branches and local changes were preserved.")
 
 
@@ -93,10 +98,11 @@ def inventory(root, manifest):
 
 
 def install(root, manifest, editable):
-    run(["uv", "sync", "--locked"], DELIVERY)
+    run(["poetry", "check", "--lock"], DELIVERY)
+    run(["poetry", "sync", "--all-extras"], DELIVERY)
     python = DELIVERY / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
     if editable:
-        args = ["uv", "pip", "install", "--no-deps", "--python", str(python)]
+        args = [str(python), "-m", "pip", "install", "--no-deps"]
         for name in manifest["repositories"]:
             path = repository(root, name)
             if (path / "pyproject.toml").exists():

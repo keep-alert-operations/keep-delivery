@@ -9,9 +9,9 @@ from uuid import UUID, uuid4
 import pytest
 
 from appchi.correlation.consumer import correlate_record
-from appchi.kafka_source import apply_record
 from test_correlation_configuration import TEST_CAPACITY, create, definition, rules  # noqa: F401
-from test_kafka_first import receipt
+# Host-clock receipts may lead the database clock; wait it out like the consumer.
+from test_kafka_first import apply_waiting, receipt
 from test_product import browser  # noqa: F401
 from test_search_pipeline import real_db  # noqa: F401
 
@@ -64,7 +64,7 @@ def window(setup, expression="true"):
 def receive(db, config, payload, offset=0, received=None):
     record = received or receipt(config, payload)
     topic, key, value = record
-    changed = apply_record(db, topic=topic, key=key, value=value, partition=0,
+    changed = apply_waiting(db, topic=topic, key=key, value=value, partition=0,
                            offset=offset, settings=config, profile=CAPACITY)
     assert changed is not None
     return changed

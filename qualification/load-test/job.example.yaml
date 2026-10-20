@@ -1,0 +1,74 @@
+# Fill all REPLACE values; create one unique Job name for each seed/verify/load/read run.
+# This is a single generator process. Never raise parallelism with the same RUN_ID.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: REPLACE-load-seed
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 90000
+  parallelism: 1
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app: appchi-load-generator
+    spec:
+      restartPolicy: Never
+      serviceAccountName: appchi-load-test
+      automountServiceAccountToken: false
+      containers:
+        - name: k6
+          image: REPLACE_PRIVATE_REGISTRY/appchi-load-test@sha256:REPLACE_DIGEST
+          args: [run, /work/seed.js]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          # Initial diagnostic allocation, not a qualified limit for 500-2000 VUs.
+          resources:
+            requests: {cpu: "1", memory: 1Gi}
+            limits: {cpu: "2", memory: 2Gi}
+          env:
+            - {name: K6_NO_USAGE_REPORT, value: "true"}
+            - {name: RUN_ID, value: REPLACE_UNIQUE_RUN_ID}
+            - {name: CONFIG, value: /config/profile.json}
+            - {name: INGEST_URL, value: "https://REPLACE_GATEWAY_HOST/api/ingest/v2/alerts"}
+            - {name: API_ORIGIN, value: "https://REPLACE_APP_HOST"}
+            - {name: TENANT_ID, value: REPLACE_REAL_TENANT_UUID}
+            - {name: DASHBOARD_IDS, value: REPLACE_COMMA_SEPARATED_DASHBOARD_UUIDS}
+            - {name: FIXTURE_READY, value: "0"}
+            - {name: API_KEY_FILE, value: /auth/operator-key}
+            - {name: SESSIONS_FILE, value: /auth/sessions.json}
+            - {name: SSL_CERT_FILE, value: /trust/ca-bundle.pem}
+          volumeMounts:
+            - {name: profile, mountPath: /config, readOnly: true}
+            - {name: auth, mountPath: /auth, readOnly: true}
+            - {name: trust, mountPath: /trust, readOnly: true}
+            - {name: results, mountPath: /results}
+            - {name: temporary, mountPath: /tmp}
+      volumes:
+        - name: profile
+          configMap: {name: appchi-load-profile}
+        - name: auth
+          secret: {secretName: appchi-load-auth, defaultMode: 0440}
+        - name: trust
+          configMap: {name: appchi-load-trust}
+        - name: results
+          persistentVolumeClaim: {claimName: REPLACE_STAGE_RESULT_PVC}
+        - name: temporary
+          emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: REPLACE_STAGE_RESULT_PVC
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: {storage: 1Gi}
+  # Supply storageClassName if the cluster has no appropriate default.

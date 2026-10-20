@@ -92,6 +92,7 @@ try {
     $node = (Get-Command node).Source
     $definitions = @(
         @{ Role='Api'; File=$python; Directory=$repository; Arguments='-m uvicorn appchi.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
+        @{ Role='Ingestion'; File=$python; Directory=$repository; Arguments='-m uvicorn appchi.ingestion.main:create_app --factory --host 127.0.0.1 --port 58001 --no-access-log' },
         @{ Role='Frontend'; File=$node; Directory=(Join-Path (Split-Path -Parent $repository) 'appchi-frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
     )
     $current = @()
@@ -110,15 +111,16 @@ with httpx.Client(verify=ssl.create_default_context(cafile=str(certificate)),tru
     for attempt in range(60):
         try:
             api=client.get('http://127.0.0.1:58000/livez',timeout=2)
+            ingestion=client.get('http://127.0.0.1:58001/livez',timeout=2)
             ui=client.get('https://localhost:3443/auth/session',timeout=3)
-            if api.status_code==200 and ui.status_code==401:
-                print('API and HTTPS frontend are accepting requests.')
+            if api.status_code==200 and ingestion.status_code==200 and ui.status_code==401:
+                print('Product API, Ingestion API and HTTPS frontend are accepting requests.')
                 break
         except httpx.HTTPError:
             pass
         time.sleep(1)
     else:
-        raise SystemExit('API/frontend startup failed; inspect .local/keycloak logs.')
+        raise SystemExit('API/ingestion/frontend startup failed; inspect .local/keycloak logs.')
 '@
     Invoke-Checked { & $python -c $probe }
     foreach ($record in $current) { if (-not (Get-OwnedProcess $record)) { throw "$($record.Role) exited during startup; inspect its local log." } }

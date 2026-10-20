@@ -1,5 +1,9 @@
 # Native v2 in local development
 
+**2026-10-04 verified:** local startup, normal demo-operator key rotation,
+17 gateway authorization checks, and Kafka admission/search/tenant isolation
+for three synthetic alerts passed. See [startup repair evidence](../qualification/local-startup-2026-10-04.md).
+
 **2026-09-30 worker-scope update:** see [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
 
 The user authorized local v2 configuration on 2026-09-24. The assistant-selected
@@ -20,7 +24,7 @@ Start the [local runtime](local-runtime.md) with the single Compose stack, then 
 The unified [`deploy/local/compose.yaml`](../deploy/local/compose.yaml) includes
 these services alongside Appchi PostgreSQL, Elasticsearch, Kafka, Redis and
 Keycloak. Start provisions `Local Demo Sender` in `Local Demo` using the normal local-admin
-login and operator API. The normal worker provisions and verifies the Kong
+login and operator API. The normal Product API request provisions and verifies the Kong
 Consumer/key, Grafana contact point, exact `Appchi - Local Demo Sender` policy,
 and authenticated serving-member identity. The initial bootstrap checks transport
 and authentication before opening only the initial local v2 gate; prepared keys
@@ -87,9 +91,10 @@ Native clients send one `X-API-Key` header. Copy the current key from **Local De
 → Operators → Local Demo Sender**. Keys in a query/body and native Bearer auth
 are rejected. Grafana uses one Bearer header on its dedicated route. Kong strips
 client identity headers, authenticates the key, strips the secret and supplies
-authenticated IDs over pinned mTLS; Appchi rechecks current credential state and
-immutable tenant ownership in PostgreSQL. The ordinary port 58000 cannot
-authenticate v2 from headers. Native v1 continues to route only to Global.
+policy-bound operator/tenant context over pinned mTLS. Private ingestion validates
+that trusted context and publishes to Kafka without Appchi PostgreSQL access.
+The Product API on port 58000 has no ingestion routes; public ingestion on 58001
+accepts native v1 only, routed to Global.
 
 The local CA is `.local/operators/tls/ca.crt`; configure your sender to trust it
 explicitly. This setup does not install certificates in Windows trust. The
@@ -97,15 +102,18 @@ Grafana webhook uses the Compose-internal `https://kong:8443` address and verifi
 the same CA. Only Kong receives the private client certificate; neither container
 receives the CA signing key.
 
-To send three new synthetic alerts and verify processing, search, request retry
-identity and cross-tenant concealment:
+From `appchi-delivery`, send three new synthetic alerts and verify Kafka
+admission, processing, search and cross-tenant concealment:
 
 ```powershell
 .venv/Scripts/python.exe scripts/local_v2_verify.py send
 ```
 
 This command obtains the current key through authenticated, audited Copy and
-keeps it in memory. It deliberately leaves synthetic alerts in Local Demo. To
+keeps it in memory. A 202 confirms Kafka admission; it polls tenant search and
+detail APIs for subsequent application/indexing. The current admission contract
+has no receipt lookup or client-key deduplication. It deliberately leaves
+synthetic alerts in Local Demo. To
 rerun gateway checks without creating alerts:
 
 ```powershell
@@ -133,5 +141,5 @@ processes do not hot-load newly created credentials. All state and volumes remai
 
 After installing this revision, stop old scheduler/provisioning processes before
 migration 0046. The local runtime restart detects the old removed-role records.
-This document describes the startup path; it does not assert it was executed or
-that the existing local Kafka cutover/readiness gaps have been resolved.
+The 2026-10-04 evidence records execution of this startup path and the local Kafka
+cutover. Company integration and the remaining capability gates stay unqualified.

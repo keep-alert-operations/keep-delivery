@@ -1,0 +1,1 @@
+{"version":"v2","itemsPerSecond":250,"duration":"5m","batchSize":5,"vus":100,"newPercent":20,"lifecycle":"bounded","seedCount":5000,"messageChars":3500,"memberBytes":4096}

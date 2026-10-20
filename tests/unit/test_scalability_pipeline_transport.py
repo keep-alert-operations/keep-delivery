@@ -112,6 +112,7 @@ def test_source_application_failure_retains_offset_without_kafka_transaction(mon
     worker.db, conn = database()
     worker.settings, worker.profile = Mock(), None
     worker.client = Mock()
+    worker.client.consume.return_value = []
     worker.client.poll.side_effect = [message(0, 8), message(1, 2)]
     worker.retries = PartitionRetries(worker.client)
     bad_producer, good_producer = Mock(), Mock()

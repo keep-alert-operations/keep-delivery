@@ -11,10 +11,100 @@ python scripts/workspace.py install --editable
 python scripts/workspace.py inventory --output .local/workspace-inventory.json
 ```
 
-On Linux/macOS use `.venv/bin/python`. Install Python 3.13, uv 0.10.8, Node.js
+On Linux/macOS use `.venv/bin/python`. Install Python 3.13, Poetry 2.3.1, Node.js
 22.17 or newer, npm and Git first. Authenticate Git for the private organization
 repositories using your approved credential helper. Open the **parent directory**
 in your agent/editor; `AGENTS.md` there covers the complete system.
+
+## Codex and Claude Code guidance
+
+Open the parent workspace in either agent. Both use the shared root `AGENTS.md`;
+`CLAUDE.md` imports it with `@AGENTS.md`. The shared guidance routes agents to each
+affected repository's scoped `AGENTS.md`, README, CI and existing specifications.
+Global skills and personal agent settings remain outside these repositories.
+
+Maintain the canonical [AGENTS.md](../workspace/AGENTS.md) and
+[CLAUDE.md](../workspace/CLAUDE.md) in delivery's `workspace/` directory, then run
+`python scripts/workspace.py bootstrap` from delivery to install both at the root.
+References inside the canonical guidance are relative to that installed root.
+Bootstrap saves a differing root file as `<name>.before-bootstrap`; if that backup
+already exists, it stops before replacing either instruction file. Reconcile root
+edits into the canonical files before rerunning, and retain any backup still needed.
+
+When commands, ownership or requirements change, update their existing authority
+and the corresponding guidance references. The concise entrypoint links the
+[detailed engineering policies](agent-workflows.md), which preserve the original
+workspace requirements and remain binding when applicable. Preserve manual guidance
+when maintaining the bounded `eng-project-setup` section. Validate with
+`python qualification/verify_documents.py` from delivery and
+`python scripts/check_docs.py` from design; check that both installed files match
+their canonical copies and that the Claude import resolves to the root AGENTS.md.
+The context catalog is project navigation; it adds no model configuration, plugin,
+personal runtime or second requirements authority.
+
+Both agents must follow the [repeatable verification workflow](runbooks/development.md#repeatable-verification-workflow).
+It records the user-agreed critical smoke journeys, startup/readiness, isolated
+fixtures, assertions, coverage gaps and cleanup. File/import validation establishes
+discoverability, not proof that a new Codex or Claude session followed the guidance.
+Keep actual command results in dated delivery evidence; the setup validation is
+recorded in [the 2026-10-12 setup report](../qualification/agent-verification-setup-2026-10-12.md).
+
+For future updates, ask: "Use eng-project-setup to refresh this workspace's agent
+guidance from current requirements and CI; preserve existing instructions and keep
+the delivery canonical copies and installed root files consistent."
+
+## Context routing and Obsidian
+
+Design owns [task-map.json](../../appchi-design/context/task-map.json), the
+[context guide](../../appchi-design/context/README.md) and representative routing
+fixtures. Delivery owns the standard-library reader and validator. From delivery:
+
+```powershell
+python scripts/context.py list
+python scripts/context.py plan --task "Add incident assignment" --format json
+python scripts/context.py plan --route incidents --route incident-mutations
+python scripts/context.py read --source SOURCE_ID
+python scripts/context.py render
+python qualification/check_context.py
+```
+
+Use a source ID returned by the plan. Explicit routes select their required
+dependency closure; otherwise task keywords and changed paths suggest candidate
+routes. Conditional edges describe when to expand. Neither matching nor a passing
+fixture establishes that the plan is complete. Inspect affected callers and scoped
+instructions, and resolve missing authority or conflicting requirements before acting.
+An unmatched task returns a nonzero status and requires further exploration.
+
+The reader emits exact sections with their introductory scope corrections, line
+ranges and current SHA-256 hashes. A saved plan is a snapshot: regenerate it after
+source changes or a handoff. Reading plans and source hashes do not prove that an
+agent read, understood or complied with a requirement. Keep decisions, source
+revisions, progress and unresolved questions in the existing task checkpoint.
+
+`render` generates [map.md](../../appchi-design/context/map.md) and linked route
+pages from the catalog. To browse them in Obsidian, open the **parent workspace**
+as a vault and use the local graph on an incident route. Ordinary Markdown links
+connect routes, prerequisite routes, conditional routes and authoritative sources.
+The page text labels mandatory versus conditional edges; Obsidian's ordinary graph
+does not enforce those semantics. No Obsidian plugin is required by the agent tools.
+Keep any personal vault settings local and do not move the repositories.
+
+After changing routes, source headings or filenames, render again and run the full
+context check. It checks source targets, exact headings, required dependencies,
+fixtures and generated-file drift. `verify_documents.py` also checks installed
+entrypoint consistency and invokes this gate. Standalone design checks defer links
+to absent sibling checkouts; the delivery workspace check requires them all.
+The fixtures test deterministic selection, not end-to-end agent effectiveness or
+measured context savings. Use paired real-task trials before making those claims.
+
+Context changes across design and delivery must be reviewed together. Once the
+design changes are committed and available, update delivery's workspace manifest
+to that immutable revision before publishing the delivery change. Fresh CI uses
+those pinned sources; a passing check against dirty local siblings is not release
+qualification. Update other affected repository instructions in the same coordinated
+handoff, without committing local editable overrides.
+
+## Checkout and dependencies
 
 Bootstrap clones the ten sibling repositories at the manifest's exact commits.
 Existing checkouts and branches are preserved; inspect inventory mismatches before
@@ -24,9 +114,42 @@ each affected child separately. Use `codex/` for new work branches.
 `install` resolves the committed delivery lock. `--editable` then installs local
 Python sources from every sibling into delivery's environment without changing
 release pins. Use this environment for coordinated development and system tests.
-Each Python repository also supports `uv sync --locked --all-extras` and its own
+Each Python repository also supports `poetry check --lock` followed by
+`poetry sync --all-extras` and its own
 unit suite. Without `--editable`, delivery uses the pinned Git packages even when
 sibling source files have been edited. Frontend always uses its committed npm lock.
+
+Committed `poetry.toml` files keep environments in `.venv` and use the system Git
+client, so existing Git credential helpers and scoped mirror rewrites still apply.
+Install Poetry 2.3.1 as a separate tool; the application environments keep pip
+available for the explicit `--no-deps --editable` development overrides. The helper
+first validates the lock with `poetry check --lock`, then runs `poetry sync --all-extras`.
+Sync restores the release pins and removes editable overrides; rerun
+`python scripts/workspace.py install --editable` when restoring local development.
+Use delivery's `.venv` Python directly after overrides for coordinated checks and
+service launchers. `poetry run` selects an environment without synchronizing it,
+but a later `poetry sync` or `poetry install` can replace the local sources.
+
+Delivery's development group also includes pinned Poetry 2.3.1 for the native
+lock metadata API used by the private build helper and its regression tests.
+This does not replace the separate Poetry bootstrap tool, and runtime images
+install only their main dependencies.
+
+Dependency maintenance uses the committed Poetry lock. A separate optional
+`lock-constraints` Poetry group preserves the previous exact version constraints,
+including transitive packages, without adding them to published PEP 621 runtime
+requirements. Poetry resolves this group together with the application graph;
+ordinary sync installs the main and development groups, leaving dormant constraint
+packages uninstalled. Do not use `--all-groups` for normal setup or runtime images.
+Change constraints deliberately, run `poetry lock`, review the version/source/hash
+diff and run `poetry check --lock` before syncing. Hatchling remains the build
+backend, and Poetry is the dependency and command tool.
+
+On Windows, keep checkout and temporary environment paths short: the upstream
+native CEL wheel includes deep Bazel directories. The migration's first deep
+test environments exceeded Windows MAX_PATH; shallow disposable environments
+installed the same locked wheel successfully. See the
+[Poetry migration evidence](../qualification/poetry-migration-2026-10-12.md).
 
 After changing an HTTP producer, regenerate contracts with
 `qualification/generate_contracts.py`. Commit contracts, advance affected Python
