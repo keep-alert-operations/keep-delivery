@@ -510,6 +510,77 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
         service.close()
 
 
+def claimed_audit(real_db, tenant, v1):
+    """One retained alert whose search document is missing, under an audit claim."""
+    config = configuration(tenant)
+    apply(real_db, config, receipt(config, dict(v1, node_name="repair")), uuid4().int >> 66)
+    epoch, owner = seed_scan(real_db, tenant), uuid4()
+    with real_db.transaction() as conn:
+        conn.execute(
+            """UPDATE search_reconciliation SET lease_owner=%s,
+                lease_until=clock_timestamp()+interval '30 seconds',full_audit_at=clock_timestamp()
+                WHERE index_epoch=%s AND tenant_id=%s""",
+            (owner, epoch, tenant),
+        )
+    return epoch, owner
+
+
+def view_generation(real_db, tenant):
+    with real_db.transaction() as conn:
+        return conn.execute(
+            "SELECT view_generation FROM tenant_view_state WHERE tenant_id=%s", (tenant,)
+        ).fetchone()["view_generation"]
+
+
+def test_audit_repair_is_announced_when_verification_after_bulk_fails(real_db, tenant, v1):
+    epoch, owner = claimed_audit(real_db, tenant, v1)
+    client = Mock()
+    client.search.side_effect = [{"hits": {"hits": []}}, RuntimeError("degraded")]
+    client.bulk.return_value = {"items": [{"index": {"status": 201}}]}
+    before = view_generation(real_db, tenant)
+    with pytest.raises(Exception) as failure:
+        reconciliation.audit_page(
+            real_db, client, "physical", tenant, epoch, max_document_bytes=2000000, claim=owner
+        )
+    assert failure.value.code == "projection_unavailable"
+    client.bulk.assert_called_once()
+    # The retry would find the document visible; this failure must announce it.
+    assert view_generation(real_db, tenant) == before + 1
+
+
+def test_audit_repair_is_announced_when_claim_is_lost_after_bulk(real_db, tenant, v1):
+    epoch, owner = claimed_audit(real_db, tenant, v1)
+    written = []
+
+    def bulk(operations, **kwargs):
+        written.extend(zip(operations[::2], operations[1::2]))
+        with real_db.transaction() as conn:
+            # A slow refresh outlives the lease; another worker may now own the tenant.
+            conn.execute(
+                "UPDATE search_reconciliation SET lease_until=clock_timestamp()-interval '1 second' WHERE index_epoch=%s AND tenant_id=%s",
+                (epoch, tenant),
+            )
+        return {"items": [{"index": {"status": 201}} for _ in written]}
+
+    def search(**kwargs):
+        hits = [
+            {"_id": action["index"]["_id"], "_version": action["index"]["version"], "_source": doc}
+            for action, doc in written
+        ]
+        return {"hits": {"hits": hits}}
+
+    client = Mock()
+    client.bulk.side_effect, client.search.side_effect = bulk, search
+    before = view_generation(real_db, tenant)
+    with pytest.raises(Exception) as failure:
+        reconciliation.audit_page(
+            real_db, client, "physical", tenant, epoch, max_document_bytes=2000000, claim=owner
+        )
+    assert failure.value.code == "search_reconciliation_fenced"
+    assert len(written) == 1
+    assert view_generation(real_db, tenant) == before + 1
+
+
 def test_source_rechecks_reused_maintenance_gate_before_commit(real_db, tenant, v1, monkeypatch):
     from appchi import kafka_source
 
