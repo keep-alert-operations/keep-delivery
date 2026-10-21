@@ -155,6 +155,31 @@ def test_page_notes_stream_through_one_statement_grouped_per_alert(real_db, tena
                 "INSERT INTO alert_notes(id,tenant_id,alert_id,text,actor_id,created_at,deleted) VALUES(%s,%s,%s,%s,%s,clock_timestamp(),%s)",
                 (uuid4(), tenant, alert, text, uuid4(), deleted),
             )
+    # Unprojected filler alerts give the planner a realistic notes volume
+    # (many notes per alert), so plans below use default planner settings.
+    with real_db.transaction(tenant) as conn:
+        filler = [uuid4() for _ in range(300)]
+        with conn.cursor() as cursor:
+            with cursor.copy("COPY alert_identities(id,tenant_id) FROM STDIN") as copy:
+                for alert in filler:
+                    copy.write_row((alert, tenant))
+            with cursor.copy(
+                "COPY alert_notes(id,tenant_id,alert_id,text,actor_id,created_at,deleted) FROM STDIN"
+            ) as copy:
+                for alert in filler:
+                    for number in range(40):
+                        copy.write_row(
+                            (
+                                uuid4(),
+                                tenant,
+                                alert,
+                                f"filler {number}",
+                                uuid4(),
+                                "2026-01-01",
+                                number % 8 == 0,
+                            )
+                        )
+        conn.execute("ANALYZE alert_notes")
     requested = [alerts[2], alerts[3], alerts[0], alerts[1]]
     with real_db.transaction() as conn:
         conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
@@ -183,24 +208,42 @@ def test_page_notes_stream_through_one_statement_grouped_per_alert(real_db, tena
             by_id = {UUID(item.alert_id): set(item.tokens) for item in page}
             assert not {"thirddeleted", "secondonlydeleted"} & set().union(*by_id.values())
         # Grouping and note order per alert match the per-alert statements,
-        # for index-ordered and caller-ordered pages alike.
+        # for index-ordered and caller-ordered pages alike, one statement each.
+        executed = []
         for ids in ([alerts[0], alerts[2]], [alerts[2], alerts[0]]):
             spy = StatementSpy(conn)
             with reconciliation.PageNotes(spy, tenant, ids) as notes:
                 for alert in ids:
                     assert list(notes.of(alert)) == expected[alert]
             assert len(spy.statements) == 1
-        # The index-ordered statement reads the partial notes index without a sort.
-        spy = StatementSpy(conn)
-        with reconciliation.PageNotes(spy, tenant, [alerts[0], alerts[2]]) as notes:
-            list(notes.of(alerts[0]))
-        ((query, params),) = spy.statements
-        assert query.endswith("ORDER BY alert_id,id")
-        conn.execute("SET LOCAL enable_sort=off")
-        plan = conn.execute("EXPLAIN (FORMAT JSON) " + query, params).fetchone()
-        conn.execute("RESET enable_sort")
-        nodes = list(plan_nodes(next(iter(plan.values()))[0]["Plan"]))
-        assert not [node for node in nodes if "Sort" in node], nodes
+            executed.append(spy.statements[0])
+        # Plan each executed statement as the cursor it runs as, with default
+        # planner settings: both read the partial notes index and neither sorts
+        # the page. The caller-ordered walk probes the index per alert, so it
+        # at most orders one alert's notes at a time (an incremental sort).
+        (ordered, ordered_params), (caller, caller_params) = executed
+        assert ordered.endswith("ORDER BY alert_id,id")
+        nodes = cursor_plan(conn, ordered, ordered_params)
+        assert not {"Sort", "Incremental Sort"} & {node["Node Type"] for node in nodes}, nodes
+        assert "alert_notes_projection_lookup" in {node.get("Index Name") for node in nodes}
+        assert "WITH ORDINALITY" in caller and "array_position" not in caller
+        nodes = cursor_plan(conn, caller, caller_params)
+        types = [node["Node Type"] for node in nodes]
+        assert "Sort" not in types and "Nested Loop" in types, types
+        assert "alert_notes_projection_lookup" in {node.get("Index Name") for node in nodes}
+
+
+def cursor_plan(conn, query, params):
+    """Every node of the plan PostgreSQL chooses for a page notes cursor."""
+    plan = conn.execute(
+        "EXPLAIN (FORMAT JSON) DECLARE notes_plan_probe NO SCROLL CURSOR FOR " + query, params
+    ).fetchone()
+    pending, nodes = [next(iter(plan.values()))[0]["Plan"]], []
+    while pending:
+        node = pending.pop()
+        nodes.append(node)
+        pending.extend(node.get("Plans", []))
+    return nodes
 
 
 class StatementSpy:
