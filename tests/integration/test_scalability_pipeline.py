@@ -127,6 +127,50 @@ def test_empty_and_deleted_notes_skip_streaming_but_live_notes_stay_searchable(r
     assert all("has_live_notes" not in document for document in documents.values())
 
 
+def plan_nodes(plan):
+    yield plan["Node Type"]
+    for child in plan.get("Plans", []):
+        yield from plan_nodes(child)
+
+
+def test_cursor_pages_follow_index_order_and_requested_pages_keep_caller_order(real_db, tenant, v1):
+    config = configuration(tenant)
+    offset = uuid4().int >> 66
+    alerts = sorted(
+        UUID(
+            json.loads(
+                apply(real_db, config, receipt(config, dict(v1, node_name=f"page-{i}")), offset + i)
+            )["alert_id"]
+        )
+        for i in range(4)
+    )
+    requested = [alerts[2], alerts[0], alerts[3]]
+    # The single statement used before for both scans; pages must not change.
+    legacy = """SELECT id FROM alert_identities WHERE tenant_id=%s
+        AND (%s::uuid IS NULL OR id>%s) AND (%s::uuid[] IS NULL OR id=ANY(%s::uuid[]))
+        ORDER BY array_position(%s::uuid[],id),id LIMIT 50"""
+    with real_db.transaction() as conn:
+        conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+        for cursor, ids in ((None, None), (alerts[0], None), (None, requested)):
+            expected = [
+                row["id"] for row in conn.execute(legacy, (tenant, cursor, cursor, ids, ids, ids))
+            ]
+            observed = Mock(wraps=conn)
+            page = reconciliation.current_page(observed, tenant, cursor=cursor, alert_ids=ids)
+            assert [UUID(item.alert_id) for item in page] == expected
+            if ids is None:
+                assert expected == [alert for alert in alerts if not cursor or alert > cursor]
+                # Index order needs no sort, however many identities follow the cursor.
+                query, params = observed.execute.call_args_list[0].args
+                conn.execute("SET LOCAL enable_sort=off")
+                plan = conn.execute("EXPLAIN (FORMAT JSON) " + query, params).fetchone()
+                conn.execute("RESET enable_sort")
+                nodes = list(plan_nodes(next(iter(plan.values()))[0]["Plan"]))
+                assert not [node for node in nodes if "Sort" in node], nodes
+            else:
+                assert expected == requested
+
+
 def fake_service(db, tenant):
     service = reconciliation.ProjectionService.__new__(reconciliation.ProjectionService)
     service.db, service.settings, service.client = db, configuration(tenant), Mock()
