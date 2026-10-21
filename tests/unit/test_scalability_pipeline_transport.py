@@ -34,11 +34,20 @@ def changed(messages, handler, batch_handler=None):
     worker.settings, worker.profile, worker.role = Mock(), None, "indexer"
     worker.handler, worker.batch_handler = handler, batch_handler
     worker.batch_size, worker.pending = 50, deque()
+    # Commit every handled turn; batched commits are covered in appchi-domain.
+    worker.commit_every, worker.commit_interval = 1, 0.1
+    worker.uncommitted, worker.uncommitted_count, worker.uncommitted_since = {}, 0, None
     worker.client = Mock()
     worker.client.consume.return_value = messages
     worker.client.poll.return_value = None
     worker.retries = PartitionRetries(worker.client)
     return worker, conn
+
+
+def last_commit(worker):
+    """Return the committed next offsets as (partition, offset) pairs."""
+    assert worker.client.commit.call_args.kwargs["asynchronous"] is False
+    return [(p.partition, p.offset) for p in worker.client.commit.call_args.kwargs["offsets"]]
 
 
 def test_failed_partition_is_not_committed_and_healthy_partition_progresses():
@@ -54,7 +63,7 @@ def test_failed_partition_is_not_committed_and_healthy_partition_progresses():
     point = worker.client.seek.call_args.args[0]
     assert (point.partition, point.offset) == (0, 7)
     assert worker.turn() == 1
-    worker.client.commit.assert_called_once_with(message=good, asynchronous=False)
+    assert worker.client.commit.call_count == 1 and last_commit(worker) == [(1, 4)]
     assert worker.client.close.call_count == 0
     assert ("topic", 0) in worker.retries.failed
     assert any("changed_processing_failed" in call.args[0] for call in conn.execute.call_args_list)
@@ -65,11 +74,11 @@ def test_partial_batch_commits_covered_prefix_then_rotates_partitions():
     batch = Mock(side_effect=[2, 1, 1])
     worker, _ = changed(items, Mock(), batch)
     assert worker.turn() == 2
-    assert worker.client.commit.call_args.kwargs["message"] is items[1]
+    assert last_commit(worker) == [(0, 2)]
     assert worker.turn() == 1
-    assert worker.client.commit.call_args.kwargs["message"] is items[3]
+    assert last_commit(worker) == [(1, 1)]
     assert worker.turn() == 1
-    assert worker.client.commit.call_args.kwargs["message"] is items[2]
+    assert last_commit(worker) == [(0, 3)]
 
 
 def test_later_poison_does_not_fence_before_healthy_prefix():
@@ -81,7 +90,7 @@ def test_later_poison_does_not_fence_before_healthy_prefix():
 
     worker, _ = changed(items, handler, Mock(side_effect=ValueError("batch contains poison")))
     assert worker.turn() == 1
-    assert worker.client.commit.call_args.kwargs["message"] is items[0]
+    assert last_commit(worker) == [(0, 5)]
     assert worker.turn() == 0
     assert worker.client.commit.call_count == 1
     assert worker.client.seek.call_args.args[0].offset == 5
@@ -152,4 +161,4 @@ def test_correlation_retention_gap_fences_only_lost_partition():
     good = message(1, 0)
     worker.client.consume.return_value = [good]
     assert worker.turn() == 1
-    worker.client.commit.assert_called_once_with(message=good, asynchronous=False)
+    assert worker.client.commit.call_count == 1 and last_commit(worker) == [(1, 1)]
