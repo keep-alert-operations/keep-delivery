@@ -128,12 +128,22 @@ def test_empty_and_deleted_notes_skip_streaming_but_live_notes_stay_searchable(r
 
 
 def plan_nodes(plan):
-    yield plan["Node Type"]
+    yield plan
     for child in plan.get("Plans", []):
         yield from plan_nodes(child)
 
 
-def test_cursor_pages_follow_index_order_and_requested_pages_keep_caller_order(real_db, tenant, v1):
+def explain(conn, call, *disabled):
+    query, params = call.args
+    for setting in disabled:
+        conn.execute(f"SET LOCAL {setting}=off")
+    plan = conn.execute("EXPLAIN (FORMAT JSON) " + query, params).fetchone()
+    for setting in disabled:
+        conn.execute(f"RESET {setting}")
+    return list(plan_nodes(next(iter(plan.values()))[0]["Plan"]))
+
+
+def test_page_statements_keep_rows_and_use_the_bounding_index(real_db, tenant, v1):
     config = configuration(tenant)
     offset = uuid4().int >> 66
     alerts = sorted(
@@ -145,30 +155,59 @@ def test_cursor_pages_follow_index_order_and_requested_pages_keep_caller_order(r
         for i in range(4)
     )
     requested = [alerts[2], alerts[0], alerts[3]]
-    # The single statement used before for both scans; pages must not change.
+    # The single statement used before for every page; pages must not change.
     legacy = """SELECT id FROM alert_identities WHERE tenant_id=%s
         AND (%s::uuid IS NULL OR id>%s) AND (%s::uuid[] IS NULL OR id=ANY(%s::uuid[]))
+        AND current_projection_seq>%s AND (%s::bigint IS NULL OR current_projection_seq<=%s)
         ORDER BY array_position(%s::uuid[],id),id LIMIT 50"""
     with real_db.transaction() as conn:
         conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-        for cursor, ids in ((None, None), (alerts[0], None), (None, requested)):
+        seqs = sorted(
+            row["current_projection_seq"]
+            for row in conn.execute(
+                "SELECT current_projection_seq FROM alert_identities WHERE tenant_id=%s", (tenant,)
+            )
+        )
+        cases = (
+            {},
+            {"cursor": alerts[0]},
+            {"cursor": alerts[0], "ceiling_seq": seqs[-1]},
+            {"floor_seq": seqs[1]},
+            {"cursor": alerts[0], "floor_seq": seqs[1]},
+            {"alert_ids": requested},
+        )
+        for case in cases:
+            cursor, ids = case.get("cursor"), case.get("alert_ids")
+            floor, ceiling = case.get("floor_seq", 0), case.get("ceiling_seq")
             expected = [
-                row["id"] for row in conn.execute(legacy, (tenant, cursor, cursor, ids, ids, ids))
+                row["id"]
+                for row in conn.execute(
+                    legacy, (tenant, cursor, cursor, ids, ids, floor, ceiling, ceiling, ids)
+                )
             ]
+            assert expected, case
             observed = Mock(wraps=conn)
-            page = reconciliation.current_page(observed, tenant, cursor=cursor, alert_ids=ids)
-            assert [UUID(item.alert_id) for item in page] == expected
-            if ids is None:
-                assert expected == [alert for alert in alerts if not cursor or alert > cursor]
-                # Index order needs no sort, however many identities follow the cursor.
-                query, params = observed.execute.call_args_list[0].args
-                conn.execute("SET LOCAL enable_sort=off")
-                plan = conn.execute("EXPLAIN (FORMAT JSON) " + query, params).fetchone()
-                conn.execute("RESET enable_sort")
-                nodes = list(plan_nodes(next(iter(plan.values()))[0]["Plan"]))
-                assert not [node for node in nodes if "Sort" in node], nodes
-            else:
-                assert expected == requested
+            page = reconciliation.current_page(observed, tenant, **case)
+            assert [UUID(item.alert_id) for item in page] == expected, case
+            # Every page is planned from its actual bounds, never a generic plan.
+            call = observed.execute.call_args_list[0]
+            assert call.kwargs == {"prepare": False}
+            if cursor and not floor:
+                # Full and audit pages walk the id index from the cursor bound.
+                nodes = explain(conn, call, "enable_sort")
+                assert not [node for node in nodes if "Sort" in node["Node Type"]], nodes
+                assert any("(id >" in node.get("Index Cond", "") for node in nodes), nodes
+            elif floor:
+                # Delta pages read only identities changed after floor_seq.
+                # Even when sorting is discouraged, they are not served by an
+                # id walk that would visit unchanged identities.
+                nodes = explain(conn, call, "enable_seqscan", "enable_sort")
+                assert any(
+                    node.get("Index Name") == "alert_identity_projection_changes"
+                    and "current_projection_seq >" in node.get("Index Cond", "")
+                    for node in nodes
+                ), nodes
+        assert expected == requested
 
 
 def fake_service(db, tenant):
