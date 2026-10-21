@@ -244,6 +244,49 @@ def test_expired_replaced_claim_cannot_advance_watermark(real_db, tenant):
     client.bulk.assert_not_called()
 
 
+def test_only_advancing_or_verifying_pass_bumps_view_generation(real_db, tenant, monkeypatch):
+    epoch = seed_scan(real_db, tenant)
+    monkeypatch.setattr(reconciliation, "current_page", Mock(return_value=[]))
+
+    def complete():
+        assert reconciliation.reconcile_page(real_db, Mock(), "physical", tenant, epoch)
+
+    def view():
+        with real_db.transaction() as conn:
+            return conn.execute(
+                """SELECT v.searchable_seq,v.verified_at,v.view_generation,
+                    h.generation AS hinted_generation,h.updated_at AS hinted_at
+                FROM tenant_view_state v LEFT JOIN live_hint_outbox h USING(tenant_id)
+                WHERE v.tenant_id=%s""",
+                (tenant,),
+            ).fetchone()
+
+    complete()  # The first full audit verifies the tenant without new work.
+    verified = view()
+    assert verified["verified_at"] is not None
+    assert verified["hinted_generation"] == verified["view_generation"]
+    complete()  # Idle: no watermark change, no row write, no live hint.
+    assert view() == verified
+    with real_db.transaction() as conn:
+        conn.execute(
+            "UPDATE tenant_work_state SET projection_seq=projection_seq+1 WHERE tenant_id=%s",
+            (tenant,),
+        )
+    complete()  # Captures the new boundary and advances the watermark to it.
+    advanced = view()
+    assert advanced["searchable_seq"] == verified["searchable_seq"] + 1
+    assert advanced["view_generation"] == verified["view_generation"] + 1
+    assert advanced["hinted_generation"] == advanced["view_generation"]
+    assert advanced["hinted_at"] > verified["hinted_at"]
+    with real_db.transaction() as conn:
+        conn.execute("UPDATE tenant_view_state SET verified_at=NULL WHERE tenant_id=%s", (tenant,))
+    complete()
+    restored = view()
+    assert restored["searchable_seq"] == advanced["searchable_seq"]
+    assert restored["verified_at"] is not None
+    assert restored["view_generation"] == advanced["view_generation"] + 1
+
+
 def test_delta_scan_repairs_lost_hint_and_behind_cursor_write(real_db, tenant, v1, monkeypatch):
     config = configuration(tenant)
     if not config.elasticsearch_url:
