@@ -127,6 +127,109 @@ def test_empty_and_deleted_notes_skip_streaming_but_live_notes_stay_searchable(r
     assert all("has_live_notes" not in document for document in documents.values())
 
 
+def test_page_notes_stream_through_one_statement_grouped_per_alert(real_db, tenant, v1):
+    config = configuration(tenant)
+    offset = uuid4().int >> 66
+    alerts = sorted(
+        UUID(
+            json.loads(
+                apply(
+                    real_db, config, receipt(config, dict(v1, node_name=f"group-{i}")), offset + i
+                )
+            )["alert_id"]
+        )
+        for i in range(4)
+    )
+    # Interleaved inserts across alerts, with a deleted note and a note-less alert.
+    rows = [
+        (alerts[2], "thirdfirst", False),
+        (alerts[0], "firstfirst", False),
+        (alerts[2], "thirddeleted", True),
+        (alerts[1], "secondonlydeleted", True),
+        (alerts[0], "firstsecond", False),
+        (alerts[2], "thirdsecond", False),
+    ]
+    with real_db.transaction(tenant) as conn:
+        for alert, text, deleted in rows:
+            conn.execute(
+                "INSERT INTO alert_notes(id,tenant_id,alert_id,text,actor_id,created_at,deleted) VALUES(%s,%s,%s,%s,%s,clock_timestamp(),%s)",
+                (uuid4(), tenant, alert, text, uuid4(), deleted),
+            )
+    requested = [alerts[2], alerts[3], alerts[0], alerts[1]]
+    with real_db.transaction() as conn:
+        conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+        # The per-alert statement used before: each alert's live notes by id.
+        expected = {}
+        for alert in alerts:
+            texts = [
+                row["text"]
+                for row in conn.execute(
+                    "SELECT text FROM alert_notes WHERE tenant_id=%s AND alert_id=%s AND NOT deleted ORDER BY id",
+                    (tenant, alert),
+                )
+            ]
+            expected[alert] = texts
+        for ids, order in ((None, alerts), (requested, requested)):
+            observed = Mock(wraps=conn)
+            page = reconciliation.current_page(observed, tenant, alert_ids=ids)
+            assert [UUID(item.alert_id) for item in page] == order
+            named = [call for call in observed.cursor.call_args_list if call.kwargs.get("name")]
+            assert len(named) == 1  # One cursor for the page, not one per alert.
+            for item in page:
+                tokens = set(item.tokens)
+                for alert, texts in expected.items():
+                    present = {text for text in texts if text in tokens}
+                    assert present == (set(texts) if UUID(item.alert_id) == alert else set())
+            by_id = {UUID(item.alert_id): set(item.tokens) for item in page}
+            assert not {"thirddeleted", "secondonlydeleted"} & set().union(*by_id.values())
+        # Grouping and note order per alert match the per-alert statements,
+        # for index-ordered and caller-ordered pages alike.
+        for ids in ([alerts[0], alerts[2]], [alerts[2], alerts[0]]):
+            spy = StatementSpy(conn)
+            with reconciliation.PageNotes(spy, tenant, ids) as notes:
+                for alert in ids:
+                    assert list(notes.of(alert)) == expected[alert]
+            assert len(spy.statements) == 1
+        # The index-ordered statement reads the partial notes index without a sort.
+        spy = StatementSpy(conn)
+        with reconciliation.PageNotes(spy, tenant, [alerts[0], alerts[2]]) as notes:
+            list(notes.of(alerts[0]))
+        ((query, params),) = spy.statements
+        assert query.endswith("ORDER BY alert_id,id")
+        conn.execute("SET LOCAL enable_sort=off")
+        plan = conn.execute("EXPLAIN (FORMAT JSON) " + query, params).fetchone()
+        conn.execute("RESET enable_sort")
+        nodes = list(plan_nodes(next(iter(plan.values()))[0]["Plan"]))
+        assert not [node for node in nodes if "Sort" in node], nodes
+
+
+class StatementSpy:
+    """Record the statements a named cursor executes, delegating to it."""
+
+    def __init__(self, conn):
+        self.conn, self.statements = conn, []
+
+    def cursor(self, name):
+        spy, cursor = self, self.conn.cursor(name=name)
+
+        class Recording:
+            itersize = property(
+                lambda _: cursor.itersize, lambda _, value: setattr(cursor, "itersize", value)
+            )
+
+            def execute(self, query, params):
+                spy.statements.append((query, params))
+                return cursor.execute(query, params)
+
+            def __iter__(self):
+                return iter(cursor)
+
+            def close(self):
+                cursor.close()
+
+        return Recording()
+
+
 def plan_nodes(plan):
     yield plan
     for child in plan.get("Plans", []):
