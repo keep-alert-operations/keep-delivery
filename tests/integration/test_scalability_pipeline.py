@@ -261,10 +261,19 @@ def test_only_advancing_or_verifying_pass_bumps_view_generation(real_db, tenant,
                 (tenant,),
             ).fetchone()
 
-    complete()  # The first full audit verifies the tenant without new work.
+    with real_db.transaction() as conn:
+        # Verified, without a moved watermark, as a rebuild cutover or bootstrap leaves it.
+        conn.execute(
+            "UPDATE tenant_view_state SET verified_at=clock_timestamp() WHERE tenant_id=%s",
+            (tenant,),
+        )
+    cutover = view()
+    complete()  # The epoch's first full audit may repair documents, so it still bumps.
     verified = view()
-    assert verified["verified_at"] is not None
+    assert verified["searchable_seq"] == cutover["searchable_seq"]
+    assert verified["view_generation"] == cutover["view_generation"] + 1
     assert verified["hinted_generation"] == verified["view_generation"]
+    assert verified["hinted_at"] > cutover["hinted_at"]
     complete()  # Idle: no watermark change, no row write, no live hint.
     assert view() == verified
     with real_db.transaction() as conn:
@@ -404,6 +413,12 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
             real_db, client, config.elasticsearch_index, tenant, epoch
         )
 
+    def generation():
+        with real_db.transaction() as conn:
+            return conn.execute(
+                "SELECT view_generation FROM tenant_view_state WHERE tenant_id=%s", (tenant,)
+            ).fetchone()["view_generation"]
+
     try:
         client.options(request_timeout=30).indices.create(
             index=config.elasticsearch_index,
@@ -437,7 +452,9 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
                 (tenant, epoch),
             )
         monkeypatch.setattr(reconciliation, "PAGE_SIZE", 1)
+        before = generation()
         assert service.reconcile() == 1  # First audit page, not its completion.
+        assert generation() == before  # Its document was already visible.
         with real_db.transaction() as conn:
             audit = conn.execute(
                 "SELECT * FROM search_reconciliation WHERE tenant_id=%s AND index_epoch=%s",
@@ -466,10 +483,13 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
         assert state["audit_cursor"] == first and state["audit_boundary_seq"] == 2
         assert client.count(index=config.elasticsearch_index)["count"] == 2
         assert service.reconcile() == 1  # Fourth ordinary turn before another audit.
+        before = generation()
         assert service.reconcile() == 1  # Second audit page repairs missing old doc.
         assert client.count(index=config.elasticsearch_index)["count"] == 3
+        assert generation() == before + 1  # Open feeds refetch the repair.
         for _ in range(5):  # Four ordinary turns, then bounded-generation audit completion.
             assert service.reconcile() == 1
+        assert generation() == before + 1  # Idle turns and the empty last page write nothing.
         with real_db.transaction() as conn:
             state = conn.execute(
                 "SELECT * FROM search_reconciliation WHERE tenant_id=%s AND index_epoch=%s",
