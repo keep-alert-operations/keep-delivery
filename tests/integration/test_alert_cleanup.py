@@ -244,37 +244,42 @@ def test_protected_hold_cancels_retirement_and_cannot_be_added_late(
             )
 
 
-def test_consumed_offset_cannot_change_its_event_after_cleanup(retired, real_db):
+def test_consumed_offset_cannot_change_its_event_after_cleanup(
+    retired, real_db, cipher, profile, v1
+):
     _, tenant, alert, _, _, _, store = retired
+    # Kafka-first publishes changed events to Kafka, not this outbox; only the
+    # legacy received stream still has outbox rows, so pin a second one.
+    admit_alert(real_db, cipher, profile, {**v1, "application": v1["application"] + "-other"})
     events = release_consumers(real_db, tenant)
     for _ in range(20):
         if cleanup_alert(real_db, store, tenant, alert):
             break
-    changed = [event for event in events if event["stream"] == "changed"]
-    assert len(changed) >= 2
+    received = [event for event in events if event["stream"] == "received"]
+    assert len(received) >= 2
     with real_db.transaction() as conn:
         first = conn.execute(
-            "SELECT * FROM pipeline_receipts WHERE outbox_id=%s AND consumer_name='projection'",
-            (changed[0]["id"],),
+            "SELECT * FROM pipeline_receipts WHERE outbox_id=%s AND consumer_name='processor'",
+            (received[0]["id"],),
         ).fetchone()
-    with pytest.raises(AppError):
+    with pytest.raises(AppError, match="pipeline_authoritative_proof_missing"):
         record_receipt(
             real_db,
-            consumer="projection",
+            consumer="processor",
             topic=first["topic"],
             partition=first["partition"],
             offset=first["broker_offset"],
             key=UUID(tenant).bytes,
-            value=bytes(changed[1]["envelope"]),
+            value=bytes(received[1]["envelope"]),
             environment="development",
         )
     with real_db.transaction() as conn:
         assert (
             conn.execute(
                 "SELECT outbox_id FROM pipeline_receipts WHERE consumer_name=%s AND topic=%s AND partition=%s AND broker_offset=%s",
-                ("projection", first["topic"], first["partition"], first["broker_offset"]),
+                ("processor", first["topic"], first["partition"], first["broker_offset"]),
             ).fetchone()["outbox_id"]
-            == changed[0]["id"]
+            == received[0]["id"]
         )
 
 

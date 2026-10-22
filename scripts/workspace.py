@@ -7,9 +7,13 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
+import tomllib
 
 DELIVERY = Path(__file__).resolve().parents[1]
 MANIFEST = DELIVERY / "workspace/manifest.json"
+# Runs with the environment's Python, which has its metadata and `packaging`.
+REQUIREMENTS = Path(__file__).resolve().with_name("workspace_requirements.py")
 
 
 def run(args, cwd, *, capture=False):
@@ -97,17 +101,57 @@ def inventory(root, manifest):
     return result
 
 
+def install_unmet(python, sources):
+    """Install runtime requirements that local sources added since delivery's lock.
+
+    Editable overrides use --no-deps, so a requirement a sibling added after the
+    delivery repin is otherwise missing. Pins come from the declaring sibling's
+    own lock (main group, this platform, within the requirement's specifier).
+    """
+    locks = {path: str(path / "poetry.lock") for path in sources
+             if (path / "poetry.lock").exists()}
+    distributions = {
+        tomllib.loads((path / "pyproject.toml").read_text())["project"]["name"]: locks.get(path)
+        for path in sources
+    }
+    for _ in range(5):
+        request = json.dumps({"distributions": distributions, "locks": list(locks.values())})
+        result = json.loads(run([str(python), str(REQUIREMENTS), request], DELIVERY, capture=True))
+        if result["unresolved"]:
+            raise ValueError("No sibling lock pins a compatible runtime version: "
+                             + "; ".join(result["unresolved"]))
+        if not result["pins"]:
+            return
+        with tempfile.TemporaryDirectory() as directory:
+            pins = Path(directory) / "requirements.txt"
+            pins.write_text("\n".join(pin["line"] for pin in result["pins"]) + "\n")
+            run([str(python), "-m", "pip", "install", "--no-deps", "--require-hashes",
+                 "-r", str(pins)], DELIVERY)
+        print("Installed locked requirements of local sources: "
+              + ", ".join(pin["name"] + "==" + pin["version"] for pin in result["pins"]))
+        # Newly installed packages may add requirements; resolve them from their lock.
+        distributions = {pin["name"]: pin["lock"] for pin in result["pins"]}
+    raise ValueError("Local source requirements did not converge")
+
+
 def install(root, manifest, editable):
     run(["poetry", "check", "--lock"], DELIVERY)
     run(["poetry", "sync", "--all-extras"], DELIVERY)
-    python = DELIVERY / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
+    # Poetry owns the environment location (in-project `.venv` by default).
+    environment = Path(run(["poetry", "env", "info", "--path"], DELIVERY, capture=True))
+    python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     if editable:
+        # Environments created before the Poetry migration may lack pip.
+        if subprocess.run([str(python), "-m", "pip", "--version"],
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+            run([str(python), "-m", "ensurepip", "--default-pip"], DELIVERY)
+        sources = [repository(root, name) for name in manifest["repositories"]]
+        sources = [path for path in sources if (path / "pyproject.toml").exists()]
         args = [str(python), "-m", "pip", "install", "--no-deps"]
-        for name in manifest["repositories"]:
-            path = repository(root, name)
-            if (path / "pyproject.toml").exists():
-                args += ["--editable", str(path)]
+        for path in sources:
+            args += ["--editable", str(path)]
         run(args, DELIVERY)
+        install_unmet(python, sources)
         print("Local editable sources installed; release locks are unchanged.")
     run(["npm.cmd" if os.name == "nt" else "npm", "ci"], root / "appchi-frontend")
 
