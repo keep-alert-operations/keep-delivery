@@ -123,6 +123,8 @@ def main():
     from appchi.cel import compiler as cel_compiler
     from appchi.kafka_source import SourceConsumer
     from appchi.migrate import migrate
+    from appchi.search import consumer as search_consumer
+    from appchi.search import reconciliation as search_reconciliation
     from appchi.search.consumer import index_batch, index_record
     from appchi.search.projection import index_mapping
     from appchi.search.reconciliation import ReconciliationRunner
@@ -530,6 +532,16 @@ def main():
 
     measured_index_record = measured_index_handler(index_record)
     measured_index_batch = measured_index_handler(index_batch)
+    # Match the indexer entrypoint once the pinned indexer groups hints.
+    index_groups = getattr(search_consumer, "index_groups", None)
+    grouped_index = (
+        {
+            "groups_handler": measured_index_handler(index_groups),
+            "batch_size": search_reconciliation.BULK_DOCUMENTS,
+        }
+        if index_groups
+        else {}
+    )
     es = Elasticsearch(endpoint, request_timeout=15, max_retries=0)
     kafka = AdminClient({"bootstrap.servers": broker})
     try:
@@ -700,6 +712,7 @@ def main():
                                     batch_handler=measured_index_batch
                                     if role == "indexer"
                                     else None,
+                                    **(grouped_index if role == "indexer" else {}),
                                 )
                             )
                         progress = consumer.turn()

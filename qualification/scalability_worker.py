@@ -204,10 +204,26 @@ def main():
             from appchi.correlation.consumer import correlate_record
 
             return ObservedTransport(ChangedConsumer(db, config, profile, role, correlate_record))
-        from appchi.search.consumer import index_batch, index_record
+        from appchi.search import consumer as search_consumer
+        from appchi.search import reconciliation
 
+        # Match the indexer entrypoint once the pinned indexer groups hints.
+        groups = getattr(search_consumer, "index_groups", None)
+        grouped = (
+            {"groups_handler": groups, "batch_size": reconciliation.BULK_DOCUMENTS}
+            if groups
+            else {}
+        )
         return ObservedTransport(
-            ChangedConsumer(db, config, profile, role, index_record, batch_handler=index_batch)
+            ChangedConsumer(
+                db,
+                config,
+                profile,
+                role,
+                search_consumer.index_record,
+                batch_handler=search_consumer.index_batch,
+                **grouped,
+            )
         )
 
     def make(db, config, profile):
