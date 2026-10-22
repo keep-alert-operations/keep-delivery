@@ -90,17 +90,21 @@ def test_real_broker_batches_commits_and_replays_uncommitted_inputs(setup, real_
         worker.uncommitted.clear()
     finally:
         worker.close()
+    # The interval is far above the replay's duration, so only an idle turn can
+    # commit the replayed offsets.
     worker = ChangedConsumer(
-        real_db, config, CAPACITY, "correlation", correlate_record, commit_interval=0.1
+        real_db, config, CAPACITY, "correlation", correlate_record, commit_interval=10
     )
     try:
         drain(worker, 3)
         assert consumption(real_db, tenant) == first
-        # An idle consumer still commits once the interval elapses.
-        deadline = monotonic() + 15
+        assert worker.client.committed([point], timeout=5)[0].offset < 0
+        idle, deadline = 0, monotonic() + 30
         while monotonic() < deadline and worker.client.committed([point], timeout=5)[0].offset != 3:
             assert worker.turn() == 0
+            idle += 1
         assert worker.client.committed([point], timeout=5)[0].offset == 3
+        assert idle > 0
     finally:
         worker.close()
     with real_db.transaction() as conn:
