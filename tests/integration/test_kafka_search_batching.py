@@ -9,8 +9,6 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.search import reconciliation
-from appchi.search.consumer import index_batch, index_groups, index_record
 from appchi.search.projection import index_mapping
 from test_kafka_first import apply, receipt
 from test_search_pipeline import real_db  # noqa: F401
@@ -30,6 +28,16 @@ def test_busy_partitions_share_one_bulk_and_commit_their_own_offsets(real_db, te
     elasticsearch = os.getenv("APPCHI_TEST_ELASTICSEARCH_URL")
     if not bootstrap or not elasticsearch:
         pytest.skip("Requires isolated Kafka and Elasticsearch")
+    # Imported here so collection survives an indexer pin from before #11.
+    from appchi.search import consumer, reconciliation
+
+    if not hasattr(consumer, "index_groups"):
+        pytest.skip("requires appchi-indexer with index_groups")
+    index_batch, index_groups, index_record = (
+        consumer.index_batch,
+        consumer.index_groups,
+        consumer.index_record,
+    )
     search = SimpleNamespace(
         environment="development",
         global_tenant_id=tenant,
