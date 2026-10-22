@@ -27,26 +27,26 @@ def editor(browser, real_db, tenant):
 
 
 def test_profile_catalog_and_viewer_native_validation(editor):
-    from appchi.cel.catalog import FIELDS, RULE_FIELDS
+    from appchi.cel.catalog import FIELDS, LEGACY_ACK_FIELDS, RULE_FIELDS
 
     client, _, _, base = editor
     feed = client.get(base + "/profile")
     assert feed.status_code == 200, feed.text
     profile = feed.json()["data"]
-    assert {field["name"] for field in profile["fields"]} == set(FIELDS)
+    # REV-27: legacy acknowledgement fields are omitted from editor discovery.
+    assert {field["name"] for field in profile["fields"]} == set(FIELDS) - LEGACY_ACK_FIELDS
     assert profile["limits"]["source_bytes"] == compiler.MAX_SOURCE_BYTES
     assert "now" in {fn["name"] for fn in profile["functions"]}
     rule = client.get(base + "/profile", params={"context": "rule"}).json()["data"]
-    assert {field["name"] for field in rule["fields"]} == RULE_FIELDS
+    assert {field["name"] for field in rule["fields"]} == RULE_FIELDS - LEGACY_ACK_FIELDS
     assert "now" not in {fn["name"] for fn in rule["functions"]}
-    for context, expected in (("feed", True), ("rule", False)):
-        response = client.post(
-            base + "/validate",
-            json={
-                "cel": "alert.time_created < now()",
-                "context": context,
-            },
-        )
+    for cel, context, expected in (
+        ("alert.time_created < now()", "feed", True),
+        ("alert.time_created < now()", "rule", False),
+        # Existing predicates keep their compatibility meaning.
+        ("alert.acknowledged == true", "feed", True),
+    ):
+        response = client.post(base + "/validate", json={"cel": cel, "context": context})
         assert response.status_code == 200, response.text
         assert response.json()["data"]["valid"] is expected
     assert feed.headers["cache-control"] == "private, no-store"

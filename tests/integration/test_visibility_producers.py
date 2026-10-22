@@ -263,6 +263,10 @@ def test_registry_stays_unavailable_without_explicit_limits(browser, real_db):
     assert response.json()["error"]["code"] == "visibility_registry_unconfigured"
 
 
+@pytest.mark.skip(
+    reason="REV-34: deferred scheduler prototype; expiry creates no fan-out job and "
+    "current source-driven release is tested in test_source_driven_maintenance"
+)
 def test_expiry_fanout_commits_projection_link_and_cursor_atomically(
     browser, real_db, cipher, capture, v1, monkeypatch
 ):
