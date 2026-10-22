@@ -128,8 +128,10 @@ Sync restores the release pins and removes editable overrides; rerun
 `python scripts/workspace.py install --editable` when restoring local development.
 The overrides use `--no-deps`. A runtime requirement that a sibling added after
 delivery's last repin is therefore installed separately, at the exact version and
-hashes in that sibling's committed `poetry.lock`; install stops if no sibling lock
-pins it. The helper finds the environment with `poetry env info --path`, so
+hashes in the declaring sibling's committed `poetry.lock`. Only a main-group entry
+whose marker matches this platform and whose version satisfies the requirement is
+used; another sibling's lock is a fallback under the same rules. Install stops if
+no lock has such a pin. The helper finds the environment with `poetry env info --path`, so
 `POETRY_VIRTUALENVS_IN_PROJECT=false` with a short `POETRY_VIRTUALENVS_PATH` also
 works for deep worktree paths. An environment created before the Poetry migration
 has neither pip nor the development group's Poetry: the helper's sync adds Poetry

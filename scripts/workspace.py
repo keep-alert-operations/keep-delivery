@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
@@ -13,23 +12,8 @@ import tomllib
 
 DELIVERY = Path(__file__).resolve().parents[1]
 MANIFEST = DELIVERY / "workspace/manifest.json"
-# Runs inside the environment: unmet runtime requirements of the named distributions.
-UNMET = """
-import json, sys
-from importlib import metadata
-from packaging.requirements import Requirement
-unmet = set()
-for name in sys.argv[1:]:
-    for text in metadata.requires(name) or ():
-        requirement = Requirement(text)
-        if requirement.marker and not requirement.marker.evaluate({"extra": ""}):
-            continue
-        try:
-            metadata.version(requirement.name)
-        except metadata.PackageNotFoundError:
-            unmet.add(requirement.name)
-print(json.dumps(sorted(unmet)))
-"""
+# Runs with the environment's Python, which has its metadata and `packaging`.
+REQUIREMENTS = Path(__file__).resolve().with_name("workspace_requirements.py")
 
 
 def run(args, cwd, *, capture=False):
@@ -117,41 +101,36 @@ def inventory(root, manifest):
     return result
 
 
-def canonical_name(name):
-    return re.sub(r"[-_.]+", "-", name).lower()
-
-
-def locked_requirement(locks, name):
-    """Exact version and hashes from the first sibling lock that pins the package."""
-    for lock in locks:
-        for package in lock.get("package", ()):
-            if canonical_name(package["name"]) == canonical_name(name):
-                hashes = " ".join(f"--hash={item['hash']}" for item in package.get("files", ()))
-                return f"{package['name']}=={package['version']} {hashes}"
-    raise ValueError(f"{name} is required by a local source but pinned by no sibling lock")
-
-
 def install_unmet(python, sources):
     """Install runtime requirements that local sources added since delivery's lock.
 
     Editable overrides use --no-deps, so a requirement a sibling added after the
-    delivery repin is otherwise missing. Pins come from that sibling's own lock.
+    delivery repin is otherwise missing. Pins come from the declaring sibling's
+    own lock (main group, this platform, within the requirement's specifier).
     """
-    names = [tomllib.loads((path / "pyproject.toml").read_text())["project"]["name"]
-             for path in sources]
-    locks = [tomllib.loads((path / "poetry.lock").read_text())
-             for path in sources if (path / "poetry.lock").exists()]
+    locks = {path: str(path / "poetry.lock") for path in sources
+             if (path / "poetry.lock").exists()}
+    distributions = {
+        tomllib.loads((path / "pyproject.toml").read_text())["project"]["name"]: locks.get(path)
+        for path in sources
+    }
     for _ in range(5):
-        unmet = json.loads(run([str(python), "-c", UNMET, *names], DELIVERY, capture=True))
-        if not unmet:
+        request = json.dumps({"distributions": distributions, "locks": list(locks.values())})
+        result = json.loads(run([str(python), str(REQUIREMENTS), request], DELIVERY, capture=True))
+        if result["unresolved"]:
+            raise ValueError("No sibling lock pins a compatible runtime version: "
+                             + "; ".join(result["unresolved"]))
+        if not result["pins"]:
             return
         with tempfile.TemporaryDirectory() as directory:
             pins = Path(directory) / "requirements.txt"
-            pins.write_text("\n".join(locked_requirement(locks, name) for name in unmet) + "\n")
+            pins.write_text("\n".join(pin["line"] for pin in result["pins"]) + "\n")
             run([str(python), "-m", "pip", "install", "--no-deps", "--require-hashes",
                  "-r", str(pins)], DELIVERY)
-        print("Installed locked requirements of local sources: " + ", ".join(unmet))
-        names = unmet
+        print("Installed locked requirements of local sources: "
+              + ", ".join(pin["name"] + "==" + pin["version"] for pin in result["pins"]))
+        # Newly installed packages may add requirements; resolve them from their lock.
+        distributions = {pin["name"]: pin["lock"] for pin in result["pins"]}
     raise ValueError("Local source requirements did not converge")
 
 
