@@ -107,8 +107,8 @@ def test_api_role_publishes_cross_tenant_hints_without_domain_rls_bypass(real_db
 
     class ApiDatabase:
         @contextmanager
-        def transaction(self):
-            with real_db.transaction() as conn:
+        def transaction(self, *args, **kwargs):
+            with real_db.transaction(*args, **kwargs) as conn:
                 conn.execute("SET LOCAL ROLE appchi_api")
                 yield conn
 

@@ -43,10 +43,12 @@ def test_detail_uses_one_snapshot_during_concurrent_disable(
     assert first.status_code == 200, first.text
     assert first.json()["data"]["suppressed"] is True
     assert first.json()["data"]["maintenance_updating"] is False
+    # REV-34: disable stops new coverage without sweeping existing alerts, and
+    # reads use persisted suppression; only a later source input releases it.
     second = client.get(path)
     assert second.status_code == 200, second.text
-    assert second.json()["data"]["suppressed"] is False
-    assert second.json()["data"]["maintenance_updating"] is True
+    assert second.json()["data"]["suppressed"] is True
+    assert second.json()["data"]["maintenance_updating"] is False
     with db.transaction(tenant) as conn:
         materialized = conn.execute(
             "SELECT suppressed,revision FROM alerts WHERE tenant_id=%s AND id=%s",

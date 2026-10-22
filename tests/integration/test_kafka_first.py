@@ -53,6 +53,26 @@ def settings(db):
     )
 
 
+@pytest.fixture
+def restore_pipeline_control(real_db):
+    """Broker tests enable the Kafka pipeline in the shared session database.
+
+    Restore the previous control row so later legacy-path tests are not fenced
+    with ``legacy_pipeline_fenced``.
+    """
+    columns = "enabled,received_partitions,changed_partitions"
+    with real_db.transaction() as conn:
+        previous = conn.execute(
+            f"SELECT {columns} FROM kafka_pipeline_control WHERE singleton"
+        ).fetchone()
+    yield
+    with real_db.transaction() as conn:
+        conn.execute(
+            "UPDATE kafka_pipeline_control SET enabled=%s,received_partitions=%s,changed_partitions=%s WHERE singleton",
+            (previous["enabled"], previous["received_partitions"], previous["changed_partitions"]),
+        )
+
+
 def receipt(config, payload, *, publisher=None, at=None):
     publisher = publisher or Capture()
     admission = KafkaAdmission(
@@ -195,7 +215,7 @@ def test_receipt_ahead_of_database_clock_rolls_back_then_applies_unmoved(real_db
     assert result["received_at"] == at  # receipt is never moved
 
 
-def test_actual_broker_ack_and_transactional_output_offset(real_db, v1):
+def test_actual_broker_ack_and_transactional_output_offset(real_db, v1, restore_pipeline_control):
     from confluent_kafka import Consumer, TopicPartition, KafkaException
     from confluent_kafka.admin import AdminClient, NewTopic
 
@@ -358,7 +378,9 @@ def test_lost_manual_hint_reconciles_current_authority_and_watermark(real_db, v1
             es.options(request_timeout=30).indices.delete(index=index, ignore_unavailable=True)
 
 
-def test_real_broker_low_watermark_gap_is_recorded_and_fenced(real_db, v1):
+def test_real_broker_low_watermark_gap_is_recorded_and_fenced(
+    real_db, v1, restore_pipeline_control
+):
     from confluent_kafka import Consumer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
 

@@ -42,13 +42,19 @@ def real_db():
             conn.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
 
 
-def test_durable_source_projection_search_and_manual_refresh(browser, real_db, cipher, profile, v1):
+@pytest.fixture
+def browser_settings():
     if not os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"):
         pytest.skip("Requires real Elasticsearch URL")
+    return {
+        "elasticsearch_url": os.environ["APPCHI_TEST_ELASTICSEARCH_URL"],
+        "elasticsearch_index": "appchi-pipeline-test-" + uuid4().hex,
+    }
+
+
+def test_durable_source_projection_search_and_manual_refresh(browser, real_db, cipher, profile, v1):
     client, principal = browser
     settings = client.app.state.settings
-    settings.elasticsearch_url = os.environ["APPCHI_TEST_ELASTICSEARCH_URL"]
-    settings.elasticsearch_index = "appchi-pipeline-test-" + uuid4().hex
     with Elasticsearch(settings.elasticsearch_url, request_timeout=5, max_retries=0) as es:
         es.indices.create(
             index=settings.elasticsearch_index,
