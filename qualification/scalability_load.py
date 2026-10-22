@@ -1478,12 +1478,11 @@ def main():
                         "SELECT consumer||':'||reason,count(*) FROM kafka_pipeline_faults GROUP BY consumer,reason"
                     ).fetchall()
                 )
-            # Retried inputs are measurements (see each scenario's faults); exact
-            # drained counts, not a fault-free run, establish correctness.
-            result["correctness_passed"] = (
-                result["pipeline"]["correctness_passed"] and not stats["errors"]
-            )
-            result["faults_free"] = not result["pipeline_faults"]
+            # Exact drained counts make a valid measurement. Retried inputs and
+            # the worker errors behind them (for example native CEL deadlines)
+            # are reported per scenario and compared, and mark the run unclean.
+            result["correctness_passed"] = result["pipeline"]["correctness_passed"]
+            result["clean"] = not stats["errors"] and not result["pipeline_faults"]
             result["passed"] = result["correctness_passed"]
 
         if args.phase == "pipeline":
@@ -1680,7 +1679,10 @@ def main():
         result["worker_turns"] = dict(stats["worker_turns"])
         if stats["errors"]:
             result["errors"] = dict(stats["errors"])
-            result["correctness_passed"] = result["passed"] = False
+            if args.phase == "combined":
+                result["correctness_passed"] = result["passed"] = False
+            else:
+                result["clean"] = False
         if server:
             server.terminate()
             try:

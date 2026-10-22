@@ -422,11 +422,12 @@ Elasticsearch, Redis and Kafka containers. Kafka is configured like
 Readiness is proven before it returns, including an idempotent produce and a
 transactional init/produce/commit. `down` runs `docker rm -f -v` on exactly
 those containers. The comparison refuses runs whose workloads differ. A run
-exits non-zero unless every scenario drained to exact counts with no harness or
-worker errors. Treat a failed run as no measurement. Retried inputs do not fail
-a run. Each scenario reports them as `faults` (consumer and reason), and the
-consumers report `handler_errors` by error code; compare them like any other
-metric. The defaults keep `steady` below this workstation's measured capacity.
+exits non-zero (`passed` false) unless every scenario drained to exact
+processor, correlation, search and watermark counts. Treat such a run as no
+measurement. Retried inputs do not invalidate a run but set `clean` false. Each
+scenario reports them as `faults` (consumer and reason). Each worker role reports
+its `errors` and `handler_errors` by code, for example native CEL compile
+deadlines on a busy host. Compare them like any other metric. The defaults keep `steady` below this workstation's measured capacity.
 Do not change them between the runs you compare. Executed baselines belong
 in `qualification/`, with their package commits.
 

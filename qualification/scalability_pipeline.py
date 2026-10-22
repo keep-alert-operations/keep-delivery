@@ -267,7 +267,9 @@ def worker_delta(before, after):
     roles = {}
     for pid, report in after.items():
         prior = before.get(pid, {})
-        role = roles.setdefault(report["role"], {"processes": 0, "totals": {}, "samples": {}})
+        role = roles.setdefault(
+            report["role"], {"processes": 0, "totals": {}, "samples": {}, "errors": Counter()}
+        )
         role["processes"] += 1
         role.setdefault("instrumented", sorted(report.get("instrumented", [])))
         for label, total in report.get("totals", {}).items():
@@ -275,6 +277,7 @@ def worker_delta(before, after):
             merged = role["totals"].setdefault(label, {"count": 0, "total_ms": 0.0, "records": 0})
             for key in merged:
                 merged[key] += total.get(key, 0) - old.get(key, 0)
+        role["errors"].update(Counter(report.get("errors", {})) - Counter(prior.get("errors", {})))
         for label, values in report.get("samples", {}).items():
             start = len(prior.get("samples", {}).get(label, []))
             role["samples"].setdefault(label, []).extend(values[start:])
@@ -354,6 +357,7 @@ def summarize_role(role):
     return {
         "processes": role["processes"],
         "instrumented": role["instrumented"],
+        "errors": dict(role.get("errors", {})),
         "handler_errors": {
             label.removeprefix("handler_error:"): value["count"]
             for label, value in totals.items()

@@ -133,3 +133,36 @@ def test_workload_records_the_fixed_scenarios_and_topology():
         "burst_one_tenant",
         "burst_global_v1",
     ]
+
+
+def test_undrained_scenario_is_kept_and_stops_the_sequence():
+    phase = load("scalability_pipeline")
+    runner = phase.PipelinePhase.__new__(phase.PipelinePhase)
+    runner.args = SimpleNamespace(warmup=0, steady_rate=3, steady_seconds=60, burst=300)
+    runner.correlation = True
+    seen = []
+
+    def scenario(definition, count, measure=True):
+        seen.append(definition["name"])
+        done = definition["name"] != "burst_spread"
+        return {
+            "name": definition["name"],
+            "offered": count,
+            "accepted": count,
+            "drained_seconds": {"watermark": 1.0} if done else {},
+            "drain_timed_out": not done,
+            "workers": {},
+            "kafka_source_results_writes": {"hot_update_ratio": 0.0, "wal_bytes_per_alert": 1},
+            "stages": {
+                "processor": {"complete": True, "rejected": 0, "per_second": 5.0},
+                "correlation": {"complete": done, "per_second": 2.0},
+                "search": {"complete": True},
+            },
+        }
+
+    runner.scenario = scenario
+    result = runner.execute()
+    assert seen == ["steady", "burst_spread"]
+    assert result["stopped_after"] == "burst_spread"
+    assert result["correctness_passed"] is False
+    assert result["serialization"]["one_tenant_vs_spread"] is None

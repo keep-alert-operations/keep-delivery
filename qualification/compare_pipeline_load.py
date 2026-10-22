@@ -111,7 +111,8 @@ def main():
     for label, results in (("before", before), ("after", after)):
         for result in results:
             print(
-                f"{label}: run {result['run']} passed={result.get('passed')} packages="
+                f"{label}: run {result['run']} passed={result.get('passed')} "
+                f"clean={result.get('clean')} packages="
                 + ", ".join(
                     f"{name.removeprefix('appchi-')}@{(info or {}).get('commit', '?')[:8]}"
                     + ("+dirty" if (info or {}).get("dirty") else "")
