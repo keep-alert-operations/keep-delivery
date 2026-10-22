@@ -138,8 +138,11 @@ def test_scan_failure_is_visible_and_excluded_from_next_claim(real_db, tenant, m
     epoch = seed_scan(real_db, tenant)
     with real_db.transaction() as conn:
         healthy = conn.execute("SELECT id FROM tenants WHERE kind='global'").fetchone()["id"]
+        # In the shared database an earlier test may have just completed Global's
+        # scan, which stays unclaimable for 2 s; age it so the claim is certain.
         conn.execute(
-            """UPDATE search_reconciliation r SET retry_after=NULL,last_page_at='2001-01-01'
+            """UPDATE search_reconciliation r SET retry_after=NULL,last_page_at='2001-01-01',
+            completed_at=r.completed_at-interval '1 minute'
             FROM tenant_view_state v WHERE r.tenant_id=v.tenant_id AND r.index_epoch=v.index_epoch
             AND r.tenant_id=%s""",
             (healthy,),
