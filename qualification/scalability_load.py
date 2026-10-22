@@ -6,6 +6,10 @@ bounded quick counts. Arrivals use production KafkaAdmission with a controlled
 trusted-routing fixture. The existing real-browser suite tests OIDC separately.
 Requires APPCHI_SCALE_ADMIN_URL for an explicitly isolated loopback PostgreSQL
 cluster. All created database/index/topic names are unique and removed afterward.
+
+``--phase pipeline`` skips the API and users and instead drains fixed workloads
+through the consume()-based source, correlation and indexer workers; see
+``scalability_pipeline.py`` and the development runbook for comparing revisions.
 """
 
 import argparse
@@ -155,6 +159,21 @@ def main():
     )
     parser.add_argument("--read-pause", type=float, default=2)
     parser.add_argument("--drain-seconds", type=int, default=180)
+    parser.add_argument(
+        "--phase",
+        choices=("combined", "pipeline"),
+        default="combined",
+        help="combined: API reads with arrivals; pipeline: fixed drained pipeline workloads",
+    )
+    parser.add_argument("--kafka-bootstrap", default="127.0.0.1:19093")
+    parser.add_argument("--elasticsearch-url", default="http://127.0.0.1:59201")
+    parser.add_argument("--redis-url", default="redis://127.0.0.1:56380/0")
+    pipeline = parser.add_argument_group("pipeline phase (fixed workload pipeline-v1)")
+    pipeline.add_argument("--warmup", type=int, default=100)
+    pipeline.add_argument("--steady-rate", type=float, default=3)
+    pipeline.add_argument("--steady-seconds", type=int, default=60)
+    pipeline.add_argument("--burst", type=int, default=600)
+    pipeline.add_argument("--burst-concurrency", type=int, default=50)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if not (
@@ -172,8 +191,18 @@ def main():
         and 1 <= args.api_pool <= 32
         and args.read_pause >= 1
         and 1 <= args.drain_seconds <= 3600
+        and 0 <= args.warmup <= 20000
+        and 0 < args.steady_rate <= 500
+        and 1 <= args.steady_seconds <= 600
+        and 1 <= args.burst <= 20000
+        and 1 <= args.burst_concurrency <= 200
     ):
         parser.error("Workload exceeds the explicit local diagnostic bounds")
+    if args.phase == "pipeline" and args.worker_mode != "processes":
+        parser.error("The pipeline phase measures production worker processes only")
+    for endpoint in (args.kafka_bootstrap, args.elasticsearch_url, args.redis_url):
+        if endpoint.split("//")[-1].split(":")[0] not in ("127.0.0.1", "localhost"):
+            parser.error("Only isolated loopback Kafka, Elasticsearch and Redis are supported")
     admin = os.environ["APPCHI_SCALE_ADMIN_URL"]
     parameters = conninfo_to_dict(admin)
     if parameters.get("host") not in ("127.0.0.1", "localhost"):
@@ -181,8 +210,8 @@ def main():
     run = "scale-" + uuid4().hex
     name = "appchi_scale_" + run[6:]
     index = "appchi-" + run
-    broker = "127.0.0.1:19093"
-    endpoint = "http://127.0.0.1:59201"
+    broker = args.kafka_bootstrap
+    endpoint = args.elasticsearch_url
     topics = [f"appchi.{run}.alerts.{kind}" for kind in ("received", "changed")]
     db_url = make_conninfo(admin, dbname=name)
     with socket.socket() as sock:
@@ -197,11 +226,15 @@ def main():
     if args.features:
         from scalability_feature_fixture import synthetic_feature_profile
 
-        profile = synthetic_feature_profile(
-            profile,
-            max_alerts_per_tenant=math.ceil((args.seed + args.seconds * args.rate) / args.tenants)
-            + 10,
-        )
+        if args.phase == "pipeline":
+            # The one-tenant burst lands on the first tenant on top of its share.
+            offered = args.warmup + round(args.steady_rate * args.steady_seconds) + args.burst
+            per_tenant = math.ceil(offered / args.tenants) + args.burst + 10
+        else:
+            per_tenant = math.ceil((args.seed + args.seconds * args.rate) / args.tenants) + 10
+        profile = synthetic_feature_profile(profile, max_alerts_per_tenant=per_tenant)
+    # A fresh checkout or worktree has no ignored local state directory yet.
+    profile_file.parent.mkdir(exist_ok=True)
     profile_file.write_text(json.dumps(profile))
     publish_clock(clock)
     settings = Settings(
@@ -215,7 +248,7 @@ def main():
         elasticsearch_url=endpoint,
         elasticsearch_index=index,
         kafka_bootstrap=broker,
-        redis_url="redis://127.0.0.1:56380/0",
+        redis_url=args.redis_url,
         clock_health_file=clock,
         database_clock_health_file=clock,
     )
@@ -486,6 +519,14 @@ def main():
             finally:
                 record_phase("poll", began)
 
+        def consume(self, *values, **kwargs):
+            # Batched source turns fetch with consume(); poll() only when idle.
+            began = monotonic()
+            try:
+                return self.inner.consume(*values, **kwargs)
+            finally:
+                record_phase("consume", began)
+
     class TimedSourceConsumer(SourceConsumer):
         def __init__(self, *values, **kwargs):
             super().__init__(*values, **kwargs)
@@ -604,7 +645,7 @@ def main():
             )
             sessions = []
             cipher = settings.cipher()
-            for _ in range(args.users):
+            for _ in range(args.users if args.phase == "combined" else 0):
                 principal, handle, csrf = (
                     uuid4(),
                     secrets.token_urlsafe(32),
@@ -806,61 +847,62 @@ def main():
         thread = threading.Thread(target=clock_refresh, daemon=True)
         thread.start()
         threads.append(thread)
-        tls = ROOT / ".local/keycloak/tls"
-        # Use the real process entrypoint. Embedding the API in the generator's
-        # thread changes Windows CEL spawn startup and resource contention.
-        api_environment = private_environment(settings)
-        server = subprocess.Popen(
-            [
-                sys.executable,
-                "-m",
-                "uvicorn",
-                *(
-                    ["qualification.scalability_api:create_app", "--factory"]
-                    if args.response_timings
-                    else ["appchi.main:app"]
-                ),
-                "--host",
-                "127.0.0.1",
-                "--port",
-                str(port),
-                "--log-level",
-                "error",
-                "--no-access-log",
-                "--ssl-keyfile",
-                str(tls / "localhost-key.pem"),
-                "--ssl-certfile",
-                str(tls / "localhost.pem"),
-            ],
-            env=api_environment,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-        )
-        result["response_timing_scope"] = (
-            "Test-only outer ASGI wrapper header measures scope entry to response start; "
-            "client headers/complete durations also include transport, scheduling and body delivery. "
-            "Production application, lifespan, authorization and budgets are unchanged."
-            if args.response_timings
-            else None
-        )
-        api_setup_started = monotonic()
-        until = api_setup_started + 90
-        with httpx.Client(
-            verify=ssl.create_default_context(cafile=str(tls / "localhost.pem")), timeout=1
-        ) as readiness:
-            while monotonic() < until and server.poll() is None:
-                try:
-                    if readiness.get(origin + "/health/live").status_code < 500:
-                        break
-                except httpx.HTTPError:
-                    pass
-                sleep(0.1)
-            else:
-                result["api_exit_code"] = server.poll()
-                result["setup_api_seconds"] = round(monotonic() - api_setup_started, 3)
-                raise RuntimeError("HTTPS API did not start")
-        result["setup_api_seconds"] = round(monotonic() - api_setup_started, 3)
+        if args.phase == "combined":
+            tls = ROOT / ".local/keycloak/tls"
+            # Use the real process entrypoint. Embedding the API in the generator's
+            # thread changes Windows CEL spawn startup and resource contention.
+            api_environment = private_environment(settings)
+            server = subprocess.Popen(
+                [
+                    sys.executable,
+                    "-m",
+                    "uvicorn",
+                    *(
+                        ["qualification.scalability_api:create_app", "--factory"]
+                        if args.response_timings
+                        else ["appchi.main:app"]
+                    ),
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    str(port),
+                    "--log-level",
+                    "error",
+                    "--no-access-log",
+                    "--ssl-keyfile",
+                    str(tls / "localhost-key.pem"),
+                    "--ssl-certfile",
+                    str(tls / "localhost.pem"),
+                ],
+                env=api_environment,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
+            result["response_timing_scope"] = (
+                "Test-only outer ASGI wrapper header measures scope entry to response start; "
+                "client headers/complete durations also include transport, scheduling and body delivery. "
+                "Production application, lifespan, authorization and budgets are unchanged."
+                if args.response_timings
+                else None
+            )
+            api_setup_started = monotonic()
+            until = api_setup_started + 90
+            with httpx.Client(
+                verify=ssl.create_default_context(cafile=str(tls / "localhost.pem")), timeout=1
+            ) as readiness:
+                while monotonic() < until and server.poll() is None:
+                    try:
+                        if readiness.get(origin + "/health/live").status_code < 500:
+                            break
+                    except httpx.HTTPError:
+                        pass
+                    sleep(0.1)
+                else:
+                    result["api_exit_code"] = server.poll()
+                    result["setup_api_seconds"] = round(monotonic() - api_setup_started, 3)
+                    raise RuntimeError("HTTPS API did not start")
+            result["setup_api_seconds"] = round(monotonic() - api_setup_started, 3)
         start_workers()
 
         async def send(ordinal, measured):
@@ -1388,153 +1430,212 @@ def main():
                         checked += 1
             return checked
 
-        asyncio.run(run_workload())
-        result["host_memory_after_measurement"] = host_memory()
-        result["stage"] = "drain_and_verify"
-        print(
-            "Measured arrivals complete; draining and verifying exact authority/search counts",
-            flush=True,
-        )
-        expected = args.seed + stats["accepted"]
-        try:
-            result["applied"] = wait_applied(expected, args.drain_seconds)
-        except RuntimeError:
-            stats["errors"]["processing_drain_timeout"] += 1
-        deadline = monotonic() + args.drain_seconds
-        while monotonic() < deadline:
-            visible = es.count(index=index, query={"term": {"deleted": False}})["count"]
-            if visible >= expected:
-                break
-            sleep(1)
-        result["searchable"] = visible
-        watermark_deadline = monotonic() + args.drain_seconds
-        while monotonic() < watermark_deadline:
+        def run_pipeline():
+            from scalability_pipeline import PipelinePhase, environment, workload
+
+            result["stage"] = "pipeline"
+            result["scope"] = (
+                "Fixed drained workloads through KafkaAdmission and production source, "
+                "correlation and indexer worker processes; no API, OIDC or production qualification"
+            )
+            result["workload"] = workload(args)
+            result["environment"] = environment(db_url, es, ROOT)
+
+            def read_reports():
+                reports = {}
+                for process, path in worker_processes:
+                    for _ in range(20):
+                        try:
+                            reports[process.pid] = json.loads(path.read_text())
+                            break
+                        except (OSError, ValueError):
+                            sleep(0.05)
+                return reports
+
+            phase = PipelinePhase(
+                args=args,
+                run=run,
+                admission=admission,
+                tenants=tenants,
+                operators=operators,
+                global_id=global_id,
+                conninfo=db_url,
+                database=name,
+                es=es,
+                index=index,
+                read_reports=read_reports,
+                stop=stop,
+                errors=stats["errors"],
+                canonical=canonical,
+                format_native_time=format_native_time,
+                gateway=GatewayIdentity,
+            )
+            result["pipeline"] = phase.execute()
+            collect_worker_reports()
             with psycopg.connect(db_url) as conn:
-                lagging = conn.execute("""SELECT count(*) FROM tenant_work_state w
-                    JOIN tenant_view_state v USING(tenant_id)
-                    WHERE v.searchable_seq<w.projection_seq""").fetchone()[0]
-            if not lagging:
-                break
-            sleep(1)
+                result["pipeline_faults"] = dict(
+                    conn.execute(
+                        "SELECT consumer||':'||reason,count(*) FROM kafka_pipeline_faults GROUP BY consumer,reason"
+                    ).fetchall()
+                )
+            # Retried inputs are measurements (see each scenario's faults); exact
+            # drained counts, not a fault-free run, establish correctness.
+            result["correctness_passed"] = (
+                result["pipeline"]["correctness_passed"] and not stats["errors"]
+            )
+            result["faults_free"] = not result["pipeline_faults"]
+            result["passed"] = result["correctness_passed"]
+
+        if args.phase == "pipeline":
+            run_pipeline()
         else:
-            stats["errors"]["watermark_drain_timeout"] += 1
-        if args.features:
+            asyncio.run(run_workload())
+            result["host_memory_after_measurement"] = host_memory()
+            result["stage"] = "drain_and_verify"
+            print(
+                "Measured arrivals complete; draining and verifying exact authority/search counts",
+                flush=True,
+            )
+            expected = args.seed + stats["accepted"]
+            try:
+                result["applied"] = wait_applied(expected, args.drain_seconds)
+            except RuntimeError:
+                stats["errors"]["processing_drain_timeout"] += 1
             deadline = monotonic() + args.drain_seconds
             while monotonic() < deadline:
+                visible = es.count(index=index, query={"term": {"deleted": False}})["count"]
+                if visible >= expected:
+                    break
+                sleep(1)
+            result["searchable"] = visible
+            watermark_deadline = monotonic() + args.drain_seconds
+            while monotonic() < watermark_deadline:
                 with psycopg.connect(db_url) as conn:
-                    consumed = conn.execute("""SELECT count(*) FROM kafka_source_results r
-                        JOIN kafka_correlation_events e ON e.event_id=r.changed_event_id
-                        WHERE r.outcome='applied'""").fetchone()[0]
                     lagging = conn.execute("""SELECT count(*) FROM tenant_work_state w
                         JOIN tenant_view_state v USING(tenant_id)
                         WHERE v.searchable_seq<w.projection_seq""").fetchone()[0]
-                if consumed == expected and not lagging:
+                if not lagging:
                     break
                 sleep(1)
             else:
-                stats["errors"]["feature_drain_timeout"] += 1
+                stats["errors"]["watermark_drain_timeout"] += 1
+            if args.features:
+                deadline = monotonic() + args.drain_seconds
+                while monotonic() < deadline:
+                    with psycopg.connect(db_url) as conn:
+                        consumed = conn.execute("""SELECT count(*) FROM kafka_source_results r
+                            JOIN kafka_correlation_events e ON e.event_id=r.changed_event_id
+                            WHERE r.outcome='applied'""").fetchone()[0]
+                        lagging = conn.execute("""SELECT count(*) FROM tenant_work_state w
+                            JOIN tenant_view_state v USING(tenant_id)
+                            WHERE v.searchable_seq<w.projection_seq""").fetchone()[0]
+                    if consumed == expected and not lagging:
+                        break
+                    sleep(1)
+                else:
+                    stats["errors"]["feature_drain_timeout"] += 1
+                with psycopg.connect(db_url) as conn:
+                    result["features"] = {
+                        "source_events_consumed": consumed,
+                        "suppressed": conn.execute(
+                            "SELECT count(*) FROM alerts WHERE suppressed"
+                        ).fetchone()[0],
+                        "expected_suppressed": stats["expected_suppressed"],
+                        "incidents": conn.execute("SELECT count(*) FROM incidents").fetchone()[0],
+                        "active_owners": conn.execute(
+                            "SELECT count(*) FROM alert_active_ownership"
+                        ).fetchone()[0],
+                    }
+                if (
+                    result["features"]["suppressed"] != stats["expected_suppressed"]
+                    or not result["features"]["incidents"]
+                    or not result["features"]["active_owners"]
+                ):
+                    stats["errors"]["feature_effects_mismatch"] += 1
+            result["final_tenants_exact_counts"] = asyncio.run(verify_final_reads())
+            observation_deadline = monotonic() + 3
+            while monotonic() < observation_deadline:
+                with sample_lock:
+                    if len(stats["search_visibility_ms"]) == len(stats["search_sample_arrivals"]):
+                        break
+                sleep(0.1)
             with psycopg.connect(db_url) as conn:
-                result["features"] = {
-                    "source_events_consumed": consumed,
-                    "suppressed": conn.execute(
-                        "SELECT count(*) FROM alerts WHERE suppressed"
-                    ).fetchone()[0],
-                    "expected_suppressed": stats["expected_suppressed"],
-                    "incidents": conn.execute("SELECT count(*) FROM incidents").fetchone()[0],
-                    "active_owners": conn.execute(
-                        "SELECT count(*) FROM alert_active_ownership"
-                    ).fetchone()[0],
-                }
-            if (
-                result["features"]["suppressed"] != stats["expected_suppressed"]
-                or not result["features"]["incidents"]
-                or not result["features"]["active_owners"]
-            ):
-                stats["errors"]["feature_effects_mismatch"] += 1
-        result["final_tenants_exact_counts"] = asyncio.run(verify_final_reads())
-        observation_deadline = monotonic() + 3
-        while monotonic() < observation_deadline:
-            with sample_lock:
-                if len(stats["search_visibility_ms"]) == len(stats["search_sample_arrivals"]):
-                    break
-            sleep(0.1)
-        with psycopg.connect(db_url) as conn:
-            result["authority"] = dict(
-                zip(
-                    ("receipts", "applied", "rejected"),
-                    conn.execute(
-                        "SELECT count(*),count(*) FILTER(WHERE outcome='applied'),count(*) FILTER(WHERE outcome='rejected') FROM kafka_source_results"
-                    ).fetchone(),
+                result["authority"] = dict(
+                    zip(
+                        ("receipts", "applied", "rejected"),
+                        conn.execute(
+                            "SELECT count(*),count(*) FILTER(WHERE outcome='applied'),count(*) FILTER(WHERE outcome='rejected') FROM kafka_source_results"
+                        ).fetchone(),
+                    )
                 )
-            )
-            result["processing_p99_ms"] = conn.execute(
-                "SELECT percentile_cont(0.99) WITHIN GROUP(ORDER BY extract(epoch FROM recorded_at-received_at)*1000) FROM kafka_source_results WHERE received_at>=%s",
-                (result["measured_from"],),
-            ).fetchone()[0]
-            result["pipeline_faults"] = dict(
-                conn.execute(
-                    "SELECT consumer||':'||reason,count(*) FROM kafka_pipeline_faults GROUP BY consumer,reason"
-                ).fetchall()
-            )
-            result["watermark_lag_tenants"] = conn.execute(
-                "SELECT count(*) FROM tenant_work_state w JOIN tenant_view_state v USING(tenant_id) WHERE v.searchable_seq<w.projection_seq"
-            ).fetchone()[0]
-        with sample_lock:
-            result["search_visibility_sample_p99_ms"] = percentile(
-                list(stats["search_visibility_ms"].values()), 0.99
-            )
-            result["search_visibility_sampled"] = len(stats["search_sample_arrivals"])
-            result["search_visibility_observed"] = len(stats["search_visibility_ms"])
-        collect_worker_reports()
-        result.update(
-            {
-                "accepted": stats["accepted"],
-                "offered": stats["offered"],
-                "read_requests": stats["read_requests"],
-                "admission_p99_ms": percentile(stats["arrival_ms"], 0.99),
-                "read_p99_ms": percentile(stats["read_ms"], 0.99),
-                "generator_late_p99_ms": percentile(stats["generator_late_ms"], 0.99),
-                "errors": dict(stats["errors"]),
-                "worker_turns": dict(stats["worker_turns"]),
-                "sse_connections": stats["sse_connections"],
-                "sse_messages": stats["sse_messages"],
-                "pit_closed": stats["pit_closed"],
-            }
-        )
-        with phase_lock:
-            result["source_phases_ms"] = {
-                label: {
-                    "count": len(values),
-                    "p50": percentile(values, 0.5),
-                    "p99": percentile(values, 0.99),
-                    "total_ms": round(sum(values), 3),
+                result["processing_p99_ms"] = conn.execute(
+                    "SELECT percentile_cont(0.99) WITHIN GROUP(ORDER BY extract(epoch FROM recorded_at-received_at)*1000) FROM kafka_source_results WHERE received_at>=%s",
+                    (result["measured_from"],),
+                ).fetchone()[0]
+                result["pipeline_faults"] = dict(
+                    conn.execute(
+                        "SELECT consumer||':'||reason,count(*) FROM kafka_pipeline_faults GROUP BY consumer,reason"
+                    ).fetchall()
+                )
+                result["watermark_lag_tenants"] = conn.execute(
+                    "SELECT count(*) FROM tenant_work_state w JOIN tenant_view_state v USING(tenant_id) WHERE v.searchable_seq<w.projection_seq"
+                ).fetchone()[0]
+            with sample_lock:
+                result["search_visibility_sample_p99_ms"] = percentile(
+                    list(stats["search_visibility_ms"].values()), 0.99
+                )
+                result["search_visibility_sampled"] = len(stats["search_sample_arrivals"])
+                result["search_visibility_observed"] = len(stats["search_visibility_ms"])
+            collect_worker_reports()
+            result.update(
+                {
+                    "accepted": stats["accepted"],
+                    "offered": stats["offered"],
+                    "read_requests": stats["read_requests"],
+                    "admission_p99_ms": percentile(stats["arrival_ms"], 0.99),
+                    "read_p99_ms": percentile(stats["read_ms"], 0.99),
+                    "generator_late_p99_ms": percentile(stats["generator_late_ms"], 0.99),
+                    "errors": dict(stats["errors"]),
+                    "worker_turns": dict(stats["worker_turns"]),
+                    "sse_connections": stats["sse_connections"],
+                    "sse_messages": stats["sse_messages"],
+                    "pit_closed": stats["pit_closed"],
                 }
-                for label, values in stats["source_phases_ms"].items()
-            }
-        result["correctness_passed"] = (
-            not stats["errors"]
-            and visible == expected
-            and result.get("applied") == expected
-            and stats["accepted"] == round(args.rate * args.seconds)
-            and not result["pipeline_faults"]
-            and not result["watermark_lag_tenants"]
-            and result["final_tenants_exact_counts"] == args.tenants
-            and result["search_visibility_observed"] == result["search_visibility_sampled"]
-        )
-        result["latency_passed"] = (
-            result["admission_p99_ms"] is not None
-            and result["admission_p99_ms"] < 1000
-            and result["read_p99_ms"] is not None
-            and result["read_p99_ms"] < 2000
-            and result["processing_p99_ms"] is not None
-            and result["processing_p99_ms"] < 5000
-            and stats["sse_connections"] == args.users
-            and result["minimum_active_sse"] == args.users
-            and result["generator_late_p99_ms"] < 1000
-            and result["search_visibility_sample_p99_ms"] is not None
-            and result["search_visibility_sample_p99_ms"] < 5000
-        )
-        result["passed"] = result["correctness_passed"] and result["latency_passed"]
+            )
+            with phase_lock:
+                result["source_phases_ms"] = {
+                    label: {
+                        "count": len(values),
+                        "p50": percentile(values, 0.5),
+                        "p99": percentile(values, 0.99),
+                        "total_ms": round(sum(values), 3),
+                    }
+                    for label, values in stats["source_phases_ms"].items()
+                }
+            result["correctness_passed"] = (
+                not stats["errors"]
+                and visible == expected
+                and result.get("applied") == expected
+                and stats["accepted"] == round(args.rate * args.seconds)
+                and not result["pipeline_faults"]
+                and not result["watermark_lag_tenants"]
+                and result["final_tenants_exact_counts"] == args.tenants
+                and result["search_visibility_observed"] == result["search_visibility_sampled"]
+            )
+            result["latency_passed"] = (
+                result["admission_p99_ms"] is not None
+                and result["admission_p99_ms"] < 1000
+                and result["read_p99_ms"] is not None
+                and result["read_p99_ms"] < 2000
+                and result["processing_p99_ms"] is not None
+                and result["processing_p99_ms"] < 5000
+                and stats["sse_connections"] == args.users
+                and result["minimum_active_sse"] == args.users
+                and result["generator_late_p99_ms"] < 1000
+                and result["search_visibility_sample_p99_ms"] is not None
+                and result["search_visibility_sample_p99_ms"] < 5000
+            )
+            result["passed"] = result["correctness_passed"] and result["latency_passed"]
     except Exception as error:
         result.update(
             {"passed": False, "failure_type": type(error).__name__, "errors": dict(stats["errors"])}

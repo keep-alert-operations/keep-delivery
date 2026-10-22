@@ -355,6 +355,81 @@ This setup does not install a framework, provision CI services or claim those ga
 are fixed. See [engineering policies](../agent-workflows.md#documentation-and-verification)
 for the binding selection and repair rules.
 
+### Pipeline load comparison (before/after)
+
+Use the pipeline phase of `qualification/scalability_load.py` to compare pipeline
+throughput and latency between two package sets, for example `origin/main`
+before and after a performance merge. It is a local diagnostic, not release
+qualification. It does not use the shared `appchi-local-stack` containers or the
+local runtime. It skips the API and users. Production KafkaAdmission publishes
+fixed workload `pipeline-v1`. The production source, correlation and indexer worker
+processes consume it through `consume()`. Each scenario drains completely
+before the next one starts:
+
+| Scenario | Offered alerts | Measures |
+|---|---|---|
+| `warmup` | `--warmup` (100), spread over all tenants | Not reported; warms caches and assignment |
+| `steady` | `--steady-rate` × `--steady-seconds` (3/s × 60 s), all tenants | Stage latency at a fixed sub-saturation rate |
+| `burst_spread` | `--burst` (600), all tenants, `--burst-concurrency` (50) in flight | Stage throughput across tenants |
+| `burst_one_tenant` | `--burst` v2 alerts for one tenant | Per-tenant serialization ceiling (rule and maintenance tenant) |
+| `burst_global_v1` | `--burst` native v1 alerts for Global | The same ceiling for all v1 traffic |
+
+For each scenario the result JSON contains the following:
+
+- Per-stage throughput and latency percentiles from PostgreSQL timestamps. The
+  database clock offset is corrected. Stages: received→recorded (processor) and
+  received→processed (correlation).
+- The search drain time and a 100 ms sampled visibility latency.
+- Worker diagnostics differenced over the scenario:
+  - `consume()` batch sizes.
+  - Source records per Kafka transaction.
+  - Kafka transaction, partition-confirmation write and apply time per record.
+  - The confirmation share of active source turns.
+  - Changed-consumer records per handler call and Kafka commits per record.
+  - PostgreSQL transactions per record by stage.
+- `kafka_source_results` HOT update ratio and WAL bytes per alert.
+- Sampled lock-waiting backends.
+
+Two summaries feed the open design items. `pipeline.confirmation` covers the
+partition-confirmation write cost. `pipeline.serialization` gives one-tenant and
+Global throughput as ratios to the spread burst. The report also records
+`workload`, the exact arguments, installed package commits (editable checkouts
+add HEAD and a dirty flag), consumer batching settings, service versions and host.
+
+Run both sides with the same arguments on the same idle host, under the
+heavy-suite rules (one heavy run at a time). Run each side at least twice;
+single runs vary. From `appchi-delivery`, with an environment whose installed
+packages are the revision under test: a non-editable `poetry sync` of delivery's
+lock, or `scripts/workspace.py install --editable` for local siblings. On Windows,
+keep that environment path short (see workspace setup):
+
+```powershell
+.venv/Scripts/python.exe qualification/scalability_services.py up
+$env:APPCHI_SCALE_ADMIN_URL = Get-Content .local/appchi-load-admin-url
+.venv/Scripts/python.exe qualification/scalability_load.py --phase pipeline --features `
+  --kafka-bootstrap 127.0.0.1:19293 --elasticsearch-url http://127.0.0.1:59401 `
+  --redis-url redis://127.0.0.1:56580/0 --drain-seconds 900 --output .local/pipeline-before-1.json
+# Repeat for -2, then install the other revision and write pipeline-after-1/-2.json.
+.venv/Scripts/python.exe qualification/compare_pipeline_load.py `
+  --before (Get-ChildItem .local/pipeline-before-*.json) `
+  --after (Get-ChildItem .local/pipeline-after-*.json)
+.venv/Scripts/python.exe qualification/scalability_services.py down
+```
+
+`scalability_services.py up` starts private `appchi-load-*` PostgreSQL,
+Elasticsearch, Redis and Kafka containers. Kafka is configured like
+`deploy/local/compose.yaml`: INTERNAL inter-broker listener and hostname `kafka`.
+Readiness is proven before it returns, including an idempotent produce and a
+transactional init/produce/commit. `down` runs `docker rm -f -v` on exactly
+those containers. The comparison refuses runs whose workloads differ. A run
+exits non-zero unless every scenario drained to exact counts with no harness or
+worker errors. Treat a failed run as no measurement. Retried inputs do not fail
+a run. Each scenario reports them as `faults` (consumer and reason), and the
+consumers report `handler_errors` by error code; compare them like any other
+metric. The defaults keep `steady` below this workstation's measured capacity.
+Do not change them between the runs you compare. Executed baselines belong
+in `qualification/`, with their package commits.
+
 ### Evidence, cleanup and completion
 
 Record each command with working directory, exit status, pass/fail/skip counts,
