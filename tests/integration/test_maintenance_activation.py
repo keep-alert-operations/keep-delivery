@@ -57,8 +57,8 @@ def test_requires_qualification_current_proof_and_records_one_activation(
     transaction = db.transaction
 
     @contextmanager
-    def worker_role(tenant_id=None):
-        with transaction(tenant_id) as conn:
+    def worker_role(*args, **kwargs):
+        with transaction(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_worker")
             yield conn
 

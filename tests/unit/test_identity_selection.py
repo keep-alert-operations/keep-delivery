@@ -241,8 +241,8 @@ def test_nonowner_api_role_can_queue_discovery_and_never_read_other_grants(direc
 
     class APIIdentity:
         @contextmanager
-        def transaction(self, tenant_id=None):
-            with db.transaction(tenant_id) as conn:
+        def transaction(self, *args, **kwargs):
+            with db.transaction(*args, **kwargs) as conn:
                 conn.execute("SET LOCAL ROLE appchi_api")
                 yield conn
 

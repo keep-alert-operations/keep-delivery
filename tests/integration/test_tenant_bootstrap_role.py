@@ -17,8 +17,8 @@ def test_superadmin_can_create_tenant_under_api_role(browser, real_db, monkeypat
     transaction = real_db.transaction
 
     @contextmanager
-    def restricted(tenant_id=None):
-        with transaction(tenant_id) as conn:
+    def restricted(*args, **kwargs):
+        with transaction(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_api")
             yield conn
 

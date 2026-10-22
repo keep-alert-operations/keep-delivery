@@ -42,13 +42,19 @@ def real_db():
             conn.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
 
 
-def test_durable_source_projection_search_and_manual_refresh(browser, real_db, cipher, profile, v1):
+@pytest.fixture
+def browser_settings():
     if not os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"):
         pytest.skip("Requires real Elasticsearch URL")
+    return {
+        "elasticsearch_url": os.environ["APPCHI_TEST_ELASTICSEARCH_URL"],
+        "elasticsearch_index": "appchi-pipeline-test-" + uuid4().hex,
+    }
+
+
+def test_durable_source_projection_search_and_manual_refresh(browser, real_db, cipher, profile, v1):
     client, principal = browser
     settings = client.app.state.settings
-    settings.elasticsearch_url = os.environ["APPCHI_TEST_ELASTICSEARCH_URL"]
-    settings.elasticsearch_index = "appchi-pipeline-test-" + uuid4().hex
     with Elasticsearch(settings.elasticsearch_url, request_timeout=5, max_retries=0) as es:
         es.indices.create(
             index=settings.elasticsearch_index,
@@ -109,5 +115,71 @@ def test_durable_source_projection_search_and_manual_refresh(browser, real_db, c
                     (tenant,),
                 ).fetchone()
                 assert progress["searchable_seq"] == progress["projection_seq"] == 3
+        finally:
+            es.indices.delete(index=settings.elasticsearch_index)
+
+
+def test_feed_pages_authorize_twice_in_few_units(
+    browser, real_db, cipher, profile, v1, monkeypatch
+):
+    """[#16] Each page authorizes before and after Elasticsearch in 3-4 units."""
+    if not os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"):
+        pytest.skip("Requires real Elasticsearch URL")
+    from appchi import search_routes
+
+    client, _ = browser
+    settings = client.app.state.settings
+    settings.elasticsearch_url = os.environ["APPCHI_TEST_ELASTICSEARCH_URL"]
+    settings.elasticsearch_index = "appchi-feed-units-test-" + uuid4().hex
+    with Elasticsearch(settings.elasticsearch_url, request_timeout=5, max_retries=0) as es:
+        es.indices.create(
+            index=settings.elasticsearch_index,
+            mappings=index_mapping(),
+            settings={"number_of_shards": 1, "number_of_replicas": 0},
+        )
+        # The app builds its process-owned client at startup, before this binding.
+        monkeypatch.setattr(client.app.state, "search_client", es, raising=False)
+        try:
+            alerts = set()
+            for n in range(3):
+                tenant, alert = admit_alert(
+                    real_db, cipher, profile, {**v1, "application": f"{v1['application']}-{n}"}
+                )
+                alerts.add(alert)
+            with real_db.transaction() as conn:
+                conn.execute("UPDATE capability_gates SET ready=true WHERE capability='search'")
+                conn.execute(
+                    "UPDATE tenant_view_state SET index_epoch=%s WHERE tenant_id=%s",
+                    (uuid4().hex, tenant),
+                )
+            projection_turn(real_db, settings)
+
+            units, authorizations = [], []
+            transaction, authorize = real_db.transaction, search_routes.authorize
+
+            def counted_transaction(*args, **kwargs):
+                units.append((args, kwargs))
+                return transaction(*args, **kwargs)
+
+            def counted_authorize(*args, **kwargs):
+                authorizations.append(args[2])
+                return authorize(*args, **kwargs)
+
+            monkeypatch.setattr(real_db, "transaction", counted_transaction)
+            monkeypatch.setattr(search_routes, "authorize", counted_authorize)
+            base = f"/api/tenants/{tenant}/alerts"
+            first = client.get(base, params={"limit": 2})
+            assert first.status_code == 200, first.text
+            assert first.json()["meta"]["total"] == "3"
+            assert len(first.json()["data"]) == 2 and first.json()["next_cursor"]
+            assert len(units) == 4 and authorizations == [tenant, tenant]
+
+            units.clear(), authorizations.clear()
+            second = client.get(base, params={"limit": 2, "cursor": first.json()["next_cursor"]})
+            assert second.status_code == 200, second.text
+            assert second.json()["meta"]["total"] == "3" and second.json()["next_cursor"] is None
+            assert len(units) == 3 and authorizations == [tenant, tenant]
+            seen = [row["id"] for row in first.json()["data"] + second.json()["data"]]
+            assert sorted(seen) == sorted(alerts)
         finally:
             es.indices.delete(index=settings.elasticsearch_index)
