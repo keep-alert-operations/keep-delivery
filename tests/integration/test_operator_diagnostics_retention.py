@@ -81,8 +81,8 @@ class RoleDB:
         self.db, self.role = db, role
 
     @contextmanager
-    def transaction(self, tenant=None):
-        with self.db.transaction(tenant) as conn:
+    def transaction(self, *args, **kwargs):
+        with self.db.transaction(*args, **kwargs) as conn:
             conn.execute(
                 psycopg.sql.SQL("SET LOCAL ROLE {}").format(psycopg.sql.Identifier(self.role))
             )
