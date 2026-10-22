@@ -230,6 +230,10 @@ def main():
                 errors["reconciliation_" + getattr(error, "code", type(error).__name__)] += 1
                 raise
 
+        def idle_seconds(self):
+            # Forward the scan's next due time so an outage loop waits like main.
+            return getattr(self.runner, "idle_seconds", lambda: 0.0)()
+
         def close(self):
             self.runner.close()
 
