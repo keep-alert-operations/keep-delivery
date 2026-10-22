@@ -30,7 +30,7 @@ def real_db():
 
 
 @pytest.fixture
-def index(browser, real_db):
+def index(real_db):
     url = os.getenv("APPCHI_TEST_ELASTICSEARCH_URL")
     if not url:
         pytest.skip("Requires real Elasticsearch")
@@ -54,8 +54,6 @@ def index(browser, real_db):
         )
         try:
             bind_serving_index(real_db, client, binding, str(uuid4()))
-            browser[0].app.state.settings.elasticsearch_url = url
-            browser[0].app.state.settings.elasticsearch_index = alias
             with real_db.transaction() as conn:
                 conn.execute("UPDATE capability_gates SET ready=true WHERE capability='search'")
             yield client, binding, source
@@ -65,6 +63,15 @@ def index(browser, real_db):
             for name in indices:
                 assert name.startswith(prefix)
                 client.indices.delete(index=name)
+
+
+@pytest.fixture
+def browser_settings(index):
+    # The API reads through the serving alias that `index` bound.
+    return {
+        "elasticsearch_url": os.environ["APPCHI_TEST_ELASTICSEARCH_URL"],
+        "elasticsearch_index": index[1].alias,
+    }
 
 
 def state(db, identity):
