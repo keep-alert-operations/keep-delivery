@@ -1,4 +1,4 @@
-"""Real HTTP/PG receipt capture and atomic source linkage, without render claims."""
+"""Real PG receipt capture and atomic source linkage, without render claims."""
 # ruff: noqa: F811
 
 from copy import deepcopy
@@ -42,13 +42,13 @@ def global_id(db):
         return conn.execute("SELECT id FROM tenants WHERE kind='global'").fetchone()["id"]
 
 
-def test_http_receipt_includes_validation_and_retries_keep_original_seed(
-    browser, real_db, capture, v1, monkeypatch
+def test_receipt_includes_validation_and_retries_keep_original_seed(
+    real_db, cipher, capture, v1, monkeypatch
 ):
+    # The product API no longer serves ingestion, and Kafka admission has no PG
+    # capture; the legacy admission still seeds from the receipt start it is given.
     import appchi.ingestion.service as service
 
-    client, _ = browser
-    client.app.state.profile = capture
     original = service.validate_native
 
     def slow_validation(*args):
@@ -56,14 +56,13 @@ def test_http_receipt_includes_validation_and_retries_keep_original_seed(
         return original(*args)
 
     monkeypatch.setattr(service, "validate_native", slow_validation)
-    response = client.post(
-        "/api/ingest/v1/alerts", json=v1, headers={"Idempotency-Key": "capture-http"}
+    admission = Admission(real_db, cipher, capture)
+    status, response = admission.admit(
+        canonical(v1), "v1", "capture-http", receipt_started=monotonic()
     )
-    assert response.status_code == 202, response.text
-    replay = client.post(
-        "/api/ingest/v1/alerts", json=v1, headers={"Idempotency-Key": "capture-http"}
-    )
-    assert replay.json() == response.json()
+    assert status == 202, response
+    replay = admission.admit(canonical(v1), "v1", "capture-http", receipt_started=monotonic())
+    assert replay == (status, response)
     with real_db.transaction() as conn:
         rows = conn.execute("""SELECT v.*,i.received_at FROM visibility_inputs v
             JOIN ingest_items i ON i.id=v.id""").fetchall()
@@ -264,6 +263,10 @@ def test_registry_stays_unavailable_without_explicit_limits(browser, real_db):
     assert response.json()["error"]["code"] == "visibility_registry_unconfigured"
 
 
+@pytest.mark.skip(
+    reason="REV-34: deferred scheduler prototype; expiry creates no fan-out job and "
+    "current source-driven release is tested in test_source_driven_maintenance"
+)
 def test_expiry_fanout_commits_projection_link_and_cursor_atomically(
     browser, real_db, cipher, capture, v1, monkeypatch
 ):

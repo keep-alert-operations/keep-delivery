@@ -1,3 +1,4 @@
+#Requires -Version 7
 [CmdletBinding()]
 param([ValidateSet('Start', 'Stop', 'Status', 'Refresh')][string]$Action = 'Status', [switch]$Restart)
 $ErrorActionPreference = 'Stop'

@@ -21,8 +21,8 @@ class RestrictedDatabase:
         self.hook = None
 
     @contextmanager
-    def transaction(self, tenant_id=None):
-        with self.database.transaction(tenant_id) as conn:
+    def transaction(self, *args, **kwargs):
+        with self.database.transaction(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_api")
             self.roles.append(conn.execute("SELECT current_user AS role").fetchone()["role"])
             yield HookedConnection(conn, self.hook) if self.hook else conn
