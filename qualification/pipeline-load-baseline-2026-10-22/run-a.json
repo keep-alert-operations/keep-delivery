@@ -1,0 +1,2500 @@
+{
+  "host_memory_at_start": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 863236096
+  },
+  "run": "scale-985caddcb49845cf8834b184aeda83d6",
+  "profile": {
+    "seconds": 60,
+    "rate": 83.33333333333333,
+    "users": 100,
+    "tenants": 50,
+    "seed": 5000,
+    "seed_batch": 10,
+    "seed_rate": null,
+    "preload_seconds": 600,
+    "partitions": 8,
+    "processors": 4,
+    "indexers": 4,
+    "api_pool": 16,
+    "response_timings": false,
+    "worker_mode": "processes",
+    "correlators": 4,
+    "features": true,
+    "read_pause": 2,
+    "drain_seconds": 1800,
+    "phase": "pipeline",
+    "kafka_bootstrap": "127.0.0.1:19293",
+    "elasticsearch_url": "http://127.0.0.1:59401",
+    "redis_url": "redis://127.0.0.1:56580/0",
+    "warmup": 100,
+    "steady_rate": 3,
+    "steady_seconds": 60,
+    "burst": 300,
+    "burst_concurrency": 50,
+    "output": ".local\\pipeline-baseline-2.json"
+  },
+  "scope": "Fixed drained workloads through KafkaAdmission and production source, correlation and indexer worker processes; no API, OIDC or production qualification",
+  "feature_profile": {
+    "id": "scale-985caddcb49845cf8834b184aeda83d6",
+    "qualified": true,
+    "search_max_document_bytes": 104857600,
+    "scope": "isolated-synthetic-fixture",
+    "production_qualified": false,
+    "qualification_notice": "Synthetic feature-gate input; not production capacity evidence",
+    "correlation": {
+      "cost_model": "appchi-cel-cost-v1",
+      "enabled_rules_per_tenant": 1,
+      "live_groups_per_rule": 2,
+      "live_evidence_per_rule": 322,
+      "live_evidence_per_tenant": 322,
+      "condition_cost": 1000000000,
+      "rule_cost": 1000000000,
+      "tenant_cost": 1000000000,
+      "digest_bucket": 4
+    },
+    "maintenance_max_work": 10000,
+    "maintenance_max_inputs": 100,
+    "maintenance_max_segments": 20,
+    "maintenance": {
+      "max_overlap": 20,
+      "max_work_bytes": 1000000
+    }
+  },
+  "source_sql_scope": "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits.",
+  "worker_topology": "Separate production-lifecycle worker processes and uvicorn API process; delivery fixture adapts only private namespace, stop polling and diagnostics. Local process resources are not production pod qualification.",
+  "migration_head": {
+    "filename": "0051_kafka_source_unconfirmed.sql",
+    "sha256": "d58a2cf4540146457cc7d809606eea4b7a3c19073f6ba8d9867b3b1511cd57c4"
+  },
+  "worker_health_sha256": "8a9094785272b4d6fa210f58e5cf456b39392dd6a1bcbc87272273cb2dac12a3",
+  "setup_index_seconds": 1.454,
+  "host_memory_before_workers": {
+    "total_physical_bytes": 16716918784,
+    "available_physical_bytes": 780746752
+  },
+  "worker_startup_seconds": 23.985,
+  "stage": "pipeline",
+  "workload": {
+    "version": "pipeline-v1",
+    "scenarios": [
+      "steady",
+      "burst_spread",
+      "burst_one_tenant",
+      "burst_global_v1"
+    ],
+    "tenants": 50,
+    "warmup": 100,
+    "steady_rate": 3,
+    "steady_seconds": 60,
+    "burst": 300,
+    "burst_concurrency": 50,
+    "message_bytes": 3500,
+    "partitions": 8,
+    "processors": 4,
+    "indexers": 4,
+    "correlators": 4,
+    "features": true
+  },
+  "environment": {
+    "harness": {
+      "commit": "f2c5d3b139f7325325ad915e27a809146254305e",
+      "dirty": true
+    },
+    "packages": {
+      "appchi-domain": {
+        "version": "0.1.0",
+        "commit": "6d4cfa6f1acf11ef3a369a002f0cceb99bab2e3c"
+      },
+      "appchi-contracts": {
+        "version": "0.1.0",
+        "commit": "eb555e8bd307c2dbc3f20a9134351696a4f5eba2"
+      },
+      "appchi-ingestion": {
+        "version": "0.1.0",
+        "commit": "cc80542fe1ee28fff97e0bb802eaeca8962b945d"
+      },
+      "appchi-processor": {
+        "version": "0.1.0",
+        "commit": "f483832e50aca3efc58f778517d3010467c16792"
+      },
+      "appchi-correlation": {
+        "version": "0.1.0",
+        "commit": "d3cd9331c20da40f93d1dc5bb10a489649327872"
+      },
+      "appchi-indexer": {
+        "version": "0.1.0",
+        "commit": "c335a201116be5b5ee8b617bea8f36aa843eb62c"
+      },
+      "appchi-migrations": {
+        "version": "0.1.0",
+        "commit": "c5f3e9c80184080ff98217313793e7f16cd3fd8e"
+      },
+      "appchi-api": {
+        "version": "0.1.0",
+        "commit": "aad9bf61f664cea44c6319470bbbc223aabe68cf"
+      }
+    },
+    "consumers": {
+      "source_batch_records": 100,
+      "source_batch_seconds": 0.1,
+      "changed_defaults": {
+        "batch_size": 50
+      },
+      "index_groups_available": false,
+      "search_bulk_documents": null
+    },
+    "postgres": "18.2 (Debian 18.2-1.pgdg13+1)",
+    "elasticsearch": "9.0.0",
+    "python": "3.13.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu_count": 12,
+    "host_memory": {
+      "total_physical_bytes": 16716918784,
+      "available_physical_bytes": 409108480
+    }
+  },
+  "pipeline": {
+    "scenarios": [
+      {
+        "name": "steady",
+        "version": "v2",
+        "tenants": 50,
+        "offered": 180,
+        "accepted": 180,
+        "offer_seconds": 59.705,
+        "offered_per_second": 3.015,
+        "admission_ms": {
+          "p50": 30.779,
+          "p95": 44.405,
+          "p99": 47.187,
+          "max": 47.41
+        },
+        "generator_late_ms": {
+          "p50": 8.432,
+          "p95": 15.004,
+          "p99": 16.187,
+          "max": 16.294
+        },
+        "db_clock_offset_ms": 0.463,
+        "drained_seconds": {
+          "processor": 60.102,
+          "correlation": 60.725,
+          "search": 61.707,
+          "watermark": 76.392
+        },
+        "drain_timed_out": false,
+        "drain_counts": {
+          "processor": 180,
+          "correlation": 180,
+          "search": 180
+        },
+        "faults": {},
+        "stages": {
+          "processor": {
+            "count": 180,
+            "complete": true,
+            "elapsed_seconds": 59.941,
+            "per_second": 3.003,
+            "latency_ms": {
+              "p50": 234.18,
+              "p95": 355.999,
+              "p99": 434.292,
+              "max": 436.905
+            },
+            "rejected": 0
+          },
+          "correlation": {
+            "count": 180,
+            "complete": true,
+            "elapsed_seconds": 60.404,
+            "per_second": 2.98,
+            "latency_ms": {
+              "p50": 707.491,
+              "p95": 1079.348,
+              "p99": 1214.08,
+              "max": 1445.983
+            },
+            "after_processor_ms": {
+              "p50": 463.279,
+              "p95": 792.196,
+              "p99": 976.469,
+              "max": 1189.045
+            }
+          },
+          "search": {
+            "count": 180,
+            "complete": true,
+            "drained_seconds": 61.707,
+            "per_second": 2.917,
+            "visibility_sample_ms": {
+              "p50": 1571.422,
+              "p95": 3116.208,
+              "p99": 3910.493,
+              "max": 4191.54
+            },
+            "visibility_sampled": 180,
+            "visibility_observed": 180,
+            "resolution_ms": 100
+          }
+        },
+        "workers": {
+          "source": {
+            "processes": 4,
+            "instrumented": [
+              "client",
+              "db.transaction",
+              "source._publish"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 180,
+              "records_per_consume": 1.0,
+              "active_turns": 180,
+              "active_turn_ms": 62645.563,
+              "pg_transactions_per_record": {
+                "apply": 5.0,
+                "confirmation": 1.0
+              },
+              "apply_ms_per_record": 253.896,
+              "publishes": 180,
+              "records_per_publish": 1.0,
+              "kafka_transaction_ms_per_record": 21.551,
+              "confirmation_ms_per_record": 30.306,
+              "confirmation_share_of_active_turns": 0.0871
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 2187,
+                "records": 0,
+                "total_ms": 43.604,
+                "mean_ms": 0.02
+              },
+              "poll_empty": {
+                "count": 2041,
+                "records": 0,
+                "total_ms": 215823.374,
+                "mean_ms": 105.744
+              },
+              "idle_turn": {
+                "count": 2041,
+                "records": 0,
+                "total_ms": 218145.957,
+                "mean_ms": 106.882
+              },
+              "poll": {
+                "count": 146,
+                "records": 146,
+                "total_ms": 7406.694,
+                "mean_ms": 50.731,
+                "ms": {
+                  "p50": 49.915,
+                  "p95": 99.062,
+                  "p99": 101.277,
+                  "max": 105.847
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:apply": {
+                "count": 900,
+                "records": 0,
+                "total_ms": 45068.157,
+                "mean_ms": 50.076
+              },
+              "apply": {
+                "count": 180,
+                "records": 180,
+                "total_ms": 45701.327,
+                "mean_ms": 253.896,
+                "ms": {
+                  "p50": 239.87,
+                  "p95": 354.107,
+                  "p99": 440.181,
+                  "max": 462.423
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "consume": {
+                "count": 34,
+                "records": 34,
+                "total_ms": 1.301,
+                "mean_ms": 0.038,
+                "ms": {
+                  "p50": 0.036,
+                  "p95": 0.062,
+                  "p99": 0.078,
+                  "max": 0.078
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:confirmation": {
+                "count": 180,
+                "records": 0,
+                "total_ms": 5443.67,
+                "mean_ms": 30.243
+              },
+              "kafka_transaction": {
+                "count": 180,
+                "records": 180,
+                "total_ms": 3879.175,
+                "mean_ms": 21.551,
+                "ms": {
+                  "p50": 19.181,
+                  "p95": 38.903,
+                  "p99": 49.959,
+                  "max": 50.488
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "partition_confirmation": {
+                "count": 180,
+                "records": 180,
+                "total_ms": 5455.128,
+                "mean_ms": 30.306,
+                "ms": {
+                  "p50": 27.751,
+                  "p95": 45.899,
+                  "p99": 51.791,
+                  "max": 67.194
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "turn": {
+                "count": 180,
+                "records": 180,
+                "total_ms": 62645.563,
+                "mean_ms": 348.031,
+                "ms": {
+                  "p50": 339.652,
+                  "p95": 471.316,
+                  "p99": 571.582,
+                  "max": 649.671
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              }
+            }
+          },
+          "correlation": {
+            "processes": 4,
+            "instrumented": [
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 340,
+              "records_per_consume": 1.131,
+              "active_turns": 340,
+              "active_turn_ms": 122845.874,
+              "pg_transactions_per_record": {
+                "handler": 4.0,
+                "other": 1.0
+              },
+              "handler_calls": 340,
+              "records_per_handler_call": 1.0,
+              "handler_ms_per_record": 241.185,
+              "kafka_commits_per_record": 1.0,
+              "kafka_commit_ms_per_record": 10.104
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 1537,
+                "records": 0,
+                "total_ms": 163834.923,
+                "mean_ms": 106.594
+              },
+              "idle_turn": {
+                "count": 1537,
+                "records": 0,
+                "total_ms": 164260.471,
+                "mean_ms": 106.871
+              },
+              "consume": {
+                "count": 260,
+                "records": 294,
+                "total_ms": 27829.112,
+                "mean_ms": 107.035,
+                "ms": {
+                  "p50": 106.667,
+                  "p95": 114.16,
+                  "p99": 115.125,
+                  "max": 115.247
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 3,
+                  "mean": 1.131
+                }
+              },
+              "pg_tx:handler": {
+                "count": 1360,
+                "records": 0,
+                "total_ms": 81697.314,
+                "mean_ms": 60.072
+              },
+              "handler": {
+                "count": 340,
+                "records": 340,
+                "total_ms": 82002.752,
+                "mean_ms": 241.185,
+                "ms": {
+                  "p50": 221.478,
+                  "p95": 437.087,
+                  "p99": 518.717,
+                  "max": 537.279
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:other": {
+                "count": 340,
+                "records": 0,
+                "total_ms": 9454.345,
+                "mean_ms": 27.807
+              },
+              "kafka_commit": {
+                "count": 340,
+                "records": 0,
+                "total_ms": 3435.341,
+                "mean_ms": 10.104,
+                "ms": {
+                  "p50": 9.556,
+                  "p95": 13.643,
+                  "p99": 27.597,
+                  "max": 28.635
+                }
+              },
+              "turn": {
+                "count": 340,
+                "records": 340,
+                "total_ms": 122845.874,
+                "mean_ms": 361.311,
+                "ms": {
+                  "p50": 348.078,
+                  "p95": 574.891,
+                  "p99": 672.564,
+                  "max": 709.64
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll": {
+                "count": 46,
+                "records": 46,
+                "total_ms": 1.363,
+                "mean_ms": 0.03,
+                "ms": {
+                  "p50": 0.029,
+                  "p95": 0.037,
+                  "p99": 0.08,
+                  "max": 0.08
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll_empty": {
+                "count": 34,
+                "records": 0,
+                "total_ms": 0.553,
+                "mean_ms": 0.016
+              }
+            }
+          },
+          "indexer": {
+            "processes": 4,
+            "instrumented": [
+              "changed.batch_handler",
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 340,
+              "records_per_consume": 1.937,
+              "active_turns": 204,
+              "active_turn_ms": 151558.197,
+              "pg_transactions_per_record": {
+                "reconciliation": 11.094,
+                "handler": 2.4,
+                "other": 0.6
+              },
+              "handler_calls": 204,
+              "records_per_handler_call": 1.667,
+              "handler_ms_per_record": 371.529,
+              "kafka_commits_per_record": 0.6,
+              "kafka_commit_ms_per_record": 6.234
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 306,
+                "records": 0,
+                "total_ms": 33033.737,
+                "mean_ms": 107.953
+              },
+              "idle_turn": {
+                "count": 306,
+                "records": 0,
+                "total_ms": 33106.812,
+                "mean_ms": 108.192
+              },
+              "pg_tx:reconciliation": {
+                "count": 3772,
+                "records": 0,
+                "total_ms": 117101.75,
+                "mean_ms": 31.045
+              },
+              "reconciliation": {
+                "count": 510,
+                "records": 0,
+                "total_ms": 128624.433,
+                "mean_ms": 252.205
+              },
+              "consume": {
+                "count": 158,
+                "records": 306,
+                "total_ms": 16935.693,
+                "mean_ms": 107.188,
+                "ms": {
+                  "p50": 106.85,
+                  "p95": 114.545,
+                  "p99": 115.414,
+                  "max": 115.65
+                },
+                "records_per_call": {
+                  "p50": 2,
+                  "max": 7,
+                  "mean": 1.937
+                }
+              },
+              "pg_tx:handler": {
+                "count": 816,
+                "records": 0,
+                "total_ms": 27743.362,
+                "mean_ms": 33.999
+              },
+              "batch_handler": {
+                "count": 204,
+                "records": 340,
+                "total_ms": 126319.919,
+                "mean_ms": 619.215,
+                "ms": {
+                  "p50": 651.244,
+                  "p95": 931.164,
+                  "p99": 1185.527,
+                  "max": 1220.78
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 6,
+                  "mean": 1.667
+                }
+              },
+              "kafka_commit": {
+                "count": 204,
+                "records": 0,
+                "total_ms": 2119.478,
+                "mean_ms": 10.39,
+                "ms": {
+                  "p50": 9.268,
+                  "p95": 23.439,
+                  "p99": 31.527,
+                  "max": 34.15
+                }
+              },
+              "pg_tx:other": {
+                "count": 204,
+                "records": 0,
+                "total_ms": 6111.126,
+                "mean_ms": 29.956
+              },
+              "turn": {
+                "count": 204,
+                "records": 340,
+                "total_ms": 151558.197,
+                "mean_ms": 742.932,
+                "ms": {
+                  "p50": 776.743,
+                  "p95": 1073.272,
+                  "p99": 1262.707,
+                  "max": 1326.889
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 6,
+                  "mean": 1.667
+                }
+              },
+              "poll": {
+                "count": 34,
+                "records": 34,
+                "total_ms": 1.104,
+                "mean_ms": 0.032,
+                "ms": {
+                  "p50": 0.032,
+                  "p95": 0.038,
+                  "p99": 0.052,
+                  "max": 0.052
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll_empty": {
+                "count": 12,
+                "records": 0,
+                "total_ms": 0.205,
+                "mean_ms": 0.017
+              }
+            }
+          }
+        },
+        "database": {
+          "samples": 354,
+          "active_backends_mean": 0.87,
+          "lock_waiting_backends_mean": 0.0,
+          "lock_waiting_backends_max": 0,
+          "samples_with_lock_wait": 0.0,
+          "wait_events": {
+            "IO:WalSync": 65,
+            "Client:ClientRead": 27,
+            "LWLock:WALWrite": 22,
+            "IO:WalWrite": 10
+          }
+        },
+        "kafka_source_results_writes": {
+          "inserted": 180,
+          "updated": 180,
+          "hot_updated": 0,
+          "wal_bytes": 8937424,
+          "hot_update_ratio": 0.0,
+          "wal_bytes_per_alert": 49652
+        }
+      },
+      {
+        "name": "burst_spread",
+        "version": "v2",
+        "tenants": 50,
+        "offered": 300,
+        "accepted": 300,
+        "offer_seconds": 1.017,
+        "offered_per_second": 295.076,
+        "admission_ms": {
+          "p50": 136.043,
+          "p95": 190.506,
+          "p99": 229.05,
+          "max": 259.594
+        },
+        "generator_late_ms": {},
+        "db_clock_offset_ms": 0.916,
+        "drained_seconds": {
+          "processor": 37.368,
+          "search": 40.534,
+          "correlation": 58.269,
+          "watermark": 70.223
+        },
+        "drain_timed_out": false,
+        "drain_counts": {
+          "processor": 300,
+          "correlation": 300,
+          "search": 300
+        },
+        "faults": {},
+        "stages": {
+          "processor": {
+            "count": 300,
+            "complete": true,
+            "elapsed_seconds": 37.085,
+            "per_second": 8.09,
+            "latency_ms": {
+              "p50": 17102.532,
+              "p95": 33208.694,
+              "p99": 35533.124,
+              "max": 36124.386
+            },
+            "rejected": 0
+          },
+          "correlation": {
+            "count": 300,
+            "complete": true,
+            "elapsed_seconds": 58.099,
+            "per_second": 5.164,
+            "latency_ms": {
+              "p50": 29003.45,
+              "p95": 51849.603,
+              "p99": 56256.868,
+              "max": 57187.338
+            },
+            "after_processor_ms": {
+              "p50": 12319.525,
+              "p95": 21214.891,
+              "p99": 23609.119,
+              "max": 23698.215
+            }
+          },
+          "search": {
+            "count": 300,
+            "complete": true,
+            "drained_seconds": 40.534,
+            "per_second": 7.401,
+            "visibility_sample_ms": {
+              "p50": 20127.814,
+              "p95": 35863.562,
+              "p99": 37873.913,
+              "max": 38883.435
+            },
+            "visibility_sampled": 150,
+            "visibility_observed": 150,
+            "resolution_ms": 100
+          }
+        },
+        "workers": {
+          "source": {
+            "processes": 4,
+            "instrumented": [
+              "client",
+              "db.transaction",
+              "source._publish"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 300,
+              "records_per_consume": 37.0,
+              "active_turns": 12,
+              "active_turn_ms": 139293.419,
+              "pg_transactions_per_record": {
+                "apply": 5.0,
+                "confirmation": 1.0
+              },
+              "apply_ms_per_record": 383.424,
+              "publishes": 300,
+              "records_per_publish": 1.0,
+              "kafka_transaction_ms_per_record": 32.095,
+              "confirmation_ms_per_record": 48.186,
+              "confirmation_share_of_active_turns": 0.1038
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 1207,
+                "records": 0,
+                "total_ms": 24.339,
+                "mean_ms": 0.02
+              },
+              "poll_empty": {
+                "count": 1203,
+                "records": 0,
+                "total_ms": 127044.455,
+                "mean_ms": 105.606
+              },
+              "idle_turn": {
+                "count": 1203,
+                "records": 0,
+                "total_ms": 128442.313,
+                "mean_ms": 106.768
+              },
+              "poll": {
+                "count": 4,
+                "records": 4,
+                "total_ms": 153.47,
+                "mean_ms": 38.367,
+                "ms": {
+                  "p50": 56.171,
+                  "p95": 82.744,
+                  "p99": 82.744,
+                  "max": 82.744
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:apply": {
+                "count": 1500,
+                "records": 0,
+                "total_ms": 113882.347,
+                "mean_ms": 75.922
+              },
+              "apply": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 115027.15,
+                "mean_ms": 383.424,
+                "ms": {
+                  "p50": 356.777,
+                  "p95": 618.558,
+                  "p99": 726.337,
+                  "max": 809.296
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "consume": {
+                "count": 8,
+                "records": 296,
+                "total_ms": 2.384,
+                "mean_ms": 0.298,
+                "ms": {
+                  "p50": 0.237,
+                  "p95": 0.551,
+                  "p99": 0.551,
+                  "max": 0.551
+                },
+                "records_per_call": {
+                  "p50": 35,
+                  "max": 53,
+                  "mean": 37.0
+                }
+              },
+              "pg_tx:confirmation": {
+                "count": 300,
+                "records": 0,
+                "total_ms": 14435.808,
+                "mean_ms": 48.119
+              },
+              "kafka_transaction": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 9628.596,
+                "mean_ms": 32.095,
+                "ms": {
+                  "p50": 29.043,
+                  "p95": 57.257,
+                  "p99": 74.801,
+                  "max": 96.917
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "partition_confirmation": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 14455.925,
+                "mean_ms": 48.186,
+                "ms": {
+                  "p50": 41.469,
+                  "p95": 82.63,
+                  "p99": 201.45,
+                  "max": 245.485
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "turn": {
+                "count": 12,
+                "records": 300,
+                "total_ms": 139293.419,
+                "mean_ms": 11607.785,
+                "ms": {
+                  "p50": 14902.126,
+                  "p95": 24817.633,
+                  "p99": 24817.633,
+                  "max": 24817.633
+                },
+                "records_per_call": {
+                  "p50": 33,
+                  "max": 53,
+                  "mean": 25.0
+                }
+              }
+            }
+          },
+          "correlation": {
+            "processes": 4,
+            "instrumented": [
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 560,
+              "records_per_consume": 1.417,
+              "active_turns": 560,
+              "active_turn_ms": 212961.472,
+              "pg_transactions_per_record": {
+                "handler": 4.0,
+                "other": 1.0
+              },
+              "handler_calls": 560,
+              "records_per_handler_call": 1.0,
+              "handler_ms_per_record": 330.467,
+              "kafka_commits_per_record": 1.0,
+              "kafka_commit_ms_per_record": 11.006
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 623,
+                "records": 0,
+                "total_ms": 66386.261,
+                "mean_ms": 106.559
+              },
+              "idle_turn": {
+                "count": 623,
+                "records": 0,
+                "total_ms": 66550.986,
+                "mean_ms": 106.823
+              },
+              "consume": {
+                "count": 12,
+                "records": 17,
+                "total_ms": 1277.637,
+                "mean_ms": 106.47,
+                "ms": {
+                  "p50": 106.213,
+                  "p95": 112.136,
+                  "p99": 112.136,
+                  "max": 112.136
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 2,
+                  "mean": 1.417
+                }
+              },
+              "pg_tx:handler": {
+                "count": 2240,
+                "records": 0,
+                "total_ms": 184550.558,
+                "mean_ms": 82.389
+              },
+              "handler": {
+                "count": 560,
+                "records": 560,
+                "total_ms": 185061.273,
+                "mean_ms": 330.467,
+                "ms": {
+                  "p50": 304.156,
+                  "p95": 723.215,
+                  "p99": 882.522,
+                  "max": 1123.608
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:other": {
+                "count": 560,
+                "records": 0,
+                "total_ms": 20239.6,
+                "mean_ms": 36.142
+              },
+              "kafka_commit": {
+                "count": 560,
+                "records": 0,
+                "total_ms": 6163.585,
+                "mean_ms": 11.006,
+                "ms": {
+                  "p50": 10.089,
+                  "p95": 17.561,
+                  "p99": 28.433,
+                  "max": 40.687
+                }
+              },
+              "turn": {
+                "count": 560,
+                "records": 560,
+                "total_ms": 212961.472,
+                "mean_ms": 380.288,
+                "ms": {
+                  "p50": 373.814,
+                  "p95": 780.838,
+                  "p99": 1025.408,
+                  "max": 1171.426
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll": {
+                "count": 543,
+                "records": 543,
+                "total_ms": 18.231,
+                "mean_ms": 0.034,
+                "ms": {
+                  "p50": 0.032,
+                  "p95": 0.042,
+                  "p99": 0.083,
+                  "max": 0.212
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll_empty": {
+                "count": 5,
+                "records": 0,
+                "total_ms": 0.086,
+                "mean_ms": 0.017
+              }
+            }
+          },
+          "indexer": {
+            "processes": 4,
+            "instrumented": [
+              "changed.batch_handler",
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 560,
+              "records_per_consume": 6.527,
+              "active_turns": 154,
+              "active_turn_ms": 126699.54,
+              "pg_transactions_per_record": {
+                "reconciliation": 5.18,
+                "handler": 1.1,
+                "other": 0.275
+              },
+              "handler_calls": 154,
+              "records_per_handler_call": 3.636,
+              "handler_ms_per_record": 197.698,
+              "kafka_commits_per_record": 0.275,
+              "kafka_commit_ms_per_record": 3.094
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 239,
+                "records": 0,
+                "total_ms": 25827.819,
+                "mean_ms": 108.066
+              },
+              "idle_turn": {
+                "count": 239,
+                "records": 0,
+                "total_ms": 25886.964,
+                "mean_ms": 108.314
+              },
+              "pg_tx:reconciliation": {
+                "count": 2901,
+                "records": 0,
+                "total_ms": 106890.483,
+                "mean_ms": 36.846
+              },
+              "reconciliation": {
+                "count": 393,
+                "records": 0,
+                "total_ms": 138636.988,
+                "mean_ms": 352.766
+              },
+              "consume": {
+                "count": 74,
+                "records": 483,
+                "total_ms": 8014.034,
+                "mean_ms": 108.298,
+                "ms": {
+                  "p50": 108.334,
+                  "p95": 114.902,
+                  "p99": 115.795,
+                  "max": 115.795
+                },
+                "records_per_call": {
+                  "p50": 4,
+                  "max": 19,
+                  "mean": 6.527
+                }
+              },
+              "pg_tx:handler": {
+                "count": 616,
+                "records": 0,
+                "total_ms": 33925.246,
+                "mean_ms": 55.073
+              },
+              "batch_handler": {
+                "count": 154,
+                "records": 560,
+                "total_ms": 110710.838,
+                "mean_ms": 718.902,
+                "ms": {
+                  "p50": 680.854,
+                  "p95": 1186.863,
+                  "p99": 1369.967,
+                  "max": 1384.735
+                },
+                "records_per_call": {
+                  "p50": 2,
+                  "max": 12,
+                  "mean": 3.636
+                }
+              },
+              "kafka_commit": {
+                "count": 154,
+                "records": 0,
+                "total_ms": 1732.92,
+                "mean_ms": 11.253,
+                "ms": {
+                  "p50": 9.909,
+                  "p95": 19.392,
+                  "p99": 33.344,
+                  "max": 33.426
+                }
+              },
+              "pg_tx:other": {
+                "count": 154,
+                "records": 0,
+                "total_ms": 6181.992,
+                "mean_ms": 40.143
+              },
+              "turn": {
+                "count": 154,
+                "records": 560,
+                "total_ms": 126699.54,
+                "mean_ms": 822.724,
+                "ms": {
+                  "p50": 765.992,
+                  "p95": 1266.733,
+                  "p99": 1518.092,
+                  "max": 1549.231
+                },
+                "records_per_call": {
+                  "p50": 2,
+                  "max": 12,
+                  "mean": 3.636
+                }
+              },
+              "poll": {
+                "count": 77,
+                "records": 77,
+                "total_ms": 2.658,
+                "mean_ms": 0.035,
+                "ms": {
+                  "p50": 0.032,
+                  "p95": 0.05,
+                  "p99": 0.099,
+                  "max": 0.099
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll_empty": {
+                "count": 3,
+                "records": 0,
+                "total_ms": 0.055,
+                "mean_ms": 0.018
+              }
+            }
+          }
+        },
+        "database": {
+          "samples": 325,
+          "active_backends_mean": 1.385,
+          "lock_waiting_backends_mean": 0.046,
+          "lock_waiting_backends_max": 1,
+          "samples_with_lock_wait": 0.046,
+          "wait_events": {
+            "IO:WalSync": 65,
+            "Client:ClientRead": 60,
+            "LWLock:WALWrite": 30,
+            "Lock:transactionid": 15,
+            "IO:WalWrite": 5,
+            "IO:DataFileExtend": 1
+          }
+        },
+        "kafka_source_results_writes": {
+          "inserted": 300,
+          "updated": 300,
+          "hot_updated": 0,
+          "wal_bytes": 10768760,
+          "hot_update_ratio": 0.0,
+          "wal_bytes_per_alert": 35896
+        }
+      },
+      {
+        "name": "burst_one_tenant",
+        "version": "v2",
+        "tenants": 1,
+        "offered": 300,
+        "accepted": 300,
+        "offer_seconds": 0.963,
+        "offered_per_second": 311.633,
+        "admission_ms": {
+          "p50": 130.232,
+          "p95": 192.314,
+          "p99": 223.023,
+          "max": 236.572
+        },
+        "generator_late_ms": {},
+        "db_clock_offset_ms": -1.039,
+        "drained_seconds": {
+          "processor": 68.887,
+          "search": 70.142,
+          "correlation": 291.036,
+          "watermark": 292.729
+        },
+        "drain_timed_out": false,
+        "drain_counts": {
+          "processor": 300,
+          "correlation": 300,
+          "search": 300
+        },
+        "faults": {},
+        "stages": {
+          "processor": {
+            "count": 300,
+            "complete": true,
+            "elapsed_seconds": 68.687,
+            "per_second": 4.368,
+            "latency_ms": {
+              "p50": 25773.789,
+              "p95": 61452.635,
+              "p99": 66510.597,
+              "max": 67778.735
+            },
+            "rejected": 0
+          },
+          "correlation": {
+            "count": 300,
+            "complete": true,
+            "elapsed_seconds": 290.991,
+            "per_second": 1.031,
+            "latency_ms": {
+              "p50": 122935.547,
+              "p95": 277321.371,
+              "p99": 288307.822,
+              "max": 290083.414
+            },
+            "after_processor_ms": {
+              "p50": 97318.781,
+              "p95": 215868.736,
+              "p99": 221921.912,
+              "max": 222304.679
+            }
+          },
+          "search": {
+            "count": 300,
+            "complete": true,
+            "drained_seconds": 70.142,
+            "per_second": 4.277,
+            "visibility_sample_ms": {
+              "p50": 27240.599,
+              "p95": 61090.013,
+              "p99": 66056.382,
+              "max": 67124.17
+            },
+            "visibility_sampled": 150,
+            "visibility_observed": 150,
+            "resolution_ms": 100
+          }
+        },
+        "workers": {
+          "source": {
+            "processes": 4,
+            "instrumented": [
+              "client",
+              "db.transaction",
+              "source._publish"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 300,
+              "records_per_consume": 42.429,
+              "active_turns": 10,
+              "active_turn_ms": 252239.117,
+              "pg_transactions_per_record": {
+                "apply": 5.0,
+                "confirmation": 1.0
+              },
+              "apply_ms_per_record": 788.07,
+              "publishes": 300,
+              "records_per_publish": 1.0,
+              "kafka_transaction_ms_per_record": 17.471,
+              "confirmation_ms_per_record": 34.65,
+              "confirmation_share_of_active_turns": 0.0412
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 7434,
+                "records": 0,
+                "total_ms": 147.103,
+                "mean_ms": 0.02
+              },
+              "poll_empty": {
+                "count": 7431,
+                "records": 0,
+                "total_ms": 785127.692,
+                "mean_ms": 105.656
+              },
+              "idle_turn": {
+                "count": 7431,
+                "records": 0,
+                "total_ms": 793548.878,
+                "mean_ms": 106.789
+              },
+              "poll": {
+                "count": 3,
+                "records": 3,
+                "total_ms": 155.559,
+                "mean_ms": 51.853,
+                "ms": {
+                  "p50": 57.019,
+                  "p95": 77.289,
+                  "p99": 77.289,
+                  "max": 77.289
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:apply": {
+                "count": 1500,
+                "records": 0,
+                "total_ms": 235290.126,
+                "mean_ms": 156.86
+              },
+              "apply": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 236420.885,
+                "mean_ms": 788.07,
+                "ms": {
+                  "p50": 749.275,
+                  "p95": 1212.75,
+                  "p99": 1346.917,
+                  "max": 1470.036
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "consume": {
+                "count": 7,
+                "records": 297,
+                "total_ms": 1.779,
+                "mean_ms": 0.254,
+                "ms": {
+                  "p50": 0.248,
+                  "p95": 0.546,
+                  "p99": 0.546,
+                  "max": 0.546
+                },
+                "records_per_call": {
+                  "p50": 39,
+                  "max": 80,
+                  "mean": 42.429
+                }
+              },
+              "pg_tx:confirmation": {
+                "count": 300,
+                "records": 0,
+                "total_ms": 10375.445,
+                "mean_ms": 34.585
+              },
+              "kafka_transaction": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 5241.331,
+                "mean_ms": 17.471,
+                "ms": {
+                  "p50": 15.295,
+                  "p95": 31.418,
+                  "p99": 41.48,
+                  "max": 53.706
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "partition_confirmation": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 10394.981,
+                "mean_ms": 34.65,
+                "ms": {
+                  "p50": 31.236,
+                  "p95": 52.153,
+                  "p99": 77.856,
+                  "max": 242.138
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "turn": {
+                "count": 10,
+                "records": 300,
+                "total_ms": 252239.117,
+                "mean_ms": 25223.912,
+                "ms": {
+                  "p50": 30889.316,
+                  "p95": 67806.106,
+                  "p99": 67806.106,
+                  "max": 67806.106
+                },
+                "records_per_call": {
+                  "p50": 36,
+                  "max": 80,
+                  "mean": 30.0
+                }
+              }
+            }
+          },
+          "correlation": {
+            "processes": 4,
+            "instrumented": [
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 368,
+              "records_per_consume": 2.5,
+              "active_turns": 368,
+              "active_turn_ms": 291890.765,
+              "pg_transactions_per_record": {
+                "handler": 4.0,
+                "other": 1.0
+              },
+              "handler_calls": 368,
+              "records_per_handler_call": 1.0,
+              "handler_ms_per_record": 754.122,
+              "kafka_commits_per_record": 1.0,
+              "kafka_commit_ms_per_record": 8.889
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 7082,
+                "records": 0,
+                "total_ms": 754179.087,
+                "mean_ms": 106.492
+              },
+              "idle_turn": {
+                "count": 7082,
+                "records": 0,
+                "total_ms": 756241.797,
+                "mean_ms": 106.784
+              },
+              "consume": {
+                "count": 2,
+                "records": 5,
+                "total_ms": 214.84,
+                "mean_ms": 107.42,
+                "ms": {
+                  "p50": 108.708,
+                  "p95": 108.708,
+                  "p99": 108.708,
+                  "max": 108.708
+                },
+                "records_per_call": {
+                  "p50": 4,
+                  "max": 4,
+                  "mean": 2.5
+                }
+              },
+              "pg_tx:handler": {
+                "count": 1472,
+                "records": 0,
+                "total_ms": 276747.938,
+                "mean_ms": 188.008
+              },
+              "handler": {
+                "count": 368,
+                "records": 368,
+                "total_ms": 277516.773,
+                "mean_ms": 754.122,
+                "ms": {
+                  "p50": 767.199,
+                  "p95": 1385.821,
+                  "p99": 1632.301,
+                  "max": 1767.492
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:other": {
+                "count": 368,
+                "records": 0,
+                "total_ms": 10753.191,
+                "mean_ms": 29.221
+              },
+              "kafka_commit": {
+                "count": 368,
+                "records": 0,
+                "total_ms": 3271.107,
+                "mean_ms": 8.889,
+                "ms": {
+                  "p50": 8.718,
+                  "p95": 10.687,
+                  "p99": 13.927,
+                  "max": 15.784
+                }
+              },
+              "turn": {
+                "count": 368,
+                "records": 368,
+                "total_ms": 291890.765,
+                "mean_ms": 793.181,
+                "ms": {
+                  "p50": 801.396,
+                  "p95": 1421.748,
+                  "p99": 1665.23,
+                  "max": 1818.728
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll": {
+                "count": 366,
+                "records": 366,
+                "total_ms": 11.622,
+                "mean_ms": 0.032,
+                "ms": {
+                  "p50": 0.031,
+                  "p95": 0.042,
+                  "p99": 0.083,
+                  "max": 0.104
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              }
+            }
+          },
+          "indexer": {
+            "processes": 4,
+            "instrumented": [
+              "changed.batch_handler",
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 500,
+              "records_per_consume": 2.358,
+              "active_turns": 212,
+              "active_turn_ms": 163462.196,
+              "pg_transactions_per_record": {
+                "reconciliation": 41.834,
+                "handler": 1.696,
+                "other": 0.424
+              },
+              "handler_calls": 212,
+              "records_per_handler_call": 2.358,
+              "handler_ms_per_record": 263.78,
+              "kafka_commits_per_record": 0.424,
+              "kafka_commit_ms_per_record": 3.889
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 2764,
+                "records": 0,
+                "total_ms": 297879.437,
+                "mean_ms": 107.771
+              },
+              "idle_turn": {
+                "count": 2764,
+                "records": 0,
+                "total_ms": 298585.215,
+                "mean_ms": 108.026
+              },
+              "pg_tx:reconciliation": {
+                "count": 20917,
+                "records": 0,
+                "total_ms": 699770.975,
+                "mean_ms": 33.455
+              },
+              "reconciliation": {
+                "count": 2976,
+                "records": 0,
+                "total_ms": 709980.919,
+                "mean_ms": 238.569
+              },
+              "consume": {
+                "count": 212,
+                "records": 500,
+                "total_ms": 22820.754,
+                "mean_ms": 107.645,
+                "ms": {
+                  "p50": 107.645,
+                  "p95": 114.293,
+                  "p99": 115.273,
+                  "max": 115.922
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 8,
+                  "mean": 2.358
+                }
+              },
+              "pg_tx:handler": {
+                "count": 848,
+                "records": 0,
+                "total_ms": 29885.688,
+                "mean_ms": 35.243
+              },
+              "batch_handler": {
+                "count": 212,
+                "records": 500,
+                "total_ms": 131890.174,
+                "mean_ms": 622.123,
+                "ms": {
+                  "p50": 647.461,
+                  "p95": 1012.407,
+                  "p99": 1112.708,
+                  "max": 1144.513
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 8,
+                  "mean": 2.358
+                }
+              },
+              "kafka_commit": {
+                "count": 212,
+                "records": 0,
+                "total_ms": 1944.381,
+                "mean_ms": 9.172,
+                "ms": {
+                  "p50": 8.744,
+                  "p95": 12.061,
+                  "p99": 16.315,
+                  "max": 20.066
+                }
+              },
+              "pg_tx:other": {
+                "count": 212,
+                "records": 0,
+                "total_ms": 6722.39,
+                "mean_ms": 31.709
+              },
+              "turn": {
+                "count": 212,
+                "records": 500,
+                "total_ms": 163462.196,
+                "mean_ms": 771.048,
+                "ms": {
+                  "p50": 795.273,
+                  "p95": 1154.232,
+                  "p99": 1266.245,
+                  "max": 1287.474
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 8,
+                  "mean": 2.358
+                }
+              }
+            }
+          }
+        },
+        "database": {
+          "samples": 1360,
+          "active_backends_mean": 1.649,
+          "lock_waiting_backends_mean": 0.628,
+          "lock_waiting_backends_max": 4,
+          "samples_with_lock_wait": 0.229,
+          "wait_events": {
+            "Lock:tuple": 544,
+            "IO:WalSync": 438,
+            "Lock:transactionid": 310,
+            "LWLock:WALWrite": 165,
+            "Client:ClientRead": 102,
+            "IO:WalWrite": 15
+          }
+        },
+        "kafka_source_results_writes": {
+          "inserted": 300,
+          "updated": 300,
+          "hot_updated": 0,
+          "wal_bytes": 25381728,
+          "hot_update_ratio": 0.0,
+          "wal_bytes_per_alert": 84606
+        }
+      },
+      {
+        "name": "burst_global_v1",
+        "version": "v1",
+        "tenants": 1,
+        "offered": 300,
+        "accepted": 300,
+        "offer_seconds": 0.9,
+        "offered_per_second": 333.501,
+        "admission_ms": {
+          "p50": 121.202,
+          "p95": 177.938,
+          "p99": 239.115,
+          "max": 264.254
+        },
+        "generator_late_ms": {},
+        "db_clock_offset_ms": -1.617,
+        "drained_seconds": {
+          "processor": 32.79,
+          "search": 33.695,
+          "watermark": 66.582,
+          "correlation": 86.275
+        },
+        "drain_timed_out": false,
+        "drain_counts": {
+          "processor": 300,
+          "correlation": 300,
+          "search": 300
+        },
+        "faults": {},
+        "stages": {
+          "processor": {
+            "count": 300,
+            "complete": true,
+            "elapsed_seconds": 32.468,
+            "per_second": 9.24,
+            "latency_ms": {
+              "p50": 16106.497,
+              "p95": 30205.58,
+              "p99": 31402.937,
+              "max": 31628.697
+            },
+            "rejected": 0
+          },
+          "correlation": {
+            "count": 300,
+            "complete": true,
+            "elapsed_seconds": 86.032,
+            "per_second": 3.487,
+            "latency_ms": {
+              "p50": 56809.838,
+              "p95": 82603.343,
+              "p99": 84859.606,
+              "max": 85193.066
+            },
+            "after_processor_ms": {
+              "p50": 40699.156,
+              "p95": 52397.763,
+              "p99": 53456.669,
+              "max": 53564.369
+            }
+          },
+          "search": {
+            "count": 300,
+            "complete": true,
+            "drained_seconds": 33.695,
+            "per_second": 8.903,
+            "visibility_sample_ms": {
+              "p50": 17635.677,
+              "p95": 31601.14,
+              "p99": 32491.272,
+              "max": 32494.884
+            },
+            "visibility_sampled": 150,
+            "visibility_observed": 150,
+            "resolution_ms": 100
+          }
+        },
+        "workers": {
+          "source": {
+            "processes": 4,
+            "instrumented": [
+              "client",
+              "db.transaction",
+              "source._publish"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 300,
+              "records_per_consume": 49.333,
+              "active_turns": 10,
+              "active_turn_ms": 128522.116,
+              "pg_transactions_per_record": {
+                "other": 0.057,
+                "apply": 3.0,
+                "confirmation": 1.0
+              },
+              "apply_ms_per_record": 375.513,
+              "publishes": 300,
+              "records_per_publish": 1.0,
+              "kafka_transaction_ms_per_record": 17.143,
+              "confirmation_ms_per_record": 35.251,
+              "confirmation_share_of_active_turns": 0.0823
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 1758,
+                "records": 0,
+                "total_ms": 43.228,
+                "mean_ms": 0.025
+              },
+              "poll_empty": {
+                "count": 1754,
+                "records": 0,
+                "total_ms": 191567.281,
+                "mean_ms": 109.217
+              },
+              "idle_turn": {
+                "count": 1754,
+                "records": 0,
+                "total_ms": 193572.586,
+                "mean_ms": 110.361
+              },
+              "pg_tx:other": {
+                "count": 17,
+                "records": 0,
+                "total_ms": 411.715,
+                "mean_ms": 24.219
+              },
+              "poll": {
+                "count": 4,
+                "records": 4,
+                "total_ms": 123.671,
+                "mean_ms": 30.918,
+                "ms": {
+                  "p50": 19.074,
+                  "p95": 77.441,
+                  "p99": 77.441,
+                  "max": 77.441
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:apply": {
+                "count": 900,
+                "records": 0,
+                "total_ms": 111836.766,
+                "mean_ms": 124.263
+              },
+              "apply": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 112653.872,
+                "mean_ms": 375.513,
+                "ms": {
+                  "p50": 356.772,
+                  "p95": 539.147,
+                  "p99": 665.45,
+                  "max": 861.183
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "consume": {
+                "count": 6,
+                "records": 296,
+                "total_ms": 2.532,
+                "mean_ms": 0.422,
+                "ms": {
+                  "p50": 0.451,
+                  "p95": 0.742,
+                  "p99": 0.742,
+                  "max": 0.742
+                },
+                "records_per_call": {
+                  "p50": 59,
+                  "max": 73,
+                  "mean": 49.333
+                }
+              },
+              "pg_tx:confirmation": {
+                "count": 300,
+                "records": 0,
+                "total_ms": 10555.621,
+                "mean_ms": 35.185
+              },
+              "kafka_transaction": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 5142.794,
+                "mean_ms": 17.143,
+                "ms": {
+                  "p50": 15.816,
+                  "p95": 26.136,
+                  "p99": 41.012,
+                  "max": 55.063
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "partition_confirmation": {
+                "count": 300,
+                "records": 300,
+                "total_ms": 10575.4,
+                "mean_ms": 35.251,
+                "ms": {
+                  "p50": 31.663,
+                  "p95": 54.09,
+                  "p99": 76.142,
+                  "max": 156.111
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "turn": {
+                "count": 10,
+                "records": 300,
+                "total_ms": 128522.116,
+                "mean_ms": 12852.212,
+                "ms": {
+                  "p50": 15317.722,
+                  "p95": 31177.824,
+                  "p99": 31177.824,
+                  "max": 31177.824
+                },
+                "records_per_call": {
+                  "p50": 37,
+                  "max": 73,
+                  "mean": 30.0
+                }
+              }
+            }
+          },
+          "correlation": {
+            "processes": 4,
+            "instrumented": [
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 415,
+              "records_per_consume": null,
+              "active_turns": 415,
+              "active_turn_ms": 85512.638,
+              "pg_transactions_per_record": {
+                "handler": 4.0,
+                "other": 1.0
+              },
+              "handler_calls": 415,
+              "records_per_handler_call": 1.0,
+              "handler_ms_per_record": 167.464,
+              "kafka_commits_per_record": 1.0,
+              "kafka_commit_ms_per_record": 9.688
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 2145,
+                "records": 0,
+                "total_ms": 228301.641,
+                "mean_ms": 106.434
+              },
+              "idle_turn": {
+                "count": 2145,
+                "records": 0,
+                "total_ms": 228928.289,
+                "mean_ms": 106.726
+              },
+              "pg_tx:handler": {
+                "count": 1660,
+                "records": 0,
+                "total_ms": 68914.183,
+                "mean_ms": 41.515
+              },
+              "handler": {
+                "count": 415,
+                "records": 415,
+                "total_ms": 69497.572,
+                "mean_ms": 167.464,
+                "ms": {
+                  "p50": 149.831,
+                  "p95": 280.969,
+                  "p99": 408.734,
+                  "max": 538.739
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "pg_tx:other": {
+                "count": 415,
+                "records": 0,
+                "total_ms": 11842.581,
+                "mean_ms": 28.536
+              },
+              "kafka_commit": {
+                "count": 415,
+                "records": 0,
+                "total_ms": 4020.662,
+                "mean_ms": 9.688,
+                "ms": {
+                  "p50": 8.766,
+                  "p95": 11.438,
+                  "p99": 16.059,
+                  "max": 262.306
+                }
+              },
+              "turn": {
+                "count": 415,
+                "records": 415,
+                "total_ms": 85512.638,
+                "mean_ms": 206.055,
+                "ms": {
+                  "p50": 186.517,
+                  "p95": 357.585,
+                  "p99": 459.547,
+                  "max": 574.548
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll": {
+                "count": 412,
+                "records": 412,
+                "total_ms": 13.354,
+                "mean_ms": 0.032,
+                "ms": {
+                  "p50": 0.031,
+                  "p95": 0.053,
+                  "p99": 0.08,
+                  "max": 0.145
+                },
+                "records_per_call": {
+                  "p50": 1,
+                  "max": 1,
+                  "mean": 1.0
+                }
+              },
+              "poll_empty": {
+                "count": 3,
+                "records": 0,
+                "total_ms": 0.062,
+                "mean_ms": 0.021
+              }
+            }
+          },
+          "indexer": {
+            "processes": 4,
+            "instrumented": [
+              "changed.batch_handler",
+              "changed.handler",
+              "client",
+              "db.transaction"
+            ],
+            "handler_errors": {},
+            "derived": {
+              "records": 300,
+              "records_per_consume": 9.677,
+              "active_turns": 31,
+              "active_turn_ms": 24287.929,
+              "pg_transactions_per_record": {
+                "reconciliation": 22.81,
+                "handler": 0.413,
+                "other": 0.103
+              },
+              "handler_calls": 31,
+              "records_per_handler_call": 9.677,
+              "handler_ms_per_record": 65.562,
+              "kafka_commits_per_record": 0.103,
+              "kafka_commit_ms_per_record": 0.935
+            },
+            "operations": {
+              "consume_empty": {
+                "count": 945,
+                "records": 0,
+                "total_ms": 101838.691,
+                "mean_ms": 107.766
+              },
+              "idle_turn": {
+                "count": 945,
+                "records": 0,
+                "total_ms": 102083.474,
+                "mean_ms": 108.025
+              },
+              "pg_tx:reconciliation": {
+                "count": 6843,
+                "records": 0,
+                "total_ms": 225136.6,
+                "mean_ms": 32.9
+              },
+              "reconciliation": {
+                "count": 976,
+                "records": 0,
+                "total_ms": 227301.459,
+                "mean_ms": 232.891
+              },
+              "consume": {
+                "count": 31,
+                "records": 300,
+                "total_ms": 3310.0,
+                "mean_ms": 106.774,
+                "ms": {
+                  "p50": 105.146,
+                  "p95": 116.388,
+                  "p99": 117.611,
+                  "max": 117.611
+                },
+                "records_per_call": {
+                  "p50": 10,
+                  "max": 18,
+                  "mean": 9.677
+                }
+              },
+              "pg_tx:handler": {
+                "count": 124,
+                "records": 0,
+                "total_ms": 5207.081,
+                "mean_ms": 41.993
+              },
+              "batch_handler": {
+                "count": 31,
+                "records": 300,
+                "total_ms": 19668.631,
+                "mean_ms": 634.472,
+                "ms": {
+                  "p50": 639.268,
+                  "p95": 793.856,
+                  "p99": 1030.253,
+                  "max": 1030.253
+                },
+                "records_per_call": {
+                  "p50": 10,
+                  "max": 18,
+                  "mean": 9.677
+                }
+              },
+              "kafka_commit": {
+                "count": 31,
+                "records": 0,
+                "total_ms": 280.489,
+                "mean_ms": 9.048,
+                "ms": {
+                  "p50": 8.843,
+                  "p95": 11.495,
+                  "p99": 12.628,
+                  "max": 12.628
+                }
+              },
+              "pg_tx:other": {
+                "count": 31,
+                "records": 0,
+                "total_ms": 1014.482,
+                "mean_ms": 32.725
+              },
+              "turn": {
+                "count": 31,
+                "records": 300,
+                "total_ms": 24287.929,
+                "mean_ms": 783.482,
+                "ms": {
+                  "p50": 786.425,
+                  "p95": 942.289,
+                  "p99": 1182.451,
+                  "max": 1182.451
+                },
+                "records_per_call": {
+                  "p50": 10,
+                  "max": 18,
+                  "mean": 9.677
+                }
+              }
+            }
+          }
+        },
+        "database": {
+          "samples": 399,
+          "active_backends_mean": 1.9,
+          "lock_waiting_backends_mean": 0.777,
+          "lock_waiting_backends_max": 3,
+          "samples_with_lock_wait": 0.373,
+          "wait_events": {
+            "Lock:tuple": 161,
+            "Lock:transactionid": 149,
+            "IO:WalSync": 144,
+            "Client:ClientRead": 56,
+            "LWLock:WALWrite": 55,
+            "IO:WalWrite": 4,
+            "LWLock:LockManager": 1
+          }
+        },
+        "kafka_source_results_writes": {
+          "inserted": 300,
+          "updated": 300,
+          "hot_updated": 0,
+          "wal_bytes": 14714936,
+          "hot_update_ratio": 0.0,
+          "wal_bytes_per_alert": 49050
+        }
+      }
+    ],
+    "warmup": {
+      "name": "warmup",
+      "offered": 100,
+      "accepted": 100,
+      "drained_seconds": {
+        "processor": 41.854,
+        "search": 43.439,
+        "correlation": 58.047,
+        "watermark": 71.389
+      }
+    },
+    "serialization": {
+      "processor_per_second": {
+        "burst_spread": 8.09,
+        "burst_one_tenant": 4.368,
+        "burst_global_v1": 9.24
+      },
+      "one_tenant_vs_spread": 0.54,
+      "global_v1_vs_spread": 1.142,
+      "correlation_per_second": {
+        "burst_spread": 5.164,
+        "burst_one_tenant": 1.031,
+        "burst_global_v1": 3.487
+      }
+    },
+    "confirmation": {
+      "steady": {
+        "records_per_publish": 1.0,
+        "confirmation_ms_per_record": 30.306,
+        "confirmation_share_of_active_turns": 0.0871,
+        "kafka_transaction_ms_per_record": 21.551,
+        "apply_ms_per_record": 253.896,
+        "hot_update_ratio": 0.0,
+        "wal_bytes_per_alert": 49652
+      },
+      "burst_spread": {
+        "records_per_publish": 1.0,
+        "confirmation_ms_per_record": 48.186,
+        "confirmation_share_of_active_turns": 0.1038,
+        "kafka_transaction_ms_per_record": 32.095,
+        "apply_ms_per_record": 383.424,
+        "hot_update_ratio": 0.0,
+        "wal_bytes_per_alert": 35896
+      },
+      "burst_one_tenant": {
+        "records_per_publish": 1.0,
+        "confirmation_ms_per_record": 34.65,
+        "confirmation_share_of_active_turns": 0.0412,
+        "kafka_transaction_ms_per_record": 17.471,
+        "apply_ms_per_record": 788.07,
+        "hot_update_ratio": 0.0,
+        "wal_bytes_per_alert": 84606
+      },
+      "burst_global_v1": {
+        "records_per_publish": 1.0,
+        "confirmation_ms_per_record": 35.251,
+        "confirmation_share_of_active_turns": 0.0823,
+        "kafka_transaction_ms_per_record": 17.143,
+        "apply_ms_per_record": 375.513,
+        "hot_update_ratio": 0.0,
+        "wal_bytes_per_alert": 49050
+      }
+    },
+    "correctness_passed": true
+  },
+  "worker_memory": [
+    {
+      "pid": 45868,
+      "role": "source",
+      "peak_sampled_rss_bytes": 72024064
+    },
+    {
+      "pid": 34520,
+      "role": "source",
+      "peak_sampled_rss_bytes": 71688192
+    },
+    {
+      "pid": 32264,
+      "role": "source",
+      "peak_sampled_rss_bytes": 71901184
+    },
+    {
+      "pid": 40032,
+      "role": "source",
+      "peak_sampled_rss_bytes": 72818688
+    },
+    {
+      "pid": 27120,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 86437888
+    },
+    {
+      "pid": 42284,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 86757376
+    },
+    {
+      "pid": 2816,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 84934656
+    },
+    {
+      "pid": 41500,
+      "role": "indexer",
+      "peak_sampled_rss_bytes": 86761472
+    },
+    {
+      "pid": 38740,
+      "role": "correlation",
+      "peak_sampled_rss_bytes": 69296128
+    },
+    {
+      "pid": 24096,
+      "role": "correlation",
+      "peak_sampled_rss_bytes": 69820416
+    },
+    {
+      "pid": 42984,
+      "role": "correlation",
+      "peak_sampled_rss_bytes": 69062656
+    },
+    {
+      "pid": 38384,
+      "role": "correlation",
+      "peak_sampled_rss_bytes": 88494080
+    }
+  ],
+  "pipeline_faults": {
+    "source:source_processing_failed": 8,
+    "correlation:changed_processing_failed": 8
+  },
+  "correctness_passed": false,
+  "faults_free": false,
+  "passed": false,
+  "read_diagnostics": {},
+  "errors": {
+    "source_apply_CELUnavailableError": 9,
+    "source_apply_cel_compilation_unavailable": 8,
+    "worker_source_clock_untrusted": 1
+  },
+  "accepted": 0,
+  "offered": 0,
+  "seed_offered": 0,
+  "seed_accepted": 0,
+  "worker_turns": {
+    "source": 1180,
+    "indexer": 1880,
+    "correlation": 1880
+  },
+  "source_sql": {},
+  "source_phases_ms": {
+    "seed:cel_compile": {
+      "count": 2,
+      "p50": 790.35,
+      "p99": 790.35,
+      "total_ms": 1521.876
+    },
+    "seed:source_idle_turn": {
+      "count": 15350,
+      "p50": 106.728,
+      "p99": 116.238,
+      "total_ms": 1671870.544
+    },
+    "seed:queue_age": {
+      "count": 1197,
+      "p50": 15370.777,
+      "p99": 61515.356,
+      "total_ms": 20599537.51
+    },
+    "seed:postgres_apply": {
+      "count": 1197,
+      "p50": 366.698,
+      "p99": 1315.403,
+      "total_ms": 577121.256
+    },
+    "seed:source_active_turn": {
+      "count": 226,
+      "p50": 357.774,
+      "p99": 36244.274,
+      "total_ms": 634348.155
+    },
+    "seed:indexer_idle_turn": {
+      "count": 5000,
+      "p50": 108.156,
+      "p99": 115.499,
+      "total_ms": 540499.788
+    },
+    "seed:indexer_active_turn": {
+      "count": 696,
+      "p50": 788.186,
+      "p99": 1768.282,
+      "total_ms": 555159.814
+    },
+    "seed:correlation_idle_turn": {
+      "count": 13420,
+      "p50": 106.741,
+      "p99": 113.558,
+      "total_ms": 1461265.206
+    },
+    "seed:correlation_active_turn": {
+      "count": 1880,
+      "p50": 284.992,
+      "p99": 1502.07,
+      "total_ms": 794826.51
+    }
+  }
+}
