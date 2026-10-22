@@ -8,31 +8,31 @@
     },
     "appchi-domain": {
       "url": "https://github.com/appchi-alert-operations/appchi-domain.git",
-      "revision": "6d4cfa6f1acf11ef3a369a002f0cceb99bab2e3c"
+      "revision": "d4fb748ca199cdf75a42544f6a3aeb4f358a9e77"
     },
     "appchi-migrations": {
       "url": "https://github.com/appchi-alert-operations/appchi-migrations.git",
-      "revision": "c5f3e9c80184080ff98217313793e7f16cd3fd8e"
+      "revision": "e34fdea836203b4e91b94ebe3c7db3cd590e1a34"
     },
     "appchi-api": {
       "url": "https://github.com/appchi-alert-operations/appchi-api.git",
-      "revision": "aad9bf61f664cea44c6319470bbbc223aabe68cf"
+      "revision": "08bf1ecb364a4272030b1c2e139132ef1c58dccf"
     },
     "appchi-ingestion": {
       "url": "https://github.com/appchi-alert-operations/appchi-ingestion.git",
-      "revision": "cc80542fe1ee28fff97e0bb802eaeca8962b945d"
+      "revision": "c019991b54a1a7d0979b2b578544663543df09bd"
     },
     "appchi-processor": {
       "url": "https://github.com/appchi-alert-operations/appchi-processor.git",
-      "revision": "f483832e50aca3efc58f778517d3010467c16792"
+      "revision": "476320f591edd260f29647e242e980cde0c8b5bb"
     },
     "appchi-correlation": {
       "url": "https://github.com/appchi-alert-operations/appchi-correlation.git",
-      "revision": "d3cd9331c20da40f93d1dc5bb10a489649327872"
+      "revision": "5cad5e313efd216d3fd445c75e0a0354fc9c7478"
     },
     "appchi-indexer": {
       "url": "https://github.com/appchi-alert-operations/appchi-indexer.git",
-      "revision": "c335a201116be5b5ee8b617bea8f36aa843eb62c"
+      "revision": "76396935379e6609b01986bb1ea403178c74685e"
     },
     "appchi-frontend": {
       "url": "https://github.com/appchi-alert-operations/appchi-frontend.git",
