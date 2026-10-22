@@ -48,8 +48,8 @@ def test_worker_bootstrap_and_restore_rejection_without_restore_write_privilege(
     database = isolated_database
 
     @contextmanager
-    def transaction(tenant_id=None):
-        with database.transaction(tenant_id) as conn:
+    def transaction(*args, **kwargs):
+        with database.transaction(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_worker")
             yield conn
 
