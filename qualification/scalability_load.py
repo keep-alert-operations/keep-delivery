@@ -172,7 +172,7 @@ def main():
     pipeline.add_argument("--warmup", type=int, default=100)
     pipeline.add_argument("--steady-rate", type=float, default=3)
     pipeline.add_argument("--steady-seconds", type=int, default=60)
-    pipeline.add_argument("--burst", type=int, default=600)
+    pipeline.add_argument("--burst", type=int, default=300)
     pipeline.add_argument("--burst-concurrency", type=int, default=50)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

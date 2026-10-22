@@ -370,7 +370,7 @@ before the next one starts:
 |---|---|---|
 | `warmup` | `--warmup` (100), spread over all tenants | Not reported; warms caches and assignment |
 | `steady` | `--steady-rate` × `--steady-seconds` (3/s × 60 s), all tenants | Stage latency at a fixed sub-saturation rate |
-| `burst_spread` | `--burst` (600), all tenants, `--burst-concurrency` (50) in flight | Stage throughput across tenants |
+| `burst_spread` | `--burst` (300), all tenants, `--burst-concurrency` (50) in flight | Stage throughput across tenants |
 | `burst_one_tenant` | `--burst` v2 alerts for one tenant | Per-tenant serialization ceiling (rule and maintenance tenant) |
 | `burst_global_v1` | `--burst` native v1 alerts for Global | The same ceiling for all v1 traffic |
 
@@ -408,7 +408,7 @@ keep that environment path short (see workspace setup):
 $env:APPCHI_SCALE_ADMIN_URL = Get-Content .local/appchi-load-admin-url
 .venv/Scripts/python.exe qualification/scalability_load.py --phase pipeline --features `
   --kafka-bootstrap 127.0.0.1:19293 --elasticsearch-url http://127.0.0.1:59401 `
-  --redis-url redis://127.0.0.1:56580/0 --drain-seconds 900 --output .local/pipeline-before-1.json
+  --redis-url redis://127.0.0.1:56580/0 --drain-seconds 1800 --output .local/pipeline-before-1.json
 # Repeat for -2, then install the other revision and write pipeline-after-1/-2.json.
 .venv/Scripts/python.exe qualification/compare_pipeline_load.py `
   --before (Get-ChildItem .local/pipeline-before-*.json) `

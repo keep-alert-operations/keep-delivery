@@ -603,7 +603,8 @@ class PipelinePhase:
             if self.stop.is_set():
                 raise RuntimeError("Fixture worker stopped before the scenario drained")
             if monotonic() >= deadline:
-                raise RuntimeError(f"Scenario drain exceeded {self.args.drain_seconds}s: {last}")
+                # Keep the partial measurement; the caller stops the sequence.
+                return reached, last, True
             with psycopg.connect(self.conninfo) as conn:
                 last["processor"] = conn.execute(
                     "SELECT count(*) FROM kafka_source_results WHERE received_at>=%s", (start,)
@@ -641,7 +642,7 @@ class PipelinePhase:
                     reached[name] = elapsed
             if len(reached) < len(wanted):
                 sleep(0.25)
-        return reached, last
+        return reached, last, False
 
     def settled_reports(self):
         # Workers publish diagnostics at most once a second; after a drain they
@@ -663,7 +664,7 @@ class PipelinePhase:
         with sampler, observer or nullcontext():
             offered = asyncio.run(self.offer(scenario, count, observer))
             end = datetime.now(UTC) + timedelta(milliseconds=1)
-            reached, last = self.drain(application, start, offered["accepted"], began)
+            reached, last, timed_out = self.drain(application, start, offered["accepted"], began)
         after = self.settled_reports()
         if not measure:
             return {
@@ -702,6 +703,8 @@ class PipelinePhase:
             "generator_late_ms": percentiles(offered["late_ms"]),
             "db_clock_offset_ms": round(offset.total_seconds() * 1000, 3),
             "drained_seconds": reached,
+            "drain_timed_out": timed_out,
+            "drain_counts": last,
             "faults": stages.pop("faults"),
             "stages": stages,
             "workers": {role: summarize_role(roles[role]) for role in ROLES if role in roles},
@@ -732,18 +735,29 @@ class PipelinePhase:
                 else self.args.burst
             )
             result["scenarios"].append(self.scenario(scenario, count))
+            if result["scenarios"][-1]["drain_timed_out"]:
+                # A backlog would leak into the next scenario's measurement.
+                result["stopped_after"] = scenario["name"]
+                break
         by_name = {item["name"]: item for item in result["scenarios"]}
 
         def rate(name, stage_name="processor"):
-            return by_name[name]["stages"].get(stage_name, {}).get("per_second")
+            return by_name.get(name, {}).get("stages", {}).get(stage_name, {}).get("per_second")
+
+        def ratio(value, base):
+            return round(value / base, 3) if value and base else None
 
         spread = rate("burst_spread")
         result["serialization"] = {
             "processor_per_second": {
                 name: rate(name) for name in ("burst_spread", "burst_one_tenant", "burst_global_v1")
             },
-            "one_tenant_vs_spread": round(rate("burst_one_tenant") / spread, 3) if spread else None,
-            "global_v1_vs_spread": round(rate("burst_global_v1") / spread, 3) if spread else None,
+            "one_tenant_vs_spread": ratio(rate("burst_one_tenant"), spread),
+            "global_v1_vs_spread": ratio(rate("burst_global_v1"), spread),
+            "correlation_per_second": {
+                name: rate(name, "correlation")
+                for name in ("burst_spread", "burst_one_tenant", "burst_global_v1")
+            },
         }
         result["confirmation"] = {
             name: {
@@ -762,7 +776,7 @@ class PipelinePhase:
             }
             for name, item in by_name.items()
         }
-        result["correctness_passed"] = all(
+        result["correctness_passed"] = len(result["scenarios"]) == len(SCENARIOS) and all(
             item["accepted"] == item["offered"]
             and item["stages"]["processor"]["complete"]
             and not item["stages"]["processor"]["rejected"]
