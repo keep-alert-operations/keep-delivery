@@ -17,8 +17,8 @@ class RestrictedDatabase:
         self.database = database
 
     @contextmanager
-    def transaction(self, tenant_id=None):
-        with self.database.transaction(tenant_id) as conn:
+    def transaction(self, *args, **kwargs):
+        with self.database.transaction(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_api")
             yield conn
             assert conn.execute("SELECT current_user AS role").fetchone()["role"] == "appchi_api"

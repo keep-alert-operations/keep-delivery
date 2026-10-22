@@ -242,8 +242,8 @@ def test_worker_role_dashboard_cleanup_and_api_hold_denial(configuration, real_d
 
     class Worker:
         @contextmanager
-        def transaction(self, tenant_id=None):
-            with real_db.transaction(tenant_id) as conn:
+        def transaction(self, *args, **kwargs):
+            with real_db.transaction(*args, **kwargs) as conn:
                 conn.execute("SET LOCAL ROLE appchi_worker")
                 yield conn
 

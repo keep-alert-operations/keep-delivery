@@ -225,8 +225,8 @@ def test_worker_role_bounded_scan(real_db, tenant):
     original = real_db.transaction
 
     @contextmanager
-    def role(tenant_id=None):
-        with original(tenant_id) as conn:
+    def role(*args, **kwargs):
+        with original(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_worker")
             yield conn
 
@@ -307,8 +307,8 @@ def test_http_preset_save_registers_and_expired_retry_cannot_reexecute(browser, 
     original = real_db.transaction
 
     @contextmanager
-    def api_role(tenant_id=None):
-        with original(tenant_id) as conn:
+    def api_role(*args, **kwargs):
+        with original(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_api")
             yield conn
 

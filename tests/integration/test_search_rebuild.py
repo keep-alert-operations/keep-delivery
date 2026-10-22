@@ -275,8 +275,8 @@ def test_new_tenant_inherits_epoch_under_restricted_api_role(index, browser, rea
     original = real_db.transaction
 
     @contextmanager
-    def restricted(tenant_id=None):
-        with original(tenant_id) as conn:
+    def restricted(*args, **kwargs):
+        with original(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_api")
             yield conn
 
