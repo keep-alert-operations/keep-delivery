@@ -476,6 +476,58 @@ def test_expired_replaced_claim_cannot_advance_watermark(real_db, tenant):
     client.bulk.assert_not_called()
 
 
+def test_only_advancing_or_verifying_pass_bumps_view_generation(real_db, tenant, monkeypatch):
+    epoch = seed_scan(real_db, tenant)
+    monkeypatch.setattr(reconciliation, "current_page", Mock(return_value=[]))
+
+    def complete():
+        assert reconciliation.reconcile_page(real_db, Mock(), "physical", tenant, epoch)
+
+    def view():
+        with real_db.transaction() as conn:
+            return conn.execute(
+                """SELECT v.searchable_seq,v.verified_at,v.view_generation,
+                    h.generation AS hinted_generation,h.updated_at AS hinted_at
+                FROM tenant_view_state v LEFT JOIN live_hint_outbox h USING(tenant_id)
+                WHERE v.tenant_id=%s""",
+                (tenant,),
+            ).fetchone()
+
+    with real_db.transaction() as conn:
+        # Verified, without a moved watermark, as a rebuild cutover or bootstrap leaves it.
+        conn.execute(
+            "UPDATE tenant_view_state SET verified_at=clock_timestamp() WHERE tenant_id=%s",
+            (tenant,),
+        )
+    cutover = view()
+    complete()  # The epoch's first full audit may repair documents, so it still bumps.
+    verified = view()
+    assert verified["searchable_seq"] == cutover["searchable_seq"]
+    assert verified["view_generation"] == cutover["view_generation"] + 1
+    assert verified["hinted_generation"] == verified["view_generation"]
+    assert verified["hinted_at"] > cutover["hinted_at"]
+    complete()  # Idle: no watermark change, no row write, no live hint.
+    assert view() == verified
+    with real_db.transaction() as conn:
+        conn.execute(
+            "UPDATE tenant_work_state SET projection_seq=projection_seq+1 WHERE tenant_id=%s",
+            (tenant,),
+        )
+    complete()  # Captures the new boundary and advances the watermark to it.
+    advanced = view()
+    assert advanced["searchable_seq"] == verified["searchable_seq"] + 1
+    assert advanced["view_generation"] == verified["view_generation"] + 1
+    assert advanced["hinted_generation"] == advanced["view_generation"]
+    assert advanced["hinted_at"] > verified["hinted_at"]
+    with real_db.transaction() as conn:
+        conn.execute("UPDATE tenant_view_state SET verified_at=NULL WHERE tenant_id=%s", (tenant,))
+    complete()
+    restored = view()
+    assert restored["searchable_seq"] == advanced["searchable_seq"]
+    assert restored["verified_at"] is not None
+    assert restored["view_generation"] == advanced["view_generation"] + 1
+
+
 def test_delta_scan_repairs_lost_hint_and_behind_cursor_write(real_db, tenant, v1, monkeypatch):
     config = configuration(tenant)
     if not config.elasticsearch_url:
@@ -593,6 +645,12 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
             real_db, client, config.elasticsearch_index, tenant, epoch
         )
 
+    def generation():
+        with real_db.transaction() as conn:
+            return conn.execute(
+                "SELECT view_generation FROM tenant_view_state WHERE tenant_id=%s", (tenant,)
+            ).fetchone()["view_generation"]
+
     try:
         client.options(request_timeout=30).indices.create(
             index=config.elasticsearch_index,
@@ -626,7 +684,9 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
                 (tenant, epoch),
             )
         monkeypatch.setattr(reconciliation, "PAGE_SIZE", 1)
+        before = generation()
         assert service.reconcile() == 1  # First audit page, not its completion.
+        assert generation() == before  # Its document was already visible.
         with real_db.transaction() as conn:
             audit = conn.execute(
                 "SELECT * FROM search_reconciliation WHERE tenant_id=%s AND index_epoch=%s",
@@ -655,10 +715,13 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
         assert state["audit_cursor"] == first and state["audit_boundary_seq"] == 2
         assert client.count(index=config.elasticsearch_index)["count"] == 2
         assert service.reconcile() == 1  # Fourth ordinary turn before another audit.
+        before = generation()
         assert service.reconcile() == 1  # Second audit page repairs missing old doc.
         assert client.count(index=config.elasticsearch_index)["count"] == 3
+        assert generation() == before + 1  # Open feeds refetch the repair.
         for _ in range(5):  # Four ordinary turns, then bounded-generation audit completion.
             assert service.reconcile() == 1
+        assert generation() == before + 1  # Idle turns and the empty last page write nothing.
         with real_db.transaction() as conn:
             state = conn.execute(
                 "SELECT * FROM search_reconciliation WHERE tenant_id=%s AND index_epoch=%s",
@@ -677,6 +740,77 @@ def test_periodic_audit_repairs_missing_doc_without_blocking_delta(
             index=config.elasticsearch_index, ignore_unavailable=True
         )
         service.close()
+
+
+def claimed_audit(real_db, tenant, v1):
+    """One retained alert whose search document is missing, under an audit claim."""
+    config = configuration(tenant)
+    apply(real_db, config, receipt(config, dict(v1, node_name="repair")), uuid4().int >> 66)
+    epoch, owner = seed_scan(real_db, tenant), uuid4()
+    with real_db.transaction() as conn:
+        conn.execute(
+            """UPDATE search_reconciliation SET lease_owner=%s,
+                lease_until=clock_timestamp()+interval '30 seconds',full_audit_at=clock_timestamp()
+                WHERE index_epoch=%s AND tenant_id=%s""",
+            (owner, epoch, tenant),
+        )
+    return epoch, owner
+
+
+def view_generation(real_db, tenant):
+    with real_db.transaction() as conn:
+        return conn.execute(
+            "SELECT view_generation FROM tenant_view_state WHERE tenant_id=%s", (tenant,)
+        ).fetchone()["view_generation"]
+
+
+def test_audit_repair_is_announced_when_verification_after_bulk_fails(real_db, tenant, v1):
+    epoch, owner = claimed_audit(real_db, tenant, v1)
+    client = Mock()
+    client.search.side_effect = [{"hits": {"hits": []}}, RuntimeError("degraded")]
+    client.bulk.return_value = {"items": [{"index": {"status": 201}}]}
+    before = view_generation(real_db, tenant)
+    with pytest.raises(Exception) as failure:
+        reconciliation.audit_page(
+            real_db, client, "physical", tenant, epoch, max_document_bytes=2000000, claim=owner
+        )
+    assert failure.value.code == "projection_unavailable"
+    client.bulk.assert_called_once()
+    # The retry would find the document visible; this failure must announce it.
+    assert view_generation(real_db, tenant) == before + 1
+
+
+def test_audit_repair_is_announced_when_claim_is_lost_after_bulk(real_db, tenant, v1):
+    epoch, owner = claimed_audit(real_db, tenant, v1)
+    written = []
+
+    def bulk(operations, **kwargs):
+        written.extend(zip(operations[::2], operations[1::2]))
+        with real_db.transaction() as conn:
+            # A slow refresh outlives the lease; another worker may now own the tenant.
+            conn.execute(
+                "UPDATE search_reconciliation SET lease_until=clock_timestamp()-interval '1 second' WHERE index_epoch=%s AND tenant_id=%s",
+                (epoch, tenant),
+            )
+        return {"items": [{"index": {"status": 201}} for _ in written]}
+
+    def search(**kwargs):
+        hits = [
+            {"_id": action["index"]["_id"], "_version": action["index"]["version"], "_source": doc}
+            for action, doc in written
+        ]
+        return {"hits": {"hits": hits}}
+
+    client = Mock()
+    client.bulk.side_effect, client.search.side_effect = bulk, search
+    before = view_generation(real_db, tenant)
+    with pytest.raises(Exception) as failure:
+        reconciliation.audit_page(
+            real_db, client, "physical", tenant, epoch, max_document_bytes=2000000, claim=owner
+        )
+    assert failure.value.code == "search_reconciliation_fenced"
+    assert len(written) == 1
+    assert view_generation(real_db, tenant) == before + 1
 
 
 def test_source_rechecks_reused_maintenance_gate_before_commit(real_db, tenant, v1, monkeypatch):
