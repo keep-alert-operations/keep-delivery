@@ -236,8 +236,8 @@ def test_assessment_has_no_writes_or_content_and_runs_as_recovery_role(recovery)
     original = db.transaction
 
     @contextmanager
-    def recovery_role(tenant=None):
-        with original(tenant) as conn:
+    def recovery_role(*args, **kwargs):
+        with original(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_recovery")
             yield conn
 

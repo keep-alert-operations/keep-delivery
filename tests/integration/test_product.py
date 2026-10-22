@@ -17,7 +17,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def browser(real_db, cipher):
+def browser(real_db, cipher, browser_settings):
     principal = uuid4()
     handle = secrets.token_urlsafe(32)
     csrf = secrets.token_urlsafe(32)
@@ -46,6 +46,8 @@ def browser(real_db, cipher):
         deployment_epoch="test",
         public_origin="https://app.test",
         capacity_profile=Path("qualification/development-capacity.json").resolve(),
+        # Bound before startup, so the lifespan creates process-owned clients.
+        **browser_settings,
     )
     with TestClient(create_app(settings, real_db), base_url="https://app.test") as client:
         client.cookies.set("__Host-appchi_session", handle)

@@ -321,7 +321,7 @@ poetry run alembic heads</code></pre>
   <p><code>appchi-migrations</code> owns the complete ordered PostgreSQL chain and the dedicated migration image. REV-38 wraps immutable SQL in Alembic while preserving the checksum ledger. Runtime services never migrate on startup. Migration SQL, revision wrappers and checksums must agree; numbering gaps are intentional historical facts.</p>
   <ol>
     <li>Identify the exact release combination and inspect pending migrations, their prerequisites and the supported starting schema. Preserve applied bytes and add a forward migration for corrections.</li>
-    <li>Complete required drains and fences. The current 0048–0051 changes require the stopped-writer migration window; older cutover and stopped-scheduler prerequisites still apply when those migrations are pending.</li>
+    <li>Complete required drains and fences. The current 0048–0052 changes require the stopped-writer migration window; older cutover and stopped-scheduler prerequisites still apply when those migrations are pending.</li>
     <li>Run the dedicated migration Job using its separate migration identity before dependent writers. Require successful completion and verified ledgers before startup.</li>
     <li>Start only the compatible application combination and execute the relevant replay, authorization, maintenance and search checks. An available older image does not establish rollback compatibility.</li>
   </ol>

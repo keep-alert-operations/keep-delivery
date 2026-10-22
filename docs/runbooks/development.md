@@ -170,6 +170,33 @@ This applies migrations and writes synthetic records to that supplied test datab
 Never point it at production or shared company data. The ordinary integration suite
 does not automatically drop that caller-owned database.
 
+Only `APPCHI_TEST_DATABASE_URL` is required. Every case whose other binding is
+absent is skipped silently, so a green run without them covers far less. Bind
+each variable only to isolated local services:
+
+| Variable | Enables |
+|---|---|
+| `APPCHI_TEST_DATABASE_URL` | Required. The caller-owned migrated database shared by session-scoped cases. |
+| `APPCHI_IDENTITY_TEST_ADMIN_URL` | A role with CREATE DATABASE on an isolated cluster. Search, pipeline, correlation, visibility, cutover and identity-session cases (unit and integration) create and drop their own `appchi_pipeline_test_*` database per test. |
+| `APPCHI_MAINTENANCE_TEST_ADMIN_URL` | The same privilege, for module-scoped `appchi_maintenance_test_*` databases (maintenance, restore fencing, alert detail). Falls back to `APPCHI_IDENTITY_TEST_ADMIN_URL`. |
+| `APPCHI_TEST_ELASTICSEARCH_URL` | An isolated unauthenticated Elasticsearch 9.0, for example `http://127.0.0.1:59201`. Cases create and delete their own uniquely prefixed indices. |
+| `APPCHI_TEST_KAFKA_BOOTSTRAP` | An isolated Kafka 4.0 configured like the [local Compose definition](../../deploy/local/compose.yaml), including its INTERNAL listener and `kafka` hostname. Cases use unique topic and group names. |
+| `APPCHI_TEST_LOCAL_KONG=1` | The Kong policy cases, against the configured [local v2](../local-v2.md) Kong. |
+
+Before the run, prove the broker ready: an idempotent produce, a transactional
+init/produce/commit and a consumer-group offset commit must all succeed. A broker
+that is not ready returns `kafka_publish_unconfirmed` or
+`cutover_group_state_unverified` on unmodified code too.
+
+Other suites have their own bindings. The frontend BrowserReal smoke uses
+`APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL`, plus `APPCHI_REAL_BROWSER_PYTHON` when
+delivery's environment is not `.venv`. The S1/S2 suites opt in with
+`APPCHI_LOCAL_IDENTITY_TEST` and `APPCHI_LOCAL_RUNTIME_TEST`. Repository suites
+use `APPCHI_TEST_DATABASE_URL` and, where they need a disposable cluster,
+`APPCHI_MIGRATION_TEST_ADMIN_URL` (migrations), `APPCHI_PROOF_TEST_POSTGRES_ADMIN_DSN`
+(api operator proof) and `APPCHI_BOOTSTRAP_TEST_POSTGRES_ADMIN_DSN` (indexer, with
+optional `APPCHI_TEST_ELASTICSEARCH_CA` and `APPCHI_TEST_ELASTICSEARCH_API_KEY`).
+
 For the real HTTPS browser/API/PostgreSQL smoke, supply
 `APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL` for a **local isolated cluster** whose role
 can create/drop disposable databases:
@@ -185,10 +212,10 @@ route or enables authentication on the ordinary application database. See the
 [frontend evidence](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/frontend.md#real-browserapipostgresql-smoke) for exact assertions
 and the distinction from company Keycloak/LDAP qualification.
 
-Source inspection on 2026-10-12 found this fixture still importing the removed
-`appchi.ingestion.service.Admission` and using receipt lookup. Treat BrowserReal
-as needing repair and re-execution against the Kafka-first contract; it is not
-the current four-journey smoke suite or evidence for real sign-in/admission.
+The fixture seeds its alert through the Kafka-first path: it builds the admission
+envelope and applies it with the source processor's PostgreSQL step, with no broker
+or receipt lookup (repaired 2026-10-22, with current note selectors). It is still
+not the four-journey smoke suite or evidence for real sign-in or Kafka admission.
 
 `-Suite All` runs Unit, Build and Browser, then includes Database and BrowserReal
 only when their explicit environment variables are present. Every omitted suite is
@@ -337,7 +364,7 @@ in the normal HTTPS UI, not by directly mutating the database.
 | Python repositories | Owned CI runs Poetry lock/install, Ruff, unit tests and wheel build; migrations CI additionally provisions PostgreSQL and runs its tests. | Run changed repository checks and affected shared-package consumers; service CI is not system E2E. |
 | Delivery | CI bootstraps pinned siblings and runs contract, boundary and document checks; `verify.ps1` provides Unit/Build/Browser/Database/BrowserReal. | Use affected PG/Kafka/search integration cases, explicit isolated bindings and real entry points. `All` can skip Database/BrowserReal and does not establish S1–S4. |
 | Frontend | CI runs generation/drift, format, typecheck and build; `npm test` has controlled-route browser scenarios for alerts, incidents, navigation, dashboards/presets and access loss. | CI currently does not run Playwright. Run affected browser files locally plus S1–S4; mocked routes cannot establish persistence or real authentication. Keep local opt-ins unset for the controlled suite. |
-| Real local stack | Separate opt-in S1/S2 suites and S3 helper. | Outside default CI. S1 factor prerequisite, S3 manual browser inspection and S4 manual lifecycle remain explicit obligations. BrowserReal has the obsolete fixture described above. |
+| Real local stack | Separate opt-in S1/S2 suites and S3 helper. | Outside default CI. S1 factor prerequisite, S3 manual browser inspection and S4 manual lifecycle remain explicit obligations. BrowserReal seeds through the source step without a broker or real sign-in. |
 | Release qualification | Existing capability, replay, recovery, capacity and private-integration cases in design/delivery. | Smoke is not release qualification; preserve all existing gates, deferred-worker corrections and stronger regression requirements. |
 
 When shared commands/domain/auth/contracts change, broaden to affected producers,
@@ -348,8 +375,7 @@ browser journey. Dashboards/presets add save/reload, count correctness, draft/co
 and relevant responsive checks when affected. Serialize heavy CEL, builds and
 browser suites. Documentation-only work uses document/context/import checks.
 
-Smallest follow-ups: automate S4 using the existing real local harness; repair
-BrowserReal's Kafka-first fixture and stale selectors before reusing it; add a
+Smallest follow-ups: automate S4 using the existing real local harness; add a
 reviewed CI/browser environment with isolated data if CI smoke is requested.
 This setup does not install a framework, provision CI services or claim those gaps
 are fixed. See [engineering policies](../agent-workflows.md#documentation-and-verification)

@@ -533,8 +533,8 @@ def test_nonowner_api_role_and_rls_protect_maintenance_and_delete_resume(
 
     class RuntimeDatabase:
         @contextmanager
-        def transaction(self, tenant_id=None):
-            with db.transaction(tenant_id) as conn:
+        def transaction(self, *args, **kwargs):
+            with db.transaction(*args, **kwargs) as conn:
                 conn.execute("SET LOCAL ROLE appchi_api")
                 yield conn
 

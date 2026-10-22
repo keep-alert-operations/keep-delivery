@@ -1,3 +1,4 @@
+#Requires -Version 7
 [CmdletBinding()]
 param(
     [ValidateSet('Unit', 'Build', 'Browser', 'Database', 'BrowserReal', 'All')]

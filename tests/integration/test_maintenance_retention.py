@@ -30,7 +30,7 @@ def retention_schema(maintenance_db):
             conn.execute(draft.read_text(), prepare=False)
 
 
-def deleted(browser, db, *, active=False, final=True):
+def deleted(browser, db, *, active=False, final=True, hold=None):
     client, tenant, _, app = browser
     window = create(client, tenant, body(past=active))
     app.state.recovery_store.fail_final = not final
@@ -40,6 +40,13 @@ def deleted(browser, db, *, active=False, final=True):
     )
     assert response.status_code == (200 if final else 503), response.text
     with db.transaction(tenant) as conn:
+        if hold:
+            # Placed while the content is still retained; once expired, the
+            # guard refuses new holds (no fan-out job holds it under REV-34).
+            conn.execute(
+                "INSERT INTO maintenance_configuration_holds(id,tenant_id,window_id,reason) VALUES(%s,%s,%s,'retained proof')",
+                (hold, tenant, window["id"]),
+            )
         # Time travel only the retention clock in this isolated synthetic fixture.
         conn.execute(
             "ALTER TABLE maintenance_identities DISABLE TRIGGER maintenance_fence_immutable"
@@ -102,7 +109,18 @@ def test_ended_non_deleted_timeline_never_expires(maintenance_browser, maintenan
     )
 
 
-@pytest.mark.parametrize("blocker", ["final_proof", "fanout"])
+@pytest.mark.parametrize(
+    "blocker",
+    [
+        "final_proof",
+        pytest.param(
+            "fanout",
+            marks=pytest.mark.skip(
+                reason="REV-34: deletion creates no release fan-out job and 0046 made old ones obsolete"
+            ),
+        ),
+    ],
+)
 def test_missing_final_proof_and_pending_fanout_preserve_history(
     maintenance_browser, maintenance_db, blocker
 ):
@@ -118,13 +136,8 @@ def test_missing_final_proof_and_pending_fanout_preserve_history(
 
 def test_hold_release_bounded_erasure_and_minimal_fence(maintenance_browser, maintenance_db):
     db, _ = maintenance_db
-    client, tenant, window = deleted(maintenance_browser, db)
     hold = uuid4()
-    with db.transaction(tenant) as conn:
-        conn.execute(
-            "INSERT INTO maintenance_configuration_holds(id,tenant_id,window_id,reason) VALUES(%s,%s,%s,'retained proof')",
-            (hold, tenant, window["id"]),
-        )
+    client, tenant, window = deleted(maintenance_browser, db, hold=hold)
     complete_empty_jobs(db, tenant)
     assert not cleanup_window(db, tenant, window["id"])
     path = f"/api/tenants/{tenant}/maintenance/{window['id']}/history"
@@ -279,8 +292,8 @@ def test_worker_role_can_clean_but_api_cannot_add_holds_or_change_retired_fence(
 
     class Worker:
         @contextmanager
-        def transaction(self, tenant_id=None):
-            with db.transaction(tenant_id) as conn:
+        def transaction(self, *args, **kwargs):
+            with db.transaction(*args, **kwargs) as conn:
                 conn.execute("SET LOCAL ROLE appchi_worker")
                 yield conn
 
