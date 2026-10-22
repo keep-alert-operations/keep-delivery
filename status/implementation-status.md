@@ -1,5 +1,22 @@
 # Implementation status
 
+## 2026-10-22 Integration test hygiene
+
+Test-only and tooling changes; no product code changed. Search tests bind
+Elasticsearch before the API starts; the ingest-route, REV-27/REV-34 and
+Kafka-first-outbox tests match current behaviour; broker tests restore
+`kafka_pipeline_control`; the correlation-cleanup tests no longer need a draft
+fixture; the BrowserReal seed uses the Kafka-first source step;
+`workspace.py install` restores pip and installs requirements siblings added since
+the repin. The [runbook](../docs/runbooks/development.md#verification-commands)
+lists every test binding.
+
+Executed on delivery 82c6c72 and frontend bba55ef (pinned siblings, fresh private
+PostgreSQL 18.2, Elasticsearch 9.0.0 and Kafka 4.0.0): delivery integration 436
+passed, 13 skipped (Kong opt-in and REV-34 deferred-scheduler prototypes), 2 failed
+on the native-CEL compile deadline and passed when rerun alone; delivery unit 293
+passed, 3 skipped; BrowserReal 1 passed. Not executed: S1–S4, the Kong cases.
+
 ## 2026-10-19 Pipeline round-trip reduction
 
 A throughput/latency review led to these changes in domain 6d4cfa6, processor

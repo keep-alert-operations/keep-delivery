@@ -14,7 +14,7 @@ from appchi.search.rebuild import start_rebuild, rebuild_turn, cancel_rebuild
 from appchi.shared.errors import AppError
 from appchi.worker import projection_turn
 from test_product import admit_alert, browser  # noqa: F401
-from test_search_rebuild import index, real_db, state, until  # noqa: F401
+from test_search_rebuild import browser_settings, index, real_db, state, until  # noqa: F401
 
 pytestmark = pytest.mark.integration
 

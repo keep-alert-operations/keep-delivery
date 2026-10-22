@@ -33,6 +33,12 @@ def tenant(real_db):
 
 
 @pytest.fixture
+def browser_settings():
+    """Extra Settings for the shared `browser` app; override per module to bind services."""
+    return {}
+
+
+@pytest.fixture
 def cipher():
     from appchi.shared.crypto import EnvelopeCipher
     return EnvelopeCipher({"test": b"k" * 32}, "test")

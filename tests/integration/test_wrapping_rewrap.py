@@ -101,8 +101,8 @@ def test_all_known_families_rewrap_without_changing_identity_or_lifecycle(secret
     original = database.transaction
 
     @contextmanager
-    def restricted(tenant_id=None):
-        with original(tenant_id) as conn:
+    def restricted(*args, **kwargs):
+        with original(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_worker")
             yield conn
 
