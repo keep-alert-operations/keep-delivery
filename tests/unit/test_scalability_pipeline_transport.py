@@ -22,7 +22,7 @@ def database():
     conn = Mock()
 
     @contextmanager
-    def transaction(*args):
+    def transaction(*args, **kwargs):
         yield conn
 
     return SimpleNamespace(transaction=transaction), conn

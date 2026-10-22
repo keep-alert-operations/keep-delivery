@@ -279,8 +279,8 @@ def test_worker_role_can_clean_but_api_cannot_add_holds_or_change_retired_fence(
 
     class Worker:
         @contextmanager
-        def transaction(self, tenant_id=None):
-            with db.transaction(tenant_id) as conn:
+        def transaction(self, *args, **kwargs):
+            with db.transaction(*args, **kwargs) as conn:
                 conn.execute("SET LOCAL ROLE appchi_worker")
                 yield conn
 

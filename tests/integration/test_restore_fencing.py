@@ -109,8 +109,8 @@ def test_begin_invalidates_sessions_and_application_roles_cannot_reopen(
     original = admin.transaction
 
     @contextmanager
-    def recovery_role(tenant_id=None):
-        with original(tenant_id) as conn:
+    def recovery_role(*args, **kwargs):
+        with original(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_recovery")
             yield conn
 
