@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import os
 from threading import Event
+from time import monotonic
 from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import UUID, uuid4
@@ -177,13 +178,17 @@ def test_scan_failure_is_visible_and_excluded_from_next_claim(real_db, tenant, m
 def test_second_replica_cannot_publish_claimed_page(real_db, tenant, monkeypatch):
     epoch = seed_scan(real_db, tenant)
     started, release = Event(), Event()
+    calls = []
 
     def publish(db, client, physical, selected_tenant, selected_epoch, **kwargs):
+        # Recorded before anything the claim path's failure handling can swallow.
+        calls.append(kwargs["claim"])
         assert selected_tenant == tenant and selected_epoch == epoch
         with db.transaction() as conn:
             reconciliation.check_claim(conn, epoch, tenant, kwargs["claim"])
-        started.set()
-        assert release.wait(20)
+        if len(calls) == 1:
+            started.set()
+            assert release.wait(20)
 
     monkeypatch.setattr(reconciliation, "reconcile_page", publish)
     first, second = fake_service(real_db, tenant), fake_service(real_db, tenant)
@@ -192,16 +197,25 @@ def test_second_replica_cannot_publish_claimed_page(real_db, tenant, monkeypatch
         try:
             assert started.wait(10)
             # Bypass the due check so the claim's lease_until exclusion runs.
+            began = monotonic()
             assert second.claim_and_reconcile() == 0
+            assert monotonic() - began < 5
+            assert len(calls) == 1  # The held claim excluded the tenant.
         finally:
             release.set()
         assert pending.result(10) == 1
+    assert len(calls) == 1
     with real_db.transaction() as conn:
         state = conn.execute(
-            "SELECT lease_owner,lease_until FROM search_reconciliation WHERE index_epoch=%s AND tenant_id=%s",
+            "SELECT lease_owner,lease_until,last_error,retry_after FROM search_reconciliation WHERE index_epoch=%s AND tenant_id=%s",
             (epoch, tenant),
         ).fetchone()
-        assert state == {"lease_owner": None, "lease_until": None}
+        assert state == {
+            "lease_owner": None,
+            "lease_until": None,
+            "last_error": None,
+            "retry_after": None,
+        }
 
 
 def test_completed_empty_tenant_yields_to_pending_tenant(real_db, tenant, monkeypatch):

@@ -136,6 +136,8 @@ def test_due_check_reports_no_rows_as_nothing_registered(real_db, tenant):
             # Empty temporary tables shadow the real ones for unqualified names.
             for table in ("search_reconciliation", "tenant_view_state", "tenant_work_state"):
                 conn.execute(f"CREATE TEMP TABLE {table} (LIKE public.{table}) ON COMMIT DROP")
+            # Open the gate here too, so the test does not rely on earlier tests.
+            conn.execute("UPDATE capability_gates SET ready=true WHERE capability='search'")
 
             @contextmanager
             def same(*args, **kwargs):
