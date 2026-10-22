@@ -4,12 +4,32 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import tomllib
 
 DELIVERY = Path(__file__).resolve().parents[1]
 MANIFEST = DELIVERY / "workspace/manifest.json"
+# Runs inside the environment: unmet runtime requirements of the named distributions.
+UNMET = """
+import json, sys
+from importlib import metadata
+from packaging.requirements import Requirement
+unmet = set()
+for name in sys.argv[1:]:
+    for text in metadata.requires(name) or ():
+        requirement = Requirement(text)
+        if requirement.marker and not requirement.marker.evaluate({"extra": ""}):
+            continue
+        try:
+            metadata.version(requirement.name)
+        except metadata.PackageNotFoundError:
+            unmet.add(requirement.name)
+print(json.dumps(sorted(unmet)))
+"""
 
 
 def run(args, cwd, *, capture=False):
@@ -97,17 +117,62 @@ def inventory(root, manifest):
     return result
 
 
+def canonical_name(name):
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def locked_requirement(locks, name):
+    """Exact version and hashes from the first sibling lock that pins the package."""
+    for lock in locks:
+        for package in lock.get("package", ()):
+            if canonical_name(package["name"]) == canonical_name(name):
+                hashes = " ".join(f"--hash={item['hash']}" for item in package.get("files", ()))
+                return f"{package['name']}=={package['version']} {hashes}"
+    raise ValueError(f"{name} is required by a local source but pinned by no sibling lock")
+
+
+def install_unmet(python, sources):
+    """Install runtime requirements that local sources added since delivery's lock.
+
+    Editable overrides use --no-deps, so a requirement a sibling added after the
+    delivery repin is otherwise missing. Pins come from that sibling's own lock.
+    """
+    names = [tomllib.loads((path / "pyproject.toml").read_text())["project"]["name"]
+             for path in sources]
+    locks = [tomllib.loads((path / "poetry.lock").read_text())
+             for path in sources if (path / "poetry.lock").exists()]
+    for _ in range(5):
+        unmet = json.loads(run([str(python), "-c", UNMET, *names], DELIVERY, capture=True))
+        if not unmet:
+            return
+        with tempfile.TemporaryDirectory() as directory:
+            pins = Path(directory) / "requirements.txt"
+            pins.write_text("\n".join(locked_requirement(locks, name) for name in unmet) + "\n")
+            run([str(python), "-m", "pip", "install", "--no-deps", "--require-hashes",
+                 "-r", str(pins)], DELIVERY)
+        print("Installed locked requirements of local sources: " + ", ".join(unmet))
+        names = unmet
+    raise ValueError("Local source requirements did not converge")
+
+
 def install(root, manifest, editable):
     run(["poetry", "check", "--lock"], DELIVERY)
     run(["poetry", "sync", "--all-extras"], DELIVERY)
-    python = DELIVERY / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
+    # Poetry owns the environment location (in-project `.venv` by default).
+    environment = Path(run(["poetry", "env", "info", "--path"], DELIVERY, capture=True))
+    python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     if editable:
+        # Environments created before the Poetry migration may lack pip.
+        if subprocess.run([str(python), "-m", "pip", "--version"],
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+            run([str(python), "-m", "ensurepip", "--default-pip"], DELIVERY)
+        sources = [repository(root, name) for name in manifest["repositories"]]
+        sources = [path for path in sources if (path / "pyproject.toml").exists()]
         args = [str(python), "-m", "pip", "install", "--no-deps"]
-        for name in manifest["repositories"]:
-            path = repository(root, name)
-            if (path / "pyproject.toml").exists():
-                args += ["--editable", str(path)]
+        for path in sources:
+            args += ["--editable", str(path)]
         run(args, DELIVERY)
+        install_unmet(python, sources)
         print("Local editable sources installed; release locks are unchanged.")
     run(["npm.cmd" if os.name == "nt" else "npm", "ci"], root / "appchi-frontend")
 
