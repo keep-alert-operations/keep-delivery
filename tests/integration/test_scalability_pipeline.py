@@ -191,7 +191,8 @@ def test_second_replica_cannot_publish_claimed_page(real_db, tenant, monkeypatch
         pending = executor.submit(first.reconcile)
         try:
             assert started.wait(10)
-            assert second.reconcile() == 0
+            # Bypass the due check so the claim's lease_until exclusion runs.
+            assert second.claim_and_reconcile() == 0
         finally:
             release.set()
         assert pending.result(10) == 1

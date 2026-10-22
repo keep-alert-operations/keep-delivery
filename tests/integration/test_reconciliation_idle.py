@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 import time
+from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
 
@@ -122,6 +123,33 @@ def test_new_tenant_is_claimed_within_the_bounded_recheck(real_db, tenant, monke
                 "UPDATE search_reconciliation SET retry_after=clock_timestamp()+interval '1 hour' WHERE tenant_id=%s",
                 (created,),
             )
+
+
+def test_due_check_reports_no_rows_as_nothing_registered(real_db, tenant):
+    """The statement's empty case is NULL, not 0, so an empty scan waits."""
+
+    class Rollback(Exception):
+        pass
+
+    try:
+        with real_db.transaction() as conn:
+            # Empty temporary tables shadow the real ones for unqualified names.
+            for table in ("search_reconciliation", "tenant_view_state", "tenant_work_state"):
+                conn.execute(f"CREATE TEMP TABLE {table} (LIKE public.{table}) ON COMMIT DROP")
+
+            @contextmanager
+            def same(*args, **kwargs):
+                yield conn
+
+            service = fake_service(SimpleNamespace(transaction=same), tenant)
+            assert service.next_due() is None
+            assert service.reconcile() == 0
+            assert service.idle_seconds() == pytest.approx(
+                reconciliation.IDLE_RECHECK_SECONDS, abs=0.1
+            )
+            raise Rollback
+    except Rollback:
+        pass
 
 
 @contextmanager
