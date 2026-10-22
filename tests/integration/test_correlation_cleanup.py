@@ -226,8 +226,8 @@ class Worker:
         self.db = db
 
     @contextmanager
-    def transaction(self, tenant=None):
-        with self.db.transaction(tenant) as conn:
+    def transaction(self, *args, **kwargs):
+        with self.db.transaction(*args, **kwargs) as conn:
             conn.execute("SET LOCAL ROLE appchi_worker")
             yield conn
 
@@ -281,8 +281,8 @@ def test_hold_committed_while_cleanup_waits_on_coordinator_is_preserved(protecte
 
     class WaitingWorker(Worker):
         @contextmanager
-        def transaction(self, tenant=None):
-            with super().transaction(tenant) as conn:
+        def transaction(self, *args, **kwargs):
+            with super().transaction(*args, **kwargs) as conn:
                 started.set()
                 yield conn
 
