@@ -249,10 +249,14 @@ def test_partial_collection_is_staged_but_never_ready_and_retry_uses_new_scan(re
             pytest.fail("Transport completeness cannot reopen business paths")
 
 
-def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(recovery, tmp_path):
+def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(
+    recovery, tmp_path, monkeypatch
+):
     import base64
+    from types import SimpleNamespace
     from fastapi.testclient import TestClient
     from appchi.config import Settings
+    from appchi.ingestion.main import create_app as create_ingestion_app
     from appchi.main import create_app
 
     admin, runtime = recovery
@@ -264,7 +268,13 @@ def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(recover
         kafka_admission_enabled=False,
         capacity_profile=Path("qualification/development-capacity.json").resolve(),
     )
-    with TestClient(create_app(settings, runtime)) as client:
+    # Admission is served by the stateless ingestion app, not the product API;
+    # quiescing it during restore is its configuration, with no PG to consult.
+    monkeypatch.setattr(
+        "appchi.ingestion.main.KafkaPublisher", lambda *_: SimpleNamespace(close=lambda: None)
+    )
+    ingestion = settings.model_copy(update={"role": "ingestion-api"})
+    with TestClient(create_ingestion_app(ingestion)) as client:
         result = client.post(
             "/api/ingest/v1/alerts",
             json={
@@ -279,6 +289,7 @@ def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(recover
         )
         assert result.status_code == 503, result.text
         assert result.json()["error"]["code"] == "kafka_cutover_required"
+    with TestClient(create_app(settings, runtime)) as client:
         session = client.get("/auth/session")
         assert session.status_code == 503
         assert session.json()["error"]["code"] == "restore_reconciliation_required"
