@@ -4,7 +4,6 @@
 
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from threading import Event
 from uuid import uuid4
 
@@ -17,20 +16,9 @@ from appchi.shared.transactions import coordinator
 from test_correlation_configuration import create, definition, edit, rules  # noqa: F401
 from test_correlation_deletion import protected, remove  # noqa: F401
 from test_product import browser  # noqa: F401
-from test_search_pipeline import real_db as isolated_db  # noqa: F401
+from test_search_pipeline import real_db  # noqa: F401 -- migrate() applies 0032 retention
 
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture
-def real_db(isolated_db):
-    root = Path(__file__).resolve().parents[2]
-    if not (root / "migrations/0032_correlation_retention.sql").exists():
-        with isolated_db.transaction() as conn:
-            conn.execute(
-                (root / ".local/0032_correlation_retention.sql.draft").read_text(), prepare=False
-            )
-    return isolated_db
 
 
 def settled(db, tenant):
