@@ -166,3 +166,105 @@ def test_undrained_scenario_is_kept_and_stops_the_sequence():
     assert result["stopped_after"] == "burst_spread"
     assert result["correctness_passed"] is False
     assert result["serialization"]["one_tenant_vs_spread"] is None
+
+
+def test_undrained_warmup_stops_before_any_measured_scenario():
+    phase = load("scalability_pipeline")
+    runner = phase.PipelinePhase.__new__(phase.PipelinePhase)
+    runner.args = SimpleNamespace(warmup=100, steady_rate=3, steady_seconds=60, burst=300)
+    seen = []
+
+    def scenario(definition, count, measure=True):
+        seen.append(definition["name"])
+        return {
+            "name": definition["name"],
+            "offered": count,
+            "accepted": count,
+            "drained_seconds": {},
+            "drain_timed_out": True,
+            "drain_counts": {"processor": 80},
+        }
+
+    runner.scenario = scenario
+    result = runner.execute()
+    assert seen == ["warmup"]
+    assert result["stopped_after"] == "warmup"
+    assert result["correctness_passed"] is False
+    assert result["scenarios"] == []
+
+
+def comparison_result(path, name, *, valid=True, scenarios=("steady",), commit="abcdef0123"):
+    path.write_text(
+        json.dumps(
+            {
+                "run": name,
+                "workload": {"version": "pipeline-v1"},
+                "environment": {"packages": {"appchi-domain": {"commit": commit}}},
+                "pipeline": {
+                    "correctness_passed": valid,
+                    "scenarios": [
+                        {
+                            "name": scenario,
+                            "drain_timed_out": not valid,
+                            "stages": {"processor": {"per_second": 5.0}},
+                        }
+                        for scenario in scenarios
+                    ],
+                    "serialization": {},
+                },
+            }
+        )
+    )
+    return str(path)
+
+
+def test_comparison_refuses_invalid_runs_unless_allowed(tmp_path, monkeypatch, capsys):
+    compare = load("compare_pipeline_load")
+    before = comparison_result(tmp_path / "before.json", "before")
+    after = comparison_result(tmp_path / "after.json", "after", valid=False)
+    monkeypatch.setattr(sys, "argv", ["compare", "--before", before, "--after", after])
+    assert compare.main() == 2
+    output = capsys.readouterr().out
+    assert "correctness_passed is false" in output and "steady did not drain" in output
+    monkeypatch.setattr(
+        sys, "argv", ["compare", "--before", before, "--after", after, "--allow-invalid"]
+    )
+    assert compare.main() == 0
+
+
+def test_comparison_lists_every_scenario_and_tolerates_missing_commits(
+    tmp_path, monkeypatch, capsys
+):
+    compare = load("compare_pipeline_load")
+    before = comparison_result(tmp_path / "before.json", "before", commit=None)
+    after = comparison_result(
+        tmp_path / "after.json", "after", scenarios=("steady", "burst_spread")
+    )
+    monkeypatch.setattr(sys, "argv", ["compare", "--before", before, "--after", after])
+    assert compare.main() == 0
+    output = capsys.readouterr().out
+    assert "domain@?" in output
+    assert "### steady" in output and "### burst_spread" in output
+
+
+def test_editable_provenance_parses_file_urls_and_rejects_failed_git(tmp_path, monkeypatch):
+    phase = load("scalability_pipeline")
+    git_revision, seen = phase.git_revision, []
+    monkeypatch.setattr(phase, "git_revision", lambda path: seen.append(path) or {"commit": "c"})
+
+    class Distribution:
+        version = "0.1.0"
+
+        def read_text(self, name):
+            return json.dumps(
+                {"url": (tmp_path / "my repo").as_uri(), "dir_info": {"editable": True}}
+            )
+
+    monkeypatch.setattr(phase.importlib.metadata, "distribution", lambda name: Distribution())
+    packages = phase.package_provenance()
+    assert Path(seen[0]) == tmp_path / "my repo"
+    assert packages["appchi-domain"] == {"version": "0.1.0", "editable": True, "commit": "c"}
+    assert git_revision(str(tmp_path / "not-a-checkout")) == {
+        "commit": None,
+        "dirty": None,
+    }

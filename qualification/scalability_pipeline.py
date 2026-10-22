@@ -24,6 +24,8 @@ import platform
 import subprocess
 import threading
 from time import monotonic, sleep
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 from uuid import uuid4
 
 WORKLOAD_VERSION = "pipeline-v1"
@@ -96,7 +98,7 @@ def package_provenance():
         if origin.get("vcs_info"):
             entry["commit"] = origin["vcs_info"].get("commit_id")
         elif origin.get("dir_info", {}).get("editable"):
-            path = origin["url"].removeprefix("file:///").removeprefix("file://")
+            path = url2pathname(urlparse(origin["url"]).path)
             entry["editable"] = True
             entry.update(git_revision(path))
         packages[name] = entry
@@ -105,14 +107,18 @@ def package_provenance():
 
 def git_revision(path):
     def git(*command):
-        return subprocess.run(
+        completed = subprocess.run(
             ["git", "-C", path, *command], capture_output=True, text=True, timeout=10
-        ).stdout.strip()
+        )
+        if completed.returncode:
+            raise subprocess.SubprocessError(f"git exited {completed.returncode}")
+        return completed.stdout.strip()
 
+    # An unreadable checkout records no revision rather than a falsely clean one.
     try:
         return {"commit": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain"))}
     except (OSError, subprocess.SubprocessError):
-        return {"commit": None}
+        return {"commit": None, "dirty": None}
 
 
 def consumer_settings():
@@ -676,6 +682,8 @@ class PipelinePhase:
                 "offered": count,
                 "accepted": offered["accepted"],
                 "drained_seconds": reached,
+                "drain_timed_out": timed_out,
+                "drain_counts": last,
             }
         written = write_counters(self.conninfo)
         written = {key: written[key] - counters[key] for key in written}
@@ -732,6 +740,12 @@ class PipelinePhase:
                 self.args.warmup,
                 measure=False,
             )
+            warmup = result["warmup"]
+            if warmup["drain_timed_out"] or warmup["accepted"] != warmup["offered"]:
+                # Its backlog would be measured as part of the first scenario.
+                result["stopped_after"] = "warmup"
+                result["correctness_passed"] = False
+                return result
         for scenario in SCENARIOS:
             count = (
                 round(self.args.steady_rate * self.args.steady_seconds)

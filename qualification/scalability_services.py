@@ -3,9 +3,11 @@
 ``up`` starts PostgreSQL, Elasticsearch, Redis and Kafka containers named
 ``<prefix>-<service>`` on loopback ports, then proves readiness: a PostgreSQL
 query, yellow cluster health, a Redis PING, and on Kafka an idempotent produce
-plus a full transactional init/produce/commit. The generated admin URL is written
-to ignored ``.local/<prefix>-admin-url``, never printed. ``down`` removes only
-these containers and their anonymous volumes. Never use host-wide prune commands.
+plus a full transactional init/produce/commit. The generated password and admin
+URL are written to ignored ``.local/<prefix>-postgres-password`` and
+``.local/<prefix>-admin-url``, never printed or passed on a command line.
+``down`` removes only these containers, their anonymous volumes and those files.
+Never use host-wide prune commands.
 
     python qualification/scalability_services.py up
     python qualification/scalability_services.py down
@@ -31,7 +33,13 @@ IMAGES = {
 
 
 def docker(*command, check=True):
-    return subprocess.run(["docker", *command], capture_output=True, text=True, check=check)
+    completed = subprocess.run(["docker", *command], capture_output=True, text=True)
+    if check and completed.returncode:
+        # Report the subcommand and Docker's message, never the argument list.
+        raise SystemExit(
+            f"docker {command[0]} failed ({completed.returncode}): {completed.stderr.strip()}"
+        )
+    return completed
 
 
 def containers(prefix):
@@ -44,6 +52,11 @@ def up(args):
     if taken:
         raise SystemExit(f"Containers already exist; inspect or remove them first: {taken}")
     password = secrets.token_urlsafe(24)
+    # As in compose, the server reads the password from a mounted file, so it is
+    # absent from the command line, process listings and docker inspect.
+    password_file = ROOT / ".local" / f"{args.prefix}-postgres-password"
+    password_file.parent.mkdir(exist_ok=True)
+    password_file.write_text(password)
     # Loopback only, as in deploy/local/compose.yaml; no named volumes.
     runs = {
         "postgres": [
@@ -53,7 +66,9 @@ def up(args):
             "-e",
             "POSTGRES_USER=appchi_migrator",
             "-e",
-            f"POSTGRES_PASSWORD={password}",
+            "POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password",
+            "--mount",
+            f"type=bind,source={password_file},target=/run/secrets/postgres_password,readonly",
             "-p",
             f"127.0.0.1:{args.postgres_port}:5432",
         ],
@@ -201,6 +216,7 @@ def down(args):
     if present:
         docker("rm", "-f", "-v", *present)
     (ROOT / ".local" / f"{args.prefix}-admin-url").unlink(missing_ok=True)
+    (ROOT / ".local" / f"{args.prefix}-postgres-password").unlink(missing_ok=True)
     print(json.dumps({"removed": present}))
 
 

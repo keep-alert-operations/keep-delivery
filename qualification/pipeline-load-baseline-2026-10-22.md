@@ -27,9 +27,14 @@ Rerun and compare as described in the
   - Changed-consumer batch size: 50.
   - No grouped search hints (#11 not merged).
 - **Harness:**
-  - Run A used commit `f2c5d3b`.
-  - Run B used commit `a88db67`. It is identical apart from the clean/valid split
-    and per-scenario error attribution.
+  - Run B used a clean tree at commit `a88db67`. It is the reproducible
+    reference baseline.
+  - Run A used commit `f2c5d3b` on a dirty tree (`run-a.json` records
+    `dirty: true`). The only uncommitted change while it ran was a unit test
+    being added to `tests/unit/test_scalability_pipeline_phase.py`, which the
+    harness does not import. Its harness code otherwise matches run B, apart from
+    the clean/valid split and per-scenario error attribution. Use run A as a
+    second sample, not as the reference.
 - **Workload:** `pipeline-v1` with defaults:
   - 50 tenants, warmup 100.
   - `steady`: 3/s for 60 s.
@@ -166,7 +171,8 @@ numbers cannot set.
    `-2`), on an idle host, under the heavy-suite lock.
 3. Compare:
    `python qualification/compare_pipeline_load.py --before qualification/pipeline-load-baseline-2026-10-22/run-a.json qualification/pipeline-load-baseline-2026-10-22/run-b.json --after <after-1>.json <after-2>.json`.
-   The tool refuses differing workloads and reports medians per side.
+   The tool refuses differing workloads and invalid runs (an undrained scenario
+   or warmup), and reports medians per side.
 4. Watch these metrics:
    - Source `records_per_publish` and confirmation ms per record (window and
      confirmation).
@@ -177,5 +183,5 @@ numbers cannot set.
    - The `serialization` ratios.
 
 Remove the services with `python qualification/scalability_services.py down`.
-The private environment used here (`C:\Users\guyr2\alv`) is outside the
-repository and can be deleted, or kept for more "before" samples.
+The packages were installed in a private short-path environment outside the
+repository. It can be deleted, or kept for more "before" samples.

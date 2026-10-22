@@ -1,7 +1,8 @@
 """Compare pipeline-phase results of scalability_load.py across package revisions.
 
 Pass one or more result files per side; each metric reports the median of its
-side. Runs are comparable only when their recorded workloads match.
+side. Runs are comparable only when their recorded workloads match, and only
+valid runs (every scenario drained to exact counts) are measurements.
 
     python qualification/compare_pipeline_load.py --before a.json b.json --after c.json d.json
 """
@@ -82,6 +83,22 @@ def load(paths):
     return results
 
 
+def invalid(result):
+    """Why a run is no measurement, using the pipeline's own validity flag."""
+    pipeline = result["pipeline"]
+    reasons = []
+    if not pipeline.get("correctness_passed"):
+        reasons.append("correctness_passed is false")
+    if pipeline.get("stopped_after"):
+        reasons.append(f"stopped after {pipeline['stopped_after']}")
+    reasons += [
+        f"{item['name']} did not drain"
+        for item in pipeline.get("scenarios", [])
+        if item.get("drain_timed_out")
+    ]
+    return reasons
+
+
 def side(results, scenario, path):
     values = []
     for result in results:
@@ -99,6 +116,11 @@ def main():
     parser.add_argument("--before", nargs="+", required=True)
     parser.add_argument("--after", nargs="+", required=True)
     parser.add_argument("--allow-workload-mismatch", action="store_true")
+    parser.add_argument(
+        "--allow-invalid",
+        action="store_true",
+        help="Include runs that did not drain every scenario (their latencies are biased low)",
+    )
     args = parser.parse_args()
     before, after = load(args.before), load(args.after)
     workloads = {json.dumps(r.get("workload"), sort_keys=True) for r in before + after}
@@ -108,18 +130,32 @@ def main():
             print(f"  {path}: {json.dumps(result.get('workload'), sort_keys=True)}")
         if not args.allow_workload_mismatch:
             return 2
+    rejected = [
+        (path, reasons)
+        for path, result in zip(args.before + args.after, before + after)
+        if (reasons := invalid(result))
+    ]
+    if rejected:
+        print("Invalid runs (no measurement):")
+        for path, reasons in rejected:
+            print(f"  {path}: {'; '.join(reasons)}")
+        if not args.allow_invalid:
+            return 2
     for label, results in (("before", before), ("after", after)):
         for result in results:
             print(
                 f"{label}: run {result['run']} passed={result.get('passed')} "
                 f"clean={result.get('clean')} packages="
                 + ", ".join(
-                    f"{name.removeprefix('appchi-')}@{(info or {}).get('commit', '?')[:8]}"
+                    f"{name.removeprefix('appchi-')}@{((info or {}).get('commit') or '?')[:8]}"
                     + ("+dirty" if (info or {}).get("dirty") else "")
                     for name, info in result["environment"]["packages"].items()
                 )
             )
-    scenarios = [s["name"] for s in before[0]["pipeline"]["scenarios"]]
+    # Every scenario any run reached, in first-seen order.
+    scenarios = list(
+        dict.fromkeys(s["name"] for r in before + after for s in r["pipeline"]["scenarios"])
+    )
     for scenario in scenarios:
         print(f"\n### {scenario}\n")
         print("| metric | before | after | change |")
@@ -136,7 +172,7 @@ def main():
             print(f"| {label} | {fmt(old)} | {fmt(new)} | {change} |")
     print("\n### Per-tenant serialization (processor alerts/s ratio to burst_spread)\n")
     for label, results in (("before", before), ("after", after)):
-        ratios = [r["pipeline"]["serialization"] for r in results]
+        ratios = [r["pipeline"].get("serialization", {}) for r in results]
         print(
             f"- {label}: one tenant {fmt(median_of(ratios, 'one_tenant_vs_spread'))}, "
             f"Global v1 {fmt(median_of(ratios, 'global_v1_vs_spread'))}"

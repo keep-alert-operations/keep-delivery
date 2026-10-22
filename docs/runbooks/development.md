@@ -421,7 +421,8 @@ Elasticsearch, Redis and Kafka containers. Kafka is configured like
 `deploy/local/compose.yaml`: INTERNAL inter-broker listener and hostname `kafka`.
 Readiness is proven before it returns, including an idempotent produce and a
 transactional init/produce/commit. `down` runs `docker rm -f -v` on exactly
-those containers. The comparison refuses runs whose workloads differ. A run
+those containers. The comparison refuses runs whose workloads differ, and runs
+that are no measurement unless `--allow-invalid` is given. A run
 exits non-zero (`passed` false) unless every scenario drained to exact
 processor, correlation, search and watermark counts. Treat such a run as no
 measurement. Retried inputs do not invalidate a run but set `clean` false. Each
