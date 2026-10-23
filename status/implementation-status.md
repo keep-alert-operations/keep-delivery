@@ -758,3 +758,45 @@ initial harness/environment failures and corrected reruns. Source publication wa
 the coordinated sibling revisions. Runtime package pins, DEL gates and production
 qualification remain unchanged. The report distinguishes full working-tree tests
 from exact staged-tree publication checks.
+
+## Performance improvements — 2026-10-23
+
+At the user's request, every remaining item from the 2026-10-20 performance review
+of `main` was implemented and merged. Each item became one PR per affected
+repository and went through fresh-context review rounds until nothing remained to
+fix. Consumers were repinned to producer merge commits, and CI passed on every
+final `main`.
+
+The changes cover four areas:
+
+- **Worker paths:** fewer transactions and statements in the worker, changed-event,
+  correlation and `read_committed` paths.
+- **Search hints and reconciliation:** shared search-hint bulks, index-ordered
+  reconciliation pages, watermark-only view-generation bumps and due-first indexer
+  scheduling.
+- **API reads and live updates:** a 4-transaction feed page with migration 0052,
+  cached idle SSE wake-ups, and bounded live-hint deletes.
+- **Ingestion and frontend:** single-parse ingestion, one Kafka ack poll thread,
+  httptools/uvloop serving with a request-smuggling fix found in review, and
+  coalesced frontend live invalidations.
+
+The [implementation evidence](../qualification/performance-improvements-2026-10-23.md)
+records each item, its PRs, the measured local effects, the defects found in
+review and the merged revisions.
+
+On the merged revisions:
+
+- **Delivery integration suite:** 449 cases passed, 2 known-flaky cases failed,
+  and 13 were explicitly skipped.
+- **Frontend:** generation, formatting, typecheck and build passed. The controlled
+  browser suite passed 190 cases, with 2 timing failures that also occur on
+  earlier code.
+
+Not run:
+
+- the S1–S4 local-stack smoke baseline and the real-backend browser journeys,
+  because PowerShell 7 was unavailable;
+- the before/after load comparison, which the user stopped.
+
+The figures are local diagnostics. They establish no capacity, release or
+production readiness.
