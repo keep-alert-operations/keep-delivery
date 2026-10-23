@@ -175,3 +175,22 @@ unbound-service skips, contract/import/document checks and static container chec
 Existing runtime Git pins are preserved. Source publication was subsequently
 authorized; the workspace manifest records the coordinated sibling revisions. Complete image builds, company-service integration and production
 rollout are unexecuted, so no DEL capability gate is closed by this tooling change.
+
+## Performance improvements — 2026-10-23
+
+The remaining performance-review items are merged into every repository's `main`.
+Delivery integration tests passed on the merged revisions apart from two
+known-flaky cases.
+
+[Local evidence](../qualification/performance-improvements-2026-10-23.md) records
+the scope, measured effects and gaps. Not run:
+
+- the local-stack smoke baseline;
+- the real-backend browser journeys;
+- the before/after load comparison.
+
+Migration 0052 must run in the stopped-writer window, because it blocks
+`projection_work` inserts while its index builds. Image builds, company-service
+integration and production rollout are unexecuted, so no DEL capability gate is
+closed by this work. The CEL compile-process decision (#10) and the per-tenant
+correlation ceiling remain open.
