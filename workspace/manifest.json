@@ -4,7 +4,7 @@
   "repositories": {
     "appchi-contracts": {
       "url": "https://github.com/appchi-alert-operations/appchi-contracts.git",
-      "revision": "870e075432ef9eaba4cfdb89a8e6e4c7b5e3c49a"
+      "revision": "5420c8fd93d05828706e47b8f33f925c19b90495"
     },
     "appchi-domain": {
       "url": "https://github.com/appchi-alert-operations/appchi-domain.git",
@@ -36,7 +36,7 @@
     },
     "appchi-frontend": {
       "url": "https://github.com/appchi-alert-operations/appchi-frontend.git",
-      "revision": "311ed328e4f2e19e21fb2cc011f4704a5c84748b"
+      "revision": "9ed49b016afac35a5f60c029307529603e6bcc92"
     },
     "appchi-design": {
       "url": "https://github.com/appchi-alert-operations/appchi-design.git",
