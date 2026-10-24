@@ -98,7 +98,9 @@ introduce, and invokes this gate. Standalone design checks defer links to absent
 sibling checkouts but still fail when a catalog section in a design-owned source is
 renamed, duplicated or missing; the delivery workspace check requires them all.
 The fixtures test deterministic selection, not end-to-end agent effectiveness or
-measured context savings. Use paired real-task trials before making those claims.
+measured context savings. Use paired real-task trials before making those claims;
+the [first planning-only trials](../qualification/context-eval-2026-10-24/results.md)
+show no token saving and do not establish an effect either way.
 
 Context changes across design and delivery must be reviewed together. Once the
 design changes are committed and available, update delivery's workspace manifest

@@ -1,5 +1,21 @@
 # Implementation status
 
+## 2026-10-24 Context layer follow-ups
+
+Navigation, guidance and test-documentation changes only; no product behavior
+changed. Design CI now fails on a renamed or duplicated catalog section (design#10,
+merged and pinned), and the context gate checks that design's heading parser
+matches the resolver. Entrypoint checks ignore checkout line endings. Specs gain
+Current scope notes under 59 superseded sections (design branch, not yet merged).
+Agents are told to choose routes explicitly, and the 22 incident integration tests
+cite their requirement IDs and sections.
+
+A paired planning-only evaluation scored 28.5/29 with the layer and 27/29 without,
+using about 6% more tokens with it; one run per cell does not establish an effect.
+Documentation, context and focused unit checks passed. Six existing unit tests
+failed locally on missing `httptools`/`poetry` modules, and the tagged integration
+suites were collected but not run. See [executed evidence](../qualification/context-layer-followups-2026-10-24.md).
+
 ## 2026-10-24 Incident inactivity/retention labels removed
 
 Incident creation help and detail no longer promise automatic inactivity
