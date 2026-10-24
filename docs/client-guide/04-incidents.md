@@ -79,7 +79,7 @@ When the investigation is complete, add a final note and select **Resolved**. A 
 
 To reopen a resolved incident, select **Open** or **Investigating** in its status controls. Reopening starts a new lifecycle cycle and preserves an eligible assignee. It can fail if another active incident now owns a linked alert, or if another active incident occupies the same originating correlation-rule group. Review the blocking incident; Appchi does not silently take ownership away from it.
 
-There is no **Delete incident** action. The current release also has **no automatic inactivity resolution or automatic retention sweep**. Some screens still display inactivity or retention deadlines from an earlier design; do not rely on those labels to close or remove an incident. Explicitly resolve finished work.
+There is no **Delete incident** action. The current release also has **no automatic inactivity resolution or automatic retention sweep**: an incident stays active until someone resolves it, and a resolved incident is not removed automatically. Explicitly resolve finished work. An older **Activity** or **Cycles** entry may still record an automatic inactivity resolution; it describes a past event, not a current timer.
 
 If someone changes an incident while you are editing it, review the new state before retrying. In a membership dialog, **Clear selection and reload revision** resets your selection to the refreshed incident version. If the outcome is uncertain after a connection failure, use **Retry original command** so the original action is checked safely rather than starting a duplicate action.
 

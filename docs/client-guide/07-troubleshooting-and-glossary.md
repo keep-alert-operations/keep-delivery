@@ -42,7 +42,7 @@
 - A rule test or query preview does not perform the operation it describes.
 - Shared Save changes what other tenant users see. Save as new is also shared.
 - A source can update an alert again after your manual action. Read the new occurrence and activity rather than assuming the earlier command failed.
-- There is no automatic inactivity resolution in the current release. Do not rely on a deadline label to close neglected work.
+- There is no automatic inactivity resolution or retention sweep in the current release. An incident stays active until someone resolves it, so close neglected work explicitly.
 
 ## Give support a useful report
 
