@@ -73,6 +73,7 @@ def page_all(client, path, **params):
 
 @pytest.mark.parametrize("direction", ["asc", "desc"])
 def test_severity_rank_and_equal_rank_uuid_keysets(incident_list, direction):
+    """Requirements: I5; incident operations 14."""
     client, path, rows, _, _ = incident_list
     rank = {"low": 1, "medium": 2, "high": 3, "critical": 4}
     expected = sorted(
@@ -85,6 +86,7 @@ def test_severity_rank_and_equal_rank_uuid_keysets(incident_list, direction):
 
 @pytest.mark.parametrize("direction", ["asc", "desc"])
 def test_resolution_nulls_last_and_half_open_time_filters(incident_list, real_db, direction):
+    """Requirements: I5; incident operations 14."""
     client, path, rows, _, tenant = incident_list
     boundary = datetime(2026, 9, 20, tzinfo=UTC)
     with real_db.transaction(tenant) as conn:
@@ -112,6 +114,7 @@ def test_resolution_nulls_last_and_half_open_time_filters(incident_list, real_db
 
 
 def test_current_assignee_filters_match_presentation_before_cleanup(incident_list, real_db):
+    """Requirements: I5, REV-34; incident operations 3 and 14."""
     client, path, rows, actor, tenant = incident_list
     with real_db.transaction(tenant) as conn:
         conn.execute(
@@ -133,6 +136,7 @@ def test_current_assignee_filters_match_presentation_before_cleanup(incident_lis
 
 
 def test_exact_id_origin_rule_and_current_link_filters(incident_list, real_db):
+    """Requirements: I5; incident operations 14."""
     client, path, rows, _, tenant = incident_list
     rule, context, alert = uuid4(), uuid4(), uuid4()
     with real_db.transaction(tenant) as conn:
@@ -169,6 +173,7 @@ def test_exact_id_origin_rule_and_current_link_filters(incident_list, real_db):
 
 
 def test_text_tokens_ranges_query_binding_and_current_access(incident_list, real_db):
+    """Requirements: I5; incident operations 14 and 19."""
     client, path, rows, actor, tenant = incident_list
     assert len(result(client, path, q="HIGH shared")["data"]) == 2
     first = result(client, path, limit=1)
@@ -212,5 +217,6 @@ def test_text_tokens_ranges_query_binding_and_current_access(incident_list, real
     ],
 )
 def test_invalid_filters_fail_explicitly(incident_list, filters):
+    """Requirements: I5; incident operations 14."""
     client, path, _, _, _ = incident_list
     assert client.get(path, params=filters).status_code in (400, 422)

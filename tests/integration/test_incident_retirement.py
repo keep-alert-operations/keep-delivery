@@ -82,6 +82,7 @@ def incident(browser, real_db, cipher, profile, v1):
 
 
 def test_retirement_hides_incident_and_receipt_content_without_changing_alert(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     client, tenant, identity, alert, path, create_body, note_body, before = incident
     store = Store()
     assert retire_incident(real_db, store, tenant, identity)
@@ -106,6 +107,7 @@ def test_retirement_hides_incident_and_receipt_content_without_changing_alert(in
 
 
 def test_final_outage_preserves_content_inaccessible_then_resumes_same_fence(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     client, tenant, identity, _, path, *_ = incident
     store = Store()
     store.fail = "final"
@@ -126,6 +128,7 @@ def test_final_outage_preserves_content_inaccessible_then_resumes_same_fence(inc
 
 
 def test_reopen_race_cancels_without_changing_lifecycle_or_old_links(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     client, tenant, identity, _, path, *_ = incident
     store = Store()
 
@@ -143,6 +146,7 @@ def test_reopen_race_cancels_without_changing_lifecycle_or_old_links(incident, r
 
 
 def test_late_retention_hold_cancels_and_active_ownership_is_never_released(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     _, tenant, identity, alert, *_ = incident
     store = Store()
 
@@ -172,6 +176,7 @@ def test_late_retention_hold_cancels_and_active_ownership_is_never_released(inci
 
 
 def test_duplicate_workers_converge_on_one_final_identity(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     _, tenant, identity, *_ = incident
     store = Store()
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -189,6 +194,7 @@ def test_duplicate_workers_converge_on_one_final_identity(incident, real_db):
 
 
 def test_physical_cleanup_requires_command_fences_and_keeps_live_counterpart(incident, real_db):
+    """Requirements: I3, I4, REV-34; incident operations 7 and 13."""
     client, tenant, identity, alert, path, create_body, _, before = incident
     other = client.post(
         path, json={"command_id": str(uuid4()), "title": "Retained peer", "severity": "low"}
@@ -248,6 +254,7 @@ def test_physical_cleanup_requires_command_fences_and_keeps_live_counterpart(inc
 
 
 def test_cleanup_is_fenced_until_final_ack_and_rejects_a_late_hold(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     import psycopg
 
     _, tenant, identity, *_ = incident
@@ -265,6 +272,7 @@ def test_cleanup_is_fenced_until_final_ack_and_rejects_a_late_hold(incident, rea
 
 
 def test_scheduled_worker_connects_retirement_and_cleanup(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     from appchi.recovery.runtime import incident_retirement_turn
 
     _, tenant, identity, *_ = incident
@@ -283,6 +291,7 @@ def test_scheduled_worker_connects_retirement_and_cleanup(incident, real_db):
 
 
 def test_cancelled_hold_attempt_cannot_cancel_later_success(incident, real_db):
+    """Requirements: I4, REV-34; incident operations 13."""
     _, tenant, identity, *_ = incident
     store = Store()
 
@@ -309,6 +318,7 @@ def test_cancelled_hold_attempt_cannot_cancel_later_success(incident, real_db):
 
 
 def test_counterpart_link_expires_when_alert_retires_after_incident_cleanup(incident, real_db):
+    """Requirements: I3, I4, REV-34; incident operations 7 and 13."""
     from appchi.recovery.retirement import retire_alert
     from appchi.recovery.runtime import incident_retirement_turn
 

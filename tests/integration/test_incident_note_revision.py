@@ -68,6 +68,7 @@ def body(revision, text):
 
 
 def test_note_parent_revision_guards_edit_noop_delete_on_resolved_incident(notes, real_db):
+    """Requirements: I5; incident operations 8 and 18."""
     client, path, note, _ = notes
     response = client.post(
         path + "/status",
@@ -103,6 +104,7 @@ def test_note_parent_revision_guards_edit_noop_delete_on_resolved_incident(notes
 
 
 def test_note_read_holds_revision_until_text_read_finishes(notes, real_db):
+    """Requirements: I5; incident operations 8 and 17."""
     client, path, note, restricted = notes
     reading, release, attempted = Event(), Event(), Event()
     writer_pid = []
@@ -149,6 +151,7 @@ def test_note_read_holds_revision_until_text_read_finishes(notes, real_db):
 
 
 def test_history_keeps_actor_snapshots_watermark_and_deleted_text_out_of_current(notes, real_db):
+    """Requirements: I5; incident operations 8 and 9."""
     client, path, note, _ = notes
     tenant = path.split("/")[3]
     with real_db.transaction(tenant) as conn:
@@ -199,6 +202,7 @@ def test_history_keeps_actor_snapshots_watermark_and_deleted_text_out_of_current
 
 
 def test_history_cursor_rechecks_scope_expiry_access_and_retained_parent(notes, real_db, cipher):
+    """Requirements: I5; incident operations 8, 13 and 19."""
     client, path, note, _ = notes
     tenant = path.split("/")[3]
     incident = path.split("/")[5]
@@ -240,6 +244,7 @@ def test_history_cursor_rechecks_scope_expiry_access_and_retained_parent(notes, 
 
 
 def test_deleted_selector_cursor_is_bound_and_legacy_name_is_not_inferred(notes, real_db):
+    """Requirements: I5; incident operations 8."""
     client, path, note, _ = notes
     tenant = path.split("/")[3]
     another = client.post(path + "/notes", json=body("2", "Another note")).json()["data"]["id"]

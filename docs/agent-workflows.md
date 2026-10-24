@@ -298,7 +298,14 @@ Run verification appropriate to the change using the actual repository tooling:
   and decision numbering. Do not claim runtime tests were run.
 
 Use existing meaningful tests and add coverage for new behavior or regressions;
-avoid tests that merely repeat implementation details. Complete required checks,
+avoid tests that merely repeat implementation details. When a test verifies
+specified behavior, cite the governing requirement IDs and design sections in its
+docstring, such as `Requirements: I4, REV-34; incident operations 12.` Use only
+IDs that appear in the governing section heading, register row or decision; never
+invent one. Name the section too, because one ID can head many sections. A reader
+who starts from the code can then search the design for the same ID. The incident
+integration tests in this repository follow this convention; apply it to other
+areas as their tests change rather than as a bulk rewrite. Complete required checks,
 then broaden testing only for changed scope, failures or unresolved concerns.
 Record commands, repository revisions, results, skipped checks and environmental
 limits. Do not reuse old evidence as proof for a new revision or call unrun checks

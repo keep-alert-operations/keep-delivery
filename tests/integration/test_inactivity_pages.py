@@ -11,6 +11,7 @@ pytestmark = pytest.mark.integration
 def test_incident_inactivity_releases_claim_without_resolving_alert(
     browser, real_db, cipher, profile, v1
 ):
+    """Requirements: I4, REV-34; incident operations 12."""
     client, _ = browser
     tenant, alert = admit_alert(real_db, cipher, profile, v1)
     base = f"/api/tenants/{tenant}"

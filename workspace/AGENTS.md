@@ -9,7 +9,9 @@ not load them automatically. Paths below are relative to this workspace root.
 
 1. Identify the affected repositories; verify their Git roots, branches, revisions,
    staged/unstaged diffs and untracked work before editing. Preserve others' changes.
-2. Select relevant routes from `appchi-design/context/map.md`. The maintained map is
+2. Select relevant routes from `appchi-design/context/map.md` by reading each route's
+   "Applies when" condition, then pass them to `plan --route`. Keyword and path
+   matching (`--task`, `--path`) only suggests candidates. The maintained map is
    `appchi-design/context/task-map.json`; generated route pages link exact sections.
    Use request meaning, changed paths and behavioral impact together; combine routes.
 3. Read required sources and their scope corrections, then follow conditional
@@ -90,6 +92,8 @@ where applicable. Read the following sections when their trigger applies:
 - Complete affected producer and consumer work, run required checks, and update
   inaccurate linked guidance in the same change. Report actual revisions/results and
   skipped checks; old evidence is not proof for changed code or production readiness.
+- A test of specified behavior names its governing requirement IDs and sections in its
+  docstring (`Requirements: I5; incident operations 14.`) so readers can trace it.
 - Preserve all 55 original issue IDs and REV numbering. Record new design choices as
   assistant-selected in the existing register; resolve conflicts with settled decisions.
 - Reversible application work and isolated tests within the request are authorized.
