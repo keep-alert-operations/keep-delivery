@@ -22,6 +22,8 @@ Prepared on 11 October 2026 using these checked-out revisions **plus their exist
 | appchi-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Verified control labels and current screen behavior in source |
 | appchi-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | Implementation/readiness evidence and screenshots |
 
+**Revised 24 October 2026:** the Incidents and Troubleshooting chapters were updated after appchi-frontend `42e91ce` (branch `codex/remove-stale-incident-deadlines`, based on `9ed49b0`) removed the incident inactivity and retention deadline labels. Other chapters were not re-inspected for that revision.
+
 The guide does not replace the specifications. [Worker scope](../../../appchi-design/specs/spec-worker-scope.md) overrides older automatic maintenance-release, inactivity, retention and assignment-cleanup algorithms. Current UI corrections override older acknowledgement and dashboard controls. [Delivery readiness](../../status/delivery-readiness.md) keeps production gates open; this guide does not close them.
 
 ## Chapter authority map
@@ -55,7 +57,6 @@ Older preset editor screenshots were inspected and deliberately excluded because
 
 ## Known source and interface discrepancies
 
-- Incident creation/detail help still describes automatic inactivity resolution/retention deadlines. The guide follows the later worker-scope decision and tells clients not to rely on those labels. Product UI correction is outside this documentation change.
 - The incident membership search placeholder suggests text or CEL, while the current implementation submits its text as the plain-text query with CEL `true`. The guide only promises text search in that dialog.
 - The preset specification permits viewer temporary exploration more broadly than the current editor screen, which requires Edit access. The guide directs viewers to Feed for ad hoc expressions and documents only the temporary controls actually offered on saved results.
 - Some early dashboard prose still names Pause updates or Count provenance. Later explicit UI corrections remove those controls. The guide uses Discard changes, automatic refresh and Refresh counts.
@@ -76,4 +77,4 @@ If `marked` is resolvable by Node, omit the argument. The argument is an environ
 
 ## Verification record
 
-See [guide verification](../../qualification/client-guide-2026-10-11.md) for actual documentation and rendering results. No application runtime suite is needed for this documentation-only addition; none is claimed.
+See [guide verification](../../qualification/client-guide-2026-10-11.md) for actual documentation and rendering results, and [incident deadline label removal](../../qualification/incident-deadline-labels-2026-10-24.md) for the 24 October revision. No application runtime suite is needed for this documentation-only addition; none is claimed.

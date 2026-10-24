@@ -1,5 +1,18 @@
 # Implementation status
 
+## 2026-10-24 Incident inactivity/retention labels removed
+
+Incident creation help and detail no longer promise automatic inactivity
+resolution or retention removal, which REV-34 defers. Last activity remains;
+recorded inactivity resolutions in history still describe those past events.
+The client guide no longer says some screens show those deadlines. API,
+contracts and generated client are unchanged.
+
+TypeScript, changed-file formatting and 45 affected synthetic Chrome checks passed
+on frontend 42e91ce; desktop and phone renders were inspected against a synthetic
+API fixture. S1–S4 were not run: PowerShell 7 is not installed and Docker was not
+running. See [executed evidence](../qualification/incident-deadline-labels-2026-10-24.md).
+
 ## 2026-10-22 Integration test hygiene
 
 Test-only and tooling changes; no product code changed. Search tests bind
