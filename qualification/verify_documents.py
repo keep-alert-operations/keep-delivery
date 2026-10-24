@@ -19,7 +19,9 @@ def entrypoint_errors(workspace):
         installed = workspace / name
         if not canonical.is_file() or not installed.is_file():
             errors.append([name, 'Missing canonical or installed workspace entrypoint; run bootstrap'])
-        elif canonical.read_bytes() != installed.read_bytes():
+        # Git may check the canonical copy out with CRLF; line endings alone are not drift.
+        elif (canonical.read_bytes().replace(b'\r\n', b'\n')
+              != installed.read_bytes().replace(b'\r\n', b'\n')):
             errors.append([name, 'Installed entrypoint differs from delivery canonical copy; reconcile before bootstrap'])
     claude = workspace / 'CLAUDE.md'
     if claude.is_file() and '@AGENTS.md' not in claude.read_text(encoding='utf-8-sig').splitlines():

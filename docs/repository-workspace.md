@@ -91,9 +91,12 @@ Keep any personal vault settings local and do not move the repositories.
 
 After changing routes, source headings or filenames, render again and run the full
 context check. It checks source targets, exact headings, required dependencies,
-fixtures and generated-file drift. `verify_documents.py` also checks installed
-entrypoint consistency and invokes this gate. Standalone design checks defer links
-to absent sibling checkouts; the delivery workspace check requires them all.
+fixtures and generated-file drift, and that design's `check_docs.py` reads headings
+exactly as the resolver does. `verify_documents.py` also checks installed
+entrypoint consistency, ignoring line-ending differences that Git checkouts
+introduce, and invokes this gate. Standalone design checks defer links to absent
+sibling checkouts but still fail when a catalog section in a design-owned source is
+renamed, duplicated or missing; the delivery workspace check requires them all.
 The fixtures test deterministic selection, not end-to-end agent effectiveness or
 measured context savings. Use paired real-task trials before making those claims.
 

@@ -53,6 +53,11 @@ def repository(root, name):
     return path
 
 
+def entrypoint_text(path):
+    """Entrypoint bytes without line-ending differences that Git checkouts may introduce."""
+    return path.read_bytes().replace(b"\r\n", b"\n")
+
+
 def bootstrap(root, manifest):
     root.mkdir(parents=True, exist_ok=True)
     for name, item in manifest["repositories"].items():
@@ -73,7 +78,7 @@ def bootstrap(root, manifest):
         canonical = DELIVERY / "workspace" / name
         installed = root / name
         backup = root / f"{name}.before-bootstrap"
-        differs = installed.exists() and installed.read_bytes() != canonical.read_bytes()
+        differs = installed.exists() and entrypoint_text(installed) != entrypoint_text(canonical)
         if differs and backup.exists():
             raise ValueError(f"Root {name} differs; reconcile it with delivery before bootstrap")
         instructions.append((canonical, installed, backup, differs))

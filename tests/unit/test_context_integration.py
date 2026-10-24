@@ -23,6 +23,15 @@ def test_entrypoints_match(tmp_path):
     assert DOCUMENTS.entrypoint_errors(tmp_path) == []
 
 
+def test_line_endings_alone_are_not_drift(tmp_path):
+    canonical = install(tmp_path)
+    for name in ('AGENTS.md', 'CLAUDE.md'):
+        text = (canonical / name).read_bytes().replace(b'\r\n', b'\n')
+        (canonical / name).write_bytes(text.replace(b'\n', b'\r\n'))
+        (tmp_path / name).write_bytes(text)
+    assert DOCUMENTS.entrypoint_errors(tmp_path) == []
+
+
 def test_entrypoint_drift_and_missing_import_are_errors(tmp_path):
     canonical = install(tmp_path)
     (tmp_path / 'AGENTS.md').write_text('Local edit', encoding='utf-8')

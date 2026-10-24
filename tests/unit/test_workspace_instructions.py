@@ -29,6 +29,19 @@ def test_installs_both_files_and_repeated_bootstrap_needs_no_backup(workspace):
         assert not (root / f"{name}.before-bootstrap").exists()
 
 
+def test_line_ending_only_difference_needs_no_backup(workspace):
+    module, root, manifest = workspace
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        canonical = module.DELIVERY / "workspace" / name
+        text = canonical.read_bytes().replace(b"\r\n", b"\n")
+        canonical.write_bytes(text.replace(b"\n", b"\r\n"))
+        (root / name).write_bytes(text)
+    module.bootstrap(root, manifest)
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        assert not (root / f"{name}.before-bootstrap").exists()
+        assert (root / name).read_bytes() == (module.DELIVERY / "workspace" / name).read_bytes()
+
+
 def test_saves_exact_local_instruction_bytes(workspace):
     module, root, manifest = workspace
     original = b"Manual instructions\r\nPreserve me.\r\n"
