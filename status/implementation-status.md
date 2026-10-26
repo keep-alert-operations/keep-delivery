@@ -1,5 +1,37 @@
 # Implementation status
 
+## 2026-10-26 Quieter alert, preset and dashboard screens (REV-43)
+
+The user asked to quieten the Feed, saved presets and dashboards and approved a mock
+before implementation. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-43--quieter-alert-preset-and-dashboard-screens-2026-10-26)
+and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md).
+
+- Frontend commit `55ed846` on local branch `codex/ui-cleanup` (from `4b9ed52`), also
+  fast-forwarded into local `main`; not pushed: row ⋯ menus with Assign to me or
+  Unassign and Resolve or Reopen; no standing Live pill (a quiet notice only when
+  delivery is degraded, unavailable or search lags); no revision numbers on those
+  screens; lighter quick views with dots and no Active view; plain severity and status
+  text, no source line or New chip in rows; times relative to now with the exact time
+  in the tooltip. `DESIGN.md`, `.impeccable/design.json` and the docs follow.
+- Checks on the final code: TypeScript and Prettier passed; the controlled Chrome
+  suite (installed Chrome 155, isolated `APPCHI_NEXT_DIST_DIR`) ran 200
+  passed, 7 skipped, 0 failed; the preset specs reran 23 passed after a late presets-list
+  grid fix. Prettier flags only the checkout's CRLF copies.
+  New `tests/ui-cleanup.spec.ts` covers the quick views, the row menu (keyboard,
+  Escape, no navigation), relative times, the alert detail and the presets list.
+- Real local stack (Chrome, signed in through local Keycloak, run ledger
+  `e819557e-a363-42a1-b209-528b2dc3edc1`): Feed header empty while live delivery was
+  connected; quick views without Active; a synthetic S2 alert went through Assign to
+  me (persisted after reload), Unassign, Resolve and Reopen from its row menu and ended
+  firing and unassigned as before, with a second occurrence recorded by the reopen;
+  alert detail without revision or source line; presets and dashboards lists without
+  revisions; 390px and dark renders.
+- Not verified: S2 itself stopped at admission, because local ingestion `/readyz`
+  returned 500 and admission 503 (an existing environment fault, left untouched); the
+  Global tenant had no saved presets or dashboards, so those screens were checked only
+  with controlled fixtures; S1, S3 and S4 were not rerun. No API, contract, migration or
+  deployment changed.
+
 ## 2026-10-26 Ocean palette on the existing UI (REV-42)
 
 After a redesign round with five palette prototypes, the user kept the existing
