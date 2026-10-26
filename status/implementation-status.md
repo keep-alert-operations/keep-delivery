@@ -1,5 +1,29 @@
 # Implementation status
 
+## 2026-10-26 Ocean palette on the existing UI (REV-42)
+
+After a redesign round with five palette prototypes, the user kept the existing
+frontend design and replaced only its colors with the Ocean palette, in light and
+dark. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-42--ocean-palette-on-the-existing-design-2026-10-26)
+and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md).
+
+- Frontend local branch `design/6-ocean-palette`: `329cf83` recolors the UI and the
+  Appchi Keycloak theme; `4b9ed52` adds `DESIGN.md` and `.impeccable/design.json`.
+  Not pushed or merged. Every color is a semantic role in `src/app/theme.css`, defined
+  once per theme; layout, type, components, copy and behavior are unchanged.
+- On that branch: TypeScript passed; Prettier passed apart from the checkout's existing
+  CRLF conversion; the isolated `next build` passed; the controlled Chrome suite ran
+  194 passed, 7 skipped and 1 failed. The failure, `scalability-users.spec.ts:150`, is a
+  request-count race that passed 10 of 10 isolated runs on the branch and with the
+  previous CSS.
+- Synthetic-fixture renders at 1440 and 390, light and dark, covered the Feed, alert
+  detail, incidents, presets, rules, maintenance, dashboards, administration, sign-in
+  states and the Keycloak template. The impeccable detector and finish review ran; the
+  review's two fixes were applied.
+- Not verified: authenticated browsing with real data, the theme inside a running
+  Keycloak, and browsers other than Chrome. No dependency, migration, API or deployment
+  changed.
+
 ## 2026-10-26 Kafka topic incarnation detection (REV-41)
 
 Follow-up to the REV-40 reset: the source processor itself now refuses a recreated
