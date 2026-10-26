@@ -61,7 +61,7 @@ poetry build --format wheel</code></pre>
 .\scripts\local-runtime.ps1 -Action Start -Restart
 # When finished with this managed stack:
 .\scripts\local-runtime.ps1 -Action Stop</code></pre>
-  <p>Stop preserves volumes. Do not remove them as a startup repair. The documented browser entry is <code>https://localhost:3443</code>. Local startup publishes trusted identities once; subsequent local identity changes use the documented explicit refresh, not a directory poller. Correlation has a separately bound preview gate; a successful API start does not prove it is enabled.</p>
+  <p>Stop preserves volumes. Do not remove them as a startup repair. The documented browser entry is <code>https://localhost:3443</code>. Local startup publishes trusted identities once; subsequent local identity changes use the documented explicit refresh, not a directory poller. Correlation and maintenance are always on (REV-39) and Start always launches the correlation worker; check its fresh worker heartbeat rather than assuming a successful API start proves it is running.</p>
 </section>
 
 <section id="change-workflow" aria-labelledby="change-workflow-title">

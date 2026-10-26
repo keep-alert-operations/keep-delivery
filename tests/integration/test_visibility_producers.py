@@ -285,8 +285,6 @@ def test_expiry_fanout_commits_projection_link_and_cursor_atomically(
         maintenance={"max_overlap": 3, "max_work_bytes": 100000},
     )
     client.app.state.profile = capture
-    with real_db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability='maintenance'")
     definition = body(past=True)
     definition["cel"] = "true"
     response = client.post(f"/api/tenants/{tenant}/maintenance", json=definition)

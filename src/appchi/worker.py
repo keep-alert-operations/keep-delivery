@@ -31,7 +31,7 @@ def source_turn(db, profile=None):
             failed = True
             if "item_id" in attempt:
                 record_failure(db, tenant, attempt["item_id"])
-            log.warning("source_unit_failed", extra={"tenant_id": str(tenant)})
+            log.warning("source_unit_failed tenant_id=%s", tenant)
     if failed:
         raise unavailable("source_unit_failed")
 
@@ -87,14 +87,14 @@ def maintenance_turn(db, profile):
         worker_turn(db, tenant, profile)
 
 
-def correlation_turn(db, profile, *, allow_local_preview=False):
+def correlation_turn(db, profile):
     from appchi.correlation.runtime import worker_turn
 
     with db.transaction() as conn:
         rows = conn.execute("""SELECT c.tenant_id FROM correlation_consumer_state c JOIN tenant_work_state w USING(tenant_id)
             WHERE c.pending OR w.change_order>c.change_order ORDER BY c.updated_at,c.tenant_id LIMIT 100""").fetchall()
     for row in rows:
-        worker_turn(db, row["tenant_id"], profile, allow_local_preview=allow_local_preview)
+        worker_turn(db, row["tenant_id"], profile)
 
 
 def projection_turn(db, settings):

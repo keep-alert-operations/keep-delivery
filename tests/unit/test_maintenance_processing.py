@@ -232,13 +232,12 @@ def test_stale_catalog_and_work_limit_do_not_publish_partial_causes(
         )
 
 
-def test_journal_baseline_works_while_capability_is_disabled(maintenance_browser, maintenance_db):
+def test_journal_baseline_is_recorded_once(maintenance_browser, maintenance_db):
     _, tenant, _, _ = maintenance_browser
     db, _ = maintenance_db
     alert = snapshot(tenant)
     with db.transaction(tenant) as conn:
         _, now = coordinator(conn, tenant)
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
         conn.execute(
             "INSERT INTO alert_identities(tenant_id,id) VALUES(%s,%s)", (tenant, alert["id"])
         )
@@ -358,7 +357,6 @@ def test_scheduled_end_publishes_one_generation_and_obsolete_job_is_fenced(
 
 
 PROFILE = {
-    "qualified": True,
     "maintenance_max_work": 10000,
     "maintenance_max_inputs": 100,
     "maintenance_max_segments": 20,
@@ -467,24 +465,19 @@ def test_runtime_keeps_suppression_until_source_update(maintenance_browser, main
     assert after["revision"] == 2 and after["projection_version"] == 2
 
 
-def test_runtime_requires_qualified_profile_and_context_lock_hook(
-    maintenance_browser, maintenance_db
-):
+def test_runtime_budgets_are_optional_but_must_be_valid(maintenance_browser, maintenance_db):
+    """Requirements: REV-39; system completion 23."""
     from appchi.maintenance.runtime import prepare_for_tenant, worker_turn
+    from appchi.shared.capacity import UNLIMITED
 
     db, _, tenant, _, _, _ = setup(maintenance_browser, maintenance_db)
-    with pytest.raises(AppError, match="capacity_profile_required"):
-        prepare_for_tenant(db, tenant, {**PROFILE, "qualified": False})
-    with pytest.raises(AppError, match="capacity_profile_required"):
-        prepare_for_tenant(db, tenant, {**PROFILE, "maintenance_max_work": True})
-    with db.transaction(tenant) as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability='correlation'")
+    for invalid in (True, 0, "100"):
+        with pytest.raises(AppError, match="capacity_profile_invalid"):
+            prepare_for_tenant(db, tenant, {**PROFILE, "maintenance_max_work": invalid})
+    assert prepare_for_tenant(db, tenant, {**PROFILE, "qualified": False}).max_work == 10000
     assert worker_turn(db, tenant, PROFILE) == 0
-    with db.transaction(tenant) as conn:
-        conn.execute(
-            "UPDATE capability_gates SET ready=false WHERE capability IN ('maintenance','correlation')"
-        )
-    assert prepare_for_tenant(db, tenant, None) is None
+    unlimited = prepare_for_tenant(db, tenant, None)
+    assert (unlimited.max_work, unlimited.max_inputs) == (UNLIMITED, UNLIMITED)
 
 
 def test_enabled_alert_api_assignment_notes_noop_and_inactivity(

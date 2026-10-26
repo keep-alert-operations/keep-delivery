@@ -40,7 +40,6 @@ def setup(rules, real_db):
     client, _, tenant, _ = rules
     client.app.state.profile = CAPACITY
     with real_db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability IN ('maintenance','correlation')")
         conn.execute("UPDATE kafka_pipeline_control SET enabled=true WHERE singleton")
     config = SimpleNamespace(environment="inline-test", global_tenant_id=tenant)
     return rules, client, tenant, config

@@ -76,11 +76,7 @@ try {
     Checked { & $python scripts/local_runtime.py migrate-search }
     Checked { & $python scripts/local_runtime.py probe }
     Checked { & $python -m appchi.search.local_bootstrap --evidence qualification/pytest-local-runtime-es.xml }
-    if (Test-Path -LiteralPath '.local/runtime/correlation-preview-profile.json') {
-        Checked { & $python scripts/local_correlation.py activate }
-    }
-    $roles = @('source','indexer')
-    if (Test-Path -LiteralPath '.local/runtime/correlation-preview-profile.json') { $roles += 'correlation' }
+    $roles = @('source','indexer','correlation')
     $current = @()
     foreach ($role in $roles) {
         $existing = @($records | Where-Object { $_.Role -eq $role -and (Owned $_) })
@@ -103,9 +99,5 @@ try {
     }
     @{ compose_project='appchi-local-stack'; initialized_at=[datetime]::UtcNow.ToString('o'); postgres_port=55433; elasticsearch_port=59201 } | ConvertTo-Json | Set-Content -LiteralPath $stackMarker
     Write-Host 'Core local Appchi is running: https://localhost:3443'
-    if (Test-Path -LiteralPath '.local/runtime/correlation-preview-profile.json') {
-        Write-Host 'Local correlation preview is configured; production qualification remains pending.'
-    } else {
-        Write-Host 'Maintenance, automatic correlation and protected recovery remain gated; optional local v2 uses scripts/local-v2.ps1.'
-    }
+    Write-Host 'Correlation and maintenance are always on; protected recovery remains gated; optional local v2 uses scripts/local-v2.ps1.'
 } finally { Pop-Location }

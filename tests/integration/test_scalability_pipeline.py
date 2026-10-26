@@ -828,49 +828,6 @@ def test_audit_repair_is_announced_when_claim_is_lost_after_bulk(real_db, tenant
     assert view_generation(real_db, tenant) == before + 1
 
 
-def test_source_rechecks_reused_maintenance_gate_before_commit(real_db, tenant, v1, monkeypatch):
-    from appchi import kafka_source
-
-    config = configuration(tenant)
-    record = receipt(config, v1)
-    offset = uuid4().int >> 66
-    # The source path takes the tenant coordinator lock once, in lock_coordinator.
-    coordinator = kafka_source.lock_coordinator
-    with real_db.transaction() as conn:
-        prior = conn.execute(
-            "SELECT ready FROM capability_gates WHERE capability='maintenance'"
-        ).fetchone()["ready"]
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
-
-    def raced_coordinator(conn, selected_tenant):
-        with real_db.transaction() as publication:
-            publication.execute(
-                "UPDATE capability_gates SET ready=true WHERE capability='maintenance'"
-            )
-        return coordinator(conn, selected_tenant)
-
-    monkeypatch.setattr(kafka_source, "lock_coordinator", raced_coordinator)
-    try:
-        with pytest.raises(Exception) as failure:
-            apply(real_db, config, record, offset)
-        assert failure.value.code == "maintenance_gate_changed"
-        with real_db.transaction() as conn:
-            assert not conn.execute(
-                "SELECT 1 FROM kafka_source_results WHERE delivery_id=%s",
-                (json.loads(record[2])["event_id"],),
-            ).fetchone()
-            assert not conn.execute("SELECT 1 FROM alerts WHERE tenant_id=%s", (tenant,)).fetchone()
-            conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
-        monkeypatch.setattr(kafka_source, "lock_coordinator", coordinator)
-        # The same immutable delivery remains retryable after the gate settles.
-        assert json.loads(apply(real_db, config, record, offset))["alert_id"]
-    finally:
-        with real_db.transaction() as conn:
-            conn.execute(
-                "UPDATE capability_gates SET ready=%s WHERE capability='maintenance'", (prior,)
-            )
-
-
 @pytest.mark.parametrize("takeover_check", [1, 3])
 def test_audit_rechecks_ownership_after_row_lock(real_db, tenant, monkeypatch, takeover_check):
     epoch = seed_scan(real_db, tenant)

@@ -718,6 +718,12 @@ def main():
             [NewTopic(topic, args.partitions, 1) for topic in topics]
         ).values():
             future.result(20)
+        # Record these incarnations as the cutover would; the source refuses others.
+        with psycopg.connect(db_url) as conn:
+            conn.execute(
+                "UPDATE kafka_pipeline_control SET received_topic_id=%s,changed_topic_id=%s",
+                tuple(kafka_source.topic_identity(kafka, topic) for topic in topics),
+            )
         index_setup_started = monotonic()
         es.options(request_timeout=30).indices.create(
             index=index,

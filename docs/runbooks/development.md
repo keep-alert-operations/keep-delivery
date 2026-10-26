@@ -41,8 +41,10 @@ terminal transcripts. Scripts report missing variable names without echoing valu
 `APPCHI_ENVIRONMENT=development` and the absolute path to
 `qualification/development-capacity.json` select the explicitly **unqualified**
 local development capacity example. Its numbers are neither a production budget
-nor measured service capacity. A missing or gated capability remains visibly
-unavailable; do not open its gate to make a page look successful.
+nor measured service capacity. It sets no correlation or maintenance budgets, so
+both run without limits (REV-39); they have no capability gate. Any other missing
+or gated capability remains visibly unavailable; do not open its gate to make a
+page look successful.
 
 For real human sign-in, supply the issuer, confidential-client secret, protected
 immutable-directory claim/scope, exact password-authentication ACR/AMR mapping, directory source,
@@ -273,11 +275,12 @@ Fresh setup and retained-volume recovery differ; follow those runbooks first.
 ```
 
 Start orchestrates local dependencies, dedicated migrations, explicit identity
-publication, API/UI, source and indexer workers. It requires the documented Kafka
-cutover and real search bootstrap evidence. Correlation is optional and requires
-a freshly qualified local preview; do not launch deferred scheduler/operator/live
-workers or clear a recovery fence. Existing stale preview files are blockers to
-resolve through their runbook, not files to delete to obtain a pass.
+publication, API/UI, source, indexer and correlation workers. It requires the
+documented Kafka cutover and real search bootstrap evidence. Correlation and
+maintenance are always on (REV-39); do not launch deferred scheduler/operator/live
+workers or clear a recovery fence. An existing stack upgraded from the gated
+version follows the one-time steps in
+[local runtime](../local-runtime.md#always-on-correlation-and-maintenance-rev-39).
 
 Require healthy dependency containers, owned API/UI processes, both `/livez`
 responses 200 and fresh ready worker heartbeats with matching process IDs.

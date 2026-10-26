@@ -16,7 +16,6 @@ from test_product import browser, admit_alert  # noqa: F401 -- shared real authe
 pytestmark = pytest.mark.integration
 
 TEST_CAPACITY = {
-    "qualified": True,
     "correlation": {
         "cost_model": "appchi-cel-cost-v1",
         "enabled_rules_per_tenant": 3,
@@ -41,7 +40,6 @@ def rules(request, real_db, tenant):
             "INSERT INTO tenant_grants(tenant_id,principal_id,role) VALUES(%s,%s,'edit')",
             (tenant, actor),
         )
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='correlation'")
         conn.execute("UPDATE tenant_work_state SET change_order=42 WHERE tenant_id=%s", (tenant,))
     return client, actor, tenant, f"/api/tenants/{tenant}/correlation-rules"
 
@@ -81,7 +79,8 @@ def test_create_metadata_logic_group_and_intent_epochs(rules, real_db):
     row, command = create(rules)
     body = {key: command[key] for key in repo.DEFINITION_FIELDS}
     assert row["revision"] == row["epoch"] == row["grouping_generation"] == "1"
-    assert row["enabled"] is True and row["health"] == "blocked"
+    # REV-39: correlation is always on, so a new rule starts healthy.
+    assert row["enabled"] is True and row["health"] == "healthy"
     with real_db.transaction() as conn:
         assert (
             conn.execute(
@@ -168,11 +167,10 @@ def test_idempotency_names_conditions_capacity_and_disable_without_profile(rules
         result.status_code == 409
         and result.json()["error"]["code"] == "correlation_capacity_exceeded"
     )
+    # REV-39: without configured budgets correlation capacity is unlimited.
     client.app.state.profile = None
-    assert (
-        client.post(base, json={"command_id": str(uuid4()), **definition("No budget")}).status_code
-        == 503
-    )
+    unlimited = client.post(base, json={"command_id": str(uuid4()), **definition("No budget")})
+    assert unlimited.status_code == 201, unlimited.text
     disabled = client.post(
         base + "/" + row["id"] + "/disable",
         json={"command_id": str(uuid4()), "expected_revision": "1"},
@@ -182,7 +180,7 @@ def test_idempotency_names_conditions_capacity_and_disable_without_profile(rules
         base + "/" + row["id"] + "/enable",
         json={"command_id": str(uuid4()), "expected_revision": "2"},
     )
-    assert enable.status_code == 503
+    assert enable.status_code == 200, enable.text
 
 
 def test_listing_history_read_authorization_and_protected_delete(rules, real_db, cipher):
@@ -222,7 +220,7 @@ def test_listing_history_read_authorization_and_protected_delete(rules, real_db,
         )
     diagnostic = client.get(base + "/" + first["id"] + "/diagnostics")
     assert diagnostic.status_code == 200, diagnostic.text
-    assert diagnostic.json()["data"]["processing_ready"] is False
+    assert "processing_ready" not in diagnostic.json()["data"]
     assert edit(rules, first, {key: body[key] for key in repo.DEFINITION_FIELDS}).status_code == 403
     with real_db.transaction() as conn:
         conn.execute(

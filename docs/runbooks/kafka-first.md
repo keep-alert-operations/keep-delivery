@@ -23,8 +23,9 @@ evidence. Do not infer production readiness from local test results.
    --ingress-and-legacy-workers-stopped` in the configured application environment.
    The command verifies PG drain, blocks saved rules whose compiled fields/grouping
    reference `assignee_id`, captures Kafka ends for both topics, initializes the
-   three new groups and records partition counts/boundaries. A partial failure is
-   retried while ingress remains fenced. Never reset these groups on a live system.
+   three new groups and records partition counts/boundaries and both topic IDs. The
+   broker must report topic IDs. A partial failure is retried while ingress remains
+   fenced. Never reset these groups on a live system.
 5. Supply the existing immutable Global UUID, Kafka credentials and clock-health
    binding to ingress. Set `APPCHI_KAFKA_ADMISSION_ENABLED=true` only after cutover.
    Start source, correlation and indexer roles, plus existing non-alert roles. Do
@@ -86,6 +87,32 @@ Owners supply endpoints, topology and ACLs; templates do not prescribe allocatio
   Do not silently select earliest/latest or claim lost source inputs can be rebuilt
   from PG. Indexer state can be rebuilt from PG with the existing fenced index/alias
   rebuild protocol and authority reconciliation.
+- Lost broker storage (a recreated topic) restarts offsets under existing replay
+  proof. The source refuses the assignment: its partitions record
+  `source_topic_identity_changed` and the worker logs the recorded and observed topic
+  IDs. Another delivery at a coordinate PostgreSQL recorded records
+  `source_coordinate_conflict` and fences that partition without a timed retry. The
+  local launcher also refuses to start workers in that state. Apply the reviewed
+  reset of [REV-40](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-40--reviewed-reset-after-lost-local-kafka-storage-2026-10-25):
+  stop writers and back up PostgreSQL and the broker log; assess lost inputs after
+  the last confirmed offset; disable rules whose epoch spans the loss through the
+  normal command; in one transaction relabel only the stale rows' `topic` to
+  `<topic>@lost-<date>` (never delete them) and set diagnostic positions to broker
+  committed offsets; with source, correlation and indexer stopped, run
+  `python -m appchi.kafka_cutover --record-topic-identity`; restart, verify
+  processing and re-enable those rules. The command records the new topic IDs only
+  when each partition still holds PostgreSQL's recorded history, and otherwise
+  fails with `kafka_topic_history_mismatch`. The
+  [2026-10-25 local evidence](../../qualification/local-kafka-reset-2026-10-25.md)
+  records one execution, before this check existed.
+- A cutover recorded before migration 0054 has no topic IDs, and the updated source
+  refuses with `kafka_topic_identity_unrecorded`. Stop source, correlation and
+  indexer, apply 0054, run `python -m appchi.kafka_cutover --record-topic-identity`,
+  then start the updated workers.
+- Retained source failures log `source_partition_retry` (or `source_partition_fenced`)
+  with partition, offset, reason, exception class and the AppError code or SQLSTATE.
+  They never log exception text or payloads; `/api/admin/tenants/{tenant_id}/kafka`
+  lists the recorded faults.
 - Never reclaim unconfirmed source changed bytes or required correlation/rebuild
   proof. Maintenance timeline cleanup remains held until its replay boundary is
   verified. Database rollback recovery stays closed while the independent Kafka

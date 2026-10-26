@@ -28,7 +28,6 @@ def test_timezone_preview_preserves_utc_and_makes_no_writes(maintenance_browser,
             "SELECT activity_at FROM auth_sessions WHERE principal_id=%s", (maintenance_browser[2],)
         ).fetchone()
         conn.execute("UPDATE tenant_grants SET role='view' WHERE tenant_id=%s", (tenant,))
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
     command = edit(timezone="Asia/Jerusalem")
     response = client.post(url, json=command)
     assert response.status_code == 200, response.text

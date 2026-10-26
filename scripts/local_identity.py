@@ -288,14 +288,7 @@ def prepare():
 
 def environment():
     creds = json.loads((STATE / "credentials.json").read_text())
-    preview = ROOT / ".local/runtime/correlation-preview-profile.json"
-    capacity_profile = (
-        preview if preview.is_file() else ROOT / "qualification/development-capacity.json"
-    )
-    if preview.is_file():
-        from local_correlation import verified_profile
-
-        verified_profile(creds["deployment_epoch"])
+    capacity_profile = ROOT / "qualification/development-capacity.json"
     operator_path = ROOT / ".local/operators/credentials.json"
     operator_values = {}
     if operator_path.exists():

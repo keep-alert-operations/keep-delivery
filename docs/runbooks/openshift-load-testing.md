@@ -292,6 +292,8 @@ Use TLS, certificate validation and network isolation throughout. This permits
 the honest unqualified development capacity profile; it does **not** qualify the
 deployment for staging/production. An unqualified profile is rejected by API
 outside development. Do not set `qualified=true` just to start a pod.
+Correlation and maintenance budgets are optional (REV-39): an unset budget is
+unlimited, and those features no longer need `qualified` to run.
 
 | Workload | Environment and mounted files |
 | --- | --- |
@@ -459,12 +461,13 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    before using its v2 key. Verify v1 reaches Global and v2 reaches the owning
    test tenant. Validate the Kafka acknowledgement, canonical state and ES row
    for a single synthetic key before seeding a dataset.
-10. Configure and start correlation only when its current capacity/evidence and
-    recovery prerequisites are satisfied. The checked code deliberately gates
-    correlation and maintenance. The workstation-only `local_correlation.py`
-    is not a generic cluster activation command. Missing evidence means the
-    initial run covers ingestion/source/search/live; it cannot claim correlation
-    or maintenance capacity. Do not directly update gates or fabricate a profile.
+10. Start correlation with the other workers. Correlation and maintenance are
+    always on (REV-39); there is no gate or activation command, and an unset
+    budget is unlimited. Configure measured budgets in the profile when a run
+    needs limits. Without measured capacity evidence the run cannot claim
+    correlation or maintenance capacity; do not fabricate a profile. Baselines
+    recorded before REV-39 ran with correlation and maintenance off and do not
+    describe the always-on default.
 
 The bundle creates application Deployments stopped; use its documented deployment
 names with `oc scale --replicas=1` in that order. Wait for each rollout and inspect

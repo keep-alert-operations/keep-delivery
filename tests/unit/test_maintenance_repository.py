@@ -74,7 +74,7 @@ def maintenance_browser(maintenance_db):
     )
     with db.transaction() as conn:
         conn.execute(
-            "UPDATE capability_gates SET ready=true WHERE capability IN ('human_auth','maintenance','recovery')"
+            "UPDATE capability_gates SET ready=true WHERE capability IN ('human_auth','recovery')"
         )
         conn.execute(
             "INSERT INTO tenants(id,kind,name,name_key) VALUES(%s,'specific',%s,%s)",
@@ -123,7 +123,7 @@ def maintenance_browser(maintenance_db):
         yield client, str(tenant), principal, app
     with db.transaction() as conn:
         conn.execute(
-            "UPDATE capability_gates SET ready=false WHERE capability IN ('human_auth','maintenance','recovery')"
+            "UPDATE capability_gates SET ready=false WHERE capability IN ('human_auth','recovery')"
         )
 
 
@@ -180,15 +180,9 @@ def test_create_replay_duplicate_names_no_backfill_and_history(maintenance_brows
     assert len(history) == 1 and history[0]["action"] == "create"
 
 
-def test_gate_strict_models_and_revision_concurrency(maintenance_browser, maintenance_db):
+def test_strict_models_and_revision_concurrency(maintenance_browser, maintenance_db):
     client, tenant, _, _ = maintenance_browser
-    db, _ = maintenance_db
     path = f"/api/tenants/{tenant}/maintenance"
-    with db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
-    assert client.post(path, json=body()).status_code == 503
-    with db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability='maintenance'")
     assert client.post(path, json={**body(), "recurrence": "daily"}).status_code == 422
     window = create(client, tenant)
     edit = {
@@ -398,7 +392,7 @@ def test_delete_without_independent_store_leaves_window_intact(maintenance_brows
     assert client.get(path).status_code == 200
 
 
-@pytest.mark.parametrize("change", ["role", "recovery", "maintenance"])
+@pytest.mark.parametrize("change", ["role", "recovery"])
 def test_delete_rechecks_current_authorization_and_gates_after_external_intent(
     maintenance_browser, maintenance_db, change
 ):

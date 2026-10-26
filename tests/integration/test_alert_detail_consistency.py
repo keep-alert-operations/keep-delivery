@@ -56,18 +56,3 @@ def test_detail_uses_one_snapshot_during_concurrent_disable(
         ).fetchone()
         assert materialized["suppressed"] is True and materialized["revision"] == alert["revision"]
 
-
-def test_closed_maintenance_gate_cannot_certify_stored_suppression(
-    maintenance_browser, maintenance_db
-):
-    db, client, tenant, window, alert = current_alert(maintenance_browser, maintenance_db)
-    disabled = client.post(
-        f"/api/tenants/{tenant}/maintenance/{window['id']}/disable",
-        json={"command_id": str(uuid4()), "expected_revision": "1"},
-    )
-    assert disabled.status_code == 200
-    with db.transaction(tenant) as conn:
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
-    response = client.get(f"/api/tenants/{tenant}/alerts/{alert['id']}")
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "maintenance_gate_closed_with_timeline"

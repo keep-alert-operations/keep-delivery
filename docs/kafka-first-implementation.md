@@ -51,7 +51,9 @@ the plugin, beyond the HTTP adapter fixtures.
 Forward migrations 0040, 0041, 0044 and 0045 preserve historical migrations and old
 tables, add replay/reconciliation/cutover state and fence legacy alert writes. Offline
 cutover blocks compiled assignee-dependent correlation rules without interpreting
-their source differently. Deployment templates separate ingress secrets from database
+their source differently. Migration 0054 (REV-41) records both topic IDs at cutover;
+the source refuses another received-topic incarnation on assignment and fences a
+partition whose input meets another delivery's recorded coordinate. Deployment templates separate ingress secrets from database
 credentials and bind host/database clock evidence. See the [cutover runbook](runbooks/kafka-first.md).
 
 ## Executed evidence
@@ -124,10 +126,14 @@ run reused that server and completed successfully before its owning runner was s
   search pass duration/cost, retention headroom, rendered p99/SLO evidence, and actual
   broker lag/low-watermark/receive-age monitoring are unqualified. Tenant health
   reports Kafka source status as not measured; PG observations are not broker offsets.
-- **Existing local application:** its retained database/consumer groups, operator
-  binding and correlation preview profile require the documented fenced cutover and
-  renewed evidence. Disposable test success does not migrate that user's state. The
+- **Existing local application:** its retained database/consumer groups and operator
+  binding require the documented fenced cutover and renewed evidence. (The former
+  correlation preview profile is no longer used; REV-39 makes correlation and
+  maintenance always on.) Disposable test success does not migrate that user's state. The
   updated launcher refuses unsafe old/new worker mixing.
+- **Topic incarnation (REV-41):** the correlation and search groups do not yet verify
+  the changed topic's identity. Topic ID support and a broker-storage loss drill on the
+  supplied broker remain qualification work.
 
 No production deployment, shared-service change, production allocation or retention
 guarantee is claimed. Kafka retention can lose acknowledged unprocessed inputs by

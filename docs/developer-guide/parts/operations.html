@@ -79,7 +79,7 @@ poetry run alembic heads</code></pre>
       <tr><td>Accepted work is delayed</td><td>Consumer positions, lag age, SQL availability and blocking proof.</td><td>Accepted predecessors and replay evidence; do not skip a blocked head.</td></tr>
       <tr><td>Detail is current, Feed is stale</td><td>Indexer diagnostics, reconciliation progress and searchable watermark.</td><td>Canonical SQL and honest stale/error display; failure is not an empty result.</td></tr>
       <tr><td>Live refresh is delayed</td><td>API SSE connections, Redis hints and SQL reconciliation.</td><td>Tenant/session guards; reconnection does not widen access.</td></tr>
-      <tr><td>Correlation is blocked</td><td>Rule revision, diagnostics, eligibility and capacity/recovery gates.</td><td>Existing incidents and fresh-evidence rules; do not replay expired windows.</td></tr>
+      <tr><td>Correlation is blocked</td><td>Rule revision, diagnostics, eligibility and capacity-profile validity (an unset budget is unlimited).</td><td>Existing incidents and fresh-evidence rules; do not replay expired windows.</td></tr>
     </tbody>
   </table></div>
   <p>Collect outcomes and latency, consumer lag and retention risk, SQL pool/lock pressure, search progress and resource growth. Keep request or event references for investigation without logging secrets or alert bodies. Avoid unbounded source values as metric labels. Operational alerts use existing company on-call channels; Appchi is not its own sole outage notifier. Infrastructure telemetry and application evidence complement each other.</p>

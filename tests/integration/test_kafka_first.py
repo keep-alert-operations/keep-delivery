@@ -18,7 +18,9 @@ from appchi.kafka_source import (
     ReceiveTimeAhead,
     SourceConsumer,
     apply_record,
+    topic_identity,
 )
+from appchi.shared.errors import AppError
 
 pytestmark = pytest.mark.integration
 
@@ -60,7 +62,7 @@ def restore_pipeline_control(real_db):
     Restore the previous control row so later legacy-path tests are not fenced
     with ``legacy_pipeline_fenced``.
     """
-    columns = "enabled,received_partitions,changed_partitions"
+    columns = "enabled,received_partitions,changed_partitions,received_topic_id"
     with real_db.transaction() as conn:
         previous = conn.execute(
             f"SELECT {columns} FROM kafka_pipeline_control WHERE singleton"
@@ -68,8 +70,22 @@ def restore_pipeline_control(real_db):
     yield
     with real_db.transaction() as conn:
         conn.execute(
-            "UPDATE kafka_pipeline_control SET enabled=%s,received_partitions=%s,changed_partitions=%s WHERE singleton",
-            (previous["enabled"], previous["received_partitions"], previous["changed_partitions"]),
+            "UPDATE kafka_pipeline_control SET enabled=%s,received_partitions=%s,changed_partitions=%s,received_topic_id=%s WHERE singleton",
+            (
+                previous["enabled"],
+                previous["received_partitions"],
+                previous["changed_partitions"],
+                previous["received_topic_id"],
+            ),
+        )
+
+
+def enable_pipeline(db, admin, topic):
+    """Enable the pipeline as the cutover does, recording this received topic's ID."""
+    with db.transaction() as conn:
+        conn.execute(
+            "UPDATE kafka_pipeline_control SET enabled=true,received_partitions=1,changed_partitions=1,received_topic_id=%s WHERE singleton",
+            (topic_identity(admin, topic),),
         )
 
 
@@ -253,10 +269,7 @@ def test_actual_broker_ack_and_transactional_output_offset(real_db, v1, restore_
             settings=config,
             profile=None,
         )
-        with real_db.transaction() as conn:
-            conn.execute(
-                "UPDATE kafka_pipeline_control SET enabled=true,received_partitions=1,changed_partitions=1 WHERE singleton"
-            )
+        enable_pipeline(real_db, admin, topics[0])
         worker = SourceConsumer(real_db, config, None)
         deadline = monotonic() + 60
         while monotonic() < deadline:
@@ -411,10 +424,7 @@ def test_real_broker_low_watermark_gap_is_recorded_and_fenced(
         [TopicPartition(topic, 0, 1)], operation_timeout=5, request_timeout=10
     ).values():
         assert future.result(12).low_watermark == 1
-    with real_db.transaction() as conn:
-        conn.execute(
-            "UPDATE kafka_pipeline_control SET enabled=true,received_partitions=1,changed_partitions=1 WHERE singleton"
-        )
+    enable_pipeline(real_db, admin, topic)
     worker = SourceConsumer(real_db, config, None)
     try:
         worker._assigned(worker.client, [TopicPartition(topic, 0)])
@@ -432,3 +442,90 @@ def test_real_broker_low_watermark_gap_is_recorded_and_fenced(
             ).fetchone()
     finally:
         worker.close()
+
+
+def test_real_broker_recreated_topic_is_refused_before_any_input(
+    real_db, v1, restore_pipeline_control
+):
+    """Requirements: REV-41, REV-40; Kafka alert pipeline 3, 8.
+
+    Lost broker storage recreates the topic: its offsets restart under the
+    replay proof PostgreSQL recorded for the previous incarnation.
+    """
+    from confluent_kafka import Consumer, KafkaException, TopicPartition
+    from confluent_kafka.admin import AdminClient, NewTopic
+
+    config = settings(real_db)
+    if not config.kafka_bootstrap:
+        pytest.skip("Requires isolated Kafka")
+    topic = f"appchi.{config.environment}.alerts.received"
+    admin = AdminClient({"bootstrap.servers": config.kafka_bootstrap})
+    for future in admin.create_topics([NewTopic(topic, 1, 1)]).values():
+        future.result(15)
+    reader = Consumer({"bootstrap.servers": config.kafka_bootstrap, "group.id": uuid4().hex})
+
+    def admit_and_read():
+        publisher = KafkaPublisher(config)
+        try:
+            receipt(config, v1, publisher=publisher)
+        finally:
+            publisher.close()
+        reader.assign([TopicPartition(topic, 0, 0)])
+        try:
+            # Metadata of a just-recreated topic can briefly report errors.
+            deadline = monotonic() + 20
+            while monotonic() < deadline:
+                message = reader.poll(1)
+                if message is not None and not message.error():
+                    assert message.offset() == 0
+                    return message
+            raise AssertionError("admitted input was not readable")
+        finally:
+            reader.unassign()
+
+    worker = None
+    try:
+        first = admit_and_read()
+        apply(real_db, config, (topic, first.key(), first.value()), 0)
+        enable_pipeline(real_db, admin, topic)
+        recorded = topic_identity(admin, topic)
+        # This topic was created by this test; delete and recreate it.
+        for future in admin.delete_topics([topic], operation_timeout=10).values():
+            future.result(15)
+        deadline = monotonic() + 30
+        while True:
+            try:
+                for future in admin.create_topics([NewTopic(topic, 1, 1)]).values():
+                    future.result(15)
+                break
+            except KafkaException:
+                assert monotonic() < deadline, "topic deletion did not complete"
+                sleep(0.5)
+        assert topic_identity(admin, topic) != recorded
+        second = admit_and_read()
+        worker = SourceConsumer(real_db, config, None)
+        with pytest.raises(AppError) as raised:
+            worker._assigned(worker.client, [TopicPartition(topic, 0)])
+        assert raised.value.code == "source_topic_identity_changed"
+        assert worker.producers == {}
+        with real_db.transaction() as conn:
+            assert conn.execute(
+                "SELECT reason FROM kafka_pipeline_faults WHERE consumer='source' AND topic=%s",
+                (topic,),
+            ).fetchall() == [{"reason": "source_topic_identity_changed"}]
+            assert (
+                conn.execute(
+                    "SELECT count(*) AS n FROM kafka_source_results WHERE topic=%s", (topic,)
+                ).fetchone()["n"]
+                == 1
+            )
+        # Without the identity check, the restarted offset is a coordinate conflict.
+        with pytest.raises(AppError) as raised:
+            apply(real_db, config, (topic, second.key(), second.value()), 0)
+        assert raised.value.code == "source_coordinate_conflict"
+    finally:
+        reader.close()
+        if worker is not None:
+            worker.close()
+        for future in admin.delete_topics([topic], operation_timeout=10).values():
+            future.result(15)

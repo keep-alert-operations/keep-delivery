@@ -1,10 +1,14 @@
 # Rollback restore: fencing and evidence collection
 
 The current coordinator implements the first recovery boundary: it drains guarded
-application transactions, persists a new deployment epoch, closes all capability
-gates, invalidates restored sessions and login transactions, and stages an
+application transactions, persists a new deployment epoch, closes the remaining
+capability gates (`human_auth`, `search`, `v2_ingress`, `recovery`,
+`audit_retention`), invalidates restored sessions and login transactions, and stages an
 independently supplied evidence checkpoint. **It has no reopen command.**
 `collected` means transport completeness, never restored application correctness.
+Correlation and maintenance have no gate since REV-39 (2026-10-24), so restore does
+not turn them off; maintenance window deletion stays closed through `recovery` and
+`human_auth`.
 
 Only run this during a coordinated recovery on the intended restored database.
 The infrastructure owners perform backup/restore and supply the independently

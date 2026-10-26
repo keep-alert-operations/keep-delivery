@@ -31,7 +31,6 @@ def admin(maintenance_browser, maintenance_db):
         app.include_router(router)
     with db.transaction() as conn:
         conn.execute("UPDATE principals SET super_admin=true WHERE id=%s", (principal,))
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
         tenant = conn.execute("SELECT id FROM tenants WHERE kind='global'").fetchone()["id"]
     allocation = {
         "id": "repair-test",
@@ -218,11 +217,10 @@ def test_reason_validation_health_sanitization_and_command_fingerprint(admin):
         assert event["evidence"]["reason"] == reason
 
 
-def test_closed_maintenance_timeline_does_not_allow_blind_unblock(admin):
+def test_failed_maintenance_preparation_does_not_allow_blind_unblock(admin):
     client, db, tenant, _, _, app = admin
-    with db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability='maintenance'")
-    app.state.profile = None
+    # An invalid configured budget fails preparation; REV-39 keeps that visible.
+    app.state.profile = {"maintenance_max_work": 0}
     response = client.post(path(tenant) + "/retry", json=command())
     assert response.status_code == 409 and response.json()["error"]["code"] == "repair_required"
     assert client.get(path(tenant)).json()["data"]["blocked"]

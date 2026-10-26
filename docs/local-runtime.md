@@ -1,5 +1,23 @@
 # Running the local Appchi workspace
 
+**2026-10-26 Kafka topic identity (REV-41):** the source processor refuses a received
+topic that is not the incarnation recorded at cutover, and refuses while none is
+recorded. This stack's cutover predates migration 0054: with source, correlation and
+indexer stopped, apply 0054 and run `python -m appchi.kafka_cutover
+--record-topic-identity` before starting the updated processor; see the
+[runbook](runbooks/kafka-first.md#failure-and-recovery).
+
+**2026-10-25 Kafka storage and pipeline recovery (REV-40):** Kafka now persists its
+log in the `kafka_data` volume. A container recreation on 2026-10-05 had lost both
+topics and later stopped the source on a reused offset; the reviewed reset is recorded
+in [local Kafka reset evidence](../qualification/local-kafka-reset-2026-10-25.md).
+
+**2026-10-24 always-on correlation and maintenance (REV-39):** correlation rules and
+maintenance windows are always on; there is no capability gate or local preview.
+Older notes below that call them gated or preview-only are history. Follow the
+[one-time upgrade steps](#always-on-correlation-and-maintenance-rev-39) once on this
+stack. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-39--always-on-correlation-and-maintenance-2026-10-24).
+
 **2026-10-04 startup repaired:** the core development system and local v2 gateway
 are running from the independent repositories. Original local credentials and
 persistent data were recovered, the legacy changed stream was drained after
@@ -114,12 +132,17 @@ The previous native PostgreSQL and Elasticsearch remain on ports 55432 and
 59200 as rollback sources; Appchi uses the Compose-managed ports above. All
 published dependency ports bind to loopback. Docker volumes persist Appchi data,
 Keycloak identities, Kong configuration, Kafka state and Grafana configuration.
+Kafka keeps its log in `kafka_data` through `KAFKA_LOG_DIRS`; before 2026-10-25 it
+used the container layer, and recreating the container lost both topics. After the
+recorded cutover, Start no longer creates missing application topics and refuses to
+start workers when the broker ends below, or holds another delivery at, an offset
+PostgreSQL recorded. That state needs the reviewed reset in
+[Kafka failure and recovery](runbooks/kafka-first.md#failure-and-recovery).
 
 Local startup publishes trusted Keycloak users/groups once. Later changes require
 `./scripts/local-identity.ps1 -Action Refresh`; directory polling is nice-to-have.
 After cutover, the required workers handle Kafka source processing and search
-consumption/reconciliation. Correlation starts only with a freshly verified local
-preview profile. The Product API publishes live hints and serves SSE. The legacy alert relay and hint-consumer roles are retired.
+consumption/reconciliation, and the correlation worker always starts. The Product API publishes live hints and serves SSE. The legacy alert relay and hint-consumer roles are retired.
 Their logs, process records and heartbeats are in `.local/runtime`; identity,
 API and frontend process state/logs are in `.local/keycloak`.
 
@@ -137,38 +160,75 @@ repeated Start were exercised against the actual services.
 **This is a usable core development environment, not the complete initial
 release.** Additional capability status:
 
-- Maintenance remains gated. Automatic correlation is available through the
-  bounded local preview described below.
+- Correlation and maintenance are always on (REV-39). Maintenance window
+  deletion stays unavailable until protected recovery exists.
 - Managed operators/native v2 are available with the optional
   [local Kong/Grafana setup](local-v2.md); company integration remains unqualified.
 - Protected retention/recovery require independent evidence and remaining
   recovery implementation.
 
-The development capacity profile remains unqualified. The correlation preview
-uses a separate local file and does not establish release capacity. No production
-readiness or company-service compatibility is claimed. See
-[implementation status](../status/implementation-status.md) for the complete gaps.
+The development capacity profile remains unqualified and does not establish
+release capacity. No production readiness or company-service compatibility is
+claimed. See [implementation status](../status/implementation-status.md) for the
+complete gaps.
 
-## Local correlation preview
+## Always-on correlation and maintenance (REV-39)
 
-The local preview permits creating correlation rules and running the PostgreSQL
-correlation worker in this development stack. It uses at most two enabled rules
-per tenant, ten live groups per rule, 50 live evidence rows per rule and 100 per
-tenant, with finite CEL cost and digest limits in
-`.local/runtime/correlation-preview-profile.json`. Its `qualified` value remains
-`false`. The profile and check report in `.local/runtime` are bound to this
-deployment epoch and the relevant backend source digest. A changed source or
-missing evidence makes the next startup refuse the preview until it is checked
-again.
+Correlation rules and maintenance windows have no capability gate. Per-rule and
+per-window Enable/Disable still apply. `scripts/local_identity.py` always points
+`APPCHI_CAPACITY_PROFILE` at `qualification/development-capacity.json`, which sets
+no correlation or maintenance budgets, so both run without limits here. The
+launcher always starts the `correlation` worker with `source` and `indexer`.
+Window deletion still requires the `recovery` and `human_auth` gates and the
+recovery evidence store, so it remains unavailable until protected recovery exists.
+The REV-30 preview, `scripts/local_correlation.py` and its
+`.local/runtime/correlation-preview-profile*.json` files are no longer used.
 
-`scripts/local_correlation.py activate` checks tenant source order, the
-maintenance state, profile evidence and the existing gate binding before an
-audited local activation. The launcher starts the correlation worker when the
-profile exists. `scripts/local-runtime.ps1 -Action Start -Restart` rechecks the
-binding on a normal restart. This preview was exercised in a disposable
-PostgreSQL database; sustained release workloads, maintenance replay and
-production allocations are still unqualified. Do not copy this profile into a
-staging or production deployment.
+One-time upgrade of this stack, from `appchi-delivery` in PowerShell:
+
+1. Stop every writer: `.\scripts\local-runtime.ps1 -Action Stop`. Pre-0053 code
+   reads the gate rows that migration 0053 deletes.
+2. Back up the Appchi database (`appchi_local`) with only PostgreSQL running:
+
+   ```powershell
+   $compose = @('-p','appchi-local-stack','-f','deploy/local/compose.yaml')
+   docker compose @compose start postgres
+   docker compose @compose exec -T postgres sh -ec 'PGPASSWORD="$(cat /run/secrets/postgres_password)" pg_dump -Fc -f /tmp/pre-0053.dump postgresql://appchi_migrator@127.0.0.1:5432/appchi_local'
+   docker compose @compose cp postgres:/tmp/pre-0053.dump .local/runtime/pre-0053-always-on.dump
+   ```
+
+   Copy the file out rather than redirecting `pg_dump` output, which would
+   corrupt a binary dump in PowerShell. Never name a backup
+   `appchi-local-migration.dump`: Start can restore that file over the database.
+3. Start: `.\scripts\local-runtime.ps1 -Action Start`. Its migration step applies
+   0053, which removes the `correlation` and `maintenance` gate rows and restarts
+   rules saved as blocked with `consumer_not_integrated` at a new evaluation epoch,
+   so changed events queued while the gate was closed never count.
+4. Warm up maintenance proof once per tenant (Global and each other tenant). In the
+   same shell, load the worker environment the launcher uses, then run the warmup
+   and inspect the proof counts:
+
+   ```powershell
+   (Get-Content .local/keycloak/app-environment.json -Raw | ConvertFrom-Json).PSObject.Properties |
+     ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, [string]$_.Value, 'Process') }
+   $env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
+   .\.venv\Scripts\python.exe -m appchi.worker maintenance-warmup --tenant <tenant UUID>
+   .\.venv\Scripts\python.exe -m appchi.worker maintenance-proof --tenant <tenant UUID>
+   ```
+
+   Do not rely on `--once`: it runs one page (at most 100 alerts, and a page also
+   yields after 100 ms, which here means about one alert) and the next run starts
+   again from the beginning. Without `--once` the warmup carries its cursor between
+   pages; stop it when `maintenance-proof` in a second shell reports `pending` 0. An
+   alert still without a current checkpoint fails detail reads with
+   `maintenance_proof_unavailable`. Alerts counted in `missing_baseline` cannot be
+   proven; report them to the user before removing them from the local data.
+
+**Executed on this stack, 2026-10-25:** backup
+`.local/runtime/pre-always-on-20261025.dump`, Start applied 0051–0053, and a
+cursor-paged warmup completed Global 22/22 and Local Demo 12/12 with no missing
+baseline. The optional v2 private listener did not start because the delivery
+`.venv` lacks `httptools`; this predates REV-39.
 
 The opt-in real browser check runs from `appchi-frontend` and leaves a synthetic alert:
 

@@ -403,11 +403,6 @@
       "path": "src/appchi/maintenance/__init__.py",
       "source_sha256": "e046d131e18ca7a2bb2225c683c4314200c7c755a28b28d65ec735ead949a051"
     },
-    "backend/appchi/maintenance/activation.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/activation.py",
-      "source_sha256": "a78b181b53dd198ffb37ecb293d70ecd36096b74e0c3daef5162139d18bd9d64"
-    },
     "backend/appchi/maintenance/cleanup.py": {
       "repository": "appchi-domain",
       "path": "src/appchi/maintenance/cleanup.py",
@@ -1022,11 +1017,6 @@
       "repository": "appchi-delivery",
       "path": "tests/integration/test_local_search_bootstrap_sql.py",
       "source_sha256": "d7e6cb2be28f64a807fd4e534512954a856f73bccd79c2319888900f519a0ceb"
-    },
-    "backend/tests/integration/test_maintenance_activation.py": {
-      "repository": "appchi-delivery",
-      "path": "tests/integration/test_maintenance_activation.py",
-      "source_sha256": "fc90a533af90133765bed5a09d24f14164cf772242231c7bd46ffdfc064c8103"
     },
     "backend/tests/integration/test_maintenance_alert_test.py": {
       "repository": "appchi-delivery",
@@ -1677,11 +1667,6 @@
       "repository": "appchi-delivery",
       "path": "docs/runbooks/local-kafka.md",
       "source_sha256": "7e0b9a4f9021b9ff32f771cad3f9d43a9acd044733df7e3171a050ce413edfec"
-    },
-    "docs/runbooks/maintenance-activation.md": {
-      "repository": "appchi-delivery",
-      "path": "docs/runbooks/maintenance-activation.md",
-      "source_sha256": "26610a8ac3f29a925e920b566850aa0a77b91cfb2a37a0a3b8d2c36ea1704767"
     },
     "docs/runbooks/maintenance-correlation-retention.md": {
       "repository": "appchi-delivery",
@@ -2717,11 +2702,6 @@
       "repository": "appchi-delivery",
       "path": "scripts/local-v2.ps1",
       "source_sha256": "382307d6734358bd6ba37f546de80c156bc0c54217f9d839578c10d26d42468a"
-    },
-    "scripts/local_correlation.py": {
-      "repository": "appchi-delivery",
-      "path": "scripts/local_correlation.py",
-      "source_sha256": "38f02aeebeb8a55fd46b8948bf5b92731d9e753f2579782a44847f70d87d88f5"
     },
     "scripts/local_identity.py": {
       "repository": "appchi-delivery",

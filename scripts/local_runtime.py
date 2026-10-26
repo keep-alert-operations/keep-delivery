@@ -7,6 +7,114 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".local/runtime"
+RECOVERY = "docs/runbooks/kafka-first.md#failure-and-recovery"
+
+
+def incarnation_problems(partitions):
+    """Return why a broker partition no longer holds the history PostgreSQL recorded.
+
+    Each item carries the broker ``low``/``high`` watermarks, ``required``: the
+    highest next offset PostgreSQL observed as committed, and optionally
+    ``recorded``: the highest (offset, delivery UUID) source result with
+    ``broker_event_id`` read at that offset. A recreated topic restarts its offsets,
+    so it either ends below that observation or holds another delivery there.
+    """
+    problems = []
+    for item in partitions:
+        name = f"{item['topic']}:{item['partition']}"
+        if item["high"] < item["required"]:
+            problems.append(
+                f"{name} ends at offset {item['high']}, below recorded offset {item['required']}"
+            )
+            continue
+        recorded = item.get("recorded")
+        if recorded and recorded[0] >= item["low"] and item.get("broker_event_id") != recorded[1]:
+            problems.append(f"{name} offset {recorded[0]} holds a different delivery")
+    return problems
+
+
+def recorded_history(conn, topics):
+    """PostgreSQL's highest observed committed offsets and source results per partition."""
+    positions = {
+        (row["topic"], row["partition"]): row["next_offset"]
+        for row in conn.execute(
+            "SELECT topic,partition,max(next_offset) AS next_offset FROM kafka_consumer_positions WHERE topic=ANY(%s) GROUP BY topic,partition",
+            (topics,),
+        )
+    }
+    recorded = {
+        (row["topic"], row["partition"]): (row["input_offset"], str(row["delivery_id"]))
+        for row in conn.execute(
+            """SELECT DISTINCT ON (topic,partition) topic,partition,input_offset,delivery_id
+            FROM kafka_source_results WHERE topic=ANY(%s) ORDER BY topic,partition,input_offset DESC""",
+            (topics,),
+        )
+    }
+    return positions, recorded
+
+
+def broker_event_id(consumer, topic, partition, offset):
+    """Read one record's delivery UUID through assignment, never committing offsets."""
+    from confluent_kafka import TopicPartition
+
+    consumer.assign([TopicPartition(topic, partition, offset)])
+    try:
+        for _ in range(10):
+            message = consumer.poll(1.0)
+            if message is not None and not message.error():
+                return json.loads(message.value()).get("event_id") if message.offset() == offset else None
+        return None
+    finally:
+        consumer.unassign()
+
+
+def require_topic_history(settings, kafka, topics, positions, recorded):
+    """Refuse workers on a topic whose broker log restarted under PostgreSQL proof."""
+    from uuid import uuid4
+    from confluent_kafka import Consumer, TopicPartition
+
+    metadata = kafka.list_topics(timeout=5)
+    consumer = Consumer(
+        {
+            "bootstrap.servers": settings.kafka_bootstrap,
+            "group.id": f"appchi-local-probe-{uuid4()}",
+            "enable.auto.commit": False,
+            "enable.auto.offset.store": False,
+        }
+    )
+    partitions = []
+    try:
+        for topic in topics:
+            for partition in sorted(metadata.topics[topic].partitions):
+                low, high = consumer.get_watermark_offsets(
+                    TopicPartition(topic, partition), timeout=5
+                )
+                key = (topic, partition)
+                item = {
+                    "topic": topic,
+                    "partition": partition,
+                    "low": low,
+                    "high": high,
+                    "required": max(
+                        positions.get(key, 0), recorded[key][0] + 1 if key in recorded else 0
+                    ),
+                }
+                if key in recorded:
+                    item["recorded"] = recorded[key]
+                    if low <= recorded[key][0] < high:
+                        item["broker_event_id"] = broker_event_id(
+                            consumer, topic, partition, recorded[key][0]
+                        )
+                partitions.append(item)
+    finally:
+        consumer.close()
+    problems = incarnation_problems(partitions)
+    if problems:
+        raise RuntimeError(
+            "Kafka topic history no longer matches PostgreSQL replay proof ("
+            + "; ".join(problems)
+            + f"). Workers were not started; follow {RECOVERY}."
+        )
 
 
 def probe():
@@ -27,38 +135,53 @@ def probe():
     )
     try:
         with db.transaction() as conn:
-            conn.execute("SELECT 1")
+            row = conn.execute(
+                "SELECT enabled FROM kafka_pipeline_control WHERE singleton"
+            ).fetchone()
+            cutover = bool(row and row["enabled"])
+        with Elasticsearch(
+            settings.elasticsearch_url, request_timeout=5, max_retries=0
+        ) as client:
+            version = client.info()["version"]["number"]
+        with Redis.from_url(
+            settings.redis_url.get_secret_value(), socket_timeout=3
+        ) as redis:
+            if not redis.ping():
+                raise RuntimeError("Redis did not respond")
+        kafka = AdminClient({"bootstrap.servers": settings.kafka_bootstrap})
+        topics = [f"appchi.development.alerts.{name}" for name in ("received", "changed")]
+        for _ in range(30):
+            try:
+                metadata = kafka.list_topics(timeout=3)
+                break
+            except KafkaException:
+                time.sleep(1)
+        else:
+            raise RuntimeError("Local Kafka did not become ready")
+        missing = [
+            NewTopic(name, num_partitions=1, replication_factor=1)
+            for name in topics
+            if name not in metadata.topics
+        ]
+        if missing and cutover:
+            # Recreating a topic restarts its offsets under existing replay proof.
+            raise RuntimeError(
+                "Kafka application topics are missing after the recorded cutover: "
+                + ", ".join(topic.topic for topic in missing)
+                + f". Broker storage was lost; follow {RECOVERY}."
+            )
+        if missing:
+            for future in kafka.create_topics(missing).values():
+                future.result(timeout=15)
+        if cutover:
+            with db.transaction() as conn:
+                positions, recorded = recorded_history(conn, topics)
+            require_topic_history(settings, kafka, topics, positions, recorded)
     finally:
         db.close()
-    with Elasticsearch(
-        settings.elasticsearch_url, request_timeout=5, max_retries=0
-    ) as client:
-        version = client.info()["version"]["number"]
-    with Redis.from_url(
-        settings.redis_url.get_secret_value(), socket_timeout=3
-    ) as redis:
-        if not redis.ping():
-            raise RuntimeError("Redis did not respond")
-    kafka = AdminClient({"bootstrap.servers": settings.kafka_bootstrap})
-    topics = [f"appchi.development.alerts.{name}" for name in ("received", "changed")]
-    for _ in range(30):
-        try:
-            metadata = kafka.list_topics(timeout=3)
-            break
-        except KafkaException:
-            time.sleep(1)
-    else:
-        raise RuntimeError("Local Kafka did not become ready")
-    missing = [
-        NewTopic(name, num_partitions=1, replication_factor=1)
-        for name in topics
-        if name not in metadata.topics
-    ]
-    if missing:
-        for future in kafka.create_topics(missing).values():
-            future.result(timeout=15)
     print(
-        f"PostgreSQL, Elasticsearch {version}, Redis and Kafka responded; application topics exist."
+        f"PostgreSQL, Elasticsearch {version}, Redis and Kafka responded; application topics exist"
+        + (" and match recorded offsets." if cutover else ".")
     )
 
 
@@ -69,9 +192,15 @@ def require_kafka_cutover():
     db=Database(settings.database_url.get_secret_value(),1,deployment_epoch=settings.deployment_epoch)
     try:
         with db.transaction() as conn:
-            row=conn.execute("SELECT enabled FROM kafka_pipeline_control WHERE singleton").fetchone()
+            row=conn.execute("SELECT * FROM kafka_pipeline_control WHERE singleton").fetchone()
             if not row or not row["enabled"]:
                 raise RuntimeError("Offline Kafka protocol cutover required; follow docs/runbooks/kafka-first.md before starting workers")
+            if not row.get("received_topic_id"):
+                # The source refuses until the cutover's topic incarnation is recorded (REV-41).
+                raise RuntimeError(
+                    "Kafka topic identity is not recorded; with workers stopped, apply migration 0054 and run "
+                    f"python -m appchi.kafka_cutover --record-topic-identity (see {RECOVERY})"
+                )
     finally:
         db.close()
 

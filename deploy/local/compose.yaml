@@ -61,7 +61,11 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # The image default /tmp/kafka-logs lives in the container layer and is lost
+      # when the container is recreated, while PostgreSQL keeps replay proof.
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes: ["kafka_data:/var/lib/kafka/data"]
+    stop_grace_period: 60s
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
       interval: 10s

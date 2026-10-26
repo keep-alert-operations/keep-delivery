@@ -1,5 +1,78 @@
 # Implementation status
 
+## 2026-10-26 Kafka topic incarnation detection (REV-41)
+
+Follow-up to the REV-40 reset: the source processor itself now refuses a recreated
+received topic. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-41--kafka-topic-incarnation-detection-in-the-source-2026-10-26)
+and [evidence](../qualification/kafka-topic-incarnation-2026-10-26.md).
+
+- Migration 0054 adds `received_topic_id` and `changed_topic_id`; cutover records both.
+  The source compares the received topic's ID on every assignment and refuses a
+  different (`source_topic_identity_changed`) or unrecorded
+  (`kafka_topic_identity_unrecorded`) one before any producer, offset or input.
+- Another delivery at a recorded coordinate is `source_coordinate_conflict` and fences
+  the partition with no timed retry. Retained failures log the exception class and
+  AppError code or SQLSTATE in the message.
+- `python -m appchi.kafka_cutover --record-topic-identity` records the IDs for an
+  earlier cutover or after a reviewed reset, only while broker history matches.
+- IDs compare by the low 32 bits of each half: confluent-kafka 2.15.1 on Windows
+  reports no more.
+- Open: the local application database still needs the reviewed rollout (0054, then
+  the recording command); the correlation and search groups do not check the changed
+  topic's identity.
+
+## 2026-10-24 Always-on correlation and maintenance (REV-39)
+
+User decision: correlation rules and maintenance windows are always on, with no
+capability gate; per-rule and per-window Enable/Disable stays. An unset capacity
+budget is unlimited, and restore no longer turns these features off. See the
+[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-39--always-on-correlation-and-maintenance-2026-10-24).
+
+- Migration 0053 deletes the `correlation` and `maintenance` gate rows and restarts
+  rules saved blocked with `consumer_not_integrated` at a new evaluation epoch.
+  Stop every writer before applying it.
+- Domain `appchi.shared.capacity` treats a missing or null budget as unlimited and
+  rejects an invalid one with `capacity_profile_invalid`; correlation and
+  maintenance budgets no longer need `qualified`.
+- Removed: the maintenance activation command and runbook, the REV-30
+  `scripts/local_correlation.py` preview and its profile flags, and the API's
+  `processing_ready` field. New rules are created `healthy`.
+- Maintenance always prepares its catalog. Alerts without a current checkpoint still
+  fail reads with `maintenance_proof_unavailable`; the existing stack runs the
+  maintenance warmup once per tenant
+  ([upgrade steps](../docs/local-runtime.md#always-on-correlation-and-maintenance-rev-39)).
+- Window deletion still needs the `recovery` and `human_auth` gates and the recovery
+  evidence store.
+- The local launcher always starts the correlation worker. Earlier load-test
+  baselines ran with correlation and maintenance off.
+- The CEL compile child is a plain subprocess importing only the compiler; the
+  spawned child had re-imported each worker's entrypoint and exceeded the
+  one-second deadline in the processor and correlation workers.
+
+Executed 2026-10-25 on uncommitted `codex/always-on-correlation-maintenance`
+working trees with editable siblings (Windows, Python 3.13.5, PostgreSQL 18.2 in a
+disposable container for tests):
+
+- Unit/integration: migrations 30 passed (including the 0053 upgrade test); domain
+  unit 538 passed; API unit 167 passed (two modules not importable without
+  `httptools`); correlation and processor unit passed; delivery 712 passed, 35
+  skipped, 9 failed only on missing `httptools`/`poetry` in the delivery `.venv`
+  (four further modules skipped for the same import); correlation/maintenance
+  real-CEL subset rerun after the compiler change: 44 passed, 2 REV-34 skips.
+  Frontend `tsc --noEmit` passed.
+- Local stack: `appchi_local` backed up to
+  `.local/runtime/pre-always-on-20261025.dump`, Start applied 0051–0053, warmup
+  completed 22/22 Global and 12/12 Local Demo alerts. Browser (real sign-in): feed
+  and alert detail load; a maintenance window was created; a native v1 alert
+  matching it arrived firing and suppressed with one maintenance cause; a new rule
+  was created enabled and healthy and a matching v1 alert produced a correlation
+  incident; Platform health lists no correlation/maintenance gates. Test rule and
+  window were disabled and the incident resolved (run ledger
+  `.local/verification/561756da-3cac-4b63-b5a4-2e695d197a2c`).
+- Not verified: native v2 (S3), because the private ingestion listener needs
+  `httptools`, missing from the delivery `.venv` before this change. No load,
+  staging or production evidence is claimed.
+
 ## 2026-10-24 Context layer follow-ups
 
 Navigation, guidance and test-documentation changes only; no product behavior
@@ -56,7 +129,7 @@ f483832 and migrations c5f3e9c, pinned by api, correlation, indexer and ingestio
 - Each Kafka source alert takes the tenant coordinator once; its
   `tenant_work_state` statements drop from 9 to 3; new alerts are inserted once and
   `publish()` is pipelined.
-- Maintenance/correlation preparation reads gates, catalog and checkpoints in one
+- Maintenance/correlation preparation reads gates (removed by REV-39), catalog and checkpoints in one
   snapshot (4 → 2 transactions per alert), loads rule conditions in one query and
   reuses warmed CEL programs.
 - The source processor publishes one Kafka transaction per partition batch. A
@@ -184,6 +257,7 @@ browser workflow, 17 v2 gateway checks and a three-alert v2 tenant-isolation
 check passed. See [revisions, commands and limitations](../qualification/local-startup-2026-10-04.md).
 This establishes local core execution only; refreshed automatic correlation,
 maintenance, protected recovery and production qualification remain outstanding.
+(REV-39 later made correlation and maintenance always on.)
 
 ## 2026-10-01 repository CI audit
 
@@ -292,6 +366,8 @@ REV-32 adds a transient ascending/descending/regular-order cycle to server-sorta
 Frontend TypeScript and changed-file formatting passed. **13 focused Chrome browser checks passed** across preset columns and alert redesign, including request-cycle and cursor-reset regressions with controlled API responses. This is frontend verification; production qualification remains unperformed.
 
 ### Local correlation preview â€” 2026-09-27
+
+**Superseded by REV-39 (2026-10-24):** the preview, its activation and profile were removed; correlation and maintenance are always on. The record below is history.
 
 The user asked to make correlation rule creation work in the isolated local stack. Assistant-selected REV-30 adds a finite, explicitly unqualified development preview profile. The API and correlation worker accept it only in `development`; source/evidence/epoch bindings and an audited local activation protect startup. The current local profile limits each tenant to two enabled rules, ten live groups per rule, 50 evidence rows per rule and 100 per tenant, plus finite CEL and digest ceilings. Maintenance remains gated and activation refuses any retained maintenance window or effect.
 
@@ -644,7 +720,7 @@ The Kafka transport/offset check passed once; a later native Windows log-directo
 4. Finish response-contract coverage and remaining diagnostics/accessibility review, then connect acceptance evidence to all specification scenarios. Existing browser checks are not a complete accessibility audit.
 5. Run feasible release/security/container checks and supplied-environment compatibility, load, crash/rollback and rollout exercises. Sustained load, recovery guarantees and rolling production SLOs remain unqualified.
 
-No capability is enabled merely to remove an unavailable response. Maintenance/correlation need complete temporal proof and qualified capacity; operator jobs retain pending/needs-attention without verified remote execution. Test fixtures opening gates are not deployment approval.
+No capability is enabled merely to remove an unavailable response. Maintenance/correlation are always on (REV-39); their qualification still needs complete temporal proof and measured capacity; operator jobs retain pending/needs-attention without verified remote execution. Test fixtures opening gates are not deployment approval.
 
 ## Resume and run
 

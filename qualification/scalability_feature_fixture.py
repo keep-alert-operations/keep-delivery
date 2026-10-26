@@ -73,9 +73,6 @@ def install_feature_fixture(db, tenant_ids, *, profile):
             "evidence_generation,verified_at) VALUES(%s,'scale-feature-fixture',%s,'user',%s,true,1,clock_timestamp())",
             (actor["id"], str(actor["id"]), actor["display_name"]),
         )
-        conn.execute(
-            "UPDATE capability_gates SET ready=true WHERE capability IN ('correlation','maintenance')"
-        )
 
     definition = {
         "name": "Synthetic firing correlation",

@@ -10,7 +10,6 @@ from appchi.alerts.lifecycle import apply_source
 from appchi.alerts.repository import publish, store_alert
 from appchi.correlation import runtime
 from appchi.shared.transactions import coordinator
-from appchi.shared.errors import AppError
 from test_correlation_configuration import TEST_CAPACITY, create, definition, rules  # noqa: F401
 from test_product import browser  # noqa: F401
 
@@ -18,15 +17,8 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def running(request, real_db):
-    fixture = request.getfixturevalue("rules")
-    with real_db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability='correlation'")
-    try:
-        yield fixture
-    finally:
-        with real_db.transaction() as conn:
-            conn.execute("UPDATE capability_gates SET ready=false WHERE capability='correlation'")
+def running(request):
+    return request.getfixturevalue("rules")
 
 
 def source(db, tenant, payload, previous=None, capacity=TEST_CAPACITY):
@@ -75,24 +67,17 @@ def drain(db, tenant, capacity=TEST_CAPACITY):
     pytest.fail("consumer did not become idle")
 
 
-def test_local_preview_rule_runs_only_with_development_opt_in(running, real_db, v1):
+def test_rule_runs_without_a_capacity_profile(running, real_db, v1):
+    """Requirements: REV-39; correlation rules 6."""
     client, _, tenant, _ = running
-    preview = {
-        **TEST_CAPACITY,
-        "qualified": False,
-        "scope": "local-development",
-        "correlation_preview": True,
-    }
-    client.app.state.profile = preview
+    client.app.state.profile = None
     body = {
         **definition(),
         "conditions": [{"id": str(uuid4()), "label": "Match", "cel": "true"}],
     }
     create(running, body)
-    source(real_db, tenant, v1)
-    with pytest.raises(AppError, match="correlation_capacity_profile_required"):
-        runtime.worker_turn(real_db, tenant, preview)
-    assert runtime.worker_turn(real_db, tenant, preview, allow_local_preview=True) == 1
+    source(real_db, tenant, v1, capacity=None)
+    assert runtime.worker_turn(real_db, tenant, None) == 1
     with real_db.transaction() as conn:
         assert conn.execute(
             "SELECT count(*) AS n FROM incidents WHERE tenant_id=%s", (tenant,)
@@ -109,64 +94,54 @@ def test_delayed_qualifier_replays_changed_fields_and_original_window(running, r
         "maintenance": {"max_overlap": 20, "max_work_bytes": 1000000},
     }
     client.app.state.profile = capacity
+    create(
+        running,
+        {
+            **definition(),
+            "conditions": [
+                {"id": str(uuid4()), "label": "Match", "cel": 'alert.message == "match"'}
+            ],
+        },
+    )
+    now = datetime.now(UTC)
+    response = client.post(
+        f"/api/tenants/{tenant}/maintenance",
+        json={
+            "command_id": str(uuid4()),
+            "name": "Replay maintenance",
+            "reason": "",
+            "cel": 'alert.message == "blocked"',
+            "timezone": "UTC",
+            "start_local": (now - timedelta(minutes=1))
+            .replace(tzinfo=None)
+            .isoformat(timespec="seconds"),
+            "end_local": (now + timedelta(hours=1))
+            .replace(tzinfo=None)
+            .isoformat(timespec="seconds"),
+        },
+    )
+    assert response.status_code == 201, response.text
+    initial = source(real_db, tenant, {**v1, "message": "blocked"}, capacity=capacity)
+    assert initial["suppressed"]
+    original = source(real_db, tenant, {**v1, "message": "match"}, initial, capacity)
+    assert not original["suppressed"]
+    lost = source(real_db, tenant, {**v1, "message": "other"}, original, capacity)
+    regained = source(real_db, tenant, {**v1, "message": "match"}, lost, capacity)
+    drain(real_db, tenant, capacity)
     with real_db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=true WHERE capability='maintenance'")
-    try:
-        create(
-            running,
-            {
-                **definition(),
-                "conditions": [
-                    {"id": str(uuid4()), "label": "Match", "cel": 'alert.message == "match"'}
-                ],
-            },
+        decision = conn.execute(
+            "SELECT * FROM correlation_decisions WHERE tenant_id=%s", (tenant,)
+        ).fetchone()
+        assert decision is not None
+        support = decision["evidence"]["supports"][0]
+        assert datetime.fromisoformat(support["start"]) == regained["timestamp"]
+        assert datetime.fromisoformat(support["start"]) > original["timestamp"]
+        assert (
+            conn.execute(
+                "SELECT health FROM correlation_consumer_state WHERE tenant_id=%s", (tenant,)
+            ).fetchone()["health"]
+            == "healthy"
         )
-        now = datetime.now(UTC)
-        response = client.post(
-            f"/api/tenants/{tenant}/maintenance",
-            json={
-                "command_id": str(uuid4()),
-                "name": "Replay maintenance",
-                "reason": "",
-                "cel": 'alert.message == "blocked"',
-                "timezone": "UTC",
-                "start_local": (now - timedelta(minutes=1))
-                .replace(tzinfo=None)
-                .isoformat(timespec="seconds"),
-                "end_local": (now + timedelta(hours=1))
-                .replace(tzinfo=None)
-                .isoformat(timespec="seconds"),
-            },
-        )
-        assert response.status_code == 201, response.text
-        initial = source(real_db, tenant, {**v1, "message": "blocked"}, capacity=capacity)
-        assert initial["suppressed"]
-        original = source(real_db, tenant, {**v1, "message": "match"}, initial, capacity)
-        assert not original["suppressed"]
-        lost = source(real_db, tenant, {**v1, "message": "other"}, original, capacity)
-        regained = source(real_db, tenant, {**v1, "message": "match"}, lost, capacity)
-        drain(real_db, tenant, capacity)
-        with real_db.transaction() as conn:
-            decision = conn.execute(
-                "SELECT * FROM correlation_decisions WHERE tenant_id=%s", (tenant,)
-            ).fetchone()
-            assert decision is not None
-            support = decision["evidence"]["supports"][0]
-            assert datetime.fromisoformat(support["start"]) == regained["timestamp"]
-            assert datetime.fromisoformat(support["start"]) > original["timestamp"]
-            assert (
-                conn.execute(
-                    "SELECT health FROM correlation_consumer_state WHERE tenant_id=%s", (tenant,)
-                ).fetchone()["health"]
-                == "healthy"
-            )
-            conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
-        with pytest.raises(AppError) as failure:
-            runtime.prepare_tenant(real_db, tenant, capacity)
-        assert failure.value.code == "correlation_maintenance_proof_required"
-    finally:
-        with real_db.transaction() as conn:
-            conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
 
 
 def test_arbitration_complete_union_and_transaction_retry(running, real_db, v1, monkeypatch):

@@ -225,13 +225,13 @@ oc -n "$NAMESPACE" create secret generic appchi-kong-env \
   --from-env-file="$PRIVATE/kong.env"
 oc -n "$NAMESPACE" create secret generic appchi-kong-tls \
   --from-file="$PRIVATE/kong-tls/"
-for role in api ingestion private-ingestion processor indexer migration; do
+for role in api ingestion private-ingestion processor indexer correlation migration; do
   oc -n "$NAMESPACE" create secret generic "appchi-$role-env" \
     --from-env-file="$PRIVATE/$role.env"
   oc -n "$NAMESPACE" create secret generic "appchi-$role-bindings" \
     --from-file="$PRIVATE/$role-bindings/"
 done
-# Create correlation's env/bindings only after its profile/recovery prerequisites.
+# Correlation is always on (REV-39); its capacity profile is optional.
 ```
 
 Each `*-bindings` directory contains only the files intended for that workload;
@@ -263,7 +263,7 @@ the cluster's approved credential procedure; never use a password CLI flag.
 | `appchi-operator-proof-env` | `APPCHI_PROOF_DATABASE_URL` using its dedicated read-only-default login and actual `APPCHI_DEPLOYMENT_EPOCH`. |
 | `appchi-operator-proof-bindings` | `configuration.json`, identical `operator-binding.json`, `probe-token`, `gateway-probe-token`, PostgreSQL and Kong CA files; see cluster initialization. |
 | `appchi-operator-proof-tls` | `tls.crt`, `tls.key`; SAN includes `appchi-operator-proof` and any full Service DNS name used. |
-| `appchi-correlation-env`, `appchi-correlation-bindings` | Correlation settings and actual qualified profile/recovery evidence. Remains stopped while these are absent. |
+| `appchi-correlation-env`, `appchi-correlation-bindings` | Correlation worker settings and referenced TLS files. A capacity profile is optional: correlation and maintenance are always on (REV-39) and an unset budget is unlimited. |
 | `appchi-migration-env`, `appchi-migration-bindings` | `APPCHI_MIGRATION_URL` for dedicated login and its CA. No application starts its own schema migration. |
 
 For Redis, generate a strong distinct password privately, hash its raw bytes using

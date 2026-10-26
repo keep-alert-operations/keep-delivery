@@ -9,6 +9,7 @@ import pytest
 from psycopg.types.json import Jsonb
 
 from appchi.kafka_cutover import activate, inspect_rules, require_drained
+from appchi.kafka_source import same_topic, topic_identity
 from appchi.ingestion.service import Admission
 from appchi.ingestion.native import canonical
 from appchi.shared.errors import AppError
@@ -22,6 +23,7 @@ pytestmark = pytest.mark.integration
 def test_offline_cutover_blocks_saved_assignee_and_starts_after_old_records(
     rules, real_db, cipher, profile, v1
 ):
+    """Requirements: REV-33, REV-41; Kafka alert pipeline 8."""
     from confluent_kafka import Consumer, Producer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
 
@@ -61,6 +63,12 @@ def test_offline_cutover_blocks_saved_assignee_and_starts_after_old_records(
     assert producer.flush(5) == 0
     result = activate(real_db, config)
     assert set(result) == {"source", "correlation", "indexer"}
+    with real_db.transaction() as conn:
+        recorded = conn.execute(
+            "SELECT received_topic_id,changed_topic_id FROM kafka_pipeline_control WHERE singleton"
+        ).fetchone()
+    for topic, topic_id in zip(topics, recorded.values()):
+        assert same_topic(topic_id, topic_identity(admin, topic))
     for role, positions in result.items():
         assert positions[0]["next_offset"] == 1
         consumer = Consumer({"bootstrap.servers": bootstrap, "group.id": f"appchi.{env}.{role}-v2"})

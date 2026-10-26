@@ -28,7 +28,6 @@ def test_saved_ended_window_viewer_test_is_read_only(maintenance_browser, mainte
             "UPDATE maintenance_windows SET end_at=clock_timestamp()-interval '1 second',enabled=false WHERE id=%s",
             (window["id"],),
         )
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
         before = conn.execute(
             "SELECT admission_order,last_clock FROM tenant_work_state WHERE tenant_id=%s", (tenant,)
         ).fetchone()

@@ -29,7 +29,7 @@ The ordinary Uvicorn listener accepts public v1 into fixed Global but cannot aut
 
 ## Remaining qualification gates
 
-Maintenance/correlation activation still depends on complete durable temporal processing, bounds and connected workers. Do not qualify a pure algorithm test as a connected pipeline. Operator remote sagas, search rebuilding and resource cleanup have executable local checks. Rollback reconstruction, protected permission/credential recovery producers, rendered observations and remaining release workflows require implementation before their complete acceptance exercises can pass.
+Correlation and maintenance are always on (REV-39), with no activation step; their qualification still depends on complete durable temporal processing, measured bounds and connected workers. Do not qualify a pure algorithm test as a connected pipeline. Operator remote sagas, search rebuilding and resource cleanup have executable local checks. Rollback reconstruction, protected permission/credential recovery producers, rendered observations and remaining release workflows require implementation before their complete acceptance exercises can pass.
 
 Use the normative `verification-plan.md` as the acceptance checklist. Record failures, skipped tests and unimplemented scenarios separately. Required next environment exercises include real Kafka ordering/replay/failure, Redis loss/reconnect, Elasticsearch failover/index rebuild, actual Kong/Grafana CAS or controlled-writer safety, credential cutovers, and independent recovery-evidence rollback survival. Never toggle a capability based solely on an HTTP health response.
 

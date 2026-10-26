@@ -1,9 +1,10 @@
 # ruff: noqa: F811
-"""Offline warmup proves retained baselines without enabling capabilities."""
+"""Warmup completes proof for alerts journaled before maintenance was always on."""
 
 import pytest
 
 from appchi.maintenance.processing import record_input
+from appchi.maintenance.runtime import prepare_for_tenant
 from appchi.maintenance.warmup import warmup_page, warmup_status
 from appchi.shared.errors import AppError
 from appchi.shared.transactions import coordinator
@@ -14,9 +15,15 @@ from test_maintenance_repository import maintenance_browser, maintenance_db  # n
 pytestmark = pytest.mark.integration
 
 
-def disabled(db):
-    with db.transaction() as conn:
-        conn.execute("UPDATE capability_gates SET ready=false WHERE capability='maintenance'")
+def pre_upgrade(db, tenant):
+    """An alert journaled before REV-39: its baseline input exists, its checkpoint does not."""
+    alert, _, _ = publish_source(db, tenant, None, prepare_for_tenant(db, tenant, PROFILE))
+    with db.transaction(tenant) as conn:
+        conn.execute(
+            "DELETE FROM maintenance_alert_checkpoints WHERE tenant_id=%s AND alert_id=%s",
+            (tenant, alert["id"]),
+        )
+    return alert
 
 
 def test_warmup_complete_head_new_source_invalidation_and_idempotent_replay(
@@ -24,8 +31,7 @@ def test_warmup_complete_head_new_source_invalidation_and_idempotent_replay(
 ):
     _, tenant, _, _ = maintenance_browser
     db, _ = maintenance_db
-    disabled(db)
-    first, _, _ = publish_source(db, tenant, None, None)
+    first = pre_upgrade(db, tenant)
     assert warmup_status(db, tenant) == {
         "retained": 1,
         "missing_baseline": 0,
@@ -36,9 +42,6 @@ def test_warmup_complete_head_new_source_invalidation_and_idempotent_replay(
     assert result.completed == 1 and result.blocked == () and result.cursor is None
     assert warmup_status(db, tenant)["complete"] == 1
     with db.transaction(tenant) as conn:
-        assert not conn.execute(
-            "SELECT ready FROM capability_gates WHERE capability='maintenance'"
-        ).fetchone()["ready"]
         row = conn.execute(
             "SELECT * FROM alerts WHERE tenant_id=%s AND id=%s", (tenant, first["id"])
         ).fetchone()
@@ -68,10 +71,11 @@ def test_warmup_complete_head_new_source_invalidation_and_idempotent_replay(
             == 1
         )
     assert warmup_status(db, tenant)["complete"] == 1
-    repeated, changed, _ = publish_source(db, tenant, row, None)
+    catalog = prepare_for_tenant(db, tenant, PROFILE, alert_id=first["id"])
+    repeated, changed, _ = publish_source(db, tenant, row, catalog)
     assert not changed and repeated["revision"] == first["revision"]
-    assert warmup_status(db, tenant)["pending"] == 1
-    assert warmup_page(db, tenant, PROFILE).completed == 1
+    # REV-39: maintenance is always on, so a new source keeps its proof current inline.
+    assert warmup_status(db, tenant)["pending"] == 0
     with db.transaction(tenant) as conn:
         proof = conn.execute(
             "SELECT * FROM maintenance_alert_checkpoints WHERE tenant_id=%s AND alert_id=%s",
@@ -83,8 +87,7 @@ def test_warmup_complete_head_new_source_invalidation_and_idempotent_replay(
 def test_warmup_never_invents_missing_creation_baseline(maintenance_browser, maintenance_db):
     _, tenant, _, _ = maintenance_browser
     db, _ = maintenance_db
-    disabled(db)
-    first, _, _ = publish_source(db, tenant, None, None)
+    first = pre_upgrade(db, tenant)
     with db.transaction(tenant) as conn:
         conn.execute("DELETE FROM maintenance_alert_input_heads WHERE tenant_id=%s", (tenant,))
         conn.execute("DELETE FROM maintenance_alert_inputs WHERE tenant_id=%s", (tenant,))
@@ -98,12 +101,11 @@ def test_warmup_never_invents_missing_creation_baseline(maintenance_browser, mai
     }
 
 
-def test_warmup_pages_and_explicit_qualification(maintenance_browser, maintenance_db):
+def test_warmup_pages_and_validates_its_budget(maintenance_browser, maintenance_db):
     _, tenant, _, _ = maintenance_browser
     db, _ = maintenance_db
-    disabled(db)
     for _ in range(3):
-        publish_source(db, tenant, None, None)
+        pre_upgrade(db, tenant)
     cursor, seen = None, 0
     while True:
         page = warmup_page(db, tenant, PROFILE, cursor=cursor, limit=1)
@@ -112,5 +114,5 @@ def test_warmup_pages_and_explicit_qualification(maintenance_browser, maintenanc
         if cursor is None:
             break
     assert seen == 3 and warmup_status(db, tenant)["complete"] == 3
-    with pytest.raises(AppError, match="maintenance_capacity_profile_required"):
-        warmup_page(db, tenant, {**PROFILE, "qualified": False})
+    with pytest.raises(AppError, match="capacity_profile_invalid"):
+        warmup_page(db, tenant, {**PROFILE, "maintenance_max_inputs": 0})
