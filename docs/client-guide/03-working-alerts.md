@@ -46,7 +46,7 @@ Choose **Resolve alert** when your investigation and team procedure justify mark
 
 A later firing update from the source can reopen the same alert. If you already know it needs renewed attention, choose **Reopen alert** on a resolved alert. Either form of reopening begins another occurrence and clears the alert's assignment; assign responsibility again if appropriate.
 
-Resolution preserves the assignee until a new occurrence begins. Ordinary repeated firing updates preserve assignment. Resolving or reopening does not automatically remove every suppression cause, unlink the alert from its incident, or resolve the incident. Review the [incident](04-incidents.md) separately.
+Resolution preserves the assignee until a new occurrence begins. Ordinary repeated firing updates preserve assignment. Resolving or reopening does not automatically remove every suppression cause or unlink the alert from its incident. When resolving an alert leaves every alert linked to its active incident resolved, the incident resolves too; otherwise review the [incident](04-incidents.md) separately.
 
 There is no alert Delete action, and you cannot edit source-owned fields such as message, severity, application or source creation time through alert detail. Use a note for your observations. The current release does not automatically resolve alerts merely because they have been inactive.
 

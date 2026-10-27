@@ -17,7 +17,7 @@ Readers can inspect incidents and history. Creating or changing an incident requ
 | **Severity** | The severity chosen at creation. It cannot be changed afterward. |
 | **Origin** | Manual creation or the correlation rule that created it. Origin does not change. |
 
-An incident's status and its alerts' statuses are independent. Resolving an incident does **not** resolve its alerts. Resolving every linked alert does **not** resolve the incident. Assigning an incident does not assign its alerts, and selecting **Investigating** does not assign the incident to you.
+An incident's status and its alerts' statuses are independent. Resolving an incident does **not** resolve its alerts. When the last firing linked alert resolves, so that every linked alert is resolved, the incident resolves automatically; its **Cycles** entry reads *resolved when all linked alerts resolved*. Unlinking or moving alerts away never resolves an incident, and an empty incident stays active. If an alert fires again later, the incident stays resolved. Assigning an incident does not assign its alerts, and selecting **Investigating** does not assign the incident to you.
 
 ![Conceptual illustration: an alert can have one active incident owner; resolved incidents keep historical relationships.](assets/incident-ownership.svg)
 
@@ -79,7 +79,7 @@ When the investigation is complete, add a final note and select **Resolved**. A 
 
 To reopen a resolved incident, select **Open** or **Investigating** in its status controls. Reopening starts a new lifecycle cycle and preserves an eligible assignee. It can fail if another active incident now owns a linked alert, or if another active incident occupies the same originating correlation-rule group. Review the blocking incident; Appchi does not silently take ownership away from it.
 
-There is no **Delete incident** action. The current release also has **no automatic inactivity resolution or automatic retention sweep**: an incident stays active until someone resolves it, and a resolved incident is not removed automatically. Explicitly resolve finished work. An older **Activity** or **Cycles** entry may still record an automatic inactivity resolution; it describes a past event, not a current timer.
+There is no **Delete incident** action. The current release also has **no automatic inactivity resolution or automatic retention sweep**: an incident stays active until someone resolves it or all its linked alerts resolve, and a resolved incident is not removed automatically. Explicitly resolve finished work. An older **Activity** or **Cycles** entry may still record an automatic inactivity resolution; it describes a past event, not a current timer.
 
 If someone changes an incident while you are editing it, review the new state before retrying. In a membership dialog, **Clear selection and reload revision** resets your selection to the refreshed incident version. If the outcome is uncertain after a connection failure, use **Retry original command** so the original action is checked safely rather than starting a duplicate action.
 

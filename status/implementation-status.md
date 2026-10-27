@@ -1,5 +1,48 @@
 # Implementation status
 
+## 2026-10-27 Resolve an incident when all its linked alerts resolve (REV-46)
+
+The user asked that an incident resolve when all of its linked alerts are resolved. See
+the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-46--resolve-an-incident-when-all-its-linked-alerts-resolve-2026-10-27).
+
+Committed on `codex/alert-grouping` in domain, API, frontend, design and delivery,
+above the REV-39–41 code commits, and merged to main with REV-39–46 on 2026-10-27. No
+migration or contract change: `cause` is free text.
+
+- Domain: `incidents/state.py` adds `became_resolved` and
+  `resolve_when_alerts_resolved` (same effects as manual resolution, cause
+  `alerts_resolved`, activity `alerts-resolved`, alert history
+  `incident-alerts-resolved`); the source processor and the deferred
+  `expire_alert` call it after publishing the transition.
+- API: `alerts/routes.py` calls it after single commands and once after a bulk loop.
+- Frontend: incident detail, Cycles and Activity name the new cause; alert history names
+  the release; the New incident facts no longer say nothing resolves automatically.
+  Test: `worker-scope.spec.ts` adds one case and updates the facts text.
+- Design: REV-46; incident operations preamble and 4/12; correlation rules 15;
+  verification plan Incidents; `scripts/check_docs.py` expects REV-01 through REV-46.
+- Delivery: new `tests/integration/test_incident_auto_resolution.py` (4 cases);
+  `test_product.py` bulk case now expects the incident resolved; client guide 03/04;
+  `verify_documents.py` expects REV-01 through REV-46.
+- Checks on the final backend code, in a throwaway PostgreSQL 18.2 container:
+  the new file plus `test_product.py` ran 11 passed, 2 failed; the two failures were
+  CEL cold-compile deadlines in preset tests and both passed alone. Correlation,
+  Kafka correlation batching, source-driven and inline maintenance, inactivity pages,
+  incident listing, alert cleanup, incident retirement, correlation cleanup and note
+  revision suites ran 81 passed, 1 skipped. API `test_alert_ownership.py` and domain
+  lock/preparation unit tests passed; Ruff passed.
+- Frontend: TypeScript and Prettier passed; with installed Chrome against the running
+  HTTPS dev server, `worker-scope`, `incident-filters` and `incident-notes` ran 18
+  passed, and `worker-scope` 6 passed after the copy change.
+- Documents: design `check_docs.py` passed; delivery `verify_documents.py` had no errors.
+- Signed-in local stack, 27 October, as `local-editor` in Global with the stack restarted
+  on this code (migrations at 0055), using the two synthetic `smoke-40060096-…` v1 alerts:
+  a new High incident linked both; resolving alert a left it Open; resolving alert b
+  resolved it, with "when all linked alerts resolved" in the detail, Cycles ("Cycle 1
+  resolved when all linked alerts resolved") and Activity, and alert b's history read
+  "Released from its incident after all of the incident's linked alerts resolved". A new
+  firing v1 admission for alert a (202) opened occurrence 2 with no incident, and the
+  incident stayed resolved.
+
 ## 2026-10-27 Assigned to me, quick-view toggle and a shorter Reset (REV-45)
 
 The user asked for a quick filter for alerts assigned to them, for pressing a selected

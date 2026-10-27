@@ -240,11 +240,13 @@ def test_bulk_lifecycle_refreshes_incident_activity(browser, real_db, cipher, pr
     assert result.status_code == 200, result.text
     with real_db.transaction() as conn:
         row = conn.execute(
-            "SELECT last_activity>clock_timestamp()-interval '1 minute' AS recent,revision FROM incidents WHERE id=%s",
+            "SELECT last_activity>clock_timestamp()-interval '1 minute' AS recent,revision,status FROM incidents WHERE id=%s",
             (incident,),
         ).fetchone()
         assert row["recent"]
-        assert row["revision"] == 2
+        # Its only linked alert resolved, so the incident resolved too (REV-46).
+        assert row["revision"] == 3
+        assert row["status"] == "resolved"
 
 
 def test_incident_move_notes_and_search(browser, real_db, cipher, profile, v1):
