@@ -1,5 +1,92 @@
 # Implementation status
 
+## 2026-10-27 Group alert results by one field (REV-44)
+
+The user asked to group Feed and saved-preset alerts by a field, each group a mini
+table, approved the [alert grouping mock](https://claude.ai/artifact/FhJsfdk4VB7kAXkjBfx9Dm)
+and the plan, and chose most-alerts-first ordering with a 1,000-value cap. See the
+[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-44--group-alert-results-by-one-field-2026-10-26).
+
+Committed locally on new `codex/alert-grouping` branches, one per repository, not
+pushed: design `1326e47` (from `dbe6c9c`), migrations `322e72e` (from `e34fdea`),
+domain `279c6be` (from `d4fb748`), API `ccb0733` (from `08bf1ec`), contracts `749f670`
+(from `5420c8f`), frontend `04e6827` (from `55ed846`) and this delivery commit (from
+`b58a2f6`). The user's own uncommitted always-on correlation work (migrations
+0053/0054 and the domain, API, indexer and frontend edits, including a staged domain
+deletion) stays out of those commits and uncommitted in the same checkouts. The
+migration chain-count expectations in `test_migration_package.py` and
+`test_alembic.py` count 0053 and 0054 as well, so they stay uncommitted with that
+work.
+
+- Design (`codex/ui-cleanup` @ `dbe6c9c` + edits): REV-44; preset sections 3, 4, 8,
+  14 and 16; alert operations 24; technical baseline 17; product model; verification
+  plan; `scripts/check_docs.py` expects REV-01 through REV-44.
+- Migrations (@ `e34fdea` + the user's 0053/0054): `0055_preset_group_by` adds
+  nullable `presets.group_by`, chained after 0054, with its checksum, README note and
+  chain tests.
+- Domain (@ `d4fb748`): `GROUPABLE` and the optional `PresetDefinition.group_by`;
+  `SearchReader.groups` (one composite aggregation for exact counts on the rows'
+  PIT, compiled `display_status` filters, 1,000-value cap, one multi-search for the
+  shown groups' first rows) and `page(group=...)` for group continuations; group
+  labels and response models.
+- API (@ `08bf1ec`): preset saves persist `group_by`, and a null value is left out
+  of command fingerprints; `POST /alerts/groups`, `POST /presets/preview/groups`, and
+  group rows on `GET /alerts` and `POST /presets/preview`.
+- Contracts (@ `5420c8f`): `product.openapi.json` and `openapi.json` regenerated with
+  `qualification/generate_contracts.py`, additions only.
+- Frontend (`codex/ui-cleanup` @ `55ed846`): Group by control, grouped results
+  (`alert-groups.tsx`), Feed and preset wiring with Reset to saved, editor field,
+  history comparison, styles, `DESIGN.md` and `docs/ui-design.md`; `generated.ts`
+  regenerated from the local contracts snapshot (the `@appchi/contracts` pin still
+  needs advancing after contracts are committed).
+- Indexer: no change; every groupable field already has an exact keyword mapping.
+- Delivery: `tests/integration/test_preset_grouping.py`; `check_docs.py` and
+  `verify_documents.py` expect REV-01 through REV-44.
+- Checks on the final code, against the working trees above (including the user's
+  uncommitted work):
+  - Documents: design `check_docs.py` passed; delivery `verify_documents.py` had no
+    errors and `check_context.py` exited 0; `check_contracts.py` reported the OpenAPI
+    contract matches the application.
+  - Migrations: unit 5 passed; Alembic integration 28 passed (fresh install, upgrades
+    from every listed revision through 0054, CLI, privileges) on a disposable
+    PostgreSQL 18 cluster.
+  - Domain: unit 541 passed; on a real two-shard Elasticsearch 9.0 index, the new
+    grouping compatibility tests 4 passed (exact ordered groups, continuations
+    without gaps, cursors bound to their group, the empty group last, group-list
+    continuation, status groups equal to the Status quick views, the 1,000-value
+    cap); the indexer's existing reader compatibility test 1 passed.
+  - API: unit 210 passed; with real PostgreSQL, identity and Elasticsearch bindings,
+    the configuration, count, read, deletion, retention, command-retention,
+    display-name and new grouping suites 66 passed, and the search pipeline, restore
+    fencing, product and scalability suites 37 passed; ruff check passed.
+  - Frontend: TypeScript passed; Prettier passed on every changed file. The controlled
+    Chrome suite (installed Chrome 155, isolated `APPCHI_NEXT_DIST_DIR` server) ran 206
+    passed, 8 skipped, 0 failed, including the new `tests/grouping.spec.ts` (6). Two
+    earlier runs against the shared HTTPS dev server each had one failure of
+    `scalability-users.spec.ts:150`, which passed 6 of 6 alone and in the isolated run.
+  - Real browser (temporary harness, not committed): a separate API process on the
+    final code, a disposable database, a two-shard index of 12 synthetic alerts and
+    the running HTTPS dev frontend in Chrome. Severity groups had exact counts in
+    severity order with the Severity column hidden, Show 2 more and Show fewer, and
+    Collapse and Expand all. Status groups matched the quick-view counts. Assignee groups
+    showed the directory name with "(you)" and Unassigned last. Application groups put
+    the most alerts first. Save as preset carried the grouping, the preset persisted
+    it across reload, the temporary change offered Reset to saved, and an editor change
+    to Node put No value last. The run also showed a switch of grouping field briefly
+    rendering the previous groups under the new labels; that was fixed and a
+    regression test added.
+- Not verified: the harness forwarded the frontend's `/api` and `/auth` requests to the
+  separate API and answered the live event stream with one idle event, so live
+  refresh of a grouped view and the dev proxy were not exercised. The developer's
+  local runtime stack was not upgraded or used: its database is at the user's 0053,
+  and 0054 needs its documented stopped-writer step. Dark mode and the production
+  index shard layout were not checked, and the p99 search targets are unmeasured.
+- Pending: the migrations branch needs the user's 0053 and 0054 committed beneath it
+  (0055's `down_revision` is `0054`); pushing; advancing the API's domain pin, the
+  frontend's `@appchi/contracts` pin and their locks to published commits; delivery
+  manifest pins; and the local runtime stack upgrade. The checks above ran on the
+  combined working trees before the commits split them.
+
 ## 2026-10-26 Quieter alert, preset and dashboard screens (REV-43)
 
 The user asked to quieten the Feed, saved presets and dashboards and approved a mock

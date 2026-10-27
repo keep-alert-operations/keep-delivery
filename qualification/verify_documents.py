@@ -61,10 +61,10 @@ def main():
             errors.append([source, 'Missing assigned destination'])
     register = (WORKSPACE / 'appchi-design/decisions/design-register.md').read_text(encoding='utf-8')
     ids = {int(value) for value in re.findall(r'^(?:\|\s*|##\s*)REV-(\d+)', register, re.M)}
-    if ids != set(range(1, 44)):
-        errors.append(['design-register.md', 'Expected REV-01 through REV-43'])
+    if ids != set(range(1, 45)):
+        errors.append(['design-register.md', 'Expected REV-01 through REV-44'])
     print(json.dumps({'documents': documents, 'source_entries': len(inventory['files']),
-                      'review_ids': 'REV-01..REV-43', 'errors': errors}, indent=2))
+                      'review_ids': 'REV-01..REV-44', 'errors': errors}, indent=2))
     if errors:
         raise SystemExit(1)
     subprocess.run(
