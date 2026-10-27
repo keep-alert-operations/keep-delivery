@@ -75,17 +75,36 @@ work.
     to Node put No value last. The run also showed a switch of grouping field briefly
     rendering the previous groups under the new labels; that was fixed and a
     regression test added.
-- Not verified: the harness forwarded the frontend's `/api` and `/auth` requests to the
-  separate API and answered the live event stream with one idle event, so live
-  refresh of a grouped view and the dev proxy were not exercised. The developer's
-  local runtime stack was not upgraded or used: its database is at the user's 0053,
-  and 0054 needs its documented stopped-writer step. Dark mode and the production
-  index shard layout were not checked, and the p99 search targets are unmeasured.
+- Local runtime stack, 2026-10-27, at the user's request: after the user hit
+  `request_failed` (the API still ran pre-grouping code and returned 405), the
+  launcher stopped the API, ingestion, frontend and workers. It restarted the stopped
+  Kafka, Kong and Grafana containers and migrated `appchi_local` from 0053 through
+  0054 and 0055 with the workers stopped. `python -m appchi.kafka_cutover
+  --record-topic-identity` then verified the broker history and recorded both topic
+  IDs, and `local-runtime.ps1 -Action Start` restarted everything on the current
+  code (3 workers healthy, local v2 17 gateway checks passed). Two earlier launcher
+  attempts stopped with an unhelpful error and a third, captured run completed;
+  every step also passed when run alone.
+- Signed in through local Keycloak in the desktop browser pane (Local Demo
+  tenant, 27 alerts). Feed by Severity gave Critical 5, High 4 and Warning 18, with
+  status summaries summing to the quick views (17 Firing, 8 Acknowledged, 2
+  Resolved), the Severity column hidden, and Show 5 more growing Warning to
+  10 of 18. Feed by Assignee put "Local Administrator (you)" (9) before Unassigned
+  (18). The "shilat" preset (`true`, saved without grouping) opened normally; a
+  toolbar change to Status gave Firing 17, Acknowledged 8 and Resolved 2 with that
+  preset's own columns minus Status, and Reset to saved restored one table without
+  changing the saved preset.
+- Not verified: the harness run answered the live event stream with one idle event,
+  and the signed-in check did not wait for a live invalidation, so live refresh of a
+  grouped view is unobserved. Saving a grouping on an existing local preset was not
+  done, to leave the user's presets unchanged (covered by the harness run and API
+  tests). Dark mode and the production index shard layout were not checked, and the
+  p99 search targets are unmeasured.
 - Pending: the migrations branch needs the user's 0053 and 0054 committed beneath it
   (0055's `down_revision` is `0054`); pushing; advancing the API's domain pin, the
-  frontend's `@appchi/contracts` pin and their locks to published commits; delivery
-  manifest pins; and the local runtime stack upgrade. The checks above ran on the
-  combined working trees before the commits split them.
+  frontend's `@appchi/contracts` pin and their locks to published commits; and
+  delivery manifest pins. The checks above ran on the combined working trees before
+  the commits split them.
 
 ## 2026-10-26 Quieter alert, preset and dashboard screens (REV-43)
 
