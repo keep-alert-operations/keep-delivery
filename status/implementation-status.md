@@ -1,5 +1,43 @@
 # Implementation status
 
+## 2026-10-27 Assigned to me, quick-view toggle and a shorter Reset (REV-45)
+
+The user asked for a quick filter for alerts assigned to them, for pressing a selected
+quick view again to return to All, and for the grouping toolbar's Reset to saved button
+to read Reset. See the
+[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-45--assigned-to-me-quick-view-toggle-and-a-shorter-reset-2026-10-27).
+
+Committed locally on the `codex/alert-grouping` branches, not pushed: design
+`9d18998` (from `1326e47`), frontend `7d72ad9` (from `04e6827`) and this delivery
+commit (from `781e861`). The frontend's existing uncommitted `administration.tsx`
+edit is not part of this change and stays uncommitted. No API, domain, contract,
+migration or indexer change: `assignee_id` was already in the Feed CEL catalog and the
+quick-count batch allows 24 queries.
+
+- Design: REV-45; alert operations, Product API and screens; preset section 4 (Reset);
+  verification plan; `scripts/check_docs.py` expects REV-01 through REV-45.
+- Frontend: `alert-table.tsx` adds Assigned to me (`assignee_id` equal to the signed-in
+  principal's ID, escaped as a CEL string) after a divider without a dot, and pressing
+  the selected view again selects All; `composeCel` takes that ID on the Feed, preset
+  results and editor preview; `presets-pages.tsx` labels the grouping button Reset with
+  a "Back to the saved grouping" tooltip; `DESIGN.md` and `docs/ui-design.md` follow.
+  Tests: new `tests/quick-views.spec.ts` (3), and `ui-cleanup.spec.ts` and
+  `grouping.spec.ts` updated.
+- Delivery: `verify_documents.py` expects REV-01 through REV-45.
+- Checks on the final code:
+  - Documents: design `check_docs.py` passed; delivery `verify_documents.py` had no
+    errors and `check_context.py` exited 0.
+  - Frontend: TypeScript passed; Prettier passed on every changed file. Installed
+    Chrome against the running HTTPS dev server: the full suite before the toggle ran
+    205 passed, 7 skipped, 3 failed (two `dashboard-counts.spec.ts:247` live-refresh
+    modes and `preset-columns.spec.ts:268`, whose table did not render within 5
+    seconds); all three passed alone, and the dashboard test passed 6 of 6 repeated.
+    After the toggle, the quick-view, cleanup, grouping, redesign, history, workspace,
+    correlation-tester and preset-columns specs ran 72 passed, 0 failed.
+- Not verified: the signed-in local stack (the user chose to skip the live browser
+  check and rely on the tests); the full suite was not rerun after the toggle.
+- Pending: pushing and the REV-44 pins listed below.
+
 ## 2026-10-27 Group alert results by one field (REV-44)
 
 The user asked to group Feed and saved-preset alerts by a field, each group a mini
