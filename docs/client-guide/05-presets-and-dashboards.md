@@ -15,12 +15,13 @@ For example, a team could save a preset for its active payment alerts, another f
 ## Open and explore a preset
 
 1. Open **Presets** and search by name if necessary.
-2. Click the preset's row. Check its filter summary, columns and shared revision.
-3. Use **Search text**, a quick view or **Include suppressed** for the immediate investigation.
+2. Click the preset's row. Check its filter summary, which shows the saved expression, any saved grouping and the sort, and its columns.
+3. Use **Search text**, a quick view or **Include suppressed** for the immediate investigation. Press the selected quick view again to return to **All**.
 4. Click a supported sortable column heading to sort ascending; click again for descending; click a third time to restore the saved order.
-5. Open an alert row. Use **Back to preset** to return to its results.
+5. To see the results grouped another way, choose a field in **Group by**. The menu tags the preset's saved field **Saved**. Select **Reset** to return to the saved grouping.
+6. Open an alert row. Use **Back to preset** to return to its results.
 
-Temporary text search, quick views, suppression inclusion and column-heading sorting do not edit the shared preset. Reopening a preset starts from its saved definition, with text search empty and suppressed alerts excluded. Status is a derived display field and does not offer ordinary Status sorting; **Lifecycle** sorts the underlying firing/resolved state when selected in an editor.
+Temporary text search, quick views, suppression inclusion, column-heading sorting and a **Group by** change in the results toolbar do not edit the shared preset. Reopening a preset starts from its saved definition, with text search empty, suppressed alerts excluded and the saved grouping. A new saved revision also clears a temporary sort or grouping. Grouped results work as described in [Feed and search](02-feed-and-search.md#group-results-by-one-field). Status is a derived display field and does not offer ordinary Status sorting; **Lifecycle** sorts the underlying firing/resolved state when selected in an editor.
 
 The result count covers all matching logical alerts, not just the loaded page. The query `true` includes retained resolved alerts as well as firing alerts, subject to suppression exclusion. A preset is not automatically an active-alert view: read its actual filter.
 
@@ -34,9 +35,10 @@ Use this when a search is useful to the whole tenant, for example as a standard 
 4. Use **Validate CEL** for expression diagnostics and **Preview draft** to inspect matching current alerts. Ctrl+Enter also previews the expression.
 5. Under **Columns**, add the fields readers need and use the up/down controls to order them. Keep at least one column; up to 30 distinct supported columns are allowed.
 6. Under **Sort**, select one to three supported fields and their directions. A sort field need not be displayed as a column.
-7. Select **Create preset**. Reopen it and check that the saved filter, columns and order express the intended shared view.
+7. Optionally, under **Group by**, choose a field so the results show one table per value, such as **Application**. Keep **No grouping** for a single table. Rows inside each group follow the sort above.
+8. Select **Create preset**. Reopen it and check that the saved filter, columns, order and grouping express the intended shared view.
 
-The saved definition contains only the name, CEL expression, sort and columns. It does **not** save quick views, Search text, Include suppressed, a page position or a separate time range. Put a condition into CEL if it must be part of the shared query. There is no separate time picker; supported time conditions also belong in CEL.
+The saved definition contains only the name, CEL expression, sort, columns and optional grouping. It does **not** save quick views, Search text, Include suppressed, a **Group by** change made in the results toolbar, collapsed groups, a page position or a separate time range. Put a condition into CEL if it must be part of the shared query. There is no separate time picker; supported time conditions also belong in CEL.
 
 Previewing reads current data; it does not save, change alerts, trigger a rule or simulate historical states. A valid query that matches nothing can still be saved. If you change the expression after previewing, use **Preview draft** again before interpreting the displayed results as matches for the new text.
 
@@ -44,10 +46,10 @@ Previewing reads current data; it does not save, change alerts, trigger a rule o
 
 1. Open the preset. Before editing its query, inspect **Dashboard references** from the preset's options to understand which shared panels will be affected.
 2. Select **Edit preset**.
-3. Change the name, expression, columns or sorting and inspect the draft preview.
+3. Change the name, expression, columns, sorting or grouping and inspect the draft preview.
 4. Select **Save changes** to update the existing shared preset, or **Save as new…** and supply a unique name to create a second shared preset.
 
-Changing the saved query changes every referencing dashboard's future counts. Changing only columns or sorting does not change which alerts those panels count. A rename keeps existing links because the preset's identity stays the same.
+Changing the saved query changes every referencing dashboard's future counts. Changing only columns, sorting or grouping does not change which alerts those panels count. To change a preset's saved grouping, edit the preset; the **Group by** menu on its results changes only your current view. A rename keeps existing links because the preset's identity stays the same.
 
 Use **Discard** to abandon a preset definition draft. If someone else saves first, Appchi retains your draft and reports a conflict. Review the newer definition before deciding what to keep. **Save as new…** creates another shared view; it is not a personal copy or an overwrite shortcut.
 
@@ -59,12 +61,12 @@ Deletion affects everyone. A preset that a current dashboard uses cannot be dele
 
 1. Open **Boards**, then choose a dashboard.
 2. Read each panel's title, exact count and any stale or unavailable marker.
-3. Select a panel to open the referenced preset's current results.
+3. Select a panel to open the referenced preset's current results, grouped if the preset saves a grouping.
 4. Use **Refresh counts** if you need an explicit refresh, or **Fullscreen** for monitoring. Exit fullscreen to return to normal navigation and editing controls.
 
 ![Shared dashboard with three count panels and controls for discard, refresh, fullscreen, create panel and save](assets/dashboard.png)
 
-*Example of an editor's dashboard with unsaved changes. The three counts are synthetic. This screenshot predates the Alerts-to-Feed sidebar rename; the dashboard controls shown remain current.*
+*Example of an editor's dashboard with unsaved changes. The three counts are synthetic. This screenshot predates the Alerts-to-Feed sidebar rename, the current colours and the removal of the subtitle line with the revision number; the **Unsaved changes** chip now sits beside the dashboard name. The dashboard controls shown remain current.*
 
 Each panel counts logical alert records matching its preset's **current saved query**. It does not count incoming messages, occurrences, incident links or notes. Dashboard counts exclude suppressed alerts and include resolved alerts unless the query excludes them. Dashboards have no Include suppressed switch; use the Feed or preset results to inspect those alerts.
 

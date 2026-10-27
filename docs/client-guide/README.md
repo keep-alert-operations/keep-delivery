@@ -22,7 +22,7 @@ This guide is for people who use Appchi during their working day, with either **
 
 1. Check the **tenant** and your access beside the page title.
 2. Open **Feed**, or a team preset, and check whether the results are current.
-3. Choose **Active** to include both unassigned and assigned firing alerts. Use **Firing** when looking specifically for unassigned work.
+3. Choose **Firing** for unassigned work that needs an owner, or **Assigned to me** for your own. To see every firing alert, assigned or not, select **All** and run `status == "firing"`.
 4. Open a relevant alert. Read its details, suppression state, history and incident links before taking action.
 5. With Edit access, use **Assign → Assign to me** when you take responsibility. Add a note describing your investigation and next step.
 6. If related alerts need coordinated work, use an existing incident or create one. Confirm the responsible person and record the handoff.

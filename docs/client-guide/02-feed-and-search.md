@@ -6,7 +6,7 @@ Use **Feed** to answer a question now: what needs attention, what happened to an
 
 ![Appchi Feed showing the query bar, quick views, alert rows and pagination.](assets/feed-desktop.png)
 
-*Feed with synthetic example data. The illustration explains the controls; it does not show your tenant's alerts.*
+*Feed with synthetic example data. The illustration explains the controls; it does not show your tenant's alerts. This screenshot predates the current quick views and colours: it still shows the removed **Active** view, and it does not show **Assigned to me** or **Group by**.*
 
 ## Understand what one row means
 
@@ -28,10 +28,12 @@ Occasionally severity is **Clear** when the first message seen was a legacy reso
 
 1. Check the selected tenant, then open **Feed**.
 2. Keep the CEL expression `true` for an unrestricted starting query.
-3. Select a quick view. **Active** includes both Firing and Acknowledged; **Firing** shows only unassigned firing alerts. **Resolved** is useful for checking completed work. **All** removes the quick-view restriction, but keeps your other filters.
+3. Select a quick view. **Critical**, **High** and **Warning** narrow by severity. **Firing** shows only unassigned firing alerts and **Acknowledged** shows firing alerts with an assignee. **Resolved** is useful for checking completed work. **Assigned to me** shows the alerts currently assigned to you. Press the selected quick view again, or select **All**, to remove the quick-view restriction; your other filters stay.
 4. Review severity, message, assignee and receipt time. Open an alert's message link to inspect it before acting.
 
-**Critical**, **High** and **Warning** narrow by severity. Quick views combine with the expression and text search already applied. They do not replace those filters. If you selected Resolved while your expression requires firing, no alerts can match both.
+One quick view applies at a time, and each shows its exact count. Quick views combine with the expression, text search and **Include suppressed** already applied. They do not replace those filters. If you selected Resolved while your expression requires firing, no alerts can match both. There is no quick view for every firing alert: to see assigned and unassigned firing alerts together, select **All** and run `status == "firing"`.
+
+With Edit access on a wider screen, a row's **⋯** menu offers **Assign to me** or **Unassign**, and **Resolve** or **Reopen**, without leaving the Feed. The alert's message still opens its detail page, where you can assign it to someone else. See [Working with alerts](03-working-alerts.md).
 
 ## Search words or filter specific fields
 
@@ -73,13 +75,25 @@ The default order puts the latest received source updates first. Click a support
 
 Use **Rows per page** for 50, 100 or 200 rows and **Next page** to continue. Later pages preserve a snapshot so arrivals do not move rows during your review. When **New results available** appears, use **Back to first page**. If the snapshot expires, restart from the first page.
 
-Counts describe the current filter and snapshot. **Count unavailable**, an error, or previous results shown during a failed refresh must not be read as zero. The detail page can show your completed action before search catches up; open it to check the current alert. Displayed times use the browser timezone identified on the screen.
+Counts describe the current filter and snapshot. **Count unavailable**, an error, or previous results shown during a failed refresh must not be read as zero. The detail page can show your completed action before search catches up; open it to check the current alert. Rows show times relative to now, such as “2 hours ago”; hover over a time to see the exact time with the browser timezone.
+
+## Group results by one field
+
+Use **Group by**, to the right of the quick views, to show one table per value of a field: for example, one table per application during a wide outage. Choose **Severity**, **Status**, **Application**, **Component**, **Node**, **Site**, **Assignee** or **Incident**. **No grouping** returns to a single table.
+
+- Each group's heading shows its value, its exact alert count and a summary: status counts for severity groups, severity counts for the others. The grouped column is hidden inside the groups, and rows follow the current sort.
+- Severity groups run Critical, High, Warning, then Clear; Status groups run Firing, Acknowledged, then Resolved. For other fields, the group with the most alerts comes first. Alerts without a value come last, as **Unassigned**, **No incident** or **No value**.
+- A group shows five rows at first; use **Show 5 more** to continue and **Show fewer** to return. Ten groups show at first; use **Show 10 more groups** for the rest. Select a group's heading to collapse or expand it, or use **Collapse all** and **Expand all** for the groups shown.
+- Grouping works with the expression, Search text, the quick view and **Include suppressed**. Each group's own select-all checkbox selects only that group's shown rows.
+- If alerts change after you loaded more rows or groups, **New results available** appears; use **Back to first groups**.
+
+More than 1,000 distinct values cannot be grouped: the Feed keeps one table and says there are too many values. Narrow the query, or group by another field. Grouping on the Feed is temporary, like the quick views.
 
 ## Keep a useful query
 
-**Save as preset…** starts a shared preset with the CEL currently entered in the bar. Review the expression, columns and sorting in that form before saving. Search text, quick views and **Include suppressed** are temporary and are not carried into the saved definition. See [Presets and dashboards](05-presets-and-dashboards.md) for the complete workflow.
+**Save as preset…** starts a shared preset with the CEL currently entered in the bar and the current **Group by** choice. Review the expression, columns, sorting and grouping in that form before saving. Search text, quick views and **Include suppressed** are temporary and are not carried into the saved definition. See [Presets and dashboards](05-presets-and-dashboards.md) for the complete workflow.
 
-If results still seem wrong, check the tenant, applied expression, text search, quick view and suppression switch in that order. Then consult [Troubleshooting and glossary](07-troubleshooting-and-glossary.md).
+If results still seem wrong, check the tenant, applied expression, text search, quick view and suppression switch in that order. In grouped results, also expand collapsed groups and load the rest of each group. Then consult [Troubleshooting and glossary](07-troubleshooting-and-glossary.md).
 
 ## Reference
 

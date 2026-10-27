@@ -24,6 +24,8 @@ Prepared on 11 October 2026 using these checked-out revisions **plus their exist
 
 **Revised 24 October 2026:** the Incidents and Troubleshooting chapters were updated after appchi-frontend `42e91ce` (branch `codex/remove-stale-incident-deadlines`, based on `9ed49b0`) removed the incident inactivity and retention deadline labels. Other chapters were not re-inspected for that revision.
 
+**Revised 27 October 2026:** the Feed and search, Presets and dashboards, and Troubleshooting and glossary chapters, the first-shift steps in the guide contents and the [shared-views diagram](assets/shared-views.svg) were updated for three UI changes in the [design register](../../../appchi-design/decisions/design-register.md). REV-43 removed the Active quick view, moved row actions into a ⋯ menu, showed row times relative to now, removed revision numbers from the preset and dashboard subtitles, and quietened the live-status notices. REV-44 added Group by on Feed and saved-preset results, and an optional saved preset grouping whose results-toolbar change is view-only. REV-45 added Assigned to me, made pressing the selected quick view return to All, and renamed the toolbar's Reset to saved to Reset. Sources were appchi-design `9d189981ee42ef2af32b7a86d9ac1c112e3d50ad` (REV-43–45 and [preset section 4](../../../appchi-design/specs/spec-preset-operations.md#4-columns-and-sorting)) and appchi-frontend `7d72ad94fbaad052cf616d5766a520947cfa43ce` (`alert-table.tsx`, `alert-groups.tsx`, `alerts.tsx`, `presets-pages.tsx`, `definition-editor.tsx` and `page.tsx`), both on the unmerged `codex/alert-grouping` branches; the frontend's only uncommitted change, in `administration.tsx`, does not affect these screens. Getting started, Working with alerts, Incidents and Maintenance and correlation were not fully re-inspected. The Feed and dashboard screenshots were not recaptured; their captions now say what they no longer show.
+
 The guide does not replace the specifications. [Worker scope](../../../appchi-design/specs/spec-worker-scope.md) overrides older automatic maintenance-release, inactivity, retention and assignment-cleanup algorithms. Current UI corrections override older acknowledgement and dashboard controls. [Delivery readiness](../../status/delivery-readiness.md) keeps production gates open; this guide does not close them.
 
 ## Chapter authority map
@@ -46,8 +48,8 @@ The copied PNGs are unmodified evidence images using synthetic data. The SVGs ar
 | Guide asset | Original / basis |
 |---|---|
 | [sign-in.png](assets/sign-in.png) | [Login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
-| [feed-desktop.png](assets/feed-desktop.png) | [Current Feed screenshot](../../qualification/feed-rename-2026-10-11/feed-desktop.png) |
-| [dashboard.png](assets/dashboard.png) | [Current dashboard toolbar evidence](../../qualification/dashboard-provenance-removal-2026-10-09/toolbar-dirty.png); its older sidebar still says Alerts, explicitly called out in the guide caption |
+| [feed-desktop.png](assets/feed-desktop.png) | [Feed screenshot of 11 October](../../qualification/feed-rename-2026-10-11/feed-desktop.png); out of date since REV-42–45: it shows the removed Active view, older colours, row source lines and the Times in label, and lacks Assigned to me and Group by, as the guide caption says |
+| [dashboard.png](assets/dashboard.png) | [Dashboard toolbar evidence](../../qualification/dashboard-provenance-removal-2026-10-09/toolbar-dirty.png); its older sidebar still says Alerts, and it shows older colours and the revision subtitle that REV-43 removed, as the guide caption says |
 | [concept-map.svg](assets/concept-map.svg) | System product model and tenant boundaries |
 | [shared-views.svg](assets/shared-views.svg) | Preset saved definition versus transient filter contract |
 | [incident-ownership.svg](assets/incident-ownership.svg) | Single active ownership and independent alert/incident lifecycle |
@@ -77,4 +79,4 @@ If `marked` is resolvable by Node, omit the argument. The argument is an environ
 
 ## Verification record
 
-See [guide verification](../../qualification/client-guide-2026-10-11.md) for actual documentation and rendering results, and [incident deadline label removal](../../qualification/incident-deadline-labels-2026-10-24.md) for the 24 October revision. No application runtime suite is needed for this documentation-only addition; none is claimed.
+See [guide verification](../../qualification/client-guide-2026-10-11.md) for actual documentation and rendering results, and [incident deadline label removal](../../qualification/incident-deadline-labels-2026-10-24.md) for the 24 October revision. The 27 October revision was checked with delivery's `python qualification/verify_documents.py` and a rebuild of the reading edition; no separate qualification record was written. No application runtime suite is needed for this documentation-only addition; none is claimed.
