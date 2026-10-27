@@ -1,5 +1,36 @@
 # Implementation status
 
+## 2026-10-27 REV-39–46 merged to main
+
+The user asked to merge the grouping work together with the then-uncommitted REV-39–41
+and REV-46 code and the client-guide refresh. Each is its own commit; every repository
+fast-forwarded main to its branch (`codex/alert-grouping`, or
+`codex/always-on-correlation-maintenance` for correlation, processor, indexer and
+ingestion). Python services pin appchi-domain `98986b6`, frontend pins appchi-contracts
+`749f670`, and delivery's manifest and lock name the merged heads.
+
+Executed on the final code before the repins, with editable siblings (Windows, Python
+3.13, a disposable PostgreSQL 18.2 container):
+
+- Unit: domain 541, API 210, indexer 88, ingestion 103, processor 49, migrations 5 and
+  correlation 2 passed. The processor's two receive-lead tests first failed because
+  REV-41 moved their log values into the message; the tests now read the message.
+- Integration: migrations Alembic 28 passed (chain 0052→0055); processor 3 passed;
+  delivery 419 passed, 36 skipped, 12 failed while the browser suite ran in parallel.
+  All 12 (cutover literal check, inline maintenance, maintenance alert test, idle
+  reconciliation, scalability page statements) passed when rerun with their modules,
+  24 passed.
+- Frontend: `tsc --noEmit` passed; with installed Chrome against the running HTTPS dev
+  server, 208 passed, 7 skipped and 2 failed waiting on a first page compile (grouping
+  Save as preset, theme persistence); both specs passed on rerun, 8 passed.
+- Documents and boundaries: design `check_docs.py`, `verify_documents.py`,
+  `check_context.py`, `check_contracts.py` and `verify_boundaries.py` passed.
+- REV-46 signed-in local journey: see the REV-46 entry below.
+
+Not run: Elasticsearch- and Kafka-bound integration cases (no isolated bindings were
+supplied, so they skipped), the S1–S4 real-stack suites, and CI on the pushed commits.
+The local stack's database was already at 0055.
+
 ## 2026-10-27 Resolve an incident when all its linked alerts resolve (REV-46)
 
 The user asked that an incident resolve when all of its linked alerts are resolved. See
