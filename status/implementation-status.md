@@ -5,10 +5,14 @@
 The user asked to link an alert to an incident from the alert page and from the Feed
 row's ⋯ menu. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-48--link-an-alert-to-an-incident-from-the-alert-2026-10-28).
 Frontend only: it reuses the existing link and move commands; no API, contract or
-migration change. On `codex/link-incident-from-alert` in frontend (`ddff086`, rebased
-onto `main` `79412f6`, which merged drag-to-select as #8), design and delivery. Tests
-and the local journey ran on drag-to-select commit `4c5fb8f` plus this change; `4c5fb8f`
-and `79412f6` have identical trees, and the rebased commit passes `tsc`.
+migration change. Merged to main through pull requests on 2026-10-28 by rebase:
+frontend [#9](https://github.com/appchi-alert-operations/appchi-frontend/pull/9) as
+`4fb364c` (on `79412f6`, which merged drag-to-select as #8) and design
+[#13](https://github.com/appchi-alert-operations/appchi-design/pull/13) as `d2f1f1f`.
+The workspace manifest names those heads. Tests and the local journey ran on
+drag-to-select commit `4c5fb8f` plus this change; `4c5fb8f` and `79412f6` have
+identical trees, and the rebased commit passes `tsc`. CI: frontend and design
+`verify` passed on the pull-request heads before the merges.
 
 - Frontend: new `link-incident.tsx` (`LinkIncidentDialog`: search active incidents,
   choose one, Link at its revision, or Move with both revisions when another active
