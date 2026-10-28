@@ -12,8 +12,8 @@ and design [#12](https://github.com/appchi-alert-operations/appchi-design/pull/1
 `715eb5a`, both rebased onto unchanged mains (`9270f25`, `b63ac17`). The workspace
 manifest names those heads. Frontend only: no API, contract or migration change.
 CI: design `verify` passed; frontend `verify` (format, typecheck, `next build`) passed
-on the pushed commit, and the pull-request run of the same commit was still pending
-at merge.
+on the pushed commit before the merge, and the pull-request run of the same commit
+passed just after it.
 
 - Frontend: `definition-editor.tsx` splits the editor into the preview panel (draft
   strip, quick views, table) and a Preset settings panel (Name, then Filter, Columns,
