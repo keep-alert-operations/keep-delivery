@@ -1,5 +1,48 @@
 # Implementation status
 
+## 2026-10-28 Preset editor settings in tabs (REV-47)
+
+The user found the preset create/update screen overloaded and chose option D of the
+[preset editor options canvas](https://claude.ai/artifact/CkERUg32kLwT2AuWdzSJML),
+keeping Validate CEL. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-47--preset-editor-settings-in-tabs-beside-the-preview-2026-10-28).
+
+Merged to main through pull requests on 2026-10-28: frontend
+[#7](https://github.com/appchi-alert-operations/appchi-frontend/pull/7) as `e578791`
+and design [#12](https://github.com/appchi-alert-operations/appchi-design/pull/12) as
+`715eb5a`, both rebased onto unchanged mains (`9270f25`, `b63ac17`). The workspace
+manifest names those heads. Frontend only: no API, contract or migration change.
+CI: design `verify` passed; frontend `verify` (format, typecheck, `next build`) passed
+on the pushed commit, and the pull-request run of the same commit was still pending
+at merge.
+
+- Frontend: `definition-editor.tsx` splits the editor into the preview panel (draft
+  strip, quick views, table) and a Preset settings panel (Name, then Filter, Columns,
+  Sort and Group by tabs); `cel-editor.tsx` replaces the preset-only `fieldChips` row
+  with a `referencePopover` option and reports validity through `onValidity`;
+  `presets.css` and `alerts.css` restyle them. `docs/ui-design.md` and `DESIGN.md`
+  describe the screen.
+- Tests: new `preset-settings-tabs.spec.ts` (6 cases: keyboard tabs and kept state,
+  hidden-tab problem flags, empty name, 422 save opens Filter, Add columns and the
+  saved body, popover and Escape); `preset-columns`, `grouping` and `cel-editor`
+  updated for the tabs, the column list name, the Group by radios and the popover.
+- Design: REV-47; `scripts/check_docs.py` expects REV-01 through REV-47. Delivery:
+  `verify_documents.py` expects REV-01 through REV-47.
+- Executed on the final code with installed Chrome against the already-running HTTPS
+  dev server (mocked API routes, as the specs define): `tsc --noEmit` passed;
+  Prettier passed on every changed file; the four affected specs plus quick-views and
+  ui-cleanup ran 35 passed; an earlier run of the related specs (quick-views,
+  ui-cleanup, configuration-history, workspace, redesign, loading-states, theme,
+  preset-choices, navigation-session filters) ran 216 passed, 7 skipped, before three
+  CSS-only fixes found by screenshots (popover clipped by the settings panel, tab bar
+  cut off at 375 pixels, radio labels stacked by the global label rule). Screenshots
+  at 1440, 1024, 900 and 375 pixels in light and dark were reviewed. Design
+  `check_docs.py` passed; the Impeccable detector reported only three pre-existing
+  radius advisories.
+- Not run: `next build` (it would share `.next` with the running dev server), the
+  full Playwright suite, a signed-in journey on the local stack (Docker and the API
+  were down), and CI. `prettier --check src tests` still reports 54 untouched files
+  whose working copies have CRLF endings.
+
 ## 2026-10-27 REV-39–46 merged to main
 
 The user asked to merge the grouping work together with the then-uncommitted REV-39–41
