@@ -1,5 +1,46 @@
 # Implementation status
 
+## 2026-10-28 Link an alert to an incident from the alert (REV-48)
+
+The user asked to link an alert to an incident from the alert page and from the Feed
+row's ⋯ menu. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-48--link-an-alert-to-an-incident-from-the-alert-2026-10-28).
+Frontend only: it reuses the existing link and move commands; no API, contract or
+migration change. On `codex/link-incident-from-alert` in frontend (`ddff086`, rebased
+onto `main` `79412f6`, which merged drag-to-select as #8), design and delivery. Tests
+and the local journey ran on drag-to-select commit `4c5fb8f` plus this change; `4c5fb8f`
+and `79412f6` have identical trees, and the rebased commit passes `tsc`.
+
+- Frontend: new `link-incident.tsx` (`LinkIncidentDialog`: search active incidents,
+  choose one, Link at its revision, or Move with both revisions when another active
+  incident owns the alert); `alerts.tsx` opens it from the alert page (beside Assign…)
+  and the Feed rows; `presets-pages.tsx` from preset result rows; `alert-table.tsx`
+  and `alert-groups.tsx` carry `onLinkIncident` to the row menu; `incidents.css`
+  styles it; `docs/ui-design.md` describes it.
+- Tests: new `link-incident.spec.ts` (4 cases: Feed menu link body and path; alert page
+  move body with both revisions and the owner marked Linked here; Escape returns
+  focus without a command; viewers see no action); `ui-cleanup.spec.ts` expects the
+  third menu item.
+- Design: REV-48; incident operations 5; `scripts/check_docs.py` expects REV-01
+  through REV-48. Delivery: `verify_documents.py` expects REV-01 through REV-48.
+- Executed with installed Edge against the already-running HTTPS dev server (mocked
+  API routes, as the specs define): `tsc --noEmit` passed; Prettier passed on every
+  changed file; `link-incident`, `alert-drag-select`, `ui-cleanup`, `grouping`,
+  `quick-views`, `preset-columns`, `preset-settings-tabs`, `alert-evidence`,
+  `redesign`, `incident-notes` and `incident-filters` passed (`ui-cleanup` after its
+  menu expectation was updated). Design `check_docs.py`, delivery
+  `verify_documents.py` and `check_context.py` passed.
+- Signed-in local journey (run `fdbfd6a6-dd0f-49b4-8ffd-18f34272b9c4`, ledger under
+  `.local/verification/`): the user signed in as Local Administrator on Global; the
+  running dev server served this working tree against the unchanged local API. From
+  the Feed row menu a synthetic firing alert with no incident was linked to a new
+  `smoke-fdbfd6a6` incident (link 200; the row showed it); from the alert page the
+  dialog named that owner, marked it Linked here and offered Move to incident, which
+  moved the alert to a second smoke incident (move-alerts 200). Both incidents' and
+  the alert's activity recorded link and move. Cleanup unlinked the alert and resolved
+  both smoke incidents. The only console error was one `view-state` 500 shortly after
+  sign-in, before any link command.
+- Not run: the full Playwright suite and `next build`.
+
 ## 2026-10-28 Preset editor settings in tabs (REV-47)
 
 The user found the preset create/update screen overloaded and chose option D of the
