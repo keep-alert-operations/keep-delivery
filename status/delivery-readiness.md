@@ -46,6 +46,8 @@ Use separate development/staging/production namespaces, realms, databases/namesp
 
 Roll out expand/read-compatible application changes, validate/backfill in bounded fenced jobs, then enable new writes/features only when old incompatible writers are drained. Canary stateless APIs by supported routing and workers by explicit tenant/role fencing; never let two incompatible worker generations concurrently write a tenant. Reconcile desired remote operator state rather than duplicate provisioning during rollout. Roll back application images only within declared schema/event compatibility, preserving monotonic versions/epochs and authoritative data; no database rewind as a deployment rollback. Follow the existing error-budget policy.
 
+**Timed dismissal (REV-49):** apply migration 0056, deploy the indexer and every writer, rebuild the search index so its strict mapping has `dismissed_until`, then set `APPCHI_ALERT_DISMISSAL_ENABLED=true` on the API and deploy the UI. Turning the flag off is the rollback; older code ignores the columns, so dismissed alerts become visible again. Not yet qualified.
+
 ## Runbooks and support
 
 The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.
