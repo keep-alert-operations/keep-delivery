@@ -1,5 +1,65 @@
 # Implementation status
 
+## 2026-10-29 Free panel width and height, sized on the grid only (REV-50)
+
+The user asked to remove Width and Height from the panel create/edit dialog, remove the
+panel's maximum height and let width grow one column at a time to the full page width.
+See the design register REV-50 and dashboard operations 4. It was built as REV-49 with
+migration 0056; the timed alert dismissal merged REV-49 and 0056 first, so it was
+renumbered REV-50 with migration 0057 and rebased onto those mains. Merged to main
+through pull requests on 2026-10-29 with merge commits, in dependency order: domain #13
+(`d34e038`), contracts #4 (`9f4736f`), migrations #5 (`2d0e8c7`), API #8 (`5bb8de8`),
+ingestion #7 (`b20440a`), processor #6 (`fcd38b4`), correlation #5 (`2535bea`) and
+indexer #9 (`f605f5b`) (each pins domain `d34e038`), frontend #10 (`4b3a266`, pins
+contracts `9f4736f`) and design #14 (`cf76bb7`). Every PR's CI `verify` passed on its
+final head before its merge. This delivery commit pins those heads in the manifest and
+lock. Domain keeps pinning contracts `ae5ce85`: only the HTTP schema files changed, which
+the contract check reads from the workspace checkout. Old layouts stay valid.
+
+- Domain: `Panel.w` is an integer 3–12 and `Panel.h` an integer from 2, still inside
+  x+w <= 12 and y+h <= 100; new `tests/unit/test_dashboard_panel_size.py`.
+- Migrations: 0057 replaces the `dashboard_panels` checks `w IN (3,4,6,12)` and
+  `h IN (2,3,4)` with `w BETWEEN 3 AND 12` and `h >= 2`; the grid check is unchanged.
+  No stopped-writer window; run it before the updated API. The signed-in journey found
+  it: without it PostgreSQL rejected a 7 by 8 panel, which the API reports as 503
+  `database_unavailable`.
+- Contracts: panel `w`/`h` enums become integer ranges in `openapi.json` and
+  `product.openapi.json`, on top of `set_dismissal`.
+- Frontend: the panel dialog drops the Width and Height selects; `dashboard-layout.ts`
+  validates whole sizes from 3 by 2; pointer resize snaps to the nearest whole column
+  and unit up to the row edge and the grid bound; arrow keys step by one. Below 1024
+  pixels the handles stay hidden, so size can no longer be changed there.
+  `generated.ts` matches `npm run generate` from contracts `9f4736f`.
+- Tests: `dashboard-layout.spec.ts` adds a keyboard case (width 3 to 12 one column at a
+  time, height 2 to 9, no size fields in the dialog, saved `w: 12, h: 9`) and
+  `placePanel` checks; the responsive cases edit the title instead of the removed
+  Height select.
+- Executed on the rebased code: domain unit suite 553 passed; migrations unit and
+  Alembic integration on a disposable PostgreSQL 18.2 container 35 passed (chain to
+  0057, upgrade through 0056); frontend `tsc --noEmit`; design `check_docs.py`; delivery
+  `verify_documents.py`, `check_context.py`, `check_contracts.py` and
+  `verify_boundaries.py`; Poetry 2.3.1 `check --lock` in delivery and all five services.
+  Before the rebase (frontend on `79412f6`, isolated copy, installed Chrome):
+  `dashboard-layout` 37 of 38 passed; the failure, "picking up a settling panel
+  preserves its visible position", fails intermittently on base `79412f6` too.
+  `preset-choices`, `dashboard-counts` and `redesign` passed. API unit failures seen
+  then were native-CEL tests that pass on rerun alone.
+- Signed-in local journey (2026-10-29, before the rebase, without the dismissal): the
+  local Product API was restarted on the new domain with the launcher's environment
+  and process record, and the migration then numbered 0056 was applied with
+  `scripts/local_identity.py database`. As Local Administrator on Global at 1440 by 900,
+  a new `smoke-rev49 panel size` dashboard got a `testing` panel; the Create and Edit
+  panel dialogs show no Width or Height. Arrow keys gave 5 by 6 and a corner drag
+  snapped to 7 by 8. Save before the migration returned 503; after it the create
+  returned 201 and reload read `w: 7, h: 8`. Widening stopped at 12; the update returned
+  200 and reload read `w: 12, h: 10`. Deleting the smoke dashboard returned 503
+  `recovery_not_ready` (local recovery gate closed), so dashboard `b1bfe88c-…` remains.
+- Local stack: its ledger recorded that pre-renumbering `0056_free_panel_size.sql`; the
+  row was removed and `alembic_version` set back to 0055 so the merged 0056 and 0057
+  apply through the migration step.
+- Not run: the journey on the merged code, `next build`, the full Playwright suite and
+  delivery integration tests against PostgreSQL.
+
 ## 2026-10-29 Dismiss an alert for a time window (REV-49)
 
 The user asked to dismiss an alert for minutes, hours or until a date, approved the
