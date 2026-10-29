@@ -4,43 +4,43 @@
   "repositories": {
     "appchi-contracts": {
       "url": "https://github.com/appchi-alert-operations/appchi-contracts.git",
-      "revision": "ae5ce856a64661ba57ee1646017cc3c20feae49e"
+      "revision": "9f4736f13ffef549b3ef20b2109965b6018ebe0b"
     },
     "appchi-domain": {
       "url": "https://github.com/appchi-alert-operations/appchi-domain.git",
-      "revision": "3b1bf0e36ce93d9796e0bcb0ec2e9a135212527f"
+      "revision": "d34e0389a6801f25ca1b6ac46b1933743a6c2c35"
     },
     "appchi-migrations": {
       "url": "https://github.com/appchi-alert-operations/appchi-migrations.git",
-      "revision": "5086d7e03bd966dd6a25836a287edc9c2418161b"
+      "revision": "2d0e8c70e96ee2b684e0370420b9efa9b65f5f71"
     },
     "appchi-api": {
       "url": "https://github.com/appchi-alert-operations/appchi-api.git",
-      "revision": "07f50bfa3dbf76236f1bc54aa6ad8953f491c7d6"
+      "revision": "5bb8de8ebc790400482ff942202b50835d217e44"
     },
     "appchi-ingestion": {
       "url": "https://github.com/appchi-alert-operations/appchi-ingestion.git",
-      "revision": "eb5d40b32df357c9d2a67f948c4da7c9c22f78b3"
+      "revision": "b20440a4ee83ea8d36cbc846e428843ea03542e8"
     },
     "appchi-processor": {
       "url": "https://github.com/appchi-alert-operations/appchi-processor.git",
-      "revision": "e2687193ec048e1e133d3f843c3e4808d721983e"
+      "revision": "fcd38b4e5761e7639c23a54bbbc0a991cf8d8471"
     },
     "appchi-correlation": {
       "url": "https://github.com/appchi-alert-operations/appchi-correlation.git",
-      "revision": "b14aa3a784024727380da048ece46373dc12c246"
+      "revision": "2535bea27d8851f2585d2054c8e7170a196f1aa7"
     },
     "appchi-indexer": {
       "url": "https://github.com/appchi-alert-operations/appchi-indexer.git",
-      "revision": "fceb9a3ef3d8ce28c51feac1acad673057130112"
+      "revision": "f605f5bd564bd0fdb3973338b954a0566399b27c"
     },
     "appchi-frontend": {
       "url": "https://github.com/appchi-alert-operations/appchi-frontend.git",
-      "revision": "672a0c64eca66d522c2f322be5ca373e5802d14a"
+      "revision": "4b3a26661216eee6756649fc511eb0f26d1312d7"
     },
     "appchi-design": {
       "url": "https://github.com/appchi-alert-operations/appchi-design.git",
-      "revision": "9b3c07c405a9936da912c94f217c6b2353c6dbac"
+      "revision": "cf76bb7569670a5f34bd07f5c273f3fe83fd63d7"
     },
     "appchi-delivery": {
       "url": "https://github.com/appchi-alert-operations/appchi-delivery.git",
