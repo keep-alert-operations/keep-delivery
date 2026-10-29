@@ -1,5 +1,40 @@
 # Implementation status
 
+## 2026-10-29 Plainer alert actions and a steadier dismiss dialog (REV-51)
+
+After trying REV-49 on the local stack the user asked to drop the "…" from Dismiss,
+Link to incident and Assign in the row menu and on the alert page, to give every
+alert-page action an icon, to stop the dismiss dialog flagging an empty custom number
+as an error, and to keep the dialog one size. Frontend only; no API, contract or
+migration change. Merged to main through pull requests on 2026-10-29: frontend #12
+(`1a3dfc5`) and design #16 (`c973b4d`), whose CI `verify` passed; this delivery change
+pins both heads in the manifest.
+
+- Frontend: `icons.tsx` gains view, resolve, reopen, assign, link, clock, undo and
+  external icons; `alerts.tsx` uses them on View alert, Resolve/Reopen alert, Dismiss,
+  Assign, Link to incident, Open runbook and the band's Change and Undismiss;
+  `alert-table.tsx` drops the ellipses from its row menu. `dismiss-dialog.tsx` treats an
+  empty custom field as waiting (neutral message, no red border, Dismiss disabled) and
+  stacks both modes, the longest summary and command errors in fixed grid cells.
+  `docs/ui-design.md` describes it. Bulk actions and incident pages keep "Assign…".
+- Tests: `dismissal.spec.ts` gains an empty-custom and constant-size case; its
+  refresh case compares runs with and without a dismissal ending, with the live
+  stream held so reconnect reloads cannot fall in the window. Label expectations
+  updated in ui-cleanup, link-incident, redesign, workspace, local-runtime and
+  integration-real specs.
+- Design: REV-51; alert operations 29 and incident operations 5 wording;
+  `check_docs.py` expects REV-01 through REV-51. Delivery: `verify_documents.py`
+  expects REV-51; client guide step "Select **Assign**" (the HTML edition was edited to
+  match because no `marked` module is installed to rerun `build-guide.mjs`).
+- Executed against the running local HTTPS dev server (mocked API routes, installed
+  Chrome): `tsc --noEmit` passed; the dismissal spec passed 20 of 20 repeats; 75 tests
+  across dismissal, ui-cleanup, link-incident, redesign, workspace, grouping,
+  quick-views, alert-drag-select, loading-states, theme and alert-evidence passed. In
+  the signed-in local app the dialog measured 546 px in every state at 1024 px and
+  668 px at phone width; a real click on the empty custom field showed the neutral
+  message. Design `check_docs.py`, delivery `verify_documents.py` and
+  `check_context.py` passed.
+
 ## 2026-10-29 Free panel width and height, sized on the grid only (REV-50)
 
 The user asked to remove Width and Height from the panel create/edit dialog, remove the
