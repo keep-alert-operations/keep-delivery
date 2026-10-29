@@ -18,7 +18,7 @@ Use alert detail to understand the problem, take ownership, document your invest
 
 Assignment is Appchi's acknowledgement mechanism. There is no separate acknowledgement button.
 
-1. Select **Assign…**.
+1. Select **Assign**.
 2. Choose **Assign to me**, or enter at least two characters in **Assign alert to a user**, select **Search**, and choose an eligible person.
 3. Check the assignee and resulting status. A firing alert becomes **Acknowledged** as soon as assignment succeeds; the chosen person does not have to accept it in Appchi.
 
