@@ -6,10 +6,14 @@ The user asked to dismiss an alert for minutes, hours or until a date, approved 
 [dismiss mock](https://claude.ai/artifact/Nvp1SJzsc29Y1HYSnfcK99) (dismissed alerts are
 suppressed) and chose that the first source update after a dismissal ends may restart
 correlation, as an ended maintenance window does. See the design register REV-49 and
-alert operations 29. Uncommitted on `codex/alert-dismissal` worktrees under
-`C:/Users/guyr2/Documents/vena/dismiss`: design and delivery start from the unmerged
-REV-48 commits (`083ef60`, `f4e6d3f`) so REV numbering stays contiguous; every other
-repository starts from its `main`.
+alert operations 29. Merged to main through pull requests on 2026-10-29 with merge
+commits, in dependency order: contracts #3 (`ae5ce85`), migrations #4 (`5086d7e`),
+domain #14 (`3b1bf0e`, pins contracts `ae5ce85`), API #9 (`07f50bf`), indexer #10,
+processor #7, correlation #6 and ingestion #8 (each pins domain `3b1bf0e`), frontend #11
+(`672a0c6`, pins contracts `ae5ce85`) and design #15 (`9b3c07c`). Every PR's CI
+`verify` passed before its merge; the API run first failed on the OpenAPI display-field
+test and the frontend run on Prettier, both fixed before merging. This delivery commit
+pins those heads in the manifest and lock.
 
 - Migrations: `0056_alert_dismissal` adds `alerts.dismissed_until`, `dismissed_at`,
   `dismissed_by`, a completeness check and a partial index. Additive; the stored
@@ -30,9 +34,8 @@ repository starts from its `main`.
   `dismissal`.
 - Frontend: `dismiss-dialog.tsx`; Dismiss…, Change dismissal… and Undismiss in the row
   menu and on the alert page; "Suppressed · until" indicator; detail band and history
-  labels; Feed and alert page refresh at the end. Client regenerated from the local
-  contracts schema; the `@appchi/contracts` pin still names `749f670` until contracts
-  are committed and pushed.
+  labels; Feed and alert page refresh at the end. Client regenerated with `@appchi/contracts`
+  pinned to `ae5ce85`.
 - Rollout: run 0056; deploy the indexer and writers; rebuild the search index so it has
   the `dismissed_until` mapping (strict mapping; local bootstrap compares it exactly);
   then enable the flag; then the UI. Rollback is the flag; older code ignores the
@@ -62,7 +65,7 @@ repository starts from its `main`.
   on the loaded host.
 - Not run: S1–S4 on the shared local stack (its database and search index were left
   untouched; it needs 0056 and a rebuild first), Kafka-bound integration, the search
-  rebuild against a mapping change, and CI. Nothing is committed or pushed.
+  rebuild against a mapping change, and delivery CI on the pinned heads.
 
 ## 2026-10-28 Link an alert to an incident from the alert (REV-48)
 
