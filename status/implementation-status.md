@@ -1,5 +1,69 @@
 # Implementation status
 
+## 2026-10-29 Dismiss an alert for a time window (REV-49)
+
+The user asked to dismiss an alert for minutes, hours or until a date, approved the
+[dismiss mock](https://claude.ai/artifact/Nvp1SJzsc29Y1HYSnfcK99) (dismissed alerts are
+suppressed) and chose that the first source update after a dismissal ends may restart
+correlation, as an ended maintenance window does. See the design register REV-49 and
+alert operations 29. Uncommitted on `codex/alert-dismissal` worktrees under
+`C:/Users/guyr2/Documents/vena/dismiss`: design and delivery start from the unmerged
+REV-48 commits (`083ef60`, `f4e6d3f`) so REV numbering stays contiguous; every other
+repository starts from its `main`.
+
+- Migrations: `0056_alert_dismissal` adds `alerts.dismissed_until`, `dismissed_at`,
+  `dismissed_by`, a completeness check and a partial index. Additive; the stored
+  `suppressed` flag keeps meaning source and maintenance causes.
+- Contracts: `DismissalValue` and the `set_dismissal` alert command kind (not bulk);
+  HTTP schemas regenerated with `qualification/generate_http_contracts.py`.
+- Domain: `alerts/dismissal.py`; `apply_command` validates firing-only, server-clock
+  durations and the 30-day bound; a new occurrence ends a dismissal; the first source
+  input or command at or after the end clears it. Reads, CEL `suppressed`, feed and count
+  filters and incident counts treat a running dismissal as suppression at their clock.
+  Correlation treats a recorded dismissal as suppression until a write clears it;
+  dismissing calls `release_alert`; a maintenance release during a dismissal creates no
+  qualifier. Search documents carry `dismissed_until` only when present; feed, group
+  and count responses return `next_change_at` from a global aggregation in the same
+  request.
+- API: `set_dismissal` behind `APPCHI_ALERT_DISMISSAL_ENABLED` (default off), the reason
+  written as a note in the same transaction, command and detail responses with
+  `dismissal`.
+- Frontend: `dismiss-dialog.tsx`; Dismiss…, Change dismissal… and Undismiss in the row
+  menu and on the alert page; "Suppressed · until" indicator; detail band and history
+  labels; Feed and alert page refresh at the end. Client regenerated from the local
+  contracts schema; the `@appchi/contracts` pin still names `749f670` until contracts
+  are committed and pushed.
+- Rollout: run 0056; deploy the indexer and writers; rebuild the search index so it has
+  the `dismissed_until` mapping (strict mapping; local bootstrap compares it exactly);
+  then enable the flag; then the UI. Rollback is the flag; older code ignores the
+  columns, so a dismissed alert becomes visible rather than hidden.
+- Executed (this checkout, editable worktree sources, disposable PostgreSQL 18 on
+  127.0.0.1:55491, local Elasticsearch 9.0 test indices, no Kafka binding):
+  unit suites: domain 551 and API 210 with only CEL one-second compile-deadline timeouts
+  failing (different tests each run; they pass on rerun), contracts 33, migrations
+  unit and Alembic integration 34, indexer 88, processor 49, correlation 2; new
+  `test_dismissal.py` (domain, 10), contracts `test_alert_dismissal_command.py` and
+  delivery `test_alert_dismissal.py` (4, with `test_product` 9) passed. The delivery
+  integration suite run file by file had failures in 20 files; rerunning those files on
+  this branch and on `main` (`appchi-workspace` checkout, same bindings) gave 17 failing
+  tests here and 69 on `main`. The only branch-only failures were `test_cel_routes`
+  compile-deadline timeouts, which then passed 2 of 3 reruns, matching `main`'s latency.
+  Kafka-bound cases were skipped without `APPCHI_TEST_KAFKA_BOOTSTRAP`. Design
+  `check_docs.py`, delivery `verify_documents.py`, `check_context.py` (after
+  `context.py render`), `check_contracts.py` and `verify_boundaries.py` passed.
+  Frontend with installed Chrome: `tsc --noEmit` and Prettier on changed files passed;
+  new `dismissal.spec.ts` (5 cases, run twice) and the related grouping, quick-views,
+  preset-columns, redesign, workspace, alert-drag-select, preset-settings-tabs,
+  loading-states, alert-evidence, live-workspace-recovery, theme and ui-cleanup specs
+  (87) passed; the real HTTPS browser/API/PostgreSQL journey (`integration-real.spec.ts`,
+  new dismissal case: dialog, error state, dismiss with reason, band, reload, change to
+  one minute, return by time alone, undismiss, history labels, phone width) passed. The
+  existing real smoke passed once and later timed out in its 15-second fixture call
+  on the loaded host.
+- Not run: S1–S4 on the shared local stack (its database and search index were left
+  untouched; it needs 0056 and a rebuild first), Kafka-bound integration, the search
+  rebuild against a mapping change, and CI. Nothing is committed or pushed.
+
 ## 2026-10-28 Link an alert to an incident from the alert (REV-48)
 
 The user asked to link an alert to an incident from the alert page and from the Feed
