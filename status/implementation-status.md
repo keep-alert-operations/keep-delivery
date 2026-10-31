@@ -7,7 +7,9 @@ named by the alert rule, and approved the plan with one change: a supplied name 
 of the v2 identity. Register REV-54; [alert operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-operations.md#5-v2-identity-encoding)
 field inventory, 1, 3, 5, 7 and 24; operator operations 18. Committed on 2026-10-31
 on `codex/alert-name` branches cut from main and opened as pull requests at the user's
-request (not merged): contracts `97f374e`, domain `5ce59b3` (pins contracts `97f374e`),
+request (not merged): contracts #6, domain #15, migrations #7, design #19, API #11,
+indexer #11, processor #8, correlation #7, ingestion #9, frontend #15 and delivery #26 in
+`appchi-alert-operations`. Heads: contracts `97f374e`, domain `5ce59b3` (pins contracts `97f374e`),
 migrations `8f2e4fc`, design `bb56bcf`, API `40a3f4a`, indexer `62e5fd1`, processor
 `74c763a`, correlation `b156344` and ingestion `a398431` (each pins domain `5ce59b3`;
 processor, correlation and ingestion change nothing else) and frontend `7967efb` (pins
