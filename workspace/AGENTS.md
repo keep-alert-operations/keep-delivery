@@ -5,39 +5,78 @@ This is the shared entrypoint for Codex and Claude Code. Read each affected
 repository's AGENTS.md and scoped instructions explicitly, even if the client did
 not load them automatically. Paths below are relative to this workspace root.
 
-## Start with the task
+## Start with any request
 
-1. Identify the affected repositories; verify their Git roots, branches, revisions,
-   staged/unstaged diffs and untracked work before editing. Preserve others' changes.
-2. Select relevant routes from `appchi-design/context/map.md` by reading each route's
-   "Applies when" condition, then pass them to `plan --route`. Keyword and path
-   matching (`--task`, `--path`) only suggests candidates. The maintained map is
-   `appchi-design/context/task-map.json`; generated route pages link exact sections.
-   Use request meaning, changed paths and behavioral impact together; combine routes.
-3. Read required sources and their scope corrections, then follow conditional
-   dependencies that apply. For behavior, architecture or cross-repository changes,
-   include relevant system design, worker scope, producer/consumer contracts and
-   acceptance requirements. A small local change starts with local guidance/code.
-4. Expand when a new dependency, contradiction, missing authority or uncertain scope
-   appears. No matching route means inspect the specification map and ask only about
-   material unresolved decisions. A search match never proves context is sufficient.
-5. Begin implementation when intended behavior, constraints, affected boundaries and
-   verification are understood. Reopen exploration when new evidence changes scope.
+Questions, changes, investigations, reviews and operations all start here.
+
+1. Name the intent (what the request asks you to do) and pick the topics it concerns
+   from the index below by meaning. Combine topics when a request crosses areas.
+2. From `appchi-delivery`, run `python scripts/context.py plan --intent INTENT
+   --topic TOPIC --content`. The plan says what to do and when you are finished,
+   includes the authoritative sections with their scope corrections, shows where the
+   code lives and lists related topics with the condition for reading each.
+3. Before editing, identify the affected repositories; verify their Git roots,
+   branches, revisions, staged/unstaged diffs and untracked work. Preserve others' changes.
+4. Follow each related topic whose condition holds. For behavior, architecture or
+   cross-repository changes, include system design, worker scope, producer/consumer
+   contracts and acceptance requirements. A small local change starts with local code.
+5. Expand when a new dependency, contradiction, missing authority or uncertain scope
+   appears. When no topic fits, `find` ranks matching headings across specifications,
+   decisions and runbooks; ask only about material unresolved decisions. A match
+   never proves context is sufficient.
+6. Act when intended behavior, constraints, affected boundaries and verification are
+   understood. Reopen reading when new evidence changes scope.
+
+<!-- BEGIN generated context index: edit appchi-design/context/task-map.json, then run context.py render. -->
+**Intents:** `question` (understand or answer) · `change` (add or modify) · `review` (check a diff) · `investigate` (unexpected behavior) · `operate` (run, release, recover). Unclear requests start as `question`.
+
+| Area | Topic | Covers |
+|---|---|---|
+| System | `behavior` | Product model, services and data authority, cross-system invariants, repository boundaries and current worker scope. |
+| System | `requirements-and-decisions` | Where requirements, the 55 issue IDs, REV decisions and acceptance scenarios live, and how to trace them. |
+| Alert flow | `alert-pipeline` | How an alert travels: v1/v2/Grafana admission, Kafka publication, source processing with replay proof, then changed events. |
+| Alert flow | `alerts` | Alert fields and identity, lifecycle, assignment, notes, history, dismissal and bulk manual operations. |
+| Alert flow | `event-contract` | Native v1/v2 input fields and Kafka event schemas: definitions, serialization, generation and compatibility. |
+| Alert flow | `search` | Alert CEL filters, search and counts, the Elasticsearch projection, indexing progress, reconciliation and rebuilds. |
+| Alert flow | `live-updates` | Live publishing from the API, SSE streams, reconnect and polling, scoped invalidation and Redis hints. |
+| Alert flow | `recovery` | Restore and replay fences, protected proof, retirement, retention, deletion and access to retained history. |
+| Incidents | `incidents` | Incident content, origin, lifecycle, assignment, membership, detail, list and period reports. |
+| Incidents | `incident-mutations` | Incident notes, content edits, assignment, resolve and reopen transitions, and command results. |
+| Incidents | `incident-membership` | Linking, unlinking and moving alerts between incidents, active ownership and resolve/reopen ownership effects. |
+| Incidents | `incident-search` | Incident list filters, ordering, cursors, counts and PostgreSQL-backed incident search. |
+| Incidents | `correlation` | Automatic incident creation and attachment from changed events: rule conditions, grouping, evidence and ordering. |
+| Product areas | `maintenance` | Maintenance windows: matching, overlap, suppression, timezones, release when a window ends, and management. |
+| Product areas | `shared-views` | Saved presets and dashboards: definitions, panels, count batches, shared editing and references. |
+| Product areas | `operators` | Operator lifecycle and API keys, Kong gateway policy, synchronous provisioning and shared Grafana routing. |
+| Product areas | `identity-access` | Sign-in and sessions, tenants and roles, grants, directory publication, tenant visibility and assignee eligibility. |
+| Platform | `shared-commands` | Shared mutation rules: request validation, expected revisions, idempotent retries, conflicts and error results. |
+| Platform | `database` | PostgreSQL tables, columns, indexes, RLS and privileges, transactions and lock order, and the migration chain. |
+| Platform | `http-contract` | Product and Ingestion API endpoints, request/response envelopes, errors, OpenAPI generation and the generated client. |
+| Platform | `reliability` | Timeouts and retries, backpressure and admission control, dependency outages, recovery guarantees, telemetry and alerting. |
+| UI | `ui-appearance` | Visual spacing, typography, color, layout and styling that preserve interaction, contracts and saved data. |
+| UI | `ui-behavior` | Navigation, forms, loading and error states, accessibility, keyboard use and browser state. |
+| Engineering | `local-development` | Running the local stack, prerequisites, isolated fixtures, the smoke baseline, test commands and the workspace. |
+| Engineering | `dependencies` | Python and Node packages, lock files, internal revision pins and coordinated editable environments. |
+| Engineering | `delivery` | Deployment, OpenShift workloads, release artifacts, qualification, readiness and coordinated rollout. |
+| Engineering | `documentation` | Agent instructions, this context catalog, navigation, document links and prose that do not change requirements. |
+<!-- END generated context index -->
 
 From `appchi-delivery` (Python 3.13; standard library only):
 
 ```powershell
 python scripts/context.py list
-python scripts/context.py plan --route incidents --route incident-mutations
-python scripts/context.py plan --task "Change incident search" --format json
+python scripts/context.py plan --intent question --topic alert-pipeline --content
+python scripts/context.py plan --task "Why does a dashboard count differ from the alert list?"
+python scripts/context.py find "scheduler cadence"
 python scripts/context.py read --source SOURCE_ID
 ```
 
-Plans provide references, reasons, conditional follow-ups and current source hashes.
-Read sources before using them; a plan does not mean they were read or verified.
-Read each selected document's introductory corrections before a section. Historical
+Without `--topic`, `--task` matches request words and `--path` matches changed files;
+they suggest at most three topics and infer the intent, which the plan reports. Plans
+provide references, reasons, related topics and current source hashes. Read sources
+before using them; a plan does not mean they were read or verified. Historical
 algorithms can be superseded by current worker scope. Sources remain the authority;
-route pages, extracted text, memories and old test reports do not replace them.
+topic pages, extracted text, memories and old test reports do not replace them.
 
 ## Repository ownership
 
@@ -127,6 +166,8 @@ where applicable. Read the following sections when their trigger applies:
 Maintain this file in `appchi-delivery/workspace/AGENTS.md` and the thin CLAUDE.md
 import beside it. Reconcile root edits before running delivery's
 `python scripts/workspace.py bootstrap`; preserve any existing backup. Keep installed
-and canonical copies consistent. Generic eng-* workflows stay global. The context
-layer changes project navigation, not model selection, native permissions or hooks.
+and canonical copies consistent. The context index above is generated from the
+catalog by `context.py render`; edit the catalog, not the block. Generic eng-*
+workflows stay global. The context layer changes project navigation, not model
+selection, native permissions or hooks.
 <!-- /eng-project-setup -->

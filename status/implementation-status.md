@@ -1,5 +1,19 @@
 # Implementation status
 
+## 2026-11-01 Context topics and intents
+
+Navigation and tooling changes only; no product behavior changed. The context
+catalog now has 27 subject topics and five intents (`question`, `change`, `review`,
+`investigate`, `operate`) instead of 23 change routes, and a generated 31-line
+topic index sits in the workspace AGENTS.md. `context.py plan` infers or accepts an
+intent, says what to do and when the work is finished, matches stemmed words, and
+returns the selected text with `--content`; unmatched requests list ranked `find`
+candidates. The eight natural questions that the route layer left unresolved or
+partial on 2026-10-31 now select their expected topics. Context, documentation and
+focused unit checks passed; the paired trial (Phase 2) has not run. Local branches
+`codex/context-topics` in design and delivery, stacked on REV-55, not pushed. See
+[executed evidence](../qualification/context-topics-2026-11-01.md).
+
 ## 2026-10-31 Alert provider and Grafana alert rule URL (REV-55)
 
 The user asked to add `provider` (`grafana` when the alert arrived through the Grafana
