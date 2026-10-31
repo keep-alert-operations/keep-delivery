@@ -82,8 +82,8 @@ uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_pl
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-api.git"
-reference = "5bb8de8ebc790400482ff942202b50835d217e44"
-resolved_reference = "5bb8de8ebc790400482ff942202b50835d217e44"
+reference = "81638f5d59fcc8ef31c2e9335844ac82ec19e2cd"
+resolved_reference = "81638f5d59fcc8ef31c2e9335844ac82ec19e2cd"
 
 [[package]]
 name = "appchi-contracts"
@@ -218,8 +218,8 @@ sqlalchemy = ">=2.1,<3"
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-migrations.git"
-reference = "2d0e8c70e96ee2b684e0370420b9efa9b65f5f71"
-resolved_reference = "2d0e8c70e96ee2b684e0370420b9efa9b65f5f71"
+reference = "4abfd60af62f10a93690689340866fed06ccae87"
+resolved_reference = "4abfd60af62f10a93690689340866fed06ccae87"
 
 [[package]]
 name = "appchi-processor"
@@ -2990,4 +2990,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "75fd01d5facdeb47b1056a0ed738f20bff5d587ac3a1107d520169a461f0ac5c"
+content-hash = "c6a07adaa2c246b4243b0c54a1d6b727eb79cb16535b2c83b0ee1e00636d141d"
