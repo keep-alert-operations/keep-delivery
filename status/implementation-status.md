@@ -9,7 +9,9 @@ from their stored deliveries, and alert detail plus Feed and preset search and a
 Provider column. Register REV-55; alert operations field inventory, 3, 7 and 24;
 operator operations 18; alerts technical 6 and 26. Committed on 2026-10-31 on
 `codex/alert-provider` branches cut from main and pushed, with pull requests opened at
-the user's request; **not merged**. Branch heads: contracts `ee9ae71`, domain `1dee02d`
+the user's request; **not merged**: contracts #7, domain #16, migrations #8, design
+#20, API #12, indexer #12, processor #9, correlation #8, ingestion #10, frontend #16 and
+delivery #28. Branch heads: contracts `ee9ae71`, domain `1dee02d`
 (pins contracts `ee9ae71`), migrations `b5d9775`, design `c946e86`, processor `7565435`,
 indexer `8f7159c`, API `4ce81f1`, correlation `19aa5c6` and ingestion `f252e50` (each
 pins domain `1dee02d`; API, correlation and ingestion change nothing else) and frontend
