@@ -6,16 +6,19 @@ The user asked for an optional v2 `name` defaulting to `key_field`, with Grafana
 named by the alert rule, and approved the plan with one change: a supplied name is part
 of the v2 identity. Register REV-54; [alert operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-operations.md#5-v2-identity-encoding)
 field inventory, 1, 3, 5, 7 and 24; operator operations 18. Committed on 2026-10-31
-on `codex/alert-name` branches cut from main and opened as pull requests at the user's
-request (not merged): contracts #6, domain #15, migrations #7, design #19, API #11,
-indexer #11, processor #8, correlation #7, ingestion #9, frontend #15 and delivery #26 in
-`appchi-alert-operations`. Heads: contracts `97f374e`, domain `5ce59b3` (pins contracts `97f374e`),
+on `codex/alert-name` branches cut from main, opened as pull requests and merged with merge
+commits at the user's request: contracts #6 (`9aad257`), domain #15 (`42cbf58`), migrations
+#7 (`f139f26`), API #11 (`6af7304`), indexer #11 (`4a70311`), processor #8 (`85c8f19`),
+correlation #7 (`5dca645`), ingestion #9 (`881064f`), frontend #15 (`dfefba5`), design #19
+(`144b00d`) and delivery #26. CI `verify` passed on each pull request before it
+merged. Branch heads: contracts `97f374e`, domain `5ce59b3` (pins contracts `97f374e`),
 migrations `8f2e4fc`, design `bb56bcf`, API `40a3f4a`, indexer `62e5fd1`, processor
 `74c763a`, correlation `b156344` and ingestion `a398431` (each pins domain `5ce59b3`;
 processor, correlation and ingestion change nothing else) and frontend `7967efb` (pins
-`@appchi/contracts` `97f374e`). This delivery change pins those branch heads in the
-manifest, `pyproject.toml` and the lock; repin the merge commits after merging, in the
-order contracts, domain, migrations, then the services, frontend, design and delivery.
+`@appchi/contracts` `97f374e`). This delivery change pins the merged main heads in the manifest
+and the service pins in `pyproject.toml` and the lock; the services' own locks keep domain
+`5ce59b3` and contracts `97f374e`, which have the same trees as their merge commits.
+Not deployed; the local stack runs these sources.
 
 - Contracts: `name` is an optional v2 identifier (256 characters, no control characters);
   a named delivery uses identity format 2 (`alerts:v2:identity:2`, the name appended) and an
