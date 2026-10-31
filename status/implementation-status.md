@@ -6,14 +6,14 @@ The user approved the [incident reports mock](https://claude.ai/artifact/NxBWGUC
 (option A, incidents only; noise reports left for later) and the
 [implementation plan](../docs/incident-reports-implementation-plan.md). Register REV-53;
 [incident operations 20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-incident-operations.md#20-incident-reports-i5-n3-rev-53).
-Committed on `codex/incident-reports` branches and opened as pull requests, not merged:
-design `63c4033` (stacked on the REV-52 branch `0680546`, open PR #17, which must merge
-first), migrations `8cfa16c`, API `4132381`, contracts `8e473d3`, frontend `01fb357`
-(pins `@appchi/contracts` `8e473d3`) and `7a945df`, from `origin/main` (`2d0e8c7`,
-`5bb8de8`, `9f4736f`, `1a3dfc5`, `ccd6e33`). This delivery change pins those branch
-heads in the manifest, `pyproject.toml` and the lock; merge every pull request with a
-merge commit so the pinned SHAs stay on main. Domain, ingestion, processor, correlation
-and indexer are unchanged.
+Merged to main through pull requests with merge commits on 2026-10-31, after REV-52
+(design #17 `dbccc7a`, frontend #13 `06a8d7b`), at the user's request: design #18
+(`bb0a03e`), contracts #5 (`b01b099`), migrations #6 (`4abfd60`), API #10 (`81638f5`)
+and frontend #14 (`6fd65f7`; it merged main to keep both REV-52 and REV-53
+paragraphs in `docs/ui-design.md`). CI `verify` passed on every pull request. This
+delivery change pins those merged heads in the manifest, `pyproject.toml` and the lock;
+the frontend and design heads include REV-52, which had no delivery entry of its own.
+Domain, ingestion, processor, correlation and indexer are unchanged.
 
 - Migrations: 0058 indexes `incident_cycles(tenant_id,opened_at)`, `(tenant_id,resolved_at)`
   where resolved and `incident_activity(incident_id,recorded_at)` for `assignment` and
