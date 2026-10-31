@@ -10,7 +10,7 @@ on `codex/alert-name` branches cut from main, opened as pull requests and merged
 commits at the user's request: contracts #6 (`9aad257`), domain #15 (`42cbf58`), migrations
 #7 (`f139f26`), API #11 (`6af7304`), indexer #11 (`4a70311`), processor #8 (`85c8f19`),
 correlation #7 (`5dca645`), ingestion #9 (`881064f`), frontend #15 (`dfefba5`), design #19
-(`144b00d`) and delivery #26. CI `verify` passed on each pull request before it
+(`144b00d`) and delivery #26 (`afc661b`). CI `verify` passed on each pull request before it
 merged. Branch heads: contracts `97f374e`, domain `5ce59b3` (pins contracts `97f374e`),
 migrations `8f2e4fc`, design `bb56bcf`, API `40a3f4a`, indexer `62e5fd1`, processor
 `74c763a`, correlation `b156344` and ingestion `a398431` (each pins domain `5ce59b3`;
@@ -18,7 +18,8 @@ processor, correlation and ingestion change nothing else) and frontend `7967efb`
 `@appchi/contracts` `97f374e`). This delivery change pins the merged main heads in the manifest
 and the service pins in `pyproject.toml` and the lock; the services' own locks keep domain
 `5ce59b3` and contracts `97f374e`, which have the same trees as their merge commits.
-Not deployed; the local stack runs these sources.
+Redeployed on the shared local stack from these main heads;
+not deployed elsewhere.
 
 - Contracts: `name` is an optional v2 identifier (256 characters, no control characters);
   a named delivery uses identity format 2 (`alerts:v2:identity:2`, the name appended) and an
@@ -108,6 +109,13 @@ Not deployed; the local stack runs these sources.
   the message beside it; dark theme and 390 px without page overflow.
   After the sender change, `local_v2_verify.py send` admitted and verified the three named
   demo alerts in Local Demo (run `4c164e53`); earlier unnamed demo alerts keep their keys.
+- Local redeploy from main, 2026-10-31, after the merges: all eleven checkouts on `main`,
+  clean and matching the manifest (`workspace.py inventory`); `local-runtime.ps1 -Action
+  Start -Restart` completed in one pass (migrations at 0059, the search bootstrap accepted
+  the rebuilt index, the three workers healthy, local v2 restarted with its 17 gateway
+  checks). S1 5 passed, S2 1 passed, S3 verify and send passed, the send confirming the
+  three demo alerts by name. S4 and the alert-name browser and Grafana journey were not
+  rerun after the redeploy; they passed earlier the same day on identical trees.
 - Full mocked Playwright suite in installed Chrome: 236 passed, 10 skipped, 2 failed under
   load (a correlation-rules loading state and expired sign-in recovery, outside this
   change); both passed when repeated. `next build` passed. Domain's first rerun after the
