@@ -93,7 +93,7 @@ def test_plan_required_closure_deduplicates_and_keeps_related_topic_unselected(w
     root, _ = workspace
     plan = context.Context(root).plan(topics=["incident", "ui"], task="incident", intent="change")
     assert ids(plan["topics"]) == ["foundation", "incident", "ui"]
-    assert [(s["id"], s["role"]) for s in plan["sources"]] == [("detail", "authority"), ("baseline", "background")]
+    assert [(s["id"], s["role"]) for s in plan["sources"]] == [("detail", "authority"), ("baseline", "scope")]
     assert plan["related"][0]["topic"] == "database"
     assert not plan["related"][0]["already_selected"]
     assert plan["status"] == "candidate"
@@ -155,16 +155,26 @@ def test_intent_controls_orientation_extra_sources_steps_and_finish(workspace):
     catalog = context.Context(root)
     question = catalog.plan(topics=["incident"], intent="question")
     assert [(s["id"], s["role"]) for s in question["sources"]] == [
-        ("overview", "orientation"), ("detail", "authority"), ("baseline", "background")]
+        ("overview", "orientation"), ("detail", "authority"), ("baseline", "scope")]
     assert question["intent"]["finish"] == "question finished."
     change = catalog.plan(topics=["incident"], intent="change")
     assert ids(change["sources"]) == ["detail", "baseline"]
     investigate = catalog.plan(topics=["ui"], task="UI error", intent=None)
     assert investigate["intent"]["id"] == "investigate"
-    assert investigate["sources"][0]["role"] == "intent"
-    assert investigate["sources"][0]["required_by"] == ["intent:investigate", "foundation"]
+    assert investigate["sources"][0]["role"] == "scope"
+    assert investigate["sources"][0]["required_by"] == ["foundation", "intent:investigate"]
     with pytest.raises(context.ContextError, match="Unknown intent"):
         catalog.plan(topics=["ui"], intent="guess")
+
+
+def test_scope_sources_from_required_topics_rank_before_other_background(workspace):
+    root, data = workspace
+    data["sources"]["detail"]["authority"] = "normative"
+    data["topics"][0]["sources"] = ["detail", "baseline"]
+    save(root, data)
+    plan = context.Context(root).plan(topics=["ui"], intent="change")
+    assert [(s["id"], s["role"]) for s in plan["sources"]] == [("baseline", "scope"), ("detail", "background")]
+    assert plan["sources"][0]["required_by"] == ["foundation"]
 
 
 def test_unresolved_plans_offer_find_candidates_instead_of_nothing(workspace):

@@ -10,9 +10,12 @@ intent, says what to do and when the work is finished, matches stemmed words, an
 returns the selected text with `--content`; unmatched requests list ranked `find`
 candidates. The eight natural questions that the route layer left unresolved or
 partial on 2026-10-31 now select their expected topics. Context, documentation and
-focused unit checks passed; the paired trial (Phase 2) has not run. Local branches
-`codex/context-topics` in design and delivery, stacked on REV-55, not pushed. See
-[executed evidence](../qualification/context-topics-2026-11-01.md).
+focused unit checks passed. The paired planning trial scored the route layer 51/56
+and the topic layer 49.5/56 (change tasks 27 vs 25, questions 24 vs 24.5), with
+fewer tool calls and slightly more tokens for topics; one run per cell shows no
+effect either way ([trial](../qualification/context-eval-2026-11-01/results.md)).
+Local branches `codex/context-topics` in design and delivery, stacked on REV-55,
+not pushed. See [executed evidence](../qualification/context-topics-2026-11-01.md).
 
 ## 2026-10-31 Alert provider and Grafana alert rule URL (REV-55)
 

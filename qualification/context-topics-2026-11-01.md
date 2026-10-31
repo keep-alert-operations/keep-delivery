@@ -15,7 +15,7 @@ or deployment changed. The design decision is recorded in the
 
 | Repository | Branch | Base | State |
 |---|---|---|---|
-| appchi-design | `codex/context-topics`: `ba757d2` | `c946e86` (`codex/alert-provider`, REV-55, design#20 open) | Committed locally, not pushed |
+| appchi-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (`codex/alert-provider`, REV-55, design#20 open) | Committed locally, not pushed |
 | appchi-delivery | `codex/context-topics`: the commit carrying this record | `9926f3f` (`codex/alert-provider`, REV-55, delivery#28 open) | Committed locally, not pushed |
 
 **Assistant-selected:** the plan said to branch from `main` after REV-55 merged.
@@ -46,8 +46,9 @@ design revision when the delivery change is published.
   intent from cue words when none is given and reports why. Matching stems whole
   words conservatively, never by prefix, and auto-selects at most three topics;
   path matches always select. Sources are ranked: orientation, the requested
-  topics' own sources, intent additions, then `background` from topics that are
-  only required. Unresolved plans list ranked `find` candidates. `find`
+  topics' own sources, `scope` sources from required topics, intent additions,
+  then `background` from topics that are only required. Unresolved plans list
+  ranked `find` candidates. `find`
   ranks headings across design specifications, verification, decisions,
   architecture and delivery docs and status, labelling cited headings with their
   source's authority and topics. `render` writes the map, 27 topic pages and the
@@ -80,7 +81,7 @@ Windows 11, Python 3.13; delivery's existing `.venv`; both repositories on
 
 | Check | Result |
 |---|---|
-| `python scripts/context.py check` | Passed: 78 sources, 27 topics, 5 intents, 62 cases, 29 generated documents |
+| `python scripts/context.py check` | Passed: 78 sources, 27 topics, 5 intents, 63 cases (62 at the trial snapshot), 29 generated documents |
 | `python qualification/check_context.py` | Passed; design heading parser matches context.py |
 | `python qualification/verify_documents.py` | Passed: 184 documents, 562 entries, REV-01..REV-55, no entrypoint errors |
 | Design `python scripts/check_docs.py` | Passed: 265 design-owned catalog and scope sections |
@@ -139,9 +140,16 @@ questions, recorded for the user rather than resolved:
 
 ## Not verified
 
-- Phase 2, the paired trial of the route layer against this one, has not run; it
-  needs the user's go-ahead (about 24 agent runs). No efficiency or quality
-  improvement is claimed.
+- Phase 2 ran on 2026-11-01 ([results](context-eval-2026-11-01/results.md)): route
+  layer 51/56, topic layer 49.5/56 (change tasks 27 vs 25 of 29; questions 24 vs
+  24.5 of 27), with 3% more tokens, 14% fewer tool calls and 6% less time for the
+  topic layer. One run per cell; the plan's "no loss on change tasks" criterion is
+  not met on that run, and no efficiency or quality improvement is claimed. The
+  trial found the stale `search` path glob, fixed afterwards. Also afterwards, with
+  the user's approval, worker-scope (`scope`) sources from required topics were
+  ranked ahead of other background sources; that ranking has not been trialled.
+  Checking it on the T4 request showed "LDAP group" selecting `correlation` through
+  the generic alias "grouping"; the alias was removed and a regression case added.
 - CI has not run on either branch, and nothing is pushed.
 - Matching and intent inference are deterministic heuristics tested by fixtures;
   they do not establish that an agent chooses well. The walkthrough is one run.

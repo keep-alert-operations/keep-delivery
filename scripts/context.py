@@ -455,21 +455,33 @@ class Context:
                 reasons.setdefault(required, []).append(f"Required by: {topic_id}")
         show = set(chosen["show"])
         # Rank what answers the request ahead of prerequisites: orientation, the requested
-        # topics' own sources, intent additions, then background from required-only topics.
+        # topics' own sources, scope corrections from required topics (never background),
+        # intent additions, then the rest of the required-only topics' sources.
         background = [t for t in selected if t not in direct]
         groups = [("orientation", selected if "orientation" in show else [], "orientation"),
                   ("sources", [t for t in selected if t in direct], "authority"),
+                  ("scope", background, "scope"),
                   ("intent", [f"intent:{intent_id}"] if selected else [], "intent"),
                   ("sources", background, "background"),
                   ("evidence", selected if "evidence" in show else [], "evidence")]
+
+        def members(field, owner):
+            if field == "intent":
+                return chosen["sources"]
+            if field == "scope":
+                return [s for s in self.topics[owner]["sources"]
+                        if self.catalog["sources"][s]["authority"] == "scope"]
+            return self.topics[owner][field]
+
         source_order, used_by, role_of = [], {}, {}
         for field, owners, role in groups:
             for owner in owners:
-                for source_id in chosen["sources"] if field == "intent" else self.topics[owner][field]:
+                for source_id in members(field, owner):
                     if source_id not in used_by:
                         source_order.append(source_id)
                         role_of[source_id] = role
-                    used_by.setdefault(source_id, []).append(owner)
+                    if owner not in used_by.setdefault(source_id, []):
+                        used_by[source_id].append(owner)
         sources = []
         for source_id in source_order:
             source = self.source(source_id)
