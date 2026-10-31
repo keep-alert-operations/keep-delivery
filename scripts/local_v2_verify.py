@@ -262,7 +262,7 @@ def verify():
 
 
 def send():
-    """Submit three synthetic alerts and verify authoritative and searchable tenancy."""
+    """Submit synthetic native and Grafana alerts and verify tenancy and provider."""
     local.environment()
     with local.client(app=True) as app, local.client() as http:
         session = local.login(app)
@@ -312,6 +312,44 @@ def send():
             item["disposition"] != "accepted" for item in admission["results"]
         ) or len(admission["results"]) != len(payloads):
             raise RuntimeError("Test batch was not fully admitted")
+        # REV-55: one Grafana delivery, whose generatorURL becomes its rule URL;
+        # the native alerts above are provider api with none.
+        operator = local.checked(
+            app.get(
+                local.ORIGIN
+                + f"/api/tenants/{demo['tenant_id']}/operators/{demo['operator_id']}"
+            )
+        )["data"]
+        rule = "https://grafana.example.invalid/alerting/grafana/local-demo/view?orgId=1"
+        member = {
+            "status": "firing",
+            "startsAt": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "labels": {
+                "Appchi - " + operator["name"]: "true",
+                "alertname": "Grafana disk pressure",
+                "application": "Appchi local demo v2",
+                "component": "disk",
+                "severity": "high",
+                "site": "local-development",
+                "node_name": run,
+            },
+            "annotations": {
+                "message": "Local Demo: Grafana reports high disk usage",
+                "impact": "Synthetic development test",
+                "runbook_url": "https://example.invalid/local-demo",
+            },
+            "generatorURL": rule,
+        }
+        response = http.post(
+            local.GATEWAY + "/api/ingest/v2/grafana",
+            headers={"Authorization": "Bearer " + key},
+            json={"version": "1", "status": "firing", "truncatedAlerts": 0, "alerts": [member]},
+        )
+        if response.status_code != 202:
+            raise RuntimeError(f"Grafana delivery was not admitted: {response.status_code}")
+        expected = {
+            (p["component"], p["name"], "api", None) for p in payloads
+        } | {("disk", "Grafana disk pressure", "grafana", rule)}
         # Kafka acknowledgement is admission; application and indexing are asynchronous.
         # The current contract has no receipt lookup or client-key deduplication.
         base = local.ORIGIN + f"/api/tenants/{demo['tenant_id']}/alerts"
@@ -322,16 +360,21 @@ def send():
             )
             if response.status_code == 200:
                 rows = response.json()["data"]
-                if len(rows) == len(payloads) and {
-                    (row["component"], row.get("name")) for row in rows
-                } == {(payload["component"], payload["name"]) for payload in payloads}:
+                if {
+                    (row["component"], row.get("name"), row.get("provider"), row.get("alert_rule_url"))
+                    for row in rows
+                } == expected and len(rows) == len(expected):
                     ids = [row["id"] for row in rows]
                     break
             time.sleep(1)
         else:
             raise RuntimeError("Test alerts did not become searchable")
-        for identifier in ids:
-            local.checked(app.get(base + "/" + identifier))
+        details = [local.checked(app.get(base + "/" + identifier))["data"] for identifier in ids]
+        if {
+            (row["component"], row["name"], row["provider"], row["alert_rule_url"])
+            for row in details
+        } != expected:
+            raise RuntimeError("Alert detail provider or rule URL differs from search")
         global_id = next(t["id"] for t in session["tenants"] if t["kind"] == "global")
         for identifier in ids:
             if (
@@ -349,13 +392,14 @@ def send():
             "count": len(ids),
             "applied": True,
             "searchable": True,
+            "providers": sorted(row["provider"] for row in details),
             "global_detail_denied": True,
             "kafka_admitted": True,
             "verified_at": datetime.now(UTC).isoformat(),
         }
         local.save(local.STATE / "alerts-evidence.json", evidence)
         print(
-            f"Sent and verified {len(ids)} v2 alerts in Local Demo; Kafka admission, search and tenant isolation passed."
+            f"Sent and verified {len(ids)} v2 alerts in Local Demo, one through Grafana; Kafka admission, search, provider and tenant isolation passed."
         )
 
 
