@@ -50,6 +50,8 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 **Incident reports (REV-53):** apply migration 0058 in the stopped-writer migration window (its index builds block incident cycle and activity writes for one scan), then deploy the API and the UI. The report is read-only and has no flag; the API is correct without the indexes but slower. Rolling back the UI removes the Reports item; the indexes can stay. Not yet qualified.
 
+**Alert name (REV-54):** order matters. Apply migration 0059 (a nullable `alerts.name`, no rewrite, no stopped-writer window), then deploy the processor, correlation and API, which accept and resolve names while nothing sends one. Rebuild the search index under the strict mapping that adds `name` and `missing_name`, switch the alias, then deploy the indexer; until the switch `name` predicates match nothing. Deploy ingestion last: an older processor stops at the first named record and retries it, stalling that partition without loss. Unnamed v2 keys are unchanged; named alerts get identity format 2. Grafana members now need the `alertname` label, which Grafana always sets. Roll back ingestion first; the column stays. Not yet qualified.
+
 ## Runbooks and support
 
 The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.

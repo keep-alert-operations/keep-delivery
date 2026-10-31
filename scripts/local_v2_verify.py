@@ -279,11 +279,23 @@ def send():
                 "impact": "Synthetic development test",
                 "runbook_url": "https://example.invalid/local-demo",
                 "node_name": run,
+                # REV-54: the alert's title; part of its identity, like the node.
+                "name": name,
             }
-            for component, message, severity in (
-                ("cpu", "Local Demo: CPU usage is high", "warning"),
-                ("latency", "Local Demo: API response time is elevated", "critical"),
-                ("queue", "Local Demo: background queue needs review", "high"),
+            for component, name, message, severity in (
+                ("cpu", "High CPU usage", "Local Demo: CPU usage is high", "warning"),
+                (
+                    "latency",
+                    "Slow API responses",
+                    "Local Demo: API response time is elevated",
+                    "critical",
+                ),
+                (
+                    "queue",
+                    "Background queue backlog",
+                    "Local Demo: background queue needs review",
+                    "high",
+                ),
             )
         ]
         headers = {"X-API-Key": key}
@@ -310,9 +322,9 @@ def send():
             )
             if response.status_code == 200:
                 rows = response.json()["data"]
-                if len(rows) == len(payloads) and {row["component"] for row in rows} == {
-                    payload["component"] for payload in payloads
-                }:
+                if len(rows) == len(payloads) and {
+                    (row["component"], row.get("name")) for row in rows
+                } == {(payload["component"], payload["name"]) for payload in payloads}:
                     ids = [row["id"] for row in rows]
                     break
             time.sleep(1)

@@ -1,5 +1,117 @@
 # Implementation status
 
+## 2026-10-31 Optional alert name on native v2 (REV-54)
+
+The user asked for an optional v2 `name` defaulting to `key_field`, with Grafana alerts
+named by the alert rule, and approved the plan with one change: a supplied name is part
+of the v2 identity. Register REV-54; [alert operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-operations.md#5-v2-identity-encoding)
+field inventory, 1, 3, 5, 7 and 24; operator operations 18. Committed on 2026-10-31
+on `codex/alert-name` branches cut from main, opened as pull requests and merged with merge
+commits at the user's request: contracts #6 (`9aad257`), domain #15 (`42cbf58`), migrations
+#7 (`f139f26`), API #11 (`6af7304`), indexer #11 (`4a70311`), processor #8 (`85c8f19`),
+correlation #7 (`5dca645`), ingestion #9 (`881064f`), frontend #15 (`dfefba5`), design #19
+(`144b00d`) and delivery #26. CI `verify` passed on each pull request before it
+merged. Branch heads: contracts `97f374e`, domain `5ce59b3` (pins contracts `97f374e`),
+migrations `8f2e4fc`, design `bb56bcf`, API `40a3f4a`, indexer `62e5fd1`, processor
+`74c763a`, correlation `b156344` and ingestion `a398431` (each pins domain `5ce59b3`;
+processor, correlation and ingestion change nothing else) and frontend `7967efb` (pins
+`@appchi/contracts` `97f374e`). This delivery change pins the merged main heads in the manifest
+and the service pins in `pyproject.toml` and the lock; the services' own locks keep domain
+`5ce59b3` and contracts `97f374e`, which have the same trees as their merge commits.
+Not deployed; the local stack runs these sources.
+
+- Contracts: `name` is an optional v2 identifier (256 characters, no control characters);
+  a named delivery uses identity format 2 (`alerts:v2:identity:2`, the name appended) and an
+  unnamed one keeps format 1 byte for byte. Grafana maps the required `alertname` label.
+  Ingestion OpenAPI regenerated with `generate_http_contracts.py`; Kafka envelopes unchanged.
+- Migrations: 0059 adds nullable `alerts.name` (no rewrite); README, checksums, head,
+  chain-length and upgrade-from-0058 tests.
+- Domain: `alert_name()` resolves the effective name (supplied, else v2 `key_field`, else
+  null) for CEL evaluation, presentation, correlation fields and group keys and search
+  documents; `name` joins the catalog, rule fields, sort, columns, grouping and `q` tokens;
+  maintenance proof omits an absent name so earlier proof stays byte-identical.
+- API: the maintenance window alert list returns the name. Indexer: reconciliation tokens
+  include the name.
+  The local search bootstrap also accepts a serving index the rebuild CLI produced
+  under the same local binding, so the local stack can take a mapping change that
+  rewrites every document: it must match a completed local rebuild job for that index and
+  epoch and carry that job's metadata (indexer unit 93 with 5 new cases).
+- Frontend: the Feed title cell shows the name with the message under it; alert detail,
+  dismiss and link dialogs and incident and maintenance lists use the name; Group by and
+  sort offer Alert name; the title column is labelled Alert; `generated.ts` regenerated;
+  `docs/ui-design.md`.
+- Design: REV-54, alert operations, operator operations 18, alerts technical 6, preset
+  operations 4, verification plan "Alert name (REV-54)", `check_docs.py` REV-01..54.
+  Delivery: this entry, the readiness rollout note, `verify_documents.py` REV-01..54, the
+  Grafana admission fixture, the local runtime's "Search mapping changes" procedure, and the
+  S3 sender (`local_v2_verify.py send`), whose three demo alerts now carry names (High CPU
+  usage, Slow API responses, Background queue backlog) and are checked by name; the user
+  chose this over a readable default, so unnamed alerts keep their key as the name.
+- Executed on 2026-10-31 on the uncommitted branches, with delivery's `.venv` holding
+  editable siblings and an isolated PostgreSQL 18.2 (port 55490) and Elasticsearch 9.0
+  (port 59290, plain HTTP) holding synthetic data only; the shared local stack was not
+  touched. Unit suites: contracts 43, domain 562 (9 new), migrations 5, API 224, ingestion
+  103, processor 49, correlation 2, indexer 88 and delivery 256 (65 skipped for unset
+  services). Migrations unit and Alembic integration 38 passed, including upgrade from
+  0058. Elasticsearch compatibility: domain 5 and indexer 1, with `name` equality,
+  prefix, presence and `q` checked against native evaluation. Delivery integration, by
+  module: `test_alert_name.py` 3 and `test_alert_name_rules.py` 2 (a maintenance window
+  on `name` suppresses the named alert and the unnamed one by its key, and its alert list
+  returns the effective names; a correlation rule on `name` opens an incident only for the
+  named alert), `test_kafka_first.py` 6 (3 skipped without a broker),
+  `test_kafka_maintenance_inline.py` 16, `test_source_driven_maintenance.py` 2,
+  `test_search_pipeline.py` 2, `test_search_rebuild.py` 7, `test_grafana_admission.py` 2
+  (the rule name is stored in the payload), and maintenance, correlation,
+  preset grouping, dismissal, product and display-name modules in one batch (65 passed,
+  12 skipped).
+  Failures in that first batch were environmental and passed on rerun: native CEL
+  compiles missing the one-second deadline on a loaded machine (503
+  `cel_compilation_unavailable`), Elasticsearch 5-second client timeouts (index creation
+  takes about 3 s idle here) and a session database dirtied by an earlier run killed by its
+  timeout. The new rules tests retry that documented 503. Not run: the full delivery
+  integration suite (it exceeded a 50-minute limit without a summary), Kafka-broker cases
+  and the indexer search-bootstrap cases, which need HTTPS Elasticsearch. Design
+  `check_docs.py`; delivery `verify_documents.py`, `check_context.py`, `check_contracts.py`
+  and `verify_boundaries.py` passed.
+- Frontend: `tsc --noEmit`; Prettier on every changed file (`format:check` flags only CRLF
+  working copies of untouched files on this Windows checkout). Playwright in installed
+  Chrome (the pinned headless shell is not installed): `alert-name.spec.ts` 3 plus the
+  affected columns, grouping, dismissal and link-incident specs, 26 passed. The real HTTPS
+  browser/API/PostgreSQL case in `integration-real.spec.ts` seeds a named v2 alert in a
+  specific tenant: the detail API returns its name and 64-character key, the page heading
+  is the name with the message under it, and the v1 alert keeps its message; the existing
+  acknowledge-and-note case passed alongside it. Earlier attempts timed out with about
+  2.6 GB of memory free and passed once the isolated Elasticsearch was stopped. Not rerun after the last CSS change: the mocked spec (Next.js refuses a second dev server
+  in this checkout while the stack's UI runs from it); the change passed on the live stack.
+- Shared local stack, 2026-10-31, run `cfd8f14b-14a6-4067-aac9-54fb4b97020d` (ledger and
+  screenshots under ignored `.local/verification/`), at the user's request: stopped the
+  stale REV-53 worktree API (58100) and UI (3443) after the user approved it; `Start
+  -Restart` applied 0058 and 0059 to `appchi_local` (head 0059) and stopped at
+  `search_mapping_mismatch` as expected; the search rebuild (job `8e70281c`) copied all 52
+  documents into `appchi-local-alerts-8e70281c-…` and switched the alias, existing v2 alerts
+  named by their key; `Start` then started the workers; `local-v2.ps1 -Action Start
+  -Restart` was also needed, because plain Start leaves the v2 private ingestion on old
+  code (a first send against it rejected `name` as an unknown field and admitted a Grafana
+  alert without `alertname`). One rebuild CLI `start` returned the generic
+  `search_rebuild_unavailable`; the same `start_rebuild` call succeeded at once, cause not
+  established. Then S1 identity 5 passed, S2 native v1 1 passed, S3 gateway verify (17
+  checks) and send (3 alerts, isolation) passed, and S4 in Chrome with real Keycloak
+  sign-in as `local-editor` passed (High severity, link to the S2 alert, a note kept over
+  reload, resolve leaving the alert firing, reopen starting a second cycle; the note check
+  was resumed on the same incident after a hidden duplicate matched). REV-54 through Kong:
+  unnamed and named v2 alerts 202, the named repeat updated the same alert (resolved), a
+  renamed one became a separate alert, a blank name 422 `invalid_string` on `name`, and
+  Grafana 207 with the `alertname` member accepted and the other rejected on
+  `labels.alertname`. In the browser: Feed rows show each name with its message, the
+  unnamed alert its key; Group by Alert name; `name ==` CEL finds exactly the named
+  alert; free-text `outage` finds the renamed one; the alert page heading is the name with
+  the message beside it; dark theme and 390 px without page overflow.
+  After the sender change, `local_v2_verify.py send` admitted and verified the three named
+  demo alerts in Local Demo (run `4c164e53`); earlier unnamed demo alerts keep their keys.
+- Full mocked Playwright suite in installed Chrome: 236 passed, 10 skipped, 2 failed under
+  load (a correlation-rules loading state and expired sign-in recovery, outside this
+  change); both passed when repeated. `next build` passed. Domain's first rerun after the
+  browser suite hit the CEL compile deadline; the next run passed 562.
 ## 2026-10-30 Incident reports by period (REV-53)
 
 The user approved the [incident reports mock](https://claude.ai/artifact/NxBWGUChKyvq1CnRJmxoky)

@@ -172,6 +172,31 @@ release capacity. No production readiness or company-service compatibility is
 claimed. See [implementation status](../status/implementation-status.md) for the
 complete gaps.
 
+## Search mapping changes (REV-54)
+
+Start's search bootstrap requires the serving index's mapping to match the code
+exactly. A change that adds a field to every document, as REV-54's `name` does, needs
+a rebuild: the indexer refuses an existing document whose content differs at the same
+version. The bootstrap accepts a serving index that the rebuild CLI completed under
+the local binding, so rebuild with that CLI. From `appchi-delivery` in PowerShell 7:
+
+```powershell
+./scripts/local-runtime.ps1 -Action Start -Restart   # migrates, then stops at search_mapping_mismatch
+$values = Get-Content .local/keycloak/app-environment.json -Raw | ConvertFrom-Json
+foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
+$env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
+.venv/Scripts/python.exe -c "from appchi.search.local_bootstrap import binding; print(binding().model_dump_json())" | Set-Content .local/runtime/search-binding.json -Encoding utf8NoBOM
+.venv/Scripts/python.exe -m appchi.search.rebuild_cli --binding .local/runtime/search-binding.json start
+.venv/Scripts/python.exe -m appchi.search.rebuild_cli --binding .local/runtime/search-binding.json resume <job-id>
+./scripts/local-runtime.ps1 -Action Start
+./scripts/local-v2.ps1 -Action Start -Restart       # when local v2 runs; plain Start does not restart it
+```
+
+The workers are stopped while the rebuild copies, so nothing else writes the index.
+The previous physical index stays for cleanup, as in the [indexer runbook](https://github.com/appchi-alert-operations/appchi-indexer/blob/main/docs/runbooks/search-rebuild.md).
+The CLI reports any failure as `search_rebuild_unavailable`; `status <job-id>` shows
+the job's state, and `resume` continues the same job.
+
 ## Always-on correlation and maintenance (REV-39)
 
 Correlation rules and maintenance windows have no capability gate. Per-rule and

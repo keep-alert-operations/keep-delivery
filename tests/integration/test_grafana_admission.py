@@ -35,6 +35,7 @@ def webhook(name, label_value="true"):
                 "startsAt": "2026-09-22T12:00:00Z",
                 "labels": {
                     "Appchi - " + name: label_value,
+                    "alertname": "Grafana rule",
                     "application": "test-" + str(uuid4()),
                     "component": "cpu",
                     "site": "lab",
@@ -76,6 +77,8 @@ def test_grafana_provenance_partial_batch_and_idempotent_delivery(
         assert json.loads(bytes(row["raw_json"])) == payload["alerts"][0]
         assert row["adapter_version"] == ADAPTER_VERSION
         assert row["payload"]["message"] == "Grafana source"
+        # REV-54: the rule name is the alert name and part of its identity.
+        assert row["payload"]["name"] == "Grafana rule"
         assert (
             conn.execute("SELECT operator FROM alerts WHERE id=%s", (alert,)).fetchone()["operator"]
             == op["id"]
