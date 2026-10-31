@@ -1,5 +1,90 @@
 # Implementation status
 
+## 2026-10-30 Incident reports by period (REV-53)
+
+The user approved the [incident reports mock](https://claude.ai/artifact/NxBWGUChKyvq1CnRJmxoky)
+(option A, incidents only; noise reports left for later) and the
+[implementation plan](../docs/incident-reports-implementation-plan.md). Register REV-53;
+[incident operations 20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-incident-operations.md#20-incident-reports-i5-n3-rev-53).
+Committed on `codex/incident-reports` branches and opened as pull requests, not merged:
+design `63c4033` (stacked on the REV-52 branch `0680546`, open PR #17, which must merge
+first), migrations `8cfa16c`, API `4132381`, contracts `8e473d3`, frontend `01fb357`
+(pins `@appchi/contracts` `8e473d3`) and `7a945df`, from `origin/main` (`2d0e8c7`,
+`5bb8de8`, `9f4736f`, `1a3dfc5`, `ccd6e33`). This delivery change pins those branch
+heads in the manifest, `pyproject.toml` and the lock; merge every pull request with a
+merge commit so the pinned SHAs stay on main. Domain, ingestion, processor, correlation
+and indexer are unchanged.
+
+- Migrations: 0058 indexes `incident_cycles(tenant_id,opened_at)`, `(tenant_id,resolved_at)`
+  where resolved and `incident_activity(incident_id,recorded_at)` for `assignment` and
+  `eligibility_lost`; README, checksums, head and chain-length tests, and an upgrade test
+  that the report's reads use the leaf indexes on all 32 partitions.
+- API: `GET /api/tenants/{tenant_id}/reports/incidents` (`reports/incidents.py`, pure
+  `reports/figures.py`). One read-only repeatable-read transaction after `authorize`
+  (view): cycles opened or resolved in the period and the previous period (1.2 s budget,
+  503 `query_deadline`, 100,000-cycle limit 422 `report_too_large`), then the period's
+  assignment history in a savepoint (0.7 s budget; on timeout first response and the
+  assignee breakdown are reported unavailable). Day and week bins are computed with the
+  pinned tzdata, so DST days have 23 or 25 hours. The history read is set-based: per-cycle
+  lookups took about 2 s on 20,000 cycles, and planning a literal 20,000-element id array
+  took 0.55 s, so the array goes through a scalar subquery.
+- Contracts: regenerated with `generate_http_contracts.py`; additive only (one path and
+  18 `Report*`/`IncidentReport*` schemas, no existing path or schema changed).
+- Frontend: Reports rail item, `reports-pages.tsx`, `styles/reports.css`, `chart-1` and
+  `chart-2` tokens (validated with the dataviz palette checker for both themes), the
+  incident list reading its filters from the URL once, `generated.ts` regenerated from
+  the local contracts, `docs/ui-design.md` and `DESIGN.md`. `.impeccable/design.json`
+  was not regenerated.
+- Design: REV-53, incident operations 20 and preamble, system completion 3 and 10,
+  specification map, verification plan "Incident reports (REV-53)", `check_docs.py`
+  REV-01..53, context `task-map.json` and rendered routes. Delivery: this entry, the
+  plan, `verify_documents.py` REV-01..53 and the readiness rollout note.
+- Executed on 2026-10-30 on the uncommitted worktrees, with delivery's `.venv` holding
+  editable siblings and an isolated PostgreSQL 18.2 container with synthetic data only:
+  migrations unit and Alembic integration 37 passed; `test_incident_reports.py` 5
+  passed (lifecycle through the API, exact figures on seeded history with a deleted rule,
+  a retired incident and another tenant, the partial result on a forced history timeout,
+  access and validation, and a 90-day report over 20,000 cycles and 200,000 activity
+  rows in 0.69 s through the API); API report unit tests 14 passed. Coordinated unit
+  suites passed: contracts 33, domain 553, migrations 5, API 224, ingestion 103,
+  processor 49, correlation 2, indexer 88 and delivery 256 (65 skipped for unset
+  services). Five API unit tests that start the native CEL compiler first failed on its
+  one-second deadline while the browser suite ran alongside; they passed on an idle rerun.
+  Design `check_docs.py`; delivery `verify_documents.py`, `check_context.py`,
+  `check_contracts.py` (OpenAPI matches the application) and `verify_boundaries.py`
+  passed. Frontend: `tsc --noEmit` and `next build` passed (frontend has no lint script;
+  `format:check` flags only CRLF working copies of untouched files on this Windows
+  checkout, and every changed file passes Prettier). Playwright in installed Chrome (the
+  pinned headless shell 1243 is not installed): the full suite 234 passed and 8 skipped;
+  `incident-report.spec.ts` 6 passed (default period request, figures and deltas, the
+  breakdown and its link into the filtered Incidents list, 90 days and custom past
+  retention, 24 hours, Compare off, first load, empty, partial with Retry, failure with
+  Retry, refresh keeping figures, keyboard definitions, table view, dark and 390 px); the
+  real HTTPS browser/API/PostgreSQL case in `integration-real.spec.ts` passed (empty
+  period, held first load, figures from real incident commands, breakdown with "(you)",
+  light and dark at 1280 and 390 px with no page overflow, a failed report recovering on
+  Retry, and the Critical row opening the filtered Incidents list); its screenshots were
+  reviewed.
+- Executed on the shared local stack, 2026-10-30, at the user's request: the worktree
+  API ran on 127.0.0.1:58100 and the worktree UI replaced the main UI on
+  https://localhost:3443; the main API, ingestion and workers were unchanged, and Kafka
+  was started from the main Compose configuration. Migration 0058 was not applied to
+  `appchi_local`, so main's migration history stays valid; the report is correct
+  without it. S1 identity 5 passed and S2 native v1 1 passed (run from the main
+  frontend checkout as black-box suites). S4 with real Keycloak sign-in as
+  `local-editor` passed in installed Chrome: explicit High severity, link to the run's
+  alert, a note kept over reload, assignment, Investigating, Resolved with the alert
+  still firing, and a reopen starting a second cycle with the link kept. The Reports
+  page then showed this activity (24 hours in Global: 4 opened, 3 new and 1 reopened,
+  1 resolved and reopened, first response 378 s); light and dark at desktop and
+  390 px, first load, a failed report recovering on Retry, and Local Demo's empty
+  24 hours were captured. Two earlier attempts left synthetic incidents: their notes
+  returned 409 because the test typed before the live refresh updated the notes
+  revision after linking, which the page reports as "The resource changed". Ledger and
+  screenshots are under ignored `.local/verification/6966c7d1-3625-4146-8cd7-8044589efb1d`.
+- Not run: S3 (Kong and the local v2 services were stopped; ingestion is unchanged),
+  Kafka- and Elasticsearch-bound suites, CI and production qualification.
+
 ## 2026-10-29 Plainer alert actions and a steadier dismiss dialog (REV-51)
 
 After trying REV-49 on the local stack the user asked to drop the "…" from Dismiss,

@@ -48,6 +48,8 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 **Timed dismissal (REV-49):** apply migration 0056, deploy the indexer and every writer, rebuild the search index so its strict mapping has `dismissed_until`, then set `APPCHI_ALERT_DISMISSAL_ENABLED=true` on the API and deploy the UI. Turning the flag off is the rollback; older code ignores the columns, so dismissed alerts become visible again. Not yet qualified.
 
+**Incident reports (REV-53):** apply migration 0058 in the stopped-writer migration window (its index builds block incident cycle and activity writes for one scan), then deploy the API and the UI. The report is read-only and has no flag; the API is correct without the indexes but slower. Rolling back the UI removes the Reports item; the indexes can stay. Not yet qualified.
+
 ## Runbooks and support
 
 The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.
