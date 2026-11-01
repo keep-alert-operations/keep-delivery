@@ -2,7 +2,7 @@
 
 These are the detailed workspace policies linked from the small agent entrypoint.
 They preserve the prior workspace guidance; read the sections relevant to the task.
-All applicable requirements remain binding. A route is a starting reading plan,
+All applicable requirements remain binding. A context topic is a starting reading plan,
 not a waiver of a requirement omitted by its index. Product specifications remain
 authoritative in design; this document governs engineering work and ownership.
 

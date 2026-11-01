@@ -55,52 +55,62 @@ the delivery canonical copies and installed root files consistent."
 
 ## Context routing and Obsidian
 
-Design owns [task-map.json](../../appchi-design/context/task-map.json), the
-[context guide](../../appchi-design/context/README.md) and representative routing
-fixtures. Delivery owns the standard-library reader and validator. From delivery:
+Design owns [task-map.json](../../appchi-design/context/task-map.json) (sources,
+topics and intents), the [context guide](../../appchi-design/context/README.md) and
+representative routing fixtures. Delivery owns the standard-library reader and
+validator and the generated topic index in [workspace/AGENTS.md](../workspace/AGENTS.md).
+From delivery:
 
 ```powershell
 python scripts/context.py list
+python scripts/context.py plan --intent question --topic incidents --content
 python scripts/context.py plan --task "Add incident assignment" --format json
-python scripts/context.py plan --route incidents --route incident-mutations
+python scripts/context.py find "scheduler cadence"
 python scripts/context.py read --source SOURCE_ID
 python scripts/context.py render
 python qualification/check_context.py
 ```
 
-Use a source ID returned by the plan. Explicit routes select their required
-dependency closure; otherwise task keywords and changed paths suggest candidate
-routes. Conditional edges describe when to expand. Neither matching nor a passing
-fixture establishes that the plan is complete. Inspect affected callers and scoped
-instructions, and resolve missing authority or conflicting requirements before acting.
-An unmatched task returns a nonzero status and requires further exploration.
+Pick the intent (what to do) and topics (what to read) from the index by meaning.
+Explicit topics select their required closure; otherwise request words and changed
+paths select at most three candidate topics and the intent is inferred. Related
+topics say when to read more. Neither matching nor a passing fixture establishes
+that the plan is complete. Inspect affected callers and scoped instructions, and
+resolve missing authority or conflicting requirements before acting. An unmatched
+request returns a nonzero status with ranked `find` candidates and requires further
+exploration.
 
 The reader emits exact sections with their introductory scope corrections, line
-ranges and current SHA-256 hashes. A saved plan is a snapshot: regenerate it after
-source changes or a handoff. Reading plans and source hashes do not prove that an
-agent read, understood or complied with a requirement. Keep decisions, source
-revisions, progress and unresolved questions in the existing task checkpoint.
+ranges and current SHA-256 hashes; `--content` includes the text in the plan. A
+saved plan is a snapshot: regenerate it after source changes or a handoff. Reading
+plans and source hashes do not prove that an agent read, understood or complied
+with a requirement. Keep decisions, source revisions, progress and unresolved
+questions in the existing task checkpoint.
 
-`render` generates [map.md](../../appchi-design/context/map.md) and linked route
-pages from the catalog. To browse them in Obsidian, open the **parent workspace**
-as a vault and use the local graph on an incident route. Ordinary Markdown links
-connect routes, prerequisite routes, conditional routes and authoritative sources.
-The page text labels mandatory versus conditional edges; Obsidian's ordinary graph
-does not enforce those semantics. No Obsidian plugin is required by the agent tools.
-Keep any personal vault settings local and do not move the repositories.
+`render` generates [map.md](../../appchi-design/context/map.md), linked topic pages
+and the index block between the markers in the canonical workspace AGENTS.md; run
+`python scripts/workspace.py bootstrap` afterwards to install the root copy. To
+browse the pages in Obsidian, open the **parent workspace** as a vault and use the
+local graph on an incident topic. Ordinary Markdown links connect topics, required
+topics, related topics and authoritative sources. The page text labels mandatory
+versus related edges; Obsidian's ordinary graph does not enforce those semantics.
+No Obsidian plugin is required by the agent tools. Keep any personal vault settings
+local and do not move the repositories.
 
-After changing routes, source headings or filenames, render again and run the full
-context check. It checks source targets, exact headings, required dependencies,
-fixtures and generated-file drift, and that design's `check_docs.py` reads headings
-exactly as the resolver does. `verify_documents.py` also checks installed
-entrypoint consistency, ignoring line-ending differences that Git checkouts
-introduce, and invokes this gate. Standalone design checks defer links to absent
-sibling checkouts but still fail when a catalog section in a design-owned source is
-renamed, duplicated or missing; the delivery workspace check requires them all.
-The fixtures test deterministic selection, not end-to-end agent effectiveness or
-measured context savings. Use paired real-task trials before making those claims;
-the [first planning-only trials](../qualification/context-eval-2026-10-24/results.md)
-show no token saving and do not establish an effect either way.
+After changing topics, intents, source headings or filenames, render again and run
+the full context check. It checks source targets, exact headings and scope
+sections, required dependencies, fixtures, the index size and generated-file drift,
+and that design's `check_docs.py` reads headings exactly as the resolver does.
+`verify_documents.py` also checks installed entrypoint consistency, ignoring
+line-ending differences that Git checkouts introduce, and invokes this gate.
+Standalone design checks defer links to absent sibling checkouts but still fail
+when a catalog or scope section in a design-owned source is renamed, duplicated or
+missing; the delivery workspace check requires them all. The fixtures test
+deterministic selection, not end-to-end agent effectiveness or measured context
+savings. Use paired real-request trials before making those claims; the
+[first planning-only trials](../qualification/context-eval-2026-10-24/results.md)
+of the earlier route layer show no token saving and do not establish an effect
+either way.
 
 Context changes across design and delivery must be reviewed together. Once the
 design changes are committed and available, update delivery's workspace manifest

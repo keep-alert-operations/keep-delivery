@@ -1,5 +1,24 @@
 # Implementation status
 
+## 2026-11-01 Context topics and intents
+
+Navigation and tooling changes only; no product behavior changed. The context
+catalog now has 27 subject topics and five intents (`question`, `change`, `review`,
+`investigate`, `operate`) instead of 23 change routes, and a generated 31-line
+topic index sits in the workspace AGENTS.md. `context.py plan` infers or accepts an
+intent, says what to do and when the work is finished, matches stemmed words, and
+returns the selected text with `--content`; unmatched requests list ranked `find`
+candidates. The eight natural questions that the route layer left unresolved or
+partial on 2026-10-31 now select their expected topics. Context, documentation and
+focused unit checks passed. The paired planning trial scored the route layer 51/56
+and the topic layer 49.5/56 (change tasks 27 vs 25, questions 24 vs 24.5), with
+fewer tool calls and slightly more tokens for topics; one run per cell shows no
+effect either way ([trial](../qualification/context-eval-2026-11-01/results.md)).
+Merged with merge commits at the user's request: design #21 (`d0ac727`, the same tree
+as its tested head `f72c299`) and delivery #29, rebased on `main` after REV-55 merged;
+the manifest pins design `d0ac727`. See
+[executed evidence](../qualification/context-topics-2026-11-01.md).
+
 ## 2026-10-31 Alert provider and Grafana alert rule URL (REV-55)
 
 The user asked to add `provider` (`grafana` when the alert arrived through the Grafana
@@ -12,7 +31,7 @@ operator operations 18; alerts technical 6 and 26. Committed on 2026-10-31 on
 merge commits on 2026-11-02 at the user's request: contracts #7 (`8b67b2e`), domain #16
 (`241f398`), migrations #8 (`89ffdb0`), design #20 (`e6e581e`), API #12 (`c6c59f3`),
 indexer #12 (`2ccb222`), processor #9 (`b8e5802`), correlation #8 (`d5357a7`), ingestion
-#10 (`6cd0814`), frontend #16 (`0eef6ed`) and delivery #28. CI `verify` passed on each
+#10 (`6cd0814`), frontend #16 (`0eef6ed`) and delivery #28 (`6255670`). CI `verify` passed on each
 pull request before it merged. Branch heads: contracts `ee9ae71`, domain `1dee02d`
 (pins contracts `ee9ae71`), migrations `b5d9775`, design `c946e86`, processor `7565435`,
 indexer `8f7159c`, API `4ce81f1`, correlation `19aa5c6` and ingestion `f252e50` (each
