@@ -8,17 +8,23 @@ it) to both alert schemas, chose Grafana-only rule URLs, a backfill of existing 
 from their stored deliveries, and alert detail plus Feed and preset search and a
 Provider column. Register REV-55; alert operations field inventory, 3, 7 and 24;
 operator operations 18; alerts technical 6 and 26. Committed on 2026-10-31 on
-`codex/alert-provider` branches cut from main and pushed, with pull requests opened at
-the user's request; **not merged**: contracts #7, domain #16, migrations #8, design
-#20, API #12, indexer #12, processor #9, correlation #8, ingestion #10, frontend #16 and
-delivery #28. Branch heads: contracts `ee9ae71`, domain `1dee02d`
+`codex/alert-provider` branches cut from main, opened as pull requests and merged with
+merge commits on 2026-11-02 at the user's request: contracts #7 (`8b67b2e`), domain #16
+(`241f398`), migrations #8 (`89ffdb0`), design #20 (`e6e581e`), API #12 (`c6c59f3`),
+indexer #12 (`2ccb222`), processor #9 (`b8e5802`), correlation #8 (`d5357a7`), ingestion
+#10 (`6cd0814`), frontend #16 (`0eef6ed`) and delivery #28. CI `verify` passed on each
+pull request before it merged. Branch heads: contracts `ee9ae71`, domain `1dee02d`
 (pins contracts `ee9ae71`), migrations `b5d9775`, design `c946e86`, processor `7565435`,
 indexer `8f7159c`, API `4ce81f1`, correlation `19aa5c6` and ingestion `f252e50` (each
 pins domain `1dee02d`; API, correlation and ingestion change nothing else) and frontend
 `45a6f04` (its contracts pin is unchanged: no HTTP schema changed). This delivery change
-pins those heads in the manifest, `pyproject.toml` and the lock; repin the merge commits
-after the pull requests merge. The checks below ran on the same source before it was
-committed, and the shared local stack runs it at the user's request.
+pins the merged main heads in the manifest and the service pins in `pyproject.toml` and
+the lock; the services' own locks keep domain `1dee02d` and contracts `ee9ae71`, which
+have the same trees as their merge commits. Delivery #28's first CI run failed in
+`test_local_v2_setup.py`: its fake server predated the S3 sender's Grafana delivery, and
+it now answers the operator lookup and the Grafana post. The checks below ran on the
+same source before it was committed, and the shared local stack runs it at the user's
+request; it was not redeployed from main.
 
 - Contracts: `http_url()` holds the existing `runbook_url` rule; `rule_url()` reads a
   retained Grafana member's `generatorURL` and returns it only when it meets that rule
