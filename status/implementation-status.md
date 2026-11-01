@@ -1,5 +1,75 @@
 # Implementation status
 
+## 2026-11-01 Link counts on incident list rows (REV-56)
+
+The incident list's Linked alerts column showed "—" on every row. On the local stack,
+the four open Global incidents each held one current link in PostgreSQL. `GET
+/incidents` returned no count field; only the detail computed one. The user chose to
+return the detail's counts on every list row (register REV-56; incident operations 7,
+14 and 16; system completion 10). Merged with merge commits on 2026-11-02 at the user's
+request, after rebasing each branch onto main and repinning: domain #18 (`40e5b17`, which
+also contains the count-test fixture, domain #17 `6142bf4`), API #14 (`c9c5a12`, pins domain
+`40e5b17`), contracts #8 (`b1f9988`), frontend #17 (`054dc33`, pins `@appchi/contracts`
+`b1f9988`; `npm run generate` reproduces the committed client), design #22 (`1f9672e`) and
+this delivery change. CI `verify` passed on each pull request before it merged. This
+delivery change pins the merged main heads in the manifest and the service pins in
+`pyproject.toml` and the lock, with the documentation-only merges indexer #13
+(`04c290d`) and API #13 (`4a906a7`). The local-stack checks below ran on the source
+before the rebase; the shared local stack was not redeployed from main.
+
+- Domain: `incidents/counts.py` runs the detail's count query grouped over an
+  incident-id array. `linked_counts()` keeps its contract and its 503
+  `maintenance_proof_unavailable`. `page_linked_counts()` returns `total_linked`,
+  `suppressed` and `unavailable` per row, with `suppressed` None where proof is
+  missing. `shared/display_names.py` documents the three fields on
+  `IncidentDisplayNames`.
+- API: `incidents/listing.py` counts the page's rows in its repeatable-read
+  transaction; the OpenAPI unit test lists the new fields.
+- Contracts: `product.openapi.json` and `openapi.json` regenerated with
+  `qualification/generate_http_contracts.py`, which changed only the three additive
+  fields.
+- Frontend: `linkedSummary()` shows "N linked", adding nonzero suppressed and
+  unavailable parts. `generated.ts` is regenerated from the local contracts. Also
+  `incident-filters.spec.ts` "incident rows show their linked alert counts" and
+  `docs/ui-design.md`.
+- Design: REV-56, the sections above, verification plan "Incident list link counts
+  (REV-56)", `check_docs.py` REV-01..56. Delivery: this entry, the readiness note,
+  `verify_documents.py` REV-01..56 and two `test_incident_listing.py` cases.
+- Executed on 2026-11-01 with a worktree environment holding editable worktree
+  siblings:
+  - Unit: contracts 43, domain 562, migrations 5, API 224, ingestion 103, processor 49,
+    correlation 2 and indexer 93 passed. Delivery: 255 passed, 65 skipped and 1 failed.
+    The failure, `test_local_v2_setup.py::test_send_verifies_kafka_admission_search_and_tenant_isolation`,
+    is REV-55's S3 sender test running on main-level packages; this change does not
+    touch it.
+  - Integration, on a disposable PostgreSQL 18.2 (port 55491, removed afterwards):
+    `test_incident_listing.py`, `test_product.py`, `test_incident_auto_resolution.py`,
+    `test_incident_retirement.py`, `test_incident_note_revision.py` and
+    `test_display_names.py` gave 43 passed and 10 skipped (retirement cases without
+    Elasticsearch). The new cases compare list rows with the detail under the API
+    role, and time a 200-row page over 20,000 links in 0.20–0.23 s.
+  - `check_contracts.py`, `verify_boundaries.py`, `verify_documents.py`,
+    `check_context.py` and design `check_docs.py` passed.
+  - Frontend: typecheck passed and the changed files pass Prettier. The full
+    `format:check` reports this Windows checkout's CRLF endings in 103 files, as the
+    workspace checkout does. `incident-filters.spec.ts` and `workspace.spec.ts`: 33
+    passed on installed Chrome; the pinned Playwright Chromium is not installed here.
+- Local stack, run `50ef7917-361f-4ddb-ac1c-5a556cc22d91`, at the user's request: the
+  worktree API served 58100 and the worktree UI served 3443; the stack API, ingestion,
+  workers, data and migrations were unchanged.
+  - Before the fix the column showed "—". After it, Global showed "1 linked" on its four
+    open incidents, and all nine Global rows equalled their detail counts. Local Demo
+    showed "3 linked" and "0 linked". The 375-pixel layout had no page overflow.
+  - S1 5 passed; S2 1 passed (alert `675d9c61-5e76-4c07-9015-f0a6901dcf75`); S3 verify
+    passed 17 checks and send admitted 4 alerts (Local Demo detail 200, Global 404).
+  - S4 manual, on incident `d9841fdd-ebf1-4ac5-a4cb-12d2c0ea2e1e`: create, link the S2
+    alert ("1 linked" in the list), note, resolve (link kept, alert firing, ownership
+    released, Resolved list "1 linked"), reopen (cycle 2, ownership back), each followed
+    by a reload. Cleanup unlinked the alert and resolved the incident with the alert
+    unchanged.
+  - The swap was then restored: the workspace UI is back on 3443 and its process
+    record updated, with both `livez` returning 200 and all three workers healthy.
+
 ## 2026-11-01 Context topics and intents
 
 Navigation and tooling changes only; no product behavior changed. The context
