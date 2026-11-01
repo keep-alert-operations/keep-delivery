@@ -15,7 +15,7 @@ Use distinct migration/runtime/worker identities. Runtime identities must not be
 1. Run the backend unit and PostgreSQL suite against disposable data using the commands in README. Keep JUnit output, exact lockfiles, migration checksums and the actual PostgreSQL version.
 2. Set `APPCHI_TEST_ELASTICSEARCH_URL` to a disposable test Elasticsearch endpoint and run `pytest backend/tests/compatibility -q`. It creates a uniquely named test index and removes that index. Run it with a restricted test identity and review the test before pointing it at a shared cluster. This is native CEL versus real Elasticsearch evidence; mocked search tests are not equivalent.
 3. Run frontend typecheck/build and Playwright tests. Separately run the opt-in real browser test from `docs/frontend.md`; it creates/drops an isolated PostgreSQL database and starts temporary HTTPS services. It validates real application writes but intentionally does not prove real SSO.
-4. Configure LDAP using `docs/identity-implementation.md` and run the directory worker with the exact immutable-ID/eligibility/membership schema. Verify complete paging/nested groups, known negative evidence, outages, five-minute upstream propagation and active-session enforcement against actual company data with approved synthetic accounts. The application must not infer that a failed lookup is a trusted deletion.
+4. Configure LDAP using the [identity implementation](https://github.com/appchi-alert-operations/appchi-api/blob/main/docs/identity-implementation.md) with the exact immutable-ID/eligibility/membership schema, then publish once with `python -m appchi.worker directory --once`. There is no directory worker to run: REV-35 ([worker scope 4](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)) allows only explicit one-off publication. Verify complete paging/nested groups, known negative evidence, outages and active-session enforcement against actual company data with approved synthetic accounts, publishing explicitly again after each source change. Five-minute upstream propagation is deferred with the worker and is not a current qualification target. The application must not infer that a failed lookup is a trusted deletion.
 5. Configure Keycloak issuer/client/trust/protected directory-ID mapper and accepted password-authentication claims. Exercise login/logout/refresh uncertainty and revocation through the browser. Record actual installed versions and read-only evidence of mapper/client settings.
 6. Run the isolated real mTLS tests in `backend/tests/integration/test_gateway_tls.py`. For Kong deployment, additionally verify the actual stripping/key-auth/private TLS behavior described below; local TLS tests do not prove installed Kong behavior.
 
@@ -58,10 +58,12 @@ See the [official Kafka Python client configuration](https://docs.confluent.io/k
 
 `APPCHI_RECOVERY_BINDING` names the mounted JSON `EvidenceBinding` and
 `APPCHI_RECOVERY_CREDENTIAL` contains the adapter bearer credential. Both must be
-supplied. Run `protected-deletions` to resume configuration deletion jobs;
-`retention`, `incident-retention` and `audit-retention` handle their respective
-resource paths. Incident cleanup additionally needs the independently protected
-`command` evidence kind. No worker automatically turns on recovery readiness.
+supplied. Run `protected-deletions` to resume configuration deletion jobs. The
+`retention`, `incident-retention` and `audit-retention` sweeps are deferred (REV-34;
+[worker scope 2](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation))
+and `appchi.worker` rejects them, so they are not part of this qualification;
+reinstated incident cleanup would also need the independently protected `command`
+evidence kind. No worker automatically turns on recovery readiness.
 
 The [OpenShift handoff](openshift.md) describes separate migration, API, mTLS
 ingress, worker and network templates and their required owner-supplied inputs.
@@ -73,10 +75,13 @@ owner-supplied alias/allocation binding is separate from connection credentials.
 Document parity and uncertain cutover have been exercised on isolated Elasticsearch
 9.0.0. This does not qualify the private service or complete rollback restore.
 
-The operators worker now accepts the explicit executable profile described in
-[operator integration](https://github.com/appchi-alert-operations/appchi-api/blob/main/docs/operators-implementation.md). Mount its binding and
-separate Grafana, Kong and readiness-probe credentials. Missing or unsupported
-capabilities retain pending/needs-attention; an HTTP fixture is not installed
-Grafana/Kong compatibility evidence.
+Operator provisioning runs inside the Product API request (REV-34;
+[worker scope 3](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#3-request-owned-operator-provisioning));
+there is no operators worker. The API accepts the explicit executable profile
+described in [operator integration](https://github.com/appchi-alert-operations/appchi-api/blob/main/docs/operators-implementation.md). Mount its binding,
+the separate `APPCHI_OPERATOR_DATABASE_URL` and the Grafana, Kong and
+readiness-probe credentials into the Product API only. A missing or unsupported
+capability fails the provisioning request with 503 and an explicit retry path; an
+HTTP fixture is not installed Grafana/Kong compatibility evidence.
 
 The [restore fencing procedure](restore-fencing.md) now provides controlled begin/status/collect commands and a separately privileged database role. This is a partial recovery implementation: complete checkpoint enumeration cannot enable human access, credentials or ingestion. Validate the supplied [checkpoint wire contract](recovery-checkpoints.md) and retain the unresolved family-specific recovery gates. [Wrapping-key rotation](../wrapping-key-rotation.md) provides bounded authenticated rewrap without automatic key retirement.

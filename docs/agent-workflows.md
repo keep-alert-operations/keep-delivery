@@ -84,12 +84,12 @@ Conditional reading limits startup scope; it does not make applicable requiremen
 optional. All applicable authoritative requirements and verification obligations
 remain binding, regardless of task size.
 
-If extraction is incomplete, locate the authoritative files in the remaining
-monorepo and follow its instructions. Do not create empty replacement services,
-duplicate authoritative files, or infer remote URLs from repository names. Use
-verified repository configuration to obtain missing sources; otherwise report the
-missing input and continue work that does not depend on it. Perform a repository
-split only as part of a task that requests it.
+If an authoritative file or repository is missing from the workspace, do not
+create empty replacement services, duplicate authoritative files, or infer remote
+URLs from repository names. Use verified repository configuration to obtain
+missing sources; otherwise report the missing input and continue work that does
+not depend on it. Perform a repository split only as part of a task that requests
+it.
 
 ## Repository ownership
 
@@ -114,7 +114,7 @@ fields, runtime configuration keys, or historical migration identifiers.
 
 ## Read the design first
 
-After extraction, normative specifications live under `appchi-design/specs/`.
+Normative specifications live under `appchi-design/specs/`.
 For behavior, architecture, or cross-repository changes, read the relevant system
 design in `spec-alerts-management-system.md` and scope in `spec-worker-scope.md`
 before making the change, then read the affected supplements and producer/consumer
@@ -137,10 +137,11 @@ Acceptance requirements belong in `appchi-design/verification/verification-plan.
 Current evidence belongs in `appchi-delivery/status/implementation-status.md` and
 `appchi-delivery/status/delivery-readiness.md`, including DEL-01 through DEL-08.
 
-These are target locations. During extraction, consult the corresponding root
-files in the monorepo or the verified repository index; do not treat an absent
-target path as an absent requirement. Each contract has one authoritative home.
-Later explicit corrections supersede earlier examples and deferred algorithms.
+Each contract has one authoritative home. If a path named here is missing, find
+its current home through the Specification map in `spec-alerts-management-system.md`
+or `appchi-delivery/workspace/source-inventory.json`; do not treat an absent path
+as an absent requirement. Later explicit corrections supersede earlier examples
+and deferred algorithms.
 
 ## Preserve system behavior and scope
 
