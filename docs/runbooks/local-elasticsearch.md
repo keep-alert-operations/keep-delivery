@@ -123,9 +123,9 @@ control was disabled to address that failure.
 $previousPythonPath = $env:PYTHONPATH
 $previousSearch = $env:APPCHI_TEST_ELASTICSEARCH_URL
 try {
-    $env:PYTHONPATH = (Join-Path (Get-Location) 'backend')
+    $env:PYTHONPATH = $null
     $env:APPCHI_TEST_ELASTICSEARCH_URL = 'http://127.0.0.1:59200'
-    ./.venv/Scripts/python.exe -m pytest backend/tests/compatibility -q
+    ./.venv/Scripts/python.exe -m pytest ../appchi-indexer/tests/compatibility ../appchi-domain/tests/compatibility -q
     if ($LASTEXITCODE) { throw 'Real Elasticsearch compatibility failed' }
 } finally {
     [Environment]::SetEnvironmentVariable('PYTHONPATH', $previousPythonPath, 'Process')
@@ -133,8 +133,10 @@ try {
 }
 ```
 
-The fixture creates a unique `appchi-test-*` index and removes its own index on
-normal teardown. Tests use the real mapping, CEL translation/search, PIT traversal
+The suites come from the indexer and domain checkouts beside delivery; keep the
+indexer suite first, because the domain count test reuses its fixture. Each fixture
+creates a unique `appchi-test-*` index and removes its own index on normal
+teardown. Tests use the real mapping, CEL translation/search, PIT traversal
 and projection/tombstone paths. No route mock or in-memory substitute supplies the
 Elasticsearch result.
 
