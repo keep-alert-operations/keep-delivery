@@ -14,8 +14,9 @@ focused unit checks passed. The paired planning trial scored the route layer 51/
 and the topic layer 49.5/56 (change tasks 27 vs 25, questions 24 vs 24.5), with
 fewer tool calls and slightly more tokens for topics; one run per cell shows no
 effect either way ([trial](../qualification/context-eval-2026-11-01/results.md)).
-Local branches `codex/context-topics` in design and delivery, stacked on REV-55,
-not pushed. See [executed evidence](../qualification/context-topics-2026-11-01.md).
+Branches `codex/context-topics` in design (pull request #21) and delivery, rebased on
+`main` after REV-55 merged; delivery pins design `f72c299` until #21 merges. See
+[executed evidence](../qualification/context-topics-2026-11-01.md).
 
 ## 2026-10-31 Alert provider and Grafana alert rule URL (REV-55)
 
@@ -29,7 +30,7 @@ operator operations 18; alerts technical 6 and 26. Committed on 2026-10-31 on
 merge commits on 2026-11-02 at the user's request: contracts #7 (`8b67b2e`), domain #16
 (`241f398`), migrations #8 (`89ffdb0`), design #20 (`e6e581e`), API #12 (`c6c59f3`),
 indexer #12 (`2ccb222`), processor #9 (`b8e5802`), correlation #8 (`d5357a7`), ingestion
-#10 (`6cd0814`), frontend #16 (`0eef6ed`) and delivery #28. CI `verify` passed on each
+#10 (`6cd0814`), frontend #16 (`0eef6ed`) and delivery #28 (`6255670`). CI `verify` passed on each
 pull request before it merged. Branch heads: contracts `ee9ae71`, domain `1dee02d`
 (pins contracts `ee9ae71`), migrations `b5d9775`, design `c946e86`, processor `7565435`,
 indexer `8f7159c`, API `4ce81f1`, correlation `19aa5c6` and ingestion `f252e50` (each

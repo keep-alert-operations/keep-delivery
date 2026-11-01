@@ -15,15 +15,16 @@ or deployment changed. The design decision is recorded in the
 
 | Repository | Branch | Base | State |
 |---|---|---|---|
-| appchi-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (`codex/alert-provider`, REV-55, design#20 open) | Committed locally, not pushed |
-| appchi-delivery | `codex/context-topics`: the commit carrying this record | `9926f3f` (`codex/alert-provider`, REV-55, delivery#28 open) | Committed locally, not pushed |
+| appchi-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (REV-55 head; in `main` through merge `e6e581e`) | Pushed; pull request design#21 |
+| appchi-delivery | `codex/context-topics`: the commits carrying this record | `6255670` (`main` after REV-55 merged) | Pushed; pull request opened with this record |
 
 **Assistant-selected:** the plan said to branch from `main` after REV-55 merged.
 REV-55 was still open and touches the register, `check_docs.py`,
-`verify_documents.py`, the status record and the manifest, so these branches stack
-on it; with the usual merge commits the PRs then show only this work.
-`workspace/manifest.json` still pins design `c946e86`; it moves to the merged
-design revision when the delivery change is published.
+`verify_documents.py`, the status record and the manifest, so the branches were
+first stacked on it. On 2026-11-02 the user asked for REV-55 to be merged; after it
+merged, delivery was rebased onto `main`, and design's base is already in `main`.
+`workspace/manifest.json` pins design's branch head `f72c299`; repin to design#21's
+merge commit after it merges.
 
 ## Changes
 
@@ -150,6 +151,6 @@ questions, recorded for the user rather than resolved:
   ranked ahead of other background sources; that ranking has not been trialled.
   Checking it on the T4 request showed "LDAP group" selecting `correlation` through
   the generic alias "grouping"; the alias was removed and a regression case added.
-- CI has not run on either branch, and nothing is pushed.
+- CI ran on design#21 (passed); the delivery pull request's CI is in that pull request.
 - Matching and intent inference are deterministic heuristics tested by fixtures;
   they do not establish that an agent chooses well. The walkthrough is one run.
