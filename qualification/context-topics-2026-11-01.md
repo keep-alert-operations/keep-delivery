@@ -15,16 +15,15 @@ or deployment changed. The design decision is recorded in the
 
 | Repository | Branch | Base | State |
 |---|---|---|---|
-| appchi-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (REV-55 head; in `main` through merge `e6e581e`) | Pushed; pull request design#21 |
-| appchi-delivery | `codex/context-topics`: the commits carrying this record | `6255670` (`main` after REV-55 merged) | Pushed; pull request opened with this record |
+| appchi-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (REV-55 head; in `main` through merge `e6e581e`) | design#21 merged as `d0ac727` (same tree as `f72c299`), at the user's request |
+| appchi-delivery | `codex/context-topics`: the commits carrying this record | `6255670` (`main` after REV-55 merged) | delivery#29, merged at the user's request |
 
 **Assistant-selected:** the plan said to branch from `main` after REV-55 merged.
 REV-55 was still open and touches the register, `check_docs.py`,
 `verify_documents.py`, the status record and the manifest, so the branches were
 first stacked on it. On 2026-11-02 the user asked for REV-55 to be merged; after it
 merged, delivery was rebased onto `main`, and design's base is already in `main`.
-`workspace/manifest.json` pins design's branch head `f72c299`; repin to design#21's
-merge commit after it merges.
+`workspace/manifest.json` pins design#21's merge commit `d0ac727`.
 
 ## Changes
 

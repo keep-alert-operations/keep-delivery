@@ -14,8 +14,9 @@ focused unit checks passed. The paired planning trial scored the route layer 51/
 and the topic layer 49.5/56 (change tasks 27 vs 25, questions 24 vs 24.5), with
 fewer tool calls and slightly more tokens for topics; one run per cell shows no
 effect either way ([trial](../qualification/context-eval-2026-11-01/results.md)).
-Branches `codex/context-topics` in design (pull request #21) and delivery, rebased on
-`main` after REV-55 merged; delivery pins design `f72c299` until #21 merges. See
+Merged with merge commits at the user's request: design #21 (`d0ac727`, the same tree
+as its tested head `f72c299`) and delivery #29, rebased on `main` after REV-55 merged;
+the manifest pins design `d0ac727`. See
 [executed evidence](../qualification/context-topics-2026-11-01.md).
 
 ## 2026-10-31 Alert provider and Grafana alert rule URL (REV-55)
