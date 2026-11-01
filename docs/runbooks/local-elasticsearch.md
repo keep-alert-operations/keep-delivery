@@ -133,8 +133,8 @@ try {
 }
 ```
 
-The suites come from the indexer and domain checkouts beside delivery; keep the
-indexer suite first, because the domain count test reuses its fixture. Each fixture
+The suites come from the indexer and domain checkouts beside delivery and can run
+in either order: each has its own fixtures. Each fixture
 creates a unique `appchi-test-*` index and removes its own index on normal
 teardown. Tests use the real mapping, CEL translation/search, PIT traversal
 and projection/tombstone paths. No route mock or in-memory substitute supplies the
