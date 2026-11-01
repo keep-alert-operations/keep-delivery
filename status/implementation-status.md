@@ -1,5 +1,96 @@
 # Implementation status
 
+## 2026-10-31 Alert provider and Grafana alert rule URL (REV-55)
+
+The user asked to add `provider` (`grafana` when the alert arrived through the Grafana
+webhook, `api` otherwise) and `alert_rule_url` (the URL of the Grafana rule that fired
+it) to both alert schemas, chose Grafana-only rule URLs, a backfill of existing alerts
+from their stored deliveries, and alert detail plus Feed and preset search and a
+Provider column. Register REV-55; alert operations field inventory, 3, 7 and 24;
+operator operations 18; alerts technical 6 and 26. Committed on 2026-10-31 on
+`codex/alert-provider` branches cut from main, opened as pull requests and merged with
+merge commits on 2026-11-02 at the user's request: contracts #7 (`8b67b2e`), domain #16
+(`241f398`), migrations #8 (`89ffdb0`), design #20 (`e6e581e`), API #12 (`c6c59f3`),
+indexer #12 (`2ccb222`), processor #9 (`b8e5802`), correlation #8 (`d5357a7`), ingestion
+#10 (`6cd0814`), frontend #16 (`0eef6ed`) and delivery #28. CI `verify` passed on each
+pull request before it merged. Branch heads: contracts `ee9ae71`, domain `1dee02d`
+(pins contracts `ee9ae71`), migrations `b5d9775`, design `c946e86`, processor `7565435`,
+indexer `8f7159c`, API `4ce81f1`, correlation `19aa5c6` and ingestion `f252e50` (each
+pins domain `1dee02d`; API, correlation and ingestion change nothing else) and frontend
+`45a6f04` (its contracts pin is unchanged: no HTTP schema changed). This delivery change
+pins the merged main heads in the manifest and the service pins in `pyproject.toml` and
+the lock; the services' own locks keep domain `1dee02d` and contracts `ee9ae71`, which
+have the same trees as their merge commits. Delivery #28's first CI run failed in
+`test_local_v2_setup.py`: its fake server predated the S3 sender's Grafana delivery, and
+it now answers the operator lookup and the Grafana post. The checks below ran on the
+same source before it was committed, and the shared local stack runs it at the user's
+request; it was not redeployed from main.
+
+- Contracts: `http_url()` holds the existing `runbook_url` rule; `rule_url()` reads a
+  retained Grafana member's `generatorURL` and returns it only when it meets that rule
+  and the 2,048-character limit, else none. Native schemas, OpenAPI and Kafka envelopes
+  are unchanged.
+- Migrations: 0060 adds nullable `alerts.provider` and `alerts.alert_rule_url` with
+  checks (`api`/`grafana`; a rule URL only with `grafana`); README, checksums and chain
+  tests.
+- Domain: each applied delivery sets both fields from its `adapter_version` and
+  retained bytes, outside the identity, semantic revision and rule fields;
+  `alert_provider()` reads a missing provider as `api` for v1 and none for v2 in CEL,
+  presentation and search documents; `provider` (nullable enum) and `alert_rule_url`
+  join the searchable catalog and allowed columns. `appchi.alerts.provider_backfill`
+  fills live alerts from their latest applied source event under the tenant
+  coordinator and publishes a non-semantic `provider-backfill` projection change.
+- Processor: `python -m appchi.provider_backfill` (README). Indexer: the Elasticsearch
+  equivalence test adds provider and rule-URL cases. API, correlation and ingestion:
+  no code change.
+- Frontend: alert detail shows Provider and an Open alert rule button beside Open
+  runbook; Provider is a selectable column and editor field; `alert-provider.spec.ts`;
+  `docs/ui-design.md`.
+- Design: REV-55, the specs above, verification plan "Alert provider (REV-55)",
+  `check_docs.py` REV-01..55. Delivery: this entry, the readiness rollout note,
+  `verify_documents.py` REV-01..55, `tests/integration/test_alert_provider.py`, the
+  local runtime's "Alert provider upgrade (REV-55)" procedure and the S3 sender, which
+  now also sends one Grafana webhook alert with a `generatorURL` and checks every
+  alert's provider and rule URL in search and detail.
+- Executed on 2026-10-31 with delivery's `.venv` holding editable siblings. Unit:
+  contracts 57 (14 new), domain 569 (7 new), migrations 5, API 224, ingestion 103,
+  processor 49, correlation 2, indexer 93. On a disposable PostgreSQL 18.2 (port
+  55491) and Elasticsearch 9.0 (port 59291, plain HTTP), both removed afterwards:
+  migrations unit and Alembic 39 (chain to 0060, upgrades through 0059);
+  `test_alert_provider.py` 4, `test_alert_name.py` 3, `test_grafana_admission.py` and
+  `test_alert_name_rules.py` (2 skipped without Elasticsearch), 9 passed; Elasticsearch
+  compatibility indexer 1 and domain 5. Full delivery integration suite: 208 passed,
+  276 skipped for unset services, 1 failed:
+  `test_ninety_day_report_on_twenty_thousand_cycles_is_within_budget` (REV-53) hit the
+  4-second statement timeout while seeding about 200,000 incident activity rows, alone
+  too; it touches only incident tables and was not investigated further. Design
+  `check_docs.py`; delivery `verify_documents.py`, `check_context.py`,
+  `check_contracts.py` and `verify_boundaries.py` passed.
+- Frontend: `tsc --noEmit`, Prettier on changed files and `next build` passed. Playwright
+  in installed Chrome: `alert-provider.spec.ts` 3, `alert-name.spec.ts` 3,
+  `preset-columns.spec.ts` 8 and `redesign.spec.ts` 6 passed. The stack's UI dev server
+  was stopped for this run and restarted by Start.
+- Shared local stack, 2026-10-31, at the user's request: backed up `appchi_local` to
+  `.local/runtime/pre-0060-provider.dump`; `Start -Restart` applied 0060 (head 0060) and
+  stopped at `search_mapping_mismatch`; the search rebuild (job `dca59f01`) completed
+  and switched the alias; `Start` then `local-v2.ps1 -Action Start -Restart` (17 gateway
+  checks). The backfill filled 69 alerts (33 and 36 in the two tenants, none
+  unresolved) and a rerun filled none; every provider matched its latest delivery
+  route (v1 36 and v2 31 `api`, 2 `grafana` whose earlier Grafana deliveries had no
+  `generatorURL`). S1 5 passed, S2 1 passed, S3 verify (17 checks) and send passed (run
+  `a7855fa0`: three native alerts `api`, the Grafana one `grafana` with its rule URL,
+  Global detail 404). A temporary Playwright journey with real Keycloak sign-in as
+  `local-editor` (screenshots under ignored `.local/verification/rev55/`): Grafana
+  alert detail shows Provider Grafana and Open alert rule with the URL, `_blank` and
+  `noopener noreferrer`; an API alert shows API and no rule link; real-index CEL
+  `provider == "grafana"`, `provider == "api"` and an `alert_rule_url` prefix returned
+  1, 3 and 1 of the run's alerts after retrying the documented one-second compile 503;
+  a new-preset preview filtered by provider shows the Provider column; dark theme at
+  390 px without page overflow.
+- Not run: S4, the full mocked Playwright suite, `integration-real.spec.ts`,
+  Kafka-broker integration cases, and a delivery from a real Grafana alert rule (the
+  sender posts a webhook-shaped body, so Grafana's own `generatorURL` was not observed).
+
 ## 2026-10-31 Optional alert name on native v2 (REV-54)
 
 The user asked for an optional v2 `name` defaulting to `key_field`, with Grafana alerts

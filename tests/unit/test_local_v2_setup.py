@@ -107,16 +107,32 @@ def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
 
     def respond(request):
         calls.append((request.method, request.url.path))
+        if request.method == "POST" and request.url.path == "/api/ingest/v2/grafana":
+            # REV-55: one Grafana member with the operator's Bearer key and routing label.
+            assert request.headers["Authorization"] == "Bearer vena_test"
+            member = json.loads(request.content)["alerts"][0]
+            labels = member["labels"]
+            assert labels["Appchi - Local Demo"] == "true"
+            rows.append({"id": str(uuid4()), "component": labels["component"],
+                         "name": labels["alertname"], "node_name": labels["node_name"],
+                         "provider": "grafana", "alert_rule_url": member["generatorURL"]})
+            return httpx.Response(202, json={
+                "request_id": str(uuid4()),
+                "results": [{"index": 0, "status": 202, "disposition": "accepted"}],
+            })
         if request.method == "POST":
             assert request.url.path == "/api/ingest/v2/alerts"
             assert "Idempotency-Key" not in request.headers
             payloads = json.loads(request.content)["alerts"]
-            rows.extend({"id": str(uuid4()), **item["payload"]} for item in payloads)
+            rows.extend({"id": str(uuid4()), **item["payload"], "provider": "api", "alert_rule_url": None}
+                        for item in payloads)
             return httpx.Response(202, json={
                 "request_id": str(uuid4()),
                 "results": [{"index": index, "status": 202, "disposition": "accepted"}
                             for index in range(len(payloads))],
             })
+        if request.url.path == f"/api/tenants/{demo['tenant_id']}/operators/{demo['operator_id']}":
+            return httpx.Response(200, json={"data": {"id": demo["operator_id"], "name": "Local Demo"}})
         if request.url.path == f"/api/tenants/{demo['tenant_id']}/alerts":
             assert request.url.params["cel"] == 'alert.node_name == "' + rows[0]["node_name"] + '"'
             return httpx.Response(200, json={"data": rows})
@@ -125,7 +141,7 @@ def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
         if request.url.path.startswith(f"/api/tenants/{global_id}/"):
             return httpx.Response(404)
         assert request.url.path.startswith(f"/api/tenants/{demo['tenant_id']}/")
-        return httpx.Response(200, json={"data": {"id": identifier}})
+        return httpx.Response(200, json={"data": next(row for row in rows if row["id"] == identifier)})
 
     monkeypatch.setattr(local, "environment", lambda: None)
     monkeypatch.setattr(local, "client", lambda **kwargs: httpx.Client(transport=httpx.MockTransport(respond)))
@@ -133,8 +149,10 @@ def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
     monkeypatch.setattr(verification, "demo_key", lambda _: (demo, "vena_test"))
     monkeypatch.setattr(local, "save", lambda _, value: evidence.update(value))
     verification.send()
-    assert len([call for call in calls if call[0] == "POST"]) == 1
-    assert evidence["count"] == 3 and evidence["kafka_admitted"] and evidence["searchable"]
+    assert [path for method, path in calls if method == "POST"] == [
+        "/api/ingest/v2/alerts", "/api/ingest/v2/grafana"]
+    assert evidence["count"] == 4 and evidence["kafka_admitted"] and evidence["searchable"]
+    assert evidence["providers"] == ["api", "api", "api", "grafana"]
     assert evidence["global_detail_denied"]
     assert "idempotent_retry" not in evidence
     assert "vena_test" not in json.dumps(evidence)

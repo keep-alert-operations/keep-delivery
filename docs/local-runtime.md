@@ -197,6 +197,22 @@ The previous physical index stays for cleanup, as in the [indexer runbook](https
 The CLI reports any failure as `search_rebuild_unavailable`; `status <job-id>` shows
 the job's state, and `resume` continues the same job.
 
+## Alert provider upgrade (REV-55)
+
+REV-55 adds `provider` and `alert_rule_url` to every search document, so upgrade a
+stack from before it with the rebuild above (Start applies migration 0060 first).
+Then fill alerts stored before providers existed, in the same shell with the worker
+environment loaded and the workers running:
+
+```powershell
+.venv/Scripts/python.exe -m appchi.provider_backfill
+```
+
+It prints one JSON line per tenant with the number of alerts filled; a rerun fills
+none. `unresolved` lists alerts whose latest source event is missing, which keep no
+provider. Each filled alert gets a new projection version, so search shows its
+provider once the indexer applies it.
+
 ## Always-on correlation and maintenance (REV-39)
 
 Correlation rules and maintenance windows have no capability gate. Per-rule and

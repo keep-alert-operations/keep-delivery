@@ -102,8 +102,9 @@ Grafana webhook uses the Compose-internal `https://kong:8443` address and verifi
 the same CA. Only Kong receives the private client certificate; neither container
 receives the CA signing key.
 
-From `appchi-delivery`, send three new synthetic alerts and verify Kafka
-admission, processing, search and cross-tenant concealment:
+From `appchi-delivery`, send three new synthetic native alerts and one through the
+Grafana webhook, and verify Kafka admission, processing, search, each alert's
+provider and rule URL (REV-55) and cross-tenant concealment:
 
 ```powershell
 .venv/Scripts/python.exe scripts/local_v2_verify.py send
