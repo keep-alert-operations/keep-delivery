@@ -74,7 +74,7 @@ files = []
 develop = false
 
 [package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc", extras = ["runtime"]}
+appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "40e5b17780dbd509632cda9919d392675ac910de", extras = ["runtime"]}
 httptools = ">=0.8,<1"
 uvicorn = ">=0.34,<1"
 uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation == \"CPython\""}
@@ -82,8 +82,8 @@ uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_pl
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-api.git"
-reference = "c6c59f3ee5a2033324738f53aacb3352dd7ee75d"
-resolved_reference = "c6c59f3ee5a2033324738f53aacb3352dd7ee75d"
+reference = "c9c5a123fdff9b63f828253eb124ea1cf31c978d"
+resolved_reference = "c9c5a123fdff9b63f828253eb124ea1cf31c978d"
 
 [[package]]
 name = "appchi-contracts"
@@ -115,13 +115,13 @@ files = []
 develop = false
 
 [package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc", extras = ["runtime"]}
+appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "40e5b17780dbd509632cda9919d392675ac910de", extras = ["runtime"]}
 
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-correlation.git"
-reference = "d5357a7a253d25689ec3459a6a2e4951048af6f6"
-resolved_reference = "d5357a7a253d25689ec3459a6a2e4951048af6f6"
+reference = "12f45faf6ba5866696297aac47ad8a6b972b0576"
+resolved_reference = "12f45faf6ba5866696297aac47ad8a6b972b0576"
 
 [[package]]
 name = "appchi-domain"
@@ -155,8 +155,8 @@ runtime = ["authlib (>=1.5,<2)", "cel-expr-python (==0.1.3)", "confluent-kafka (
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-domain.git"
-reference = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc"
-resolved_reference = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc"
+reference = "40e5b17780dbd509632cda9919d392675ac910de"
+resolved_reference = "40e5b17780dbd509632cda9919d392675ac910de"
 
 [[package]]
 name = "appchi-indexer"
@@ -169,13 +169,13 @@ files = []
 develop = false
 
 [package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc", extras = ["runtime"]}
+appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "40e5b17780dbd509632cda9919d392675ac910de", extras = ["runtime"]}
 
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-indexer.git"
-reference = "2ccb2226586ddd94e730456a7f33414beb35fe75"
-resolved_reference = "2ccb2226586ddd94e730456a7f33414beb35fe75"
+reference = "c088f819ba9ccd0b3290fb35d0f88b67002bcbeb"
+resolved_reference = "c088f819ba9ccd0b3290fb35d0f88b67002bcbeb"
 
 [[package]]
 name = "appchi-ingestion"
@@ -188,7 +188,7 @@ files = []
 develop = false
 
 [package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc"}
+appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "40e5b17780dbd509632cda9919d392675ac910de"}
 confluent-kafka = ">=2.8,<3"
 httptools = ">=0.8,<1"
 uvicorn = ">=0.34,<1"
@@ -197,8 +197,8 @@ uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_pl
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-ingestion.git"
-reference = "6cd08143c8ca3a8f962e43d2800eee6cf613f97a"
-resolved_reference = "6cd08143c8ca3a8f962e43d2800eee6cf613f97a"
+reference = "d5c6922317c8aab8e4f3b952f76ed56def033b7d"
+resolved_reference = "d5c6922317c8aab8e4f3b952f76ed56def033b7d"
 
 [[package]]
 name = "appchi-migrations"
@@ -232,13 +232,13 @@ files = []
 develop = false
 
 [package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "1dee02deaeb2ca8760cf3b6f4660bc6dde6ab1bc", extras = ["runtime"]}
+appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "40e5b17780dbd509632cda9919d392675ac910de", extras = ["runtime"]}
 
 [package.source]
 type = "git"
 url = "https://github.com/appchi-alert-operations/appchi-processor.git"
-reference = "b8e5802bb96ef637f1ffba0fc21fbb55d56b027b"
-resolved_reference = "b8e5802bb96ef637f1ffba0fc21fbb55d56b027b"
+reference = "8b30d56bdf39aa4947be6c9333a6292d05755097"
+resolved_reference = "8b30d56bdf39aa4947be6c9333a6292d05755097"
 
 [[package]]
 name = "authlib"
@@ -2990,4 +2990,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "13a8595a4c5ebd95844e5d9543c441cf673e22e18f9bc11d57aca3683cdb5cc8"
+content-hash = "d322d9c7e96b5489a37ad5d46c3e87629d9f8ebe5afeee34e955093242c098e0"

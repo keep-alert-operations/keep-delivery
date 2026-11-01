@@ -13,8 +13,10 @@ also contains the count-test fixture, domain #17 `6142bf4`), API #14 (`c9c5a12`,
 `b1f9988`; `npm run generate` reproduces the committed client), design #22 (`1f9672e`) and
 this delivery change. CI `verify` passed on each pull request before it merged. This
 delivery change pins the merged main heads in the manifest and the service pins in
-`pyproject.toml` and the lock, with the documentation-only merges indexer #13
-(`04c290d`) and API #13 (`4a906a7`). The local-stack checks below ran on the source
+`pyproject.toml` and the lock. Ingestion #11 (`d5c6922`), processor #10 (`8b30d56`),
+correlation #9 (`12f45fa`) and indexer #14 (`c088f81`) move their domain pins to
+`40e5b17` so that the delivery environment resolves one domain; the documentation-only
+merges indexer #13 (`04c290d`) and API #13 (`4a906a7`) are included. The local-stack checks below ran on the source
 before the rebase; the shared local stack was not redeployed from main.
 
 - Domain: `incidents/counts.py` runs the detail's count query grouped over an
