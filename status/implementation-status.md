@@ -12,8 +12,8 @@ document's preamble once; `check` reports specification sections no topic reache
 (198/261); and intent inference handles suppositions, opening instructions and
 question sentences. Context checks, design document checks and 96 context unit tests
 passed; recall was unchanged and plan content shrank 6–17% on the study's requests.
-On branch `codex/context-catalog-fixes` in design and delivery, not yet published; the
-manifest still pins design `1f9672e`. See the
+Merged with merge commits at the user's request: design #23 (`51b28e0`, the same tree
+as its tested head `1a1c34d`) and delivery #32; the manifest pins design `51b28e0`. See the
 [comparison and verification](../qualification/context-eval-2026-11-02/results.md).
 
 ## 2026-11-01 Link counts on incident list rows (REV-56)
