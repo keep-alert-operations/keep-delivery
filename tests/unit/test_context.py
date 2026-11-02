@@ -137,17 +137,36 @@ def test_explicit_topics_keep_other_automatic_candidates_as_suggestions(workspac
 
 
 @pytest.mark.parametrize("task, expected, reason", [
-    ("How does incident search work?", "question", "first cue 'how'"),
-    ("Add an incident field", "change", "first cue 'add'"),
-    ("Incident tags?", "question", "first cue '?'"),
+    ("How does incident search work?", "question", "a sentence asks a question"),
+    ("Add an incident field", "change", "sentence opens with 'add'"),
+    ("Incident tags?", "question", "a sentence asks a question"),
     ("How do I add a field? Review it", "review", "cue 'review'"),
     ("Live updates stopped after reconnect", "investigate", "cue 'stopped'"),
     ("incident tags", "question", "no intent cue; default intent"),
     ("", "question", "no request text; default intent"),
+    ("If live updates stopped, how do they resume?", "question", "a sentence asks a question"),
+    ("How the list sorts matters. Improve the incident sort", "change", "sentence opens with 'improve'"),
+    ("Please add an incident field", "change", "sentence opens with 'add'"),
+    ("Two people change one incident. Which edit wins?", "question", "a sentence asks a question"),
+    ("Incident sorting: change it", "change", "first cue 'change'"),
 ])
-def test_intent_inference_prefers_override_cues_then_earliest_cue(workspace, task, expected, reason):
-    root, _ = workspace
+def test_intent_inference_orders_reports_instructions_questions_then_earliest_cue(workspace, task, expected, reason):
+    root, data = workspace
+    data["intents"][0]["cues"].append("which")
+    save(root, data)
     assert context.Context(root).infer_intent(task) == (expected, reason)
+
+
+def test_intent_openers_decide_only_at_sentence_start_and_longest_first(workspace):
+    root, data = workspace
+    data["intents"][0]["openers"] = ["show me"]
+    data["intents"][1]["openers"] = ["plan", "show"]
+    save(root, data)
+    catalog = context.Context(root)
+    assert catalog.infer_intent("Plan the incident rollout") == ("change", "sentence opens with 'plan'")
+    assert catalog.infer_intent("Show incident counts in the list") == ("change", "sentence opens with 'show'")
+    assert catalog.infer_intent("Show me how incident search works") == ("question", "sentence opens with 'show me'")
+    assert catalog.infer_intent("Dashboards show stale counts") == ("question", "no intent cue; default intent")
 
 
 def test_intent_controls_orientation_extra_sources_steps_and_finish(workspace):
@@ -195,14 +214,56 @@ def test_find_ranks_title_matches_and_labels_cited_headings_with_their_source(wo
     assert all(best["score"] >= r["score"] for r in results)
 
 
-def test_content_option_matches_read_output(workspace):
+def test_content_option_matches_read_output_without_repeating_a_document(workspace):
     root, _ = workspace
     catalog = context.Context(root)
     plan = catalog.plan(topics=["incident"], intent="change", content=True)
-    assert [s["content"] for s in plan["sources"]] == [catalog.source(s)["content"] for s in ("detail", "baseline")]
+    detail, baseline = plan["sources"]
+    assert detail["content"] == catalog.source("detail")["content"]
+    # Both sources read spec.md; its preamble (lines 1-4) is emitted once, under the first.
+    assert (baseline["ranges"], baseline["shown_above"]) == ([[5, 10]], [[1, 4]])
+    assert "Later correction" not in baseline["content"] and "Child rule." in baseline["content"]
+    assert catalog.plan(topics=["incident"], intent="change")["sources"][1]["ranges"] == [[1, 10]]
     assert "content" not in catalog.plan(topics=["incident"], intent="change")["sources"][0]
-    assert "## Source: baseline" in context.plan_markdown(plan)
-    assert "## Verification checks" in context.plan_markdown(plan)
+    text = context.plan_markdown(plan)
+    assert "## Source: baseline" in text and "## Verification checks" in text
+    assert text.count("Later correction") == 1
+    assert "Lines [[1, 4]] appear under an earlier source of this document." in text
+
+
+def test_sources_limited_to_other_intents_are_pointers_without_text(workspace):
+    root, data = workspace
+    data["sources"]["detail"]["intents"] = ["change"]
+    save(root, data)
+    catalog = context.Context(root)
+    question = catalog.plan(topics=["incident"], intent="question", content=True)
+    detail = next(s for s in question["sources"] if s["id"] == "detail")
+    assert "content" not in detail and detail["pointer"].startswith("Procedure for change requests")
+    text = context.plan_markdown(question)
+    assert "  - Pointer: Procedure for change requests" in text and "## Source: detail" not in text
+    # The pointer emitted nothing, so the next source of the document keeps its preamble.
+    assert next(s for s in question["sources"] if s["id"] == "baseline")["shown_above"] == []
+    change = catalog.plan(topics=["incident"], intent="change", content=True)
+    assert "pointer" not in change["sources"][0] and "Unicode rule." in change["sources"][0]["content"]
+
+
+def test_check_reports_specification_sections_no_topic_reaches(workspace):
+    root, data = workspace
+    specs = root / context.SPEC_ROOT
+    specs.mkdir(parents=True)
+    (specs / "a.md").write_text("# A\n\n## One\nx\n\n## Two\ny\n\n### Two child\nz\n\n## Three\nw\n", encoding="utf-8")
+    (specs / "b.md").write_text("# B\n\n## Whole\nv\n", encoding="utf-8")
+    data["sources"]["part"] = {"path": f"{context.SPEC_ROOT}/a.md", "authority": "normative",
+                               "sections": ["Two child"], "include_preamble": True}
+    data["sources"]["whole"] = {"path": f"{context.SPEC_ROOT}/b.md", "authority": "normative",
+                                "sections": [], "include_preamble": True}
+    data["topics"][0]["sources"] += ["part", "whole"]
+    save(root, data)
+    catalog = context.Context(root)
+    assert catalog.unowned_spec_sections() == (4, [f"{context.SPEC_ROOT}/a.md › One", f"{context.SPEC_ROOT}/a.md › Three"])
+    report = catalog.check(skip_generated=True)
+    assert report["spec_sections_reached_by_topics"] == "2/4" and "unowned_spec_sections" not in report
+    assert len(catalog.check(skip_generated=True, unowned=True)["unowned_spec_sections"]) == 2
 
 
 def test_scope_sections_join_every_partial_read_of_their_document(workspace):
@@ -351,6 +412,9 @@ def test_unknown_topic_and_source_are_errors(workspace):
     (lambda data: data["intents"][0].update(show=["everything"]), "unknown fields"),
     (lambda data: data["intents"][0].update(sources=["missing"]), "unknown source"),
     (lambda data: data["intents"][0].update(steps=[]), "steps"),
+    (lambda data: data["intents"][0].update(openers="show me"), "openers"),
+    (lambda data: data["sources"]["detail"].update(intents=["guess"]), "unknown intent"),
+    (lambda data: data["sources"]["detail"].update(intents=[]), "intents"),
     (lambda data: data["intents"].append(copy.deepcopy(data["intents"][0])), "Duplicate intent"),
     (lambda data: data.update(scope_sections={"keepHQ/spec.md": ["Required"]}), "declared Appchi"),
     (lambda data: data.update(find_roots=[]), "find_roots"),

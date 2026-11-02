@@ -1,0 +1,480 @@
+{
+ "schema_version": 1,
+ "note": "2026-11-02 context comparison. 'retrieval_cases': 14 held-out requests with the sections that govern each answer, written before any prototype ran; the 12 dev requests are the 2026-11-01 cases. 'trial': the live paired trial's 12 requests and rubrics (T rubrics reused unchanged from 2026-11-01; H rubrics written from the cited sources before any run) and the agent prompt. Snapshot: design 1f9672e, delivery c986ebe; other repositories at their main heads of 2026-11-02.",
+ "retrieval_cases": [
+  {
+   "id": "H1-access-loss",
+   "task": "What happens to someone's open alert screen when an admin removes their access to that tenant?",
+   "gold": [
+    "appchi-design/specs/spec-tenant-access.md#9-tenant-navigation-and-access-loss"
+   ]
+  },
+  {
+   "id": "H2-ldap-outage",
+   "task": "If LDAP is unreachable, can people still sign in, and do sessions that already exist keep working?",
+   "gold": [
+    "appchi-design/specs/spec-identity-configuration.md#9-outage-behavior"
+   ]
+  },
+  {
+   "id": "H3-rule-dry-run",
+   "task": "Let users try a correlation rule against recent alerts before they turn it on.",
+   "gold": [
+    "appchi-design/specs/spec-correlation-rules.md#23-explicit-rule-testing-c4-u2"
+   ]
+  },
+  {
+   "id": "H4-stale-tile",
+   "task": "Why does a dashboard tile sometimes show an old number with a warning instead of a fresh count?",
+   "gold": [
+    "appchi-design/specs/spec-dashboard-operations.md#11-partial-failures-stale-values-and-atomic-display"
+   ]
+  },
+  {
+   "id": "H5-dst-window",
+   "task": "A maintenance window set up in Europe/Berlin started an hour late right after the clocks changed. Is that a bug?",
+   "gold": [
+    "appchi-design/specs/spec-maintenance-operations.md#2-schedule-representation-and-timezone-conversion",
+    "appchi-design/specs/spec-maintenance-operations.md#3-schedule-edits-and-timezone-rule-changes"
+   ]
+  },
+  {
+   "id": "H6-latency-targets",
+   "task": "What response-time targets has Appchi committed to, and how are they measured?",
+   "gold": [
+    "appchi-design/specs/spec-reliability-operations.md#4-the-three-agreed-latency-objectives"
+   ]
+  },
+  {
+   "id": "H7-cel-function",
+   "task": "Allow saved filters to use a new startsWith function in their expressions.",
+   "gold": [
+    "appchi-design/specs/spec-alert-history-technical.md#3-complete-initial-searchable-language",
+    "appchi-design/specs/spec-alert-history-technical.md#7-query-versions-and-migration",
+    "appchi-design/specs/spec-preset-operations.md#5-cel-validation-and-compatibility"
+   ]
+  },
+  {
+   "id": "H8-preset-race",
+   "task": "Two people save changes to the same shared preset at once. Whose edit wins?",
+   "gold": [
+    "appchi-design/specs/spec-preset-operations.md#10-revisions-concurrency-and-retries"
+   ]
+  },
+  {
+   "id": "H9-group-cardinality",
+   "task": "One tenant's rule produces thousands of distinct grouping values; evaluation is slow and some groups seem to be dropped. Is that expected?",
+   "gold": [
+    "appchi-design/specs/spec-correlation-rules.md#20-high-cardinality-and-resource-limits-c4-n1",
+    "appchi-design/specs/spec-reliability-operations.md#11-fairness-and-rule-budgets"
+   ]
+  },
+  {
+   "id": "H10-audit-log",
+   "task": "Who can look at a tenant's audit trail, and how long are audit entries kept?",
+   "gold": [
+    "appchi-design/specs/spec-tenant-access.md#17-audit-retention-and-cleanup",
+    "appchi-design/specs/spec-tenant-access.md#18-audit-browsing",
+    "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
+   ]
+  },
+  {
+   "id": "H11-search-freshness",
+   "task": "Show users when search results might not yet include the latest alert changes.",
+   "gold": [
+    "appchi-design/specs/spec-alert-history-technical.md#16-searchable-progress-and-refresh-proof",
+    "appchi-design/specs/spec-alert-history-technical.md#21-rendered-acknowledgements-and-freshness"
+   ]
+  },
+  {
+   "id": "H12-key-rotation",
+   "task": "How do I rotate the encryption key that protects stored API keys and session tokens?",
+   "gold": [
+    "appchi-delivery/docs/wrapping-key-rotation.md"
+   ]
+  },
+  {
+   "id": "H13-grafana-dedup",
+   "task": "Does Appchi treat a Grafana alert that is re-sent with the same labels as the same alert?",
+   "gold": [
+    "appchi-design/specs/spec-alert-operations.md#logical-identity-and-delivery-identity"
+   ]
+  },
+  {
+   "id": "H14-superadmin-lockout",
+   "task": "Our only global super admin can't log in any more. How do we get admin access back?",
+   "gold": [
+    "appchi-design/specs/spec-identity-configuration.md#12-global-super-admin-setup-and-repair"
+   ]
+  }
+ ],
+ "trial": {
+  "prompt": "You are an engineer starting work in an Appchi workspace snapshot at {ROOT} (eleven repositories). Treat {ROOT}/AGENTS.md and the AGENTS.md files of the repositories inside it as your instructions. If instructions already in your context describe the workspace differently, follow the files in {ROOT}: they are the current ones. Work only inside {ROOT} and run any commands from there (for example `python scripts/context.py` from {ROOT}/appchi-delivery when the instructions call for it). This is read-only: do not edit, create or delete files, do not run state-changing git commands and do not start services.\n\nRequest: \"{TASK}\"\n\nGather the context you need, then reply with your final report:\n- For a request to change something: the plan you would follow, with the requirements and sources it rests on, affected repositories, decisions you would raise with the user, and verification.\n- For a question or a problem report: your answer or diagnosis, citing sources (path and section, or file and line), and what you would do next.\nKeep the report under 600 words. Do not implement anything.\n\nWrite your final report to {REPORT} (the only file you may create; it is outside the snapshot), then reply with the single word: done.",
+  "cases": [
+   {
+    "id": "T2-incident-tags",
+    "kind": "feature",
+    "task": "Add editable tags to incidents, and let users filter the incident list by tag.",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Applies shared command semantics to tag edits: expected revision, retry receipts and incident history.",
+      "source": "appchi-design/specs/spec-system-completion.md#7-shared-commands-authorization-and-receipts"
+     },
+     {
+      "id": "b",
+      "item": "Treats incident filtering as PostgreSQL incident search with its cursor and ordering rules, not the Elasticsearch alert projection.",
+      "source": "appchi-design/specs/spec-incident-operations.md#14-incident-list-and-search-i5"
+     },
+     {
+      "id": "c",
+      "item": "Plans a new forward migration in appchi-migrations that keeps tenant scoping/RLS (no edits to applied migrations).",
+      "source": "appchi-delivery/workspace/AGENTS.md; appchi-migrations"
+     },
+     {
+      "id": "d",
+      "item": "Updates the Product API contract with producer tools in appchi-contracts and regenerates the frontend client instead of hand-editing generated files.",
+      "source": "appchi-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"
+     },
+     {
+      "id": "e",
+      "item": "Covers live updates: tag edits must publish the existing incident invalidation so open views refresh.",
+      "source": "appchi-design/context/routes/live-updates.md sources (REV-36)"
+     },
+     {
+      "id": "f",
+      "item": "Raises unresolved product decisions for the user, such as tag limits, allowed characters or who may edit tags.",
+      "source": "appchi-design/context/README.md (example)"
+     }
+    ]
+   },
+   {
+    "id": "T4-directory-propagation",
+    "kind": "scope trap",
+    "task": "LDAP group removals take far longer than five minutes to reach Appchi. Implement the five-minute membership propagation target from the identity specification.",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Identifies REV-35: the directory worker is not deployed and the five-minute propagation target is deferred with it.",
+      "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+     },
+     {
+      "id": "b",
+      "item": "Explains the current mechanism: explicit trusted publication (local Refresh or directory --once) and authorization from the last trusted checkpoint.",
+      "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+     },
+     {
+      "id": "c",
+      "item": "Does not quietly add a poller or login-time identity replacement, and does not treat token group claims as permissions; asks the user before reinstating polling.",
+      "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+     },
+     {
+      "id": "d",
+      "item": "Preserves the bootstrap and restore-integrity gates and the existing revocation, logout and session-expiry rules.",
+      "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+     },
+     {
+      "id": "e",
+      "item": "Points to the verification plan's REV-35 scope, which makes propagation timing future qualification.",
+      "source": "appchi-design/verification/verification-plan.md (REV-35 scope paragraph)"
+     }
+    ]
+   },
+   {
+    "id": "T6-incident-note-count",
+    "kind": "contract change",
+    "task": "Show the number of notes on each incident in the incident list. Add it to the Product API incident list response and to the incident table.",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Changes the Product API contract in appchi-contracts with producer tools and regenerates the frontend client; no hand-edited generated artifacts.",
+      "source": "appchi-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"
+     },
+     {
+      "id": "b",
+      "item": "Recognizes this is an HTTP contract change only, not a native/Kafka event contract change.",
+      "source": "appchi-design/context/routes/http-contract.md"
+     },
+     {
+      "id": "c",
+      "item": "Uses the incident list's PostgreSQL query rules (tenant scoping, stable ordering and cursors) for the new value.",
+      "source": "appchi-design/specs/spec-system-completion.md#15-incident-persistence-and-search"
+     },
+     {
+      "id": "d",
+      "item": "Considers whether note additions must refresh open incident lists through existing live invalidation.",
+      "source": "appchi-design/context/routes/live-updates.md sources"
+     },
+     {
+      "id": "e",
+      "item": "Verifies with contract drift checks, API tests and the affected browser journey.",
+      "source": "appchi-design/context/routes/http-contract.md (verification guidance)"
+     }
+    ]
+   },
+   {
+    "id": "T9-grafana-tenant",
+    "kind": "question",
+    "task": "How does an alert sent from the shared company Grafana end up in the right Appchi tenant?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "States that the operator's API key, authenticated at Kong, determines the immutable operator and owning tenant; labels never decide the tenant.",
+      "source": "appchi-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
+     },
+     {
+      "id": "b",
+      "item": "Describes the managed contact point (webhook with the operator's key) and the exact-match notification-policy entry per operator.",
+      "source": "appchi-design/specs/spec-operator-operations.md#15-grafana-resource-identity-and-ownership"
+     },
+     {
+      "id": "c",
+      "item": "Gives the routing label `Appchi - {operator name}` with value `true` that teams put on their rules.",
+      "source": "appchi-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
+     },
+     {
+      "id": "d",
+      "item": "Notes that the webhook adapter rejects members lacking the authenticated operator's expected label, as a misconfiguration check.",
+      "source": "appchi-design/specs/spec-operator-operations.md#18-grafana-to-v2-field-mapping"
+     },
+     {
+      "id": "e",
+      "item": "Notes that the company's existing routing is preserved in a catch-all branch every alert still reaches.",
+      "source": "appchi-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
+     }
+    ]
+   },
+   {
+    "id": "T10-restore-fence",
+    "kind": "investigation",
+    "task": "After the PostgreSQL database was restored from a backup, the Product API rejects writes with a restore-fence error. Is something broken, and what should happen next?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Explains that fencing after a restore is expected until deployment authority, order, clocks and evidence are verified; a successful database restore alone does not make the application ready.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#18-application-restore-fencing-and-deletion-safety"
+     },
+     {
+      "id": "b",
+      "item": "Names the closed capability gates and revoked sessions, and that the coordinator has no reopen command.",
+      "source": "appchi-delivery/docs/runbooks/restore-fencing.md"
+     },
+     {
+      "id": "c",
+      "item": "Keeps infrastructure ownership and authorization: owners supply backup/restore and recovery authority; no bypass of the fence or protocol switch.",
+      "source": "appchi-delivery/docs/runbooks/restore-fencing.md"
+     },
+     {
+      "id": "d",
+      "item": "Mentions the operator credential rules: invalidate unprovable credentials, keep deleted identities fenced, never revive revoked keys.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#18-application-restore-fencing-and-deletion-safety"
+     },
+     {
+      "id": "e",
+      "item": "Gives the next steps with the recovery command (status, collect, assess) under a coordinated recovery, and that collected evidence is not proof of correctness.",
+      "source": "appchi-delivery/docs/runbooks/restore-fencing.md"
+     }
+    ]
+   },
+   {
+    "id": "T11-operator-kong-cleanup",
+    "kind": "investigation (scope trap)",
+    "task": "An operator was deleted in Appchi yesterday, but its Kong consumer still exists. Is cleanup broken, and what should we do?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Explains that the deleted identity is already denied: deletion revokes its keys and authoritative admission rejects it, so the leftover consumer cannot admit alerts.",
+      "source": "appchi-design/specs/spec-operator-operations.md#21-deletion-and-pending-setup-cancellation"
+     },
+     {
+      "id": "b",
+      "item": "Identifies the conflict: operator deletion says Kong cleanup may finish later, but REV-34 removed background workers and retry loops, so nothing completes it autonomously.",
+      "source": "appchi-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
+     },
+     {
+      "id": "c",
+      "item": "Proposes the explicit retry path of the recorded operation rather than adding a worker or retry sweep.",
+      "source": "appchi-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
+     },
+     {
+      "id": "d",
+      "item": "Inspects the recorded deletion operation and confirms admission denial before any repair; raises the gap with the user.",
+      "source": "appchi-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
+     }
+    ]
+   },
+   {
+    "id": "H3-rule-dry-run",
+    "kind": "feature (existing scope)",
+    "task": "Let users try a correlation rule against recent alerts before they turn it on.",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Finds that explicit rule testing is already specified: a read-only Test against one selected existing tenant alert, including an unsaved validated draft, and builds on it (checking what is implemented) instead of designing a new feature from scratch.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#23-explicit-rule-testing-c4-u2"
+     },
+     {
+      "id": "b",
+      "item": "Identifies that evaluation against recent alerts (historical simulation, bulk overlap scan, automatic recent-alert comparison) is explicitly excluded initially, so that part is a scope change to raise with the user before planning it.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#23-explicit-rule-testing-c4-u2; #22-rule-list-and-detail-c4-c6-u1"
+     },
+     {
+      "id": "c",
+      "item": "Keeps testing side-effect free: no evidence, incidents, links or history, no change to arrival/reset boundaries; test or cost-limit errors return diagnostics without changing the saved rule.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#23-explicit-rule-testing-c4-u2"
+     },
+     {
+      "id": "d",
+      "item": "Reuses the shared CEL compilation/cost mechanics and reports per-condition results, group interpretation and firing/suppression/ownership exclusions, distinguishing 'matches now' from satisfying a real window.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#23-explicit-rule-testing-c4-u2"
+     }
+    ]
+   },
+   {
+    "id": "H5-dst-window",
+    "kind": "investigation",
+    "task": "A maintenance window set up in Europe/Berlin started an hour late right after the clocks changed. Is that a bug?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Explains that windows store UTC endpoints converted once at creation with a pinned tzdata release and zoneinfo (round-trip validated); a later DST change, a timezone-only edit or a tzdata upgrade changes only rendering, never execution.",
+      "source": "appchi-design/specs/spec-maintenance-operations.md#2-schedule-representation-and-timezone-conversion; #3-schedule-edits-and-timezone-rule-changes"
+     },
+     {
+      "id": "b",
+      "item": "Checks the stored evidence (entered local values, offsets, first/second occurrence for an ambiguous time, tzdata version, UTC endpoints) for a wrongly entered instant, and notes that conversions must come from API previews (a browser-side conversion would be a defect).",
+      "source": "appchi-design/specs/spec-maintenance-operations.md#2-schedule-representation-and-timezone-conversion"
+     },
+     {
+      "id": "c",
+      "item": "Considers that with no scheduler a window's start is not an event: a cause opens only when a qualifying matching source event arrives during coverage, so alerts already firing at the start stay unsuppressed until their next update, a plausible non-DST explanation.",
+      "source": "appchi-design/specs/spec-maintenance-operations.md#6-per-cause-suppression-and-interval-history; #10-deferred-scheduler; spec-worker-scope.md#1-maintenance-without-a-scheduler"
+     },
+     {
+      "id": "d",
+      "item": "Proposes diagnosing from evidence (window detail/history, alert cause intervals and receive times) before any fix, and states which findings would mean defect versus expected behavior.",
+      "source": "appchi-design/specs/spec-maintenance-operations.md#6-per-cause-suppression-and-interval-history"
+     }
+    ]
+   },
+   {
+    "id": "H6-latency-targets",
+    "kind": "question",
+    "task": "What response-time targets has Appchi committed to, and how are they measured?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Names the agreed objectives: durable acceptance within 1 s (complete body at ingress to acceptance after Kafka durable ack) and incoming alert/status visibility within 5 s (original receipt to correct state rendered in an eligible connected foreground view), each at least 99% over a rolling 30-day window.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#4-the-three-agreed-latency-objectives"
+     },
+     {
+      "id": "b",
+      "item": "Notes that the third, maintenance-expiry visibility, is deferred under REV-34 (no timer-driven release).",
+      "source": "appchi-design/specs/spec-reliability-operations.md#4-the-three-agreed-latency-objectives"
+     },
+     {
+      "id": "c",
+      "item": "Gives the additional p99 objectives: 2 s for feed/list/search/count, 1 s for authoritative detail reads and local commands, 2 s from commit to correlation pass completion; operator commands use worker-scope budgets.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#5-additional-latency-objectives"
+     },
+     {
+      "id": "d",
+      "item": "Explains measurement rules: end-to-end across all stages, a live hint is not completion, errors/timeouts/incomplete observations are misses, normal-operation cohort reported alongside all traffic, retries never reset the start.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#4-the-three-agreed-latency-objectives"
+     },
+     {
+      "id": "e",
+      "item": "Covers measurement mechanics or status: rendered acknowledgements establish visibility, deterministic sampling, insufficient confidence under 100 observations, and that measured results live in delivery readiness rather than being claimed as met.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#7-ui-measurement-and-low-volume-treatment; preamble"
+     }
+    ]
+   },
+   {
+    "id": "H9-group-cardinality",
+    "kind": "investigation",
+    "task": "One tenant's rule produces thousands of distinct grouping values; evaluation is slow and some groups seem to be dropped. Is that expected?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Identifies the platform-configurable hard budgets (live groups per rule, live evidence, enabled rules, CEL cost) and that an unset budget is unlimited under REV-39, an invalid value failing with capacity_profile_invalid.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#20-high-cardinality-and-resource-limits-c4-n1"
+     },
+     {
+      "id": "b",
+      "item": "States that groups are never silently dropped: exceeding a runtime budget blocks the rule visibly before any partial action and discards its evidence, never evicting arbitrary matches or truncating the attachment set, so silent drops would be a defect.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#20-high-cardinality-and-resource-limits-c4-n1"
+     },
+     {
+      "id": "c",
+      "item": "Makes the rule's health/blocked reason and the configured budgets the first diagnostic step.",
+      "source": "appchi-design/specs/spec-correlation-rules.md#20-high-cardinality-and-resource-limits-c4-n1; #22-rule-list-and-detail-c4-c6-u1"
+     },
+     {
+      "id": "d",
+      "item": "Addresses slowness with the fairness and objective rules: tenant-fair scheduling yielding after 100 events or 100 ms, the 2 s correlation-pass p99, budgets derived from measured costs rather than invented.",
+      "source": "appchi-design/specs/spec-reliability-operations.md#11-fairness-and-rule-budgets; #5-additional-latency-objectives"
+     }
+    ]
+   },
+   {
+    "id": "H10-audit-log",
+    "kind": "question (scope trap)",
+    "task": "Who can look at a tenant's audit trail, and how long are audit entries kept?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Readable only by current tenant admins for their tenant and global super-admins (platform trail filterable by tenant).",
+      "source": "appchi-design/specs/spec-tenant-access.md#18-audit-browsing; preamble user-selected audit policy"
+     },
+     {
+      "id": "b",
+      "item": "Retention is 365 elapsed days from server recording time; later views, renames or role changes do not restart the clock.",
+      "source": "appchi-design/specs/spec-tenant-access.md#17-audit-retention-and-cleanup"
+     },
+     {
+      "id": "c",
+      "item": "Notes current scope REV-34: the daily audit cleanup is not deployed so storage may grow, while expired unprotected rows are still not returned by the audit API.",
+      "source": "appchi-design/specs/spec-tenant-access.md#17-audit-retention-and-cleanup; spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
+     },
+     {
+      "id": "d",
+      "item": "Mentions dependency protection (expired content kept while a command, retained reference or recovery proof depends on it) or the browsing rules (30-day default, full retained period on request, no export or delegation).",
+      "source": "appchi-design/specs/spec-tenant-access.md#17-audit-retention-and-cleanup; #18-audit-browsing"
+     }
+    ]
+   },
+   {
+    "id": "H14-superadmin-lockout",
+    "kind": "operation",
+    "task": "Our only global super admin can't log in any more. How do we get admin access back?",
+    "rubric": [
+     {
+      "id": "a",
+      "item": "Explains that super-admin access comes from membership of the designated global-super-admin directory team in controlled deployment configuration; there is no first-user promotion or Appchi-local emergency account, and Keycloak console credentials do not confer it.",
+      "source": "appchi-design/specs/spec-identity-configuration.md#12-global-super-admin-setup-and-repair"
+     },
+     {
+      "id": "b",
+      "item": "Gives the recovery paths: the user's team repairs the group membership through company directory administration, or changes the immutable group mapping through the controlled deployment process.",
+      "source": "appchi-design/specs/spec-identity-configuration.md#12-global-super-admin-setup-and-repair"
+     },
+     {
+      "id": "c",
+      "item": "For a mapping change: validate the replacement group's complete eligible membership first, switch atomically, invalidate the old privilege and record operator, old/new IDs, time and reason as protected evidence.",
+      "source": "appchi-design/specs/spec-identity-configuration.md#12-global-super-admin-setup-and-repair"
+     },
+     {
+      "id": "d",
+      "item": "Notes REV-35: with directory synchronization not deployed, repaired membership reaches Appchi only through an explicit trusted directory publication (e.g. the one-shot directory publication), not automatically.",
+      "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+     },
+     {
+      "id": "e",
+      "item": "Diagnoses why login fails (disabled account, directory outage, which does not imply an empty group) before changing mappings, and leaves directory/deployment actions to the owning team.",
+      "source": "appchi-design/specs/spec-identity-configuration.md#12-global-super-admin-setup-and-repair; AGENTS.md authorization boundaries"
+     }
+    ]
+   }
+  ]
+ }
+}

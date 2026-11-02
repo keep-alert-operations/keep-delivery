@@ -1,5 +1,21 @@
 # Implementation status
 
+## 2026-11-02 Context catalog fixes
+
+Navigation and tooling only; no product behavior changed. A retrieval comparison of
+three context-layer prototypes, then a live paired trial of the recommended redesign
+against the current layer, scored 50.5/56 for both, so the topic model stays. Four
+small fixes followed: the `delivery` alias "production" is gone (it pulled delivery
+policy into every Product API request); release and migration procedure sources are
+pointers in question, investigate and review plans; `plan --content` emits each
+document's preamble once; `check` reports specification sections no topic reaches
+(198/261); and intent inference handles suppositions, opening instructions and
+question sentences. Context checks, design document checks and 96 context unit tests
+passed; recall was unchanged and plan content shrank 6–17% on the study's requests.
+Merged with merge commits at the user's request: design #23 (`51b28e0`, the same tree
+as its tested head `1a1c34d`) and delivery #32; the manifest pins design `51b28e0`. See the
+[comparison and verification](../qualification/context-eval-2026-11-02/results.md).
+
 ## 2026-11-01 Link counts on incident list rows (REV-56)
 
 The incident list's Linked alerts column showed "—" on every row. On the local stack,
