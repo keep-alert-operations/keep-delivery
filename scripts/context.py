@@ -29,6 +29,7 @@ SHOW_FIELDS = frozenset(("orientation", "code", "evidence", "related", "checks")
 SCHEMA_VERSION = 2
 CATALOG = "appchi-design/context/task-map.json"
 EVALUATIONS = "appchi-design/context/evaluation-cases.json"
+SPEC_ROOT = "appchi-design/specs"
 TOPIC_PAGES = "appchi-design/context/topics"
 INDEX_TARGET = "appchi-delivery/workspace/AGENTS.md"
 INDEX_BEGIN = ("<!-- BEGIN generated context index: edit appchi-design/context/task-map.json, "
@@ -57,6 +58,12 @@ STOPWORDS = frozenset((
 SUFFIXES = (("ings", ""), ("ing", ""), ("ions", ""), ("ion", ""), ("ments", ""), ("ment", ""),
             ("ors", ""), ("or", ""), ("ers", ""), ("er", ""), ("ies", "y"), ("ied", "y"),
             ("ed", ""), ("es", ""), ("s", ""), ("e", ""))
+# Words that open a sentence without changing what it asks for ("Please add …", "Can you fix …").
+FILLER = ("please", "kindly", "now", "then", "also", "so", "ok", "okay", "and", "but", "first", "next",
+          "finally", "just", "can you", "could you", "would you", "will you", "let's", "we need to",
+          "we should", "i want to", "i need to", "i'd like to", "help me", "go ahead and", "try to")
+# A failure named inside a supposition ("If the indexer fails, how …?") is not a problem report.
+HYPOTHETICAL = ("if", "whether", "unless", "suppose", "in case", "what if")
 
 
 class ContextError(ValueError):
@@ -244,6 +251,11 @@ class Context:
             relative_path(root.get("path"))
         strings(data.get("areas"), "Catalog areas", nonempty=True)
         self.validate_intents(data)
+        for source_id, source in data["sources"].items():
+            if "intents" in source:
+                strings(source["intents"], f"Source {source_id} intents", nonempty=True)
+                if set(source["intents"]) - set(self.intents):
+                    fail(f"Source {source_id} intents name an unknown intent")
         self.validate_topics(data)
 
     def validate_intents(self, data):
@@ -260,6 +272,7 @@ class Context:
             text(intent.get("title"), f"Intent {intent_id} title", limit=40)
             for field in ("cues", "show", "sources", "steps", "skills"):
                 strings(intent.get(field), f"Intent {intent_id} {field}", nonempty=field == "steps")
+            strings(intent.get("openers", []), f"Intent {intent_id} openers")
             if set(intent["show"]) - SHOW_FIELDS:
                 fail(f"Intent {intent_id} show has unknown fields")
             text(intent.get("finish"), f"Intent {intent_id} finish")
@@ -341,7 +354,8 @@ class Context:
             visit(topic_id)
         return result
 
-    def source(self, source_id):
+    def source(self, source_id, *, shown=()):
+        """Read a source; ``shown`` lists 0-based line spans of its document already emitted."""
         if source_id not in self.catalog["sources"]:
             fail(f"Unknown source: {source_id}")
         source = self.catalog["sources"][source_id]
@@ -364,6 +378,11 @@ class Context:
         preamble_end = next((h["start"] for h in parsed if h["level"] == 2), len(lines))
         ranges = ([(0, len(lines))] if not selected else
                   merged_ranges([(0, preamble_end)] + [(h["start"], h["end"]) for h, _ in selected]))
+        repeated = {i for start, end in shown for i in range(start, end)}
+        shown_above = merged_ranges([(i, i + 1) for start, end in ranges for i in range(start, end) if i in repeated])
+        if repeated:
+            ranges = merged_ranges([(i, i + 1) for start, end in ranges for i in range(start, end)
+                                    if i not in repeated])
         return {
             "id": source_id, "path": source["path"], "authority": source["authority"],
             "sha256": hashlib.sha256(content).hexdigest(), "include_preamble": True,
@@ -371,6 +390,7 @@ class Context:
             "sections": [{"title": h["title"], "line": h["start"] + 1, "end_line": h["end"],
                           "anchor": h["anchor"], "scope": scope} for h, scope in selected],
             "ranges": [[start + 1, end] for start, end in ranges],
+            "shown_above": [[start + 1, end] for start, end in shown_above],
             "content": "\n\n<!-- Unselected sections omitted. -->\n\n".join(
                 "".join(lines[start:end]) for start, end in ranges),
         }
@@ -379,11 +399,35 @@ class Context:
         sequence = terms(task, keep_stopwords=True)
         if not sequence:
             return self.catalog["default_intent"], "no request text; default intent"
+        sentences = [(terms(s, keep_stopwords=True), s.rstrip().endswith("?"))
+                     for s in re.findall(r"[^.!?\n]+[.!?]*", task)]
+        sentences = [(words_, asks) for words_, asks in sentences if words_]
+        suppositions = [terms(h, keep_stopwords=True) for h in HYPOTHETICAL]
+        reports = [w for w, _ in sentences if not any(w[:len(h)] == h for h in suppositions)]
         for intent in self.intents.values():
             if intent["override"]:
                 for cue in intent["cues"]:
-                    if find_phrase(sequence, terms(cue, keep_stopwords=True)) is not None:
+                    if any(find_phrase(w, terms(cue, keep_stopwords=True)) is not None for w in reports):
                         return intent["id"], f"cue {cue!r}"
+        # An instruction decides next: a sentence opening (after filler) with an intent's opener,
+        # or with a cue of an intent other than the default, whose cues also open statements.
+        default = self.catalog["default_intent"]
+        openers = sorted(((terms(cue, keep_stopwords=True), intent["id"], cue) for intent in self.intents.values()
+                          if not intent["override"]
+                          for cue in intent.get("openers", []) + (intent["cues"] if intent["id"] != default else [])
+                          if cue != "?"), key=lambda item: -len(item[0]))
+        filler = [terms(f, keep_stopwords=True) for f in FILLER]
+        for words_, _ in sentences:
+            stripped = True
+            while stripped:
+                stripped = next((f for f in filler if len(words_) > len(f) and words_[:len(f)] == f), None)
+                words_ = words_[len(stripped):] if stripped else words_
+            opener = next((o for o in openers if o[0] and words_[:len(o[0])] == o[0]), None)
+            if opener:
+                return opener[1], f"sentence opens with {opener[2]!r}"
+        asker = next((i["id"] for i in self.intents.values() if "?" in i["cues"]), None)
+        if asker and any(asks for _, asks in sentences):
+            return asker, "a sentence asks a question"
         earliest = None
         for intent in self.intents.values():
             if intent["override"]:
@@ -482,11 +526,22 @@ class Context:
                         role_of[source_id] = role
                     if owner not in used_by.setdefault(source_id, []):
                         used_by[source_id].append(owner)
-        sources = []
+        # Procedure sources limited to other intents stay listed as pointers without text, and
+        # with --content each document's preamble and repeated sections appear only once.
+        sources, emitted = [], {}
         for source_id in source_order:
-            source = self.source(source_id)
-            if not content:
+            entry = self.catalog["sources"][source_id]
+            limited = entry.get("intents")
+            if limited and intent_id not in limited:
+                source = self.source(source_id)
                 source.pop("content")
+                source["pointer"] = f"Procedure for {', '.join(limited)} requests; read it when the work becomes one."
+            else:
+                source = self.source(source_id, shown=emitted.get(entry["path"], ()) if content else ())
+                if content:
+                    emitted.setdefault(entry["path"], []).extend((start - 1, end) for start, end in source["ranges"])
+                else:
+                    source.pop("content")
             source["role"], source["required_by"] = role_of[source_id], used_by[source_id]
             sources.append(source)
         repositories, path_globs, checks, related = [], [], [], []
@@ -733,14 +788,42 @@ class Context:
             path.write_text(content, encoding="utf-8", newline="\n")
         return len(documents)
 
-    def check(self, *, skip_generated=False):
+    def unowned_spec_sections(self):
+        """Level-2 specification sections that no topic's sources reach; a report, not a gate."""
+        cited = {}
+        for topic in self.topics.values():
+            for source_id in topic["orientation"] + topic["sources"] + topic["evidence"]:
+                source = self.catalog["sources"][source_id]
+                cited.setdefault(source["path"], set()).update(source["sections"] or [None])
+        folder = safe_path(self.workspace, f"{SPEC_ROOT}/placeholder.md", must_exist=False).parent
+        total, unowned = 0, []
+        for path in sorted(folder.glob("*.md")):
+            relative = path.relative_to(self.workspace).as_posix()
+            parsed = headings(read_lines(path, relative)[1])
+            titles = cited.get(relative, set())
+            spans = [(h["start"], h["end"]) for h in parsed if h["title"] in titles]
+            for heading in (h for h in parsed if h["level"] == 2):
+                total += 1
+                # A cited ancestor, the section itself or a cited subsection reaches it.
+                first, last = heading["start"], heading["end"]
+                reached = None in titles or any(start <= first < end or first <= start < last for start, end in spans)
+                if not reached:
+                    unowned.append(f"{relative} › {heading['title']}")
+        return total, unowned
+
+    def check(self, *, skip_generated=False, unowned=False):
         for source_id in self.catalog["sources"]:
             self.source(source_id)
         cases = self.evaluations()
         generated = None if skip_generated else self.generated()
-        return {"sources": len(self.catalog["sources"]), "topics": len(self.topics),
-                "intents": len(self.intents), "evaluation_cases": cases, "generated_documents": generated,
-                "note": "Routing checks test navigation, not agent understanding or task acceptance."}
+        total, missing = self.unowned_spec_sections()
+        result = {"sources": len(self.catalog["sources"]), "topics": len(self.topics),
+                  "intents": len(self.intents), "evaluation_cases": cases, "generated_documents": generated,
+                  "spec_sections_reached_by_topics": f"{total - len(missing)}/{total}"}
+        if unowned:
+            result["unowned_spec_sections"] = missing
+        result["note"] = "Routing checks test navigation, not agent understanding or task acceptance."
+        return result
 
 
 def plan_markdown(plan):
@@ -773,6 +856,8 @@ def plan_markdown(plan):
         lines.extend([f"  - Lines {s['line']}–{s['end_line']}: {s['title']}"
                       + (" (scope correction)" if s["scope"] else "") for s in source["sections"]]
                      or ["  - Read the full source."])
+        if source.get("pointer"):
+            lines.append(f"  - Pointer: {source['pointer']}")
         lines.append(f"  - Read: `python scripts/context.py read --source {source['id']}`")
     if "code" in show and plan["repositories"]:
         lines.extend(["", "## Where the code lives", "",
@@ -789,7 +874,10 @@ def plan_markdown(plan):
     for source in plan["sources"]:
         if "content" in source:
             lines.extend(["", f"## Source: {source['id']} — `{source['path']}`",
-                          f"Included line ranges: {source['ranges']}", "", source["content"].rstrip("\n")])
+                          f"Included line ranges: {source['ranges']}"])
+            if source["shown_above"]:
+                lines.append(f"Lines {source['shown_above']} appear under an earlier source of this document.")
+            lines.extend(["", source["content"].rstrip("\n")])
     return "\n".join(lines) + "\n"
 
 
@@ -813,6 +901,8 @@ def main(argv=None):
     read.add_argument("--source", required=True)
     check = commands.add_parser("check", help="Validate catalog, sources, evaluations and generated drift")
     check.add_argument("--skip-generated", action="store_true")
+    check.add_argument("--unowned", action="store_true",
+                       help="List specification sections that no topic's sources reach")
     commands.add_parser("render", help="Write the generated map, topic pages and AGENTS.md index")
     args = parser.parse_args(argv)
     try:
@@ -845,7 +935,8 @@ def main(argv=None):
                   f"SHA-256: {result['sha256']}\nIncluded line ranges: {result['ranges']}\n")
             print(result["content"])
         elif args.command == "check":
-            print(json.dumps(context.check(skip_generated=args.skip_generated), indent=2))
+            print(json.dumps(context.check(skip_generated=args.skip_generated, unowned=args.unowned),
+                             ensure_ascii=False, indent=2))
         else:
             print(json.dumps({"generated_documents": context.generated(write=True)}, indent=2))
         return 0

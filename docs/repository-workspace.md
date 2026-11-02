@@ -81,7 +81,10 @@ request returns a nonzero status with ranked `find` candidates and requires furt
 exploration.
 
 The reader emits exact sections with their introductory scope corrections, line
-ranges and current SHA-256 hashes; `--content` includes the text in the plan. A
+ranges and current SHA-256 hashes; `--content` includes the text in the plan, with
+each document's preamble and shared sections once. Procedure sources that serve other
+intents, such as the release and migration policies in a question plan, stay listed
+as pointers without their text. A
 saved plan is a snapshot: regenerate it after source changes or a handoff. Reading
 plans and source hashes do not prove that an agent read, understood or complied
 with a requirement. Keep decisions, source revisions, progress and unresolved
@@ -100,7 +103,9 @@ local and do not move the repositories.
 After changing topics, intents, source headings or filenames, render again and run
 the full context check. It checks source targets, exact headings and scope
 sections, required dependencies, fixtures, the index size and generated-file drift,
-and that design's `check_docs.py` reads headings exactly as the resolver does.
+and that design's `check_docs.py` reads headings exactly as the resolver does. It
+also reports how many specification sections topics reach; `check --unowned` lists
+the others without failing.
 `verify_documents.py` also checks installed entrypoint consistency, ignoring
 line-ending differences that Git checkouts introduce, and invokes this gate.
 Standalone design checks defer links to absent sibling checkouts but still fail
@@ -110,7 +115,8 @@ deterministic selection, not end-to-end agent effectiveness or measured context
 savings. Use paired real-request trials before making those claims; the
 [first planning-only trials](../qualification/context-eval-2026-10-24/results.md)
 of the earlier route layer show no token saving and do not establish an effect
-either way.
+either way, and the [2026-11-02 trial](../qualification/context-eval-2026-11-02/results.md)
+of a fuller redesign scored the same as the current layer.
 
 Context changes across design and delivery must be reviewed together. Once the
 design changes are committed and available, update delivery's workspace manifest
