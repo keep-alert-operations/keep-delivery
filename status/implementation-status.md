@@ -7,9 +7,9 @@ asked for the incident, as an alert opened from a preset shows its preset. The l
 alerts table now remembers the incident in the browser-tab alert-list context, so the
 alert detail shows Incidents and the incident title, Back to incident, and Previous and
 Next over the visible linked alerts, skipping unavailable references. A direct alert
-link still starts at Feed. No API or stored data changes. This change pins the tested
-branch heads, frontend `9366682` and design `b024232`, so CI reads REV-59; the pins move
-to the merge commits after those pull requests merge.
+link still starts at Feed. No API or stored data changes. Merged with merge commits after
+CI `verify` passed: frontend #23 (`b3922dd`) and design #28 (`6a2cd7f`); this change pins
+those heads in the manifest.
 
 - Executed on 2026-11-03: on the local stack, signed in as the local admin, the alert
   opened from an incident with three linked alerts showed `Local Demo / Incidents /
