@@ -1,5 +1,61 @@
 # Implementation status
 
+## 2026-11-03 Dashboard panel types and HTML panels (REV-57)
+
+The user asked for panel types, starting with today's count panel and an HTML panel,
+and chose a type dropdown in a fixed-size panel dialog from the
+[panel types canvas](https://claude.ai/artifact/193U2ejvHGUg2tjpUjWq6k). The user
+accepted the proposed sanitizing defaults: allowlisted tags, http/https/mailto links,
+a fixed set of style properties, no images and 16,000 characters (register REV-57;
+dashboard operations 2, 3, 5, 14 and 16). Branches `codex/panel-types` start from
+main after REV-58; the migration is 0062, after REV-58's 0061. Pull requests are open
+and nothing is merged; this change pins their heads in the manifest, the service pins
+in `pyproject.toml` and the lock.
+
+- Migrations: `0062_panel_types.sql` adds `type` (default `count`) and a `content`
+  object to `dashboard_panels`, makes `preset_id` nullable and checks that only count
+  panels reference presets, HTML panels have no thresholds and hold an `html` string.
+  No row is rewritten.
+- Domain: `configuration/html.py` sanitizes with nh3 0.3.7 and reports removals with
+  line numbers; `Panel` and `HtmlPanel` form a union defaulting to count;
+  `sanitize_panels()` runs after authorization; `presets_of()` lists count panels'
+  presets.
+- API: per-type reads and writes, 422 `panel_type_changed`, retries without a panel
+  type still match, validate reports removals, and count batches and previews use
+  count panels only.
+- Contracts: `product.openapi.json` and `openapi.json` regenerated with
+  `qualification/generate_http_contracts.py`; additive only.
+- Frontend: the fixed 1000 × 720 panel dialog with a searchable type dropdown,
+  settings left and preview right; HTML panels with a line-numbered editor, live
+  preview and the server's removal report; `HtmlTile` with a second DOMPurify 3.4.17
+  pass (`lib/panel-html.ts`); no count request for a dashboard of only HTML panels.
+  Pins `@appchi/contracts` `258e77e`; `npm run generate` reproduces the client.
+- Ingestion, processor, correlation and indexer move their domain pins to `1a8d71c` so
+  the delivery environment resolves one domain.
+- Design: REV-57, spec notes, verification plan "Panel types (REV-57)", `check_docs.py`
+  REV-01..57. Delivery: `test_dashboard_panel_types.py`, the client guide's panel steps
+  (also dropping the Width/Height step REV-50 removed), this entry, the readiness
+  note and `verify_documents.py` REV-01..57.
+- An independent security review found no stored-XSS path. Its three findings were
+  fixed before commit: sanitizing ran before authorization, stored links reported
+  their own `target`/`rel` as removals, and the browser's attribute lookup used a
+  plain object; style values now also reject CSS comments.
+- Executed on 2026-11-03 against the branch sources (delivery environment with
+  editable siblings) and a disposable PostgreSQL 18.2 on port 55491:
+  - Migrations: unit 5 and the full suite 42 passed.
+  - Domain: 33 panel tests passed. API: unit 16 (`test_count_batches.py`) passed;
+    the full API and domain unit suites showed only CEL one-second compile-deadline
+    timeouts that also occur on unchanged main under load.
+  - Integration: `test_dashboard_panel_types.py` (6) with the configuration, listing
+    and product suites gave 49 passed.
+  - Contracts 57 and `check_contracts.py`; `verify_documents.py`, `check_context.py`
+    and design `check_docs.py` passed.
+  - Frontend: typecheck, `next build` and 63 mocked browser specs (dashboard counts,
+    panel types, layout, preset choices, history) passed in Chrome on a fresh dev
+    server from a clean worktree; theme, UI-cleanup and redesign specs (13) passed.
+  - Not run: the shared local stack (it needs migration 0062 and a service restart),
+    S1–S4 and CI.
+
 ## 2026-11-02 Context catalog fixes
 
 Navigation and tooling only; no product behavior changed. A retrieval comparison of

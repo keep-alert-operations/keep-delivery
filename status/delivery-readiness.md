@@ -56,6 +56,8 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 **Incident list link counts (REV-56):** no migration and no new runtime role. Deploy the API with its domain pin; older UIs ignore the new `total_linked`, `suppressed` and `unavailable` list fields. Then deploy the frontend, whose Linked alerts column reads them. Roll back the API alone and the column shows "—" again. Not yet qualified.
 
+**Dashboard panel types (REV-57):** apply migration 0062 first (adds `dashboard_panels.type` defaulting to `count` and `content`, makes `preset_id` nullable, no rewrite). Then deploy the API and the domain-pin-only services, then the frontend. An older frontend keeps working with count panels; HTML panels can be created only from the new frontend. Rolling the API back after HTML panels exist breaks reading those dashboards, so delete the HTML panels first or roll forward. Not yet qualified.
+
 ## Runbooks and support
 
 The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.
