@@ -58,6 +58,8 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 **Noisy presets (REV-58):** apply migration 0061 (`presets.noisy`, non-null with a constant default, no rewrite, no stopped-writer window), then deploy the API with its domain pin, then the frontend. An older API keeps stored flags on update and creates silent presets; an older UI ignores the flag, so rolling back the UI only silences the alarm. The alarm is a static frontend asset. Not yet qualified.
 
+**Dashboard panel types (REV-57):** apply migration 0062 first (adds `dashboard_panels.type` defaulting to `count` and `content`, makes `preset_id` nullable, no rewrite). Then deploy the API and the domain-pin-only services, then the frontend. An older frontend keeps working with count panels; HTML panels can be created only from the new frontend. Rolling the API back after HTML panels exist breaks reading those dashboards, so delete the HTML panels first or roll forward. Not yet qualified.
+
 ## Runbooks and support
 
 The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.
