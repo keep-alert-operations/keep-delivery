@@ -1,5 +1,64 @@
 # Implementation status
 
+## 2026-11-03 Noisy presets that sound an alarm (REV-58)
+
+The user asked for presets that can be noisy: while such a preset is open and has
+alerts, the page plays a loud sound meant to wake someone at night. They approved the
+generated alarm (a heavy action-trailer loop, 27.4 s), the
+[noisy preset design mock](https://claude.ai/artifact/9i9edScgrAKBYCxqrECxtF) and the
+implementation (register REV-58; preset operations 3, 8 and 16). Pushed on
+`codex/noisy-presets` with pull requests, not merged: design `6390363`, migrations
+`3774cee`, domain `672d717`, API `c03124d` (pins domain `672d717`), contracts
+`21c3fab`, frontend `3179b58` (pins `@appchi/contracts` `21c3fab`; `npm run generate`
+reproduces the committed client) and this delivery change. Ingestion `f09070a`, processor
+`0d24bd7`, correlation `8c22bf0` and indexer `02d5223` only move their domain pins to
+`672d717`, so the delivery environment resolves one domain. This change pins those
+branch heads in the manifest, `pyproject.toml` and the lock; repin the merged heads
+after merging. Work ran in worktrees separate from the shared checkouts, which a
+concurrent session was using for REV-57.
+
+- Migrations: 0061 adds `presets.noisy boolean NOT NULL DEFAULT false`; checksum,
+  chain and ledger tests move to 58 revisions.
+- Domain: `PresetDefinition.noisy` is a strict boolean defaulting to false.
+- API: preset saves write `noisy`; a false value is left out of command fingerprints so
+  retries from before REV-58 still match, as for `group_by`. Reads and history
+  snapshots carry it through `SELECT *`.
+- Contracts: `product.openapi.json` and `openapi.json` regenerated with
+  `qualification/generate_contracts.py`; only `noisy` is added to `PresetDefinition`,
+  `PresetCreate` and `PresetReplace`.
+- Frontend: `preset-alarm.tsx` (alarm hook, sample button, Noisy chip, banner), the
+  editor's Sound tab, the list chip, the results alarm with per-tab mute, the history
+  Alarm row, styles and `generated.ts` from the local contracts. The alarm is
+  `src/assets/preset-alarm.wav`, bundled to `.next/static/media` (which the image
+  already copies); `scripts/generate-preset-alarm.py` reproduces it byte for byte.
+- Design: REV-58, preset sections 3, 8 and 16, verification plan "Alarm (REV-58)" and
+  `check_docs.py` REV-01..58. Delivery: this entry, the readiness note,
+  `verify_documents.py` REV-01..58 and `tests/integration/test_preset_noisy.py`.
+- Executed on 2026-11-03 with an environment that puts the worktree sources ahead of
+  delivery's environment, and a disposable PostgreSQL 18.2:
+  - Migrations: unit 5 and integration 35 passed, including fresh install, legacy
+    adoption through 0060 and the CLI.
+  - Domain unit 570 and API unit 224 passed; three CEL compile cases timed out at the
+    compiler's one-second child deadline under this environment and passed on rerun.
+  - Contracts: 57 passed; `check_contracts.py` reports the OpenAPI contract matches the
+    application.
+  - Real PostgreSQL: `test_preset_noisy.py` (2), `test_preset_grouping.py`,
+    `test_configuration_reads.py`, `test_configuration_deletion.py`,
+    `test_configuration_counts.py` and `test_command_retention.py`: 34 passed, 12 skipped
+    for absent Elasticsearch or admin bindings.
+  - Frontend: typecheck and production build passed; Prettier passed on the changed
+    files. Browser (installed Chrome, synthetic API): `noisy-presets.spec.ts` 4 passed;
+    the updated `preset-settings-tabs.spec.ts` and `preset-columns`, `preset-choices`,
+    `grouping`, `configuration-history`, `quick-views`, `redesign` and `ui-cleanup`
+    passed (50).
+  - Design `check_docs.py` passes except that it requires REV-57 too, which the
+    concurrent dashboard panel types change (REV-57) adds; with a REV-57 heading present
+    it passes. Delivery `verify_documents.py` reports the same gap plus errors from the
+    worktree layout (no workspace entrypoint, absent sibling checkouts); rerun it in the
+    complete workspace.
+- Not run: the shared local stack (migration 0061 not applied there), S1–S4, real
+  speakers and other browsers, and CI.
+
 ## 2026-11-02 Context catalog fixes
 
 Navigation and tooling only; no product behavior changed. A retrieval comparison of

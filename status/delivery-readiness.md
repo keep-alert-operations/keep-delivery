@@ -56,6 +56,8 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 **Incident list link counts (REV-56):** no migration and no new runtime role. Deploy the API with its domain pin; older UIs ignore the new `total_linked`, `suppressed` and `unavailable` list fields. Then deploy the frontend, whose Linked alerts column reads them. Roll back the API alone and the column shows "—" again. Not yet qualified.
 
+**Noisy presets (REV-58):** apply migration 0061 (`presets.noisy`, non-null with a constant default, no rewrite, no stopped-writer window), then deploy the API with its domain pin, then the frontend. An older API keeps stored flags on update and creates silent presets; an older UI ignores the flag, so rolling back the UI only silences the alarm. The alarm is a static frontend asset. Not yet qualified.
+
 ## Runbooks and support
 
 The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.
