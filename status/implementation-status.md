@@ -6,16 +6,19 @@ The user asked for presets that can be noisy: while such a preset is open and ha
 alerts, the page plays a loud sound meant to wake someone at night. They approved the
 generated alarm (a heavy action-trailer loop, 27.4 s), the
 [noisy preset design mock](https://claude.ai/artifact/9i9edScgrAKBYCxqrECxtF) and the
-implementation (register REV-58; preset operations 3, 8 and 16). Pushed on
-`codex/noisy-presets` with pull requests, not merged: design `6390363`, migrations
-`3774cee`, domain `672d717`, API `c03124d` (pins domain `672d717`), contracts
-`21c3fab`, frontend `3179b58` (pins `@appchi/contracts` `21c3fab`; `npm run generate`
-reproduces the committed client) and this delivery change. Ingestion `f09070a`, processor
-`0d24bd7`, correlation `8c22bf0` and indexer `02d5223` only move their domain pins to
-`672d717`, so the delivery environment resolves one domain. This change pins those
-branch heads in the manifest, `pyproject.toml` and the lock; repin the merged heads
-after merging. Work ran in worktrees separate from the shared checkouts, which a
-concurrent session was using for REV-57.
+implementation (register REV-58; preset operations 3, 8 and 16). Merged with merge
+commits at the user's request after CI `verify` passed on each pull request:
+migrations #9 (`20a16bd`), domain #19 (`d8229ae`), contracts #9 (`0523e26`), API #15
+(`3db8abe`, pins domain `d8229ae`), frontend #18 (`6737ad1`, pins `@appchi/contracts`
+`0523e26`; `npm run generate` reproduces the committed client), and the domain-pin-only
+ingestion #12 (`6acf1a9`), processor #11 (`42146f7`), correlation #10 (`f0559d6`) and
+indexer #15 (`b36cfed`), which keep one domain in the delivery environment. The user held
+design #24 (`6390363`) and this delivery change until REV-57 (dashboard panel types,
+concurrent and not yet on main) lands, because both document checks require REV-01..58.
+This change pins the merged heads in the manifest, `pyproject.toml` and the lock, and
+design's branch head until design #24 merges. The checks below ran on the branch heads
+before the repin. Work ran in worktrees separate from the shared checkouts, which the
+REV-57 session was using.
 
 - Migrations: 0061 adds `presets.noisy boolean NOT NULL DEFAULT false`; checksum,
   chain and ledger tests move to 58 revisions.
