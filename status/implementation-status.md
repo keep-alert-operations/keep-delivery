@@ -1,5 +1,19 @@
 # Implementation status
 
+## 2026-11-03 Shorter noisy preset alarm banners
+
+The user asked to rename the alarm button from "Mute on this screen" to "Mute", and to
+remove "It stops when none match." from the playing banner and "Anyone else with this
+preset open still hears it." from the muted banner. The alarm behaves as before, and
+the muted heading "Alarm muted on this screen." stays. REV-58 and preset section 3
+record the wording. Merged with merge commits after CI `verify` passed: design #27
+(`3e6b6b3`) and frontend #22 (`92082b8`). The REV-59 pins (frontend `b3922dd`,
+design `6a2cd7f`) include both merges.
+
+- Executed on 2026-11-03: frontend typecheck passed, and `noisy-presets` passed 4/4 in
+  Chrome against the dev server with mocked data. Design `check_docs.py` passed. The
+  smoke baseline and a local stack check were not run.
+
 ## 2026-11-03 Incident path on alert details (REV-59)
 
 The user reported that an alert opened from an incident showed Feed as its path, and
