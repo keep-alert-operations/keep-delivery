@@ -79,8 +79,8 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 1. Make sure the saved presets you need already exist in the same tenant.
 2. Open **Boards → New dashboard**, or open an existing dashboard.
 3. Click the dashboard name or its pen icon to rename it.
-4. Select **Create panel**. Choose a **Saved preset** and, optionally, a **Custom title**. Leaving the title blank uses the preset's name.
-5. Choose **Width**, **Height** and any **Count thresholds**, then select **Create panel** in the dialog. This changes only your draft.
+4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. The preview on the right shows the panel at its size.
+5. Select **Create panel** in the dialog. This changes only your draft. A panel keeps its type; to show something else, create a new panel.
 6. Repeat for the required panels, up to 24. Use each panel's options for **Edit panel** or **Delete panel**.
 7. Arrange panels using the move grip and resize handle. Keyboard controls and the panel options provide alternatives; on narrow screens use the size and Move up/down controls. Panels settle upward to close empty gaps.
 8. Select **Save** to save the entire shared name, panel configuration and layout together.
@@ -88,6 +88,10 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 There is no separate dashboard editor. **Apply changes** in a panel dialog updates the draft; it does not replace the dashboard-level Save. A new or changed preset reference says **Save the dashboard to count this panel** until saved. Canceling a panel dialog leaves the existing draft unchanged.
 
 The **Unsaved changes** chip identifies a changed draft. Save is disabled when there is nothing new to save. **Discard changes** asks for confirmation, then restores the current saved definition. Fullscreen hides editing controls, and automatic updates continue; there is no Pause updates control.
+
+## HTML panels
+
+HTML panels show text, headings (`h3`–`h6`), lists, tables, links and inline colors, spacing and borders. Scripts, images, iframes, forms, event handlers and other styles are removed when you save, and the dialog lists anything that will be removed before you apply it. Links open in a new tab. Content is limited to 16,000 characters after removal. HTML panels never count alerts and never reference a preset.
 
 ## Use color thresholds as a visual aid
 
