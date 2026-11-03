@@ -7,12 +7,33 @@ remove "It stops when none match." from the playing banner and "Anyone else with
 preset open still hears it." from the muted banner. The alarm behaves as before, and
 the muted heading "Alarm muted on this screen." stays. REV-58 and preset section 3
 record the wording. Merged with merge commits after CI `verify` passed: design #27
-(`3e6b6b3`) and frontend #22 (`92082b8`); this change pins those heads in the
-manifest.
+(`3e6b6b3`) and frontend #22 (`92082b8`). The REV-59 pins (frontend `b3922dd`,
+design `6a2cd7f`) include both merges.
 
 - Executed on 2026-11-03: frontend typecheck passed, and `noisy-presets` passed 4/4 in
   Chrome against the dev server with mocked data. Design `check_docs.py` passed. The
   smoke baseline and a local stack check were not run.
+
+## 2026-11-03 Incident path on alert details (REV-59)
+
+The user reported that an alert opened from an incident showed Feed as its path, and
+asked for the incident, as an alert opened from a preset shows its preset. The linked
+alerts table now remembers the incident in the browser-tab alert-list context, so the
+alert detail shows Incidents and the incident title, Back to incident, and Previous and
+Next over the visible linked alerts, skipping unavailable references. A direct alert
+link still starts at Feed. No API or stored data changes. Merged with merge commits after
+CI `verify` passed: frontend #23 (`b3922dd`) and design #28 (`6a2cd7f`); this change pins
+those heads in the manifest.
+
+- Executed on 2026-11-03: on the local stack, signed in as the local admin, the alert
+  opened from an incident with three linked alerts showed `Local Demo / Incidents /
+  fdsfa` with no Feed crumb; Next kept the path and Back to incident returned to the
+  incident. In Chrome, `link-incident`, `preset-columns` and `redesign` passed 19/19,
+  then `link-incident`, `incident-notes`, `workspace` and `navigation-session` passed
+  46/46, against the running dev server. Frontend typecheck, `check_docs.py`,
+  `verify_documents.py` and `check_context.py` passed. `format:check` warned on 96
+  files, including untouched `package.json`, in this Windows checkout. The full
+  frontend suite was not run.
 
 ## 2026-11-03 Centered count panel numbers without captions
 
