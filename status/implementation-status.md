@@ -1,5 +1,25 @@
 # Implementation status
 
+## 2026-11-03 Centered count panel numbers without captions
+
+The user asked to remove the "At least {count} · {color}" threshold chip and the
+"Exact logical alerts" caption from dashboard count panels, then to center the number
+and size it with the panel. A threshold still colors the panel's top bar; only stale,
+paused, unavailable and placeholder states keep a caption. The number is centered in
+the space under the title and sized from it with a container query, so it follows the
+panel's size, including while resizing and in the dialog preview. No specification
+named these labels, so no design change was needed. Merged with a merge commit after
+CI `verify` passed: frontend #21 (`4b5f9ed`); this change pins that head in the
+manifest.
+
+- Executed on 2026-11-03: on the local stack, signed in as the local editor, the
+  `shilat` dashboard showed no chip or caption; every count was centered (0 px offset)
+  and inside its panel at about 59 px (4×2), 41 px (3×2 with a preset line) and 221 px
+  (4×5). Frontend typecheck passed. `dashboard-counts`, `dashboard-layout` and
+  `dashboard-panel-types` passed 53/53 in Chrome after the caption removal and 51/53
+  after centering; the two timing failures (a `page.goto` timeout and the mid-animation
+  pickup case) passed 6/6 with `--repeat-each=3`.
+
 ## 2026-11-03 Live count in the panel dialog preview (REV-57 correction)
 
 On the redeployed local stack the user found that the panel dialog's count preview
