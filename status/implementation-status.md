@@ -1,5 +1,26 @@
 # Implementation status
 
+## 2026-11-03 Incident path on alert details (REV-59)
+
+The user reported that an alert opened from an incident showed Feed as its path, and
+asked for the incident, as an alert opened from a preset shows its preset. The linked
+alerts table now remembers the incident in the browser-tab alert-list context, so the
+alert detail shows Incidents and the incident title, Back to incident, and Previous and
+Next over the visible linked alerts, skipping unavailable references. A direct alert
+link still starts at Feed. No API or stored data changes. Merged with merge commits after
+CI `verify` passed: frontend #23 (`b3922dd`) and design #28 (`6a2cd7f`); this change pins
+those heads in the manifest.
+
+- Executed on 2026-11-03: on the local stack, signed in as the local admin, the alert
+  opened from an incident with three linked alerts showed `Local Demo / Incidents /
+  fdsfa` with no Feed crumb; Next kept the path and Back to incident returned to the
+  incident. In Chrome, `link-incident`, `preset-columns` and `redesign` passed 19/19,
+  then `link-incident`, `incident-notes`, `workspace` and `navigation-session` passed
+  46/46, against the running dev server. Frontend typecheck, `check_docs.py`,
+  `verify_documents.py` and `check_context.py` passed. `format:check` warned on 96
+  files, including untouched `package.json`, in this Windows checkout. The full
+  frontend suite was not run.
+
 ## 2026-11-03 Centered count panel numbers without captions
 
 The user asked to remove the "At least {count} · {color}" threshold chip and the
