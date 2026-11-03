@@ -1,5 +1,21 @@
 # Implementation status
 
+## 2026-11-03 Live count in the panel dialog preview (REV-57 correction)
+
+On the redeployed local stack the user found that the panel dialog's count preview
+showed "—" until the dashboard was saved. The dialog now counts the chosen preset at
+once through the existing `POST /alerts/counts` (`previewTotal`), excluding suppressed
+alerts as dashboard counts do, and thresholds color the live count; unsaved panels on
+the board still ask to save (the 2026-10-09 correction). Recorded as a later user
+correction under REV-57. Frontend #20 and design #26; this change pins their merged
+heads.
+
+- Executed on 2026-11-03: on the local stack, signed in as the local editor, choosing
+  `shilat` showed 37 before saving, matching the feed, and a threshold turned it blue;
+  the dialog was cancelled. Frontend typecheck passed; `dashboard-panel-types.spec.ts`
+  (5, including the new live-count case), `dashboard-layout` and `preset-choices` (40)
+  passed in Chrome against the dev server. Design `check_docs.py` passed.
+
 ## 2026-11-03 Noisy presets that sound an alarm (REV-58)
 
 The user asked for presets that can be noisy: while such a preset is open and has
