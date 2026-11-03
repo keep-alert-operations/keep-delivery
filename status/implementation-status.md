@@ -8,9 +8,15 @@ and chose a type dropdown in a fixed-size panel dialog from the
 accepted the proposed sanitizing defaults: allowlisted tags, http/https/mailto links,
 a fixed set of style properties, no images and 16,000 characters (register REV-57;
 dashboard operations 2, 3, 5, 14 and 16). Branches `codex/panel-types` start from
-main after REV-58; the migration is 0062, after REV-58's 0061. Pull requests are open
-and nothing is merged; this change pins their heads in the manifest, the service pins
-in `pyproject.toml` and the lock.
+main after REV-58; the migration is 0062, after REV-58's 0061. Merged with merge commits
+on 2026-11-03 at the user's request, after CI `verify` passed on each pull request:
+design #25 (`1b5cdfc`), migrations #10 (`9355c06`), domain #20
+(`2992672`), contracts #10 (`ccfe5b7`), API #16 (`5410192`), ingestion #13
+(`7de181a`), processor #12 (`48fe38c`), correlation #11 (`62948f6`), indexer #16
+(`e394348`), frontend #19 (`2249d70`) and this delivery change. Each merge commit has
+the same tree as its tested branch head. This change pins the merged main heads in the
+manifest, the service pins in `pyproject.toml` and the lock; the services pin domain
+`1a8d71c` and the frontend contracts `258e77e`, the branch heads those merges contain.
 
 - Migrations: `0062_panel_types.sql` adds `type` (default `count`) and a `content`
   object to `dashboard_panels`, makes `preset_id` nullable and checks that only count
