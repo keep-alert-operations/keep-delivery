@@ -91,7 +91,7 @@ The **Unsaved changes** chip identifies a changed draft. Save is disabled when t
 
 ## HTML panels
 
-HTML panels show text, headings (`h3`–`h6`), lists, tables, links and inline colors, spacing and borders. Scripts, images, iframes, forms, event handlers and other styles are removed when you save, and the dialog lists anything that will be removed before you apply it. Links open in a new tab. Content is limited to 16,000 characters after removal. HTML panels never count alerts and never reference a preset.
+HTML panels show text, headings (`h3`–`h6`), lists, tables, links and inline colors, font sizes, spacing and borders. Scripts, images, iframes, forms, event handlers and other styles are removed when you save, and the dialog lists anything that will be removed before you apply it. Links open in a new tab. Content is limited to 16,000 characters after removal. HTML panels never count alerts and never reference a preset.
 
 ## Use color thresholds as a visual aid
 

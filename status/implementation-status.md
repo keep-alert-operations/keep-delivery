@@ -1,5 +1,27 @@
 # Implementation status
 
+## 2026-11-04 Font size in HTML panels (REV-57 later decision)
+
+The user asked to change font sizes in HTML dashboard panels. `font-size` joins the
+inline style allowlist on the server (`appchi.configuration.html`) and in the browser
+(`lib/panel-html.ts`), with the same value rules and no size limit. No API or stored
+data changes. Domain `5b66a43` is pinned in API, ingestion, processor, correlation and
+indexer. Not yet merged.
+
+- Executed on 2026-11-04 before the pins: domain
+  `test_dashboard_panel_types.py` passed 33/33, API `test_count_batches.py` passed
+  16/16 with the changed domain, frontend typecheck passed, and
+  `dashboard-panel-types` passed 6/6 in Chrome with mocked data. Design `check_docs.py`
+  passed. After merging main (REV-60), frontend typecheck, `dashboard-panel-types` 6/6
+  and design `check_docs.py` passed again on `f1bff26` and `6bc589e`.
+- A signed-in journey as local-editor against a separate API and UI running the
+  changes saved an HTML panel through the real API: 28px was kept through save and
+  reload, default text stayed 13px, and `font-size: url(x)` and `position` were removed
+  and reported. Deleting the test dashboard returned 503 `recovery_not_ready`, so
+  `smoke font-size 1793782470269` remains in Global on the local stack.
+- The smoke baseline was not run. `verify_documents.py` and `check_context.py` could
+  not run in the partial worktree folder, which lacks the complete workspace.
+
 ## 2026-11-04 Dashboard panels without Move up and Move down (REV-60)
 
 The user asked to remove Move up and Move down from dashboard panels. The panel options
