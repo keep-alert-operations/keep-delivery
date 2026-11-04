@@ -82,7 +82,7 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. The preview on the right shows the panel at its size.
 5. Select **Create panel** in the dialog. This changes only your draft. A panel keeps its type; to show something else, create a new panel.
 6. Repeat for the required panels, up to 24. Use each panel's options for **Edit panel** or **Delete panel**.
-7. Arrange panels using the move grip and resize handle. Keyboard controls and the panel options provide alternatives; on narrow screens use the size and Move up/down controls. Panels settle upward to close empty gaps.
+7. Arrange panels using the move grip and resize handle; arrow keys also work on either handle. Panels settle upward to close empty gaps. On narrow screens the dashboard shows the saved layout and panels cannot be rearranged.
 8. Select **Save** to save the entire shared name, panel configuration and layout together.
 
 There is no separate dashboard editor. **Apply changes** in a panel dialog updates the draft; it does not replace the dashboard-level Save. A new or changed preset reference says **Save the dashboard to count this panel** until saved. Canceling a panel dialog leaves the existing draft unchanged.

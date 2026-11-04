@@ -1,5 +1,19 @@
 # Implementation status
 
+## 2026-11-04 Dashboard panels without Move up and Move down (REV-60)
+
+The user asked to remove Move up and Move down from dashboard panels. The panel options
+menu now holds Edit panel and Delete panel, and the grip still moves a panel by pointer
+or arrow keys. The grip is hidden below 1,024 CSS pixels, so panels cannot be rearranged
+there; the user confirmed that. Saved layouts, the API and the preset editor's column
+Move up and Move down are unchanged. REV-60 and dashboard section 4 record the decision,
+and the client guide is updated.
+
+- Executed on 2026-11-04: frontend typecheck passed, and the `dashboard` specs passed
+  53/53 in Chrome against the dev server with mocked data. Design `check_docs.py` and
+  delivery `verify_documents.py` passed. The smoke baseline, a production build and a
+  local stack check were not run.
+
 ## 2026-11-03 Shorter noisy preset alarm banners
 
 The user asked to rename the alarm button from "Mute on this screen" to "Mute", and to
