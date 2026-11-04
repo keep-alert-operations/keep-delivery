@@ -7,7 +7,9 @@ menu now holds Edit panel and Delete panel, and the grip still moves a panel by 
 or arrow keys. The grip is hidden below 1,024 CSS pixels, so panels cannot be rearranged
 there; the user confirmed that. Saved layouts, the API and the preset editor's column
 Move up and Move down are unchanged. REV-60 and dashboard section 4 record the decision,
-and the client guide is updated.
+and the client guide is updated. Merged with merge commits after CI `verify` passed:
+design #29 (`61883da`) and frontend #24 (`260e677`); this change pins those heads in
+the manifest.
 
 - Executed on 2026-11-04: frontend typecheck passed, and the `dashboard` specs passed
   53/53 in Chrome against the dev server with mocked data. Design `check_docs.py` and
