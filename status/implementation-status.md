@@ -8,11 +8,12 @@ inline style allowlist on the server (`appchi.configuration.html`) and in the br
 data changes. Domain `5b66a43` is pinned in API, ingestion, processor, correlation and
 indexer. Not yet merged.
 
-- Executed on 2026-11-04 on uncommitted worktree changes: domain
+- Executed on 2026-11-04 before the pins: domain
   `test_dashboard_panel_types.py` passed 33/33, API `test_count_batches.py` passed
   16/16 with the changed domain, frontend typecheck passed, and
   `dashboard-panel-types` passed 6/6 in Chrome with mocked data. Design `check_docs.py`
-  passed.
+  passed. After merging main (REV-60), frontend typecheck, `dashboard-panel-types` 6/6
+  and design `check_docs.py` passed again on `f1bff26` and `6bc589e`.
 - A signed-in journey as local-editor against a separate API and UI running the
   changes saved an HTML panel through the real API: 28px was kept through save and
   reload, default text stayed 13px, and `font-size: url(x)` and `position` were removed
