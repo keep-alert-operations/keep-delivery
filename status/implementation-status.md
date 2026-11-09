@@ -1,5 +1,43 @@
 # Implementation status
 
+## 2026-11-09 Alert table dashboard panels (REV-63)
+
+The user asked for a dashboard panel type that lists the latest X alerts of a preset
+in a table, like the preset's results, and chose the design from the canvas at
+https://claude.ai/artifact/XscgPgm7y16jQqcwyAaVvi. An **Alert table** panel
+references a saved preset and shows its latest 1–50 alerts (10 by default), newest
+first by last received, in the preset's saved columns; columns that do not fit are
+hidden from the right and Alert stays. Rows open their alert; the title and an "Open
+preset" footer open the preset. A new table panel starts at 6 × 6. Storage reuses
+`preset_id` and keeps `{"rows": n}` in `content` (migration 0064, after REV-62's 0063,
+widening the type check to count, html, image and table), so table panels block preset
+deletion and appear in preset references; they are not counted. Rows come from
+`POST /presets/preview` with a new `newest_first` flag on a saved preset. `rows`
+serializes as a number like the layout fields (contracts `wire`). REV-63 and dashboard
+sections 2, 3, 7, 14 and 16 record the decision; the client guide is updated. Built
+beside REV-62 and merged with main after REV-62 landed. PRs: design #33, migrations
+#12, contracts #12 (`3197008`), domain #23 (`440e3be`, pins contracts `3197008`), api
+#19, frontend #28 (pins contracts `3197008`), and domain-pin-only ingestion #16,
+processor #15, correlation #14 and indexer #19; this change pins every
+`codex/table-panel` head in the manifest, `pyproject.toml` and `poetry.lock`.
+
+- Executed on 2026-11-09 on the merged `codex/table-panel` sources (REV-62 included),
+  each repository's sources ahead of the installed packages: migrations unit 5/5 and
+  integration 41/41 on a disposable PostgreSQL 18.2 cluster (0064 constraints, preset
+  foreign key, image panels still without a preset); domain unit 657 (one CEL
+  compiler-deadline flake passed on rerun); contracts 58/58; API unit 228/228;
+  delivery integration 48/48 (`test_dashboard_table_panels.py`,
+  `test_dashboard_panel_types.py`, `test_dashboard_image_panels.py`, configuration
+  deletion and reads, and `test_preset_grouping.py` with the newest-first preview
+  through the API and response-controlled Elasticsearch); `check_contracts.py`;
+  design `check_docs.py`; `verify_documents.py` at REV-01..63 (only the worktree
+  folder's missing workspace entrypoints reported); frontend typecheck, format check,
+  `next build` and the mocked browser suite 265 passed, 11 skipped (real-stack
+  suites), 1 failed under concurrent load (`scalability-users`, 3/3 on rerun alone),
+  including the image and table panel specs, in Chrome.
+- Not run: the local stack journey and S1–S4; they follow the merge and a local
+  migration to 0064.
+
 ## 2026-11-09 Image dashboard panels (REV-62)
 
 The user asked for a dashboard panel that shows an image, uploaded or linked, and

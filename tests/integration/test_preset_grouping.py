@@ -290,3 +290,68 @@ def test_feed_groups_and_group_rows(grouping, real_db):
         root + "/groups", json={"group_by": "site", "group_limit": 50, "rows_per_group": 5}
     )
     assert too_many.status_code == 422
+
+
+def test_newest_first_preview_lists_a_saved_preset_by_last_received(grouping, real_db):
+    """Requirements: REV-63; dashboard operations 3 and 14; preset operations 4."""
+    client, actor, tenant, elastic = grouping
+    root = f"/api/tenants/{tenant}"
+    # A grouped preset sorted by severity: the table panel ignores both.
+    preset = client.post(
+        root + "/presets",
+        json={
+            "command_id": str(uuid4()),
+            **definition(group_by="assignee_id", sort=[{"field": "severity", "direction": "asc"}]),
+        },
+    ).json()["data"]
+    newer, older = str(uuid4()), str(uuid4())
+    with real_db.transaction() as conn:
+        for alert in (newer, older):
+            conn.execute("INSERT INTO alert_identities(id,tenant_id) VALUES(%s,%s)", (alert, tenant))
+    elastic.total = 2
+    # Hits carry the newest-first sort values: last received, then ID.
+    rows = [hit(tenant, newer, None, 2), hit(tenant, older, None, 1)]
+    for row, minute in zip(rows, (2, 1)):
+        row["sort"] = [minute, row["_id"]]
+    elastic.groups = [(None, rows)]
+    grouped_search = elastic.search
+
+    def search(**kwargs):
+        # A flat page asks only for the next dismissal change; serve its rows.
+        if set(kwargs.get("aggs", {})) <= {"next_change"}:
+            kwargs.pop("aggs", None)
+        return grouped_search(**kwargs)
+
+    elastic.search = search
+    latest = {"preset_id": preset["id"], "expected_revision": "1", "newest_first": True, "limit": 3}
+    response = client.post(root + "/presets/preview", json=latest)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert [row["id"] for row in body["data"]] == [newer, older]
+    assert body["meta"]["total"] == "2"
+    applied = body["meta"]["applied"]["definition"]
+    assert applied["sort"] == [{"field": "timestamp", "direction": "desc"}]
+    assert applied["columns"] == ["severity", "message"]
+    assert "group_by" not in applied
+    search = next(kwargs for kind, kwargs in elastic.calls if kind == "search")
+    assert search["sort"][0] == {"last_received_at": {"order": "desc", "missing": "_last"}}
+    assert search["size"] >= 3
+    assert not any("assignee_id" in str(item) for item in search["query"]["bool"]["filter"])
+    # Newest first needs a saved preset and no group.
+    refused = [
+        {**latest, "group_key": str(actor)},
+        {**latest, "group_empty": True},
+        {"cel": "true", "sort": [{"field": "severity", "direction": "asc"}],
+         "columns": ["message"], "newest_first": True},
+    ]
+    for body in refused:
+        assert client.post(root + "/presets/preview", json=body).status_code == 422
+    # The saved preview still uses the preset's own sort without newest_first.
+    elastic.calls.clear()
+    saved = client.post(
+        root + "/presets/preview",
+        json={"preset_id": preset["id"], "expected_revision": "1", "group_key": str(actor)},
+    )
+    assert saved.status_code == 200, saved.text
+    search = next(kwargs for kind, kwargs in elastic.calls if kind == "search")
+    assert search["sort"][0] == {"severity_clear_last": "asc"}
