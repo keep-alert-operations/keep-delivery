@@ -52,6 +52,15 @@ capacity profiles, directory/recovery bindings, trust roots and required client
 certificates. Environment path values must name those exact mounted files.
 The migration Job substitutes `MIGRATION_SECRET` for runtime configuration.
 
+ServiceNow ticket panels (REV-65) need the Product API's `CONFIG_SECRET` to supply
+`APPCHI_TICKET_COUNT_URL`: the company's ticket counting service address, `https`
+only, including any access key it needs in its query string. Supply it only to the
+Product API. When the service uses a company CA, mount it with `BINDING_SECRET` and set
+`APPCHI_TICKET_COUNT_CA_FILE` to that file. Leave the address out to keep the panel
+type disabled. The Product API must reach
+that address through network policy and egress; Appchi never logs its path or query.
+After deploying, a super admin confirms **Admin › Integrations › Test connection**.
+
 For private ingestion, configure the four `APPCHI_GATEWAY_*` TLS/peer settings
 documented in `private-qualification.md`; the template binds port 8443 to all pod
 interfaces. Certificate verification and approved peer fingerprints still apply.
