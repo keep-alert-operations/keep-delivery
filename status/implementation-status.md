@@ -8,8 +8,8 @@ pointer, or else the panel holding keyboard focus. It needs edit access and is i
 in fullscreen, with Ctrl, Alt or Meta, while typing, while a dialog or menu is open,
 during a drag and while commands are locked. The Edit panel menu item shows a muted E.
 REV-61 and dashboard section 8 record the decision, and the client guide is updated.
-Branch `codex/panel-edit-shortcut` in frontend (`ab79c83`), design (`1d8003b`) and
-delivery; this change pins those heads in the manifest. Not yet merged.
+Merged with merge commits after CI `verify` passed: design #31 (`697801c`) and
+frontend #26 (`1cbf4fa`); this change pins those heads in the manifest.
 
 - Executed on 2026-11-09: frontend typecheck passed, and the `dashboard` specs passed
   57/57 in Chrome against the dev server with mocked data. Design `check_docs.py` and
