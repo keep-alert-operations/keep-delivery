@@ -1,5 +1,41 @@
 # Implementation status
 
+## 2026-11-09 Threshold color picker (REV-64)
+
+The user asked for a Grafana-style color picker for count panel thresholds instead of
+the four fixed colors, and approved the canvas at
+https://claude.ai/artifact/Jq25myWGjN3oAymCuc4Tdu. A threshold color is now one of 40
+palette names (eight hues in five shades, for example `dark-teal`) or a custom
+`#RRGGBB`, stored upper case; `blue`, `green`, `amber` and `red` keep their meaning, so
+saved panels are unchanged and no migration is needed. Palette colors resolve to
+`--tc-<name>` theme variables with light and dark values; custom colors stay fixed.
+Built on `codex/threshold-color-picker`: design (REV-64, spec section 5, verification
+plan), domain (`Threshold.color` pattern), contracts (regenerated Product OpenAPI),
+frontend (picker, tiles, list thumbnails, history text, generated client) and this
+repository (client guide, REV bound).
+
+- Executed on 2026-11-09 on the branch code: domain unit tests 712 passed with one
+  `test_alert_name` case failing once in the full run and passing on rerun (it also
+  passes on main); the 13 new REV-64 cases passed. Product OpenAPI regenerated with
+  `qualification/generate_http_contracts.py`: only the threshold `color` enum became a
+  pattern. Frontend typecheck, Prettier on changed files and `next build` passed;
+  `threshold-color-picker`, `dashboard-panel-types`, `dashboard-counts`,
+  `configuration-history`, `dashboard-layout`, `dashboard-table-panels`,
+  `dashboard-image-panels` and `theme` passed 79/79 in Chrome. Design `check_docs.py`,
+  delivery `verify_documents.py` (REV-01..64) and `check_context.py` passed.
+- Local stack journey: a side API on 58010 ran the branch domain against the local
+  database and the branch UI ran on https://localhost:3444, beside the main stack on
+  3443/58000, which was left untouched. Signed in as local-editor, a count panel with a
+  `dark-teal` palette threshold and a custom `#E0569B` threshold was created through the
+  picker, saved and reloaded; the API returned both values, the tile and the dashboard
+  list thumbnail painted `#E0569B`, and the custom color stayed the same in dark mode.
+  `POST /dashboards/validate` rejected `pink`, `rgb(1,2,3)` and `#abc` with 422
+  `invalid_fields` and accepted `#a1b2c3`. Dashboard `smoke-rev64 threshold colors`
+  (`18b9b26b…`) remains in Global. The side servers were stopped.
+- Not yet done: domain pin bumps in api, ingestion, processor, correlation and
+  indexer, the frontend contracts pin, this manifest's pins, and CI; they need the
+  branches pushed.
+
 ## 2026-11-09 Panel dialog field order and labels
 
 The user asked that count and alert table panels show the title first and the preset
