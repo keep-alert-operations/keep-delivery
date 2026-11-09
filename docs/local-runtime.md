@@ -280,3 +280,20 @@ node node_modules/@playwright/test/cli.js test --config playwright.local-runtime
 
 Its safe result identifiers are saved to `.local/runtime/browser-evidence.json`.
 It uses real login and APIs without request mocks or injected sessions.
+
+## ServiceNow ticket panels (REV-65)
+
+The local API reads `APPCHI_TICKET_COUNT_URL` from the generated environment, which
+points at `http://127.0.0.1:58090/count` unless `APPCHI_LOCAL_TICKET_COUNT_URL`
+overrides it. Plain `http` is accepted only for loopback addresses. Start the fake
+counting service next to the API:
+
+```powershell
+.venv/Scripts/python.exe scripts/local_ticket_count.py --port 58090
+```
+
+It answers stable synthetic counts per team. Teams starting with `unknown`, `nocount`,
+`slow` or `error` give Team not found, No count, a timeout and an HTTP 500, so every
+panel state can be checked. `POST /__set` with `{"team": "NOC", "count": 25}` pins a
+count. Without the fake service running, ServiceNow panels show that the count is
+unavailable; with the variable empty, the type is disabled.

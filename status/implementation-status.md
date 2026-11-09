@@ -14,10 +14,10 @@ when they have none, and retries of commands sent without `link` still match. Bu
 plan), domain (`PanelLink` on every panel), contracts (regenerated Product OpenAPI),
 api (content storage, retry compatibility), frontend (Panel link dialog section,
 button on count, table, HTML and image panels, history text, generated client,
-DESIGN.md) and this repository (client guide, REV bound, integration tests). REV-65 is
-held by ServiceNow ticket panels, built in parallel in another session; design
-`check_docs.py` and `verify_documents.py` expect REV-01..66, so they pass only once
-REV-65 is on main.
+DESIGN.md) and this repository (client guide, REV bound, integration tests). REV-65
+(ServiceNow ticket panels) was built in parallel and merged first; main was then
+merged into every branch. ServiceNow panels carry the panel link too (REV-65's "no
+link" meant the removed ticket queue link).
 
 - Executed on 2026-11-09 on the branch code: domain panel tests 172 passed, including
   27 new REV-66 cases; the full domain unit run had 3 CEL failures that also fail on
@@ -41,12 +41,87 @@ REV-65 is on main.
   invalid address; that was fixed and covered by the spec. Dashboard
   `smoke-rev66 panel links` (`9b71677a…`) remains in Global. The side servers were
   stopped.
-- Pins: domain `aadf551` pins contracts `54820a5`; api `c7f688e`, ingestion `6834255`,
-  processor `d9e2ca2`, correlation `753f796` and indexer `d2ef720` pin domain
-  `aadf551`; frontend `7513d9a` pins contracts `54820a5`; design is `acbf966`. This
-  change pins those branch heads in the manifest and `pyproject.toml`. Migrations are
-  unchanged. Merge after REV-65 with merge commits in that order, delivery last; PR CI
-  results are not recorded here.
+- After merging main (REV-65): regenerated contracts differ from main only by
+  `PanelLink` and `link` on all five panel types; domain panel tests 195 passed; API
+  unit tests 292 passed; dashboard integration tests (links, types, tables, images,
+  ServiceNow) passed 50/50 on PostgreSQL 18 with migration 0065 (a first run right
+  after the cluster started had 2 failures that did not repeat in two reruns);
+  frontend typecheck, Prettier and `next build` passed, and the dashboard,
+  ServiceNow, history and picker specs passed 80/82 in one run, the 2
+  `configuration-history` failures passing 8/8 when rerun alone. A ServiceNow link
+  case was added to `dashboard-servicenow-panels`. The local stack journey above ran
+  before this merge.
+- Pins: domain `71a79f5` pins contracts `e67c19b`; api `8260817`, ingestion `8ee904f`,
+  processor `897f20e`, correlation `48471ae` and indexer `3097571` pin domain
+  `71a79f5`; frontend `126308d` pins contracts `e67c19b`; design is `bfdfb1b`;
+  migrations keep main's pin. This change pins those branch heads in the manifest and
+  `pyproject.toml`. Merge with merge commits in that order, delivery last.
+
+## 2026-11-09 ServiceNow ticket panels (REV-65)
+
+The user asked for a dashboard panel type like Keep's "Service Now" widget and approved
+the canvas at https://claude.ai/artifact/Cz4RDE8QUBt35p4d1KrZ1e, without its queue
+link. A `servicenow` panel shows how many ServiceNow incidents a team has: team,
+ticket state (open, in_progress, both), detection (hamal, direct, all) and count
+thresholds. The Product API asks the company's ticket counting service with Keep's
+parameters (`team`, `state=new|in_progress|all`, `system_failure=true|false|absent`),
+from the deployment secret `APPCHI_TICKET_COUNT_URL` (user decision: no UI editing),
+and reuses answers for 30 seconds per process (user decision). Team not found and
+missing counts are shown as such instead of 0; a failing service keeps the last count
+greyed. Built on `codex/servicenow-panel`: design (REV-65, dashboard spec, verification
+plan), migrations (0065 widens the panel checks), domain (`ServiceNowPanel`,
+settings), contracts (regenerated Product OpenAPI), api (counting client, cache,
+`/tenants/{tenant_id}/ticket-counts`, status and super-admin integration routes),
+frontend (type, dialog, tile, refresh, Integrations admin page, generated client) and
+this repository (client guide, OpenShift template and runbook, local fake counting
+service `scripts/local_ticket_count.py`, local environment default, integration test,
+REV bound).
+
+- Executed on 2026-11-09 on the branch code: migrations 48 passed including alembic
+  tests on a throwaway PostgreSQL 18; domain 735 passed (5 skipped); contracts 58
+  passed; api 291 passed (13 skipped database cases), including 62 ticket-count tests
+  (parameter mapping and merging, every reply kind, 4xx Team not found, timeout,
+  redirect, oversize, compressed replies refused, cache and single flight, a
+  20-call concurrency limit that never caches busy queries, no key or path in logs at
+  DEBUG, CA file); ruff clean. Some CEL-compiler timing tests failed under machine load
+  and passed on rerun. An independent security review's findings (pool exhaustion,
+  httpx URL logging, decompression size, migration checks, configured query
+  rewriting) were fixed before these runs. `check_contracts.py`,
+  `verify_boundaries.py`, `check_context.py`, `verify_documents.py` (REV-01..65) and
+  design `check_docs.py` passed. Frontend typecheck and Prettier on changed files
+  passed; the mocked `dashboard-servicenow-panels` spec and the dashboard, history,
+  workspace and threshold specs passed (119/120 before the final fixes, the failure
+  fixed; the ServiceNow spec, `dashboard-counts` and `dashboard-panel-types` 29/29 on
+  the final code).
+- Integration: `tests/integration/test_dashboard_servicenow_panels.py` with the
+  ServiceNow, panel-type and table-panel neighbours passed 23/23 twice on an isolated
+  local database (dropped afterwards), and 10/10 with the counting service configured
+  against the fake service. Its first run on the fresh database had one failure that
+  did not reproduce and was not captured.
+- Local stack journey: migration 0065 was applied to `appchi_local` (user approved
+  before merge). A side API on 58020 and the branch UI on 3446 ran beside the main
+  stack, with the fake counting service on 58090. Signed in as local-editor, two
+  ServiceNow panels were created in the dialog (live preview count, threshold, Team
+  not found), saved and reloaded; the API stored team, state, detection and
+  thresholds; the fake service received `team=NOC&state=new&system_failure=true` and
+  `state=all` without `system_failure` for Both/All; a pinned count crossed the
+  threshold and colored the top bar; with the service stopped the tile kept its last
+  count greyed with its age. Two tile layout bugs found there (monospace filter line,
+  clipped messages) were fixed and rechecked. Dashboard `smoke-rev65 servicenow
+  panels` (`a1711c01…`) remains in Global. Side servers were stopped.
+- Not verified: the read-only Integrations page with a real super-admin sign-in
+  (covered by mocked specs and API unit tests), and the real company counting
+  service and its ServiceNow mapping, which only someone with network access to it
+  can check.
+- Pins: domain `f0dfd94`; api `65c55eb`, ingestion `81c50b8`, processor `b69a983`,
+  correlation `b4b398d` and indexer `f0ed2f8` pin domain `f0dfd94`; frontend `ce0f7b9`
+  pins contracts `04abe29` (regenerating the client from it gives no diff); migrations
+  `25eb46c`; design `2763ff9`. Domain's contracts pin is unchanged because only the
+  generated schemas changed. This change pins those branch heads in the manifest and
+  `pyproject.toml`, and rebuilds the client guide's reading edition, which also picks
+  up earlier panel sections. Merge with merge commits in the order design,
+  migrations, domain, contracts, api, ingestion, processor, correlation, indexer,
+  frontend, delivery; PR CI results are not recorded here.
 
 ## 2026-11-09 Threshold color picker (REV-64)
 

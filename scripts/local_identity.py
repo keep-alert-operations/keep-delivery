@@ -336,6 +336,9 @@ def environment():
         "APPCHI_REDIS_URL": "redis://127.0.0.1:56380/0",
         "APPCHI_POOL_SIZE": "2",
         "APPCHI_BACKEND_URL": "http://127.0.0.1:58000",
+        "APPCHI_TICKET_COUNT_URL": os.environ.get(
+            "APPCHI_LOCAL_TICKET_COUNT_URL", "http://127.0.0.1:58090/count"
+        ),
         "PYTHONPATH": "",
     }
 

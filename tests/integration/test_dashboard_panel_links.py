@@ -9,6 +9,7 @@ from test_product import browser  # noqa: F401
 from test_configuration_deletion import configuration, create, headers  # noqa: F401
 from test_dashboard_panel_types import count_panel, html_panel, save
 from test_dashboard_table_panels import table_panel
+from test_dashboard_servicenow_panels import servicenow_panel
 
 pytestmark = pytest.mark.integration
 
@@ -22,7 +23,7 @@ def image_panel(x=0, y=4, **fields):
 
 
 def test_every_panel_type_stores_and_reads_its_link(configuration):
-    """Requirements: REV-66; dashboard operations 2, 3, 14 and 15."""
+    """Requirements: REV-66 (with REV-65); dashboard operations 2, 3, 14 and 15."""
     client, base, *_ = configuration
     preset, _ = create(configuration)
     panels = [
@@ -30,6 +31,7 @@ def test_every_panel_type_stores_and_reads_its_link(configuration):
         html_panel("<p>Hi</p>", link={"url": "http://calendar.internal:8080/changes", "label": None}),
         table_panel(preset["id"], link={"url": "https://wiki.example/escalation", "label": "Escalation"}),
         image_panel(link={"url": "https://grafana.example/d/abc?var=1", "label": None}),
+        servicenow_panel(x=3, y=4, link={"url": "https://servicenow.example/q", "label": "Queue"}),
     ]
     response, _ = save(configuration, panels)
     assert response.status_code == 201, response.text
