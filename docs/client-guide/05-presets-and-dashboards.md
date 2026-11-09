@@ -105,6 +105,8 @@ An image panel shows an uploaded PNG, JPEG, GIF or WebP file of up to 5 MB and 8
 
 Thresholds compare the count to lower bounds. For example, set `1` to amber and `10` to red: zero remains neutral, 1–9 is amber and 10 or more is red. Up to three distinct increasing nonnegative whole-number bounds are supported. The largest bound reached determines the color.
 
+Each threshold has a color button. **Colors** offers eight hues in five shades, from lightest to darkest; these follow the light or dark theme. **Custom** lets you choose any color with the color area and hue slider, or type a hex value such as `#E0569B`; a custom color looks the same in both themes. The preview in the panel dialog shows your choice at once, and the dashboard keeps it when you save.
+
 A red panel is not necessarily a critical alert. Threshold colors are presentation only: they do not change severity, create incidents, notify anyone or take action. Read the preset and threshold meaning before drawing operational conclusions.
 
 ## Share, reuse and review
