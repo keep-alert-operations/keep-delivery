@@ -32,9 +32,12 @@ repository (client guide, REV bound).
   `POST /dashboards/validate` rejected `pink`, `rgb(1,2,3)` and `#abc` with 422
   `invalid_fields` and accepted `#a1b2c3`. Dashboard `smoke-rev64 threshold colors`
   (`18b9b26b…`) remains in Global. The side servers were stopped.
-- Not yet done: domain pin bumps in api, ingestion, processor, correlation and
-  indexer, the frontend contracts pin, this manifest's pins, and CI; they need the
-  branches pushed.
+- Pins: domain `5bdcca1` pins contracts `c864904`; api `83acc84`, ingestion `6aa50b0`,
+  processor `4aa20ca`, correlation `ee58ae7` and indexer `b5020f6` pin domain
+  `5bdcca1`; frontend `24e6bbd` pins contracts `c864904` (regenerating the client from
+  it gives no diff); design is `1b4ccd3`. This change pins those branch heads in the
+  manifest and `pyproject.toml`. Migrations are unchanged. Merge with merge commits in
+  that order, delivery last; PR CI results are not recorded here.
 
 ## 2026-11-09 Panel dialog field order and labels
 
