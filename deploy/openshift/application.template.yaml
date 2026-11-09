@@ -4,7 +4,7 @@
   "metadata": {
     "name": "appchi-product-api",
     "annotations": {
-      "description": "Product API owns synchronous operator provisioning and background live hint publishing. CONFIG_SECRET supplies APPCHI_REDIS_URL; apply migration 0047 for minimal hint-outbox publication privileges. No separate live worker or worker database credential is needed. CONFIG_SECRET supplies APPCHI_OPERATOR_DATABASE_URL and operator management tokens; BINDING_SECRET supplies the verified operator binding. Qualify a 100-second operator-route gateway timeout; other routes retain their own budgets."
+      "description": "Product API owns synchronous operator provisioning and background live hint publishing. CONFIG_SECRET supplies APPCHI_REDIS_URL and, optionally, APPCHI_TICKET_COUNT_URL (REV-65 ServiceNow ticket counting service, https; may carry an access key); apply migration 0047 for minimal hint-outbox publication privileges. No separate live worker or worker database credential is needed. CONFIG_SECRET supplies APPCHI_OPERATOR_DATABASE_URL and operator management tokens; BINDING_SECRET supplies the verified operator binding. Qualify a 100-second operator-route gateway timeout; other routes retain their own budgets."
     }
   },
   "parameters": [
