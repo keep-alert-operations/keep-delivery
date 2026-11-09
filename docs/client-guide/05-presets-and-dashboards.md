@@ -79,7 +79,7 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 1. Make sure the saved presets you need already exist in the same tenant.
 2. Open **Boards → New dashboard**, or open an existing dashboard.
 3. Click the dashboard name or its pen icon to rename it.
-4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. The preview on the right shows the panel at its size.
+4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. An **Image** panel shows a picture such as a diagram or screenshot: choose **Upload a file** or **Link to an image**, add an optional **Title** and **Image description**, and pick a **Fit**. The preview on the right shows the panel at its size.
 5. Select **Create panel** in the dialog. This changes only your draft. A panel keeps its type; to show something else, create a new panel.
 6. Repeat for the required panels, up to 24. Use each panel's options for **Edit panel** or **Delete panel**. To edit a panel quickly, point at it and press **E**.
 7. Arrange panels using the move grip and resize handle; arrow keys also work on either handle. Panels settle upward to close empty gaps. On narrow screens the dashboard shows the saved layout and panels cannot be rearranged.
@@ -92,6 +92,10 @@ The **Unsaved changes** chip identifies a changed draft. Save is disabled when t
 ## HTML panels
 
 HTML panels show text, headings (`h3`–`h6`), lists, tables, links and inline colors, font sizes, spacing and borders. Scripts, images, iframes, forms, event handlers and other styles are removed when you save, and the dialog lists anything that will be removed before you apply it. Links open in a new tab. Content is limited to 16,000 characters after removal. HTML panels never count alerts and never reference a preset.
+
+## Image panels
+
+An image panel shows an uploaded PNG, JPEG, GIF or WebP file of up to 5 MB and 8,000 pixels on each side, or an image at an `https` address. Uploaded files are stored with the dashboard, so everyone who can open the dashboard can see them; each tenant can store up to 500 MB of images. A linked image loads from its own site each time the dashboard opens, so it changes when the source changes, and every viewer needs access to that site. **Show whole image** keeps the full picture with space around it; **Fill the panel** covers the panel and crops the edges. Without a title the image fills the whole panel. When an image cannot load, the panel says **Image unavailable**, with **Open link** for a linked image. Give each image a description so screen readers can read it. Image panels never count alerts and never reference a preset.
 
 ## Use color thresholds as a visual aid
 
