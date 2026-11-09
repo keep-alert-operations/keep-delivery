@@ -1,5 +1,36 @@
 # Implementation status
 
+## 2026-11-09 Image dashboard panels (REV-62)
+
+The user asked for a dashboard panel that shows an image, uploaded or linked, and
+approved the mock at https://claude.ai/artifact/DBAYiG4UFA3YEtsJec69w2. Image is the
+third panel type. Uploads (PNG, JPEG, GIF or WebP, 5 MiB, 8,000 pixels per side, 500 MiB
+per tenant) are checked from their own header and stored once per tenant in the new
+`dashboard_images` table (migration 0063); links must be `https` and load in the
+viewer's browser with no referrer. `POST /dashboard-images` is the one product route
+with a raw, non-JSON body; served images carry `nosniff`, a sandbox policy and an ETag
+with `private, no-cache`. Never-used uploads older than 24 hours are removed by later
+uploads. REV-62 and dashboard sections 2, 13, 14 and 16 record the decisions, and the
+client guide is updated. Not yet merged; this change pins the `codex/image-panel` heads
+(design `33cd2bc`, migrations `c824fcc`, domain `1a98a68`, contracts `b5c4b56`, API
+`44c5f52`, ingestion `d17bb4d`, processor `f75b6d2`, correlation `941a3cc`, indexer
+`2b55ff6`, frontend `addf25e`). REV-63 (alert table panels) also claims migration
+0063; whichever merges second renumbers.
+
+- Executed on 2026-11-09 on the branch code: migrations unit and Alembic integration
+  tests 44/44 and domain unit tests 644/644 on a disposable PostgreSQL 18 cluster;
+  contracts 57/57; delivery integration tests for image panels, panel types and
+  configuration deletion 31/31 through the real Product API; `check_contracts.py`,
+  `verify_boundaries.py` and design `check_docs.py` passed. Frontend typecheck and
+  Prettier passed; mocked Chrome specs for image panels and panel types 12/12 and the
+  other dashboard and history specs 64/64; the opt-in real-browser suite 5/5, including
+  a new upload, save, reload and serve journey.
+- API unit tests `test_count_batches.py` and `test_cel_editor.py` failed only on the
+  one-second CEL child deadline when run with a `PYTHONPATH` override; unmodified main
+  fails the same way under that override. They were not rerun in a clean environment.
+- Not run: the full Playwright suite, a production build, S1–S4, and a journey on the
+  local stack, whose shared database was not migrated.
+
 ## 2026-11-09 E opens Edit panel on dashboards (REV-61)
 
 The user asked that pressing E while hovering a dashboard panel open its Edit panel
