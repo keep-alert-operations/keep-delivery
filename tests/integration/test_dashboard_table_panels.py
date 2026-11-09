@@ -14,7 +14,7 @@ pytestmark = pytest.mark.integration
 
 def table_panel(preset, x=6, **fields):
     return {"id": str(uuid4()), "type": "table", "preset_id": preset, "title": None, "x": x, "y": 0,
-            "w": 6, "h": 4, "rows": 10, **fields}
+            "w": 6, "h": 4, "rows": 10, "link": None, **fields}
 
 
 def test_table_panels_store_their_preset_and_rows(configuration):

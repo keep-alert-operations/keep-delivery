@@ -13,12 +13,12 @@ pytestmark = pytest.mark.integration
 
 def count_panel(preset, x=0, **fields):
     return {"id": str(uuid4()), "preset_id": preset, "title": None, "x": x, "y": 0, "w": 3, "h": 2,
-            "thresholds": [], **fields}
+            "thresholds": [], "link": None, **fields}
 
 
 def html_panel(html, x=3, **fields):
     return {"id": str(uuid4()), "type": "html", "title": "Notes", "x": x, "y": 0, "w": 3, "h": 2,
-            "html": html, **fields}
+            "html": html, "link": None, **fields}
 
 
 def save(configuration, panels, *, dashboard=None, revision=None, command=None):

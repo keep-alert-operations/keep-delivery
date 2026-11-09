@@ -1,5 +1,53 @@
 # Implementation status
 
+## 2026-11-09 Panel links (REV-66)
+
+The user asked for an optional link on every panel type that shows a button opening
+the configured address, approved the canvas at
+https://claude.ai/artifact/4EeppYSGDV9QfWXR7Td6m9 and asked to build it. Every panel
+may carry `link`, `null` or `{url, label}`: an absolute `http` or `https` address of at
+most 2,048 printable ASCII characters without credentials, and optional single-line
+button text of at most 40 characters (blank shows "Open link"). The API stores it in
+the panel's `content`, so no migration is needed; panels read back with `link: null`
+when they have none, and retries of commands sent without `link` still match. Built on
+`codex/panel-link`: design (REV-66, dashboard spec sections 2, 14 and 16, verification
+plan), domain (`PanelLink` on every panel), contracts (regenerated Product OpenAPI),
+api (content storage, retry compatibility), frontend (Panel link dialog section,
+button on count, table, HTML and image panels, history text, generated client,
+DESIGN.md) and this repository (client guide, REV bound, integration tests). REV-65 is
+held by ServiceNow ticket panels, built in parallel in another session; design
+`check_docs.py` and `verify_documents.py` expect REV-01..66, so they pass only once
+REV-65 is on main.
+
+- Executed on 2026-11-09 on the branch code: domain panel tests 172 passed, including
+  27 new REV-66 cases; the full domain unit run had 3 CEL failures that also fail on
+  unmodified main (native CEL compile timing). API unit tests 229 passed after
+  updating one exact-shape test. Contracts tests 58 passed. Delivery integration tests
+  for panel links, types, tables and images passed 40/40 against a throwaway
+  PostgreSQL 18. `generate_http_contracts.py` added only `PanelLink` and the `link`
+  property; `check_contracts.py`, `verify_boundaries.py`, `check_context.py` and
+  `verify_documents.py` passed (the last two with REV-65 excluded, and with the
+  workspace entrypoint copied into the worktree folder). Frontend typecheck, Prettier
+  and `next build` passed; the full Playwright suite passed 272 with 11 skipped, and the
+  final `dashboard-panel-links` spec passed 4/4.
+- Local stack journey: a side API on 58010 ran the branch code against the local
+  database and the branch UI ran on https://localhost:3444, beside the running main
+  stack on 3443/58000, which was left untouched. Signed in as local-editor, a count
+  panel with link text "Runbook" and an untitled HTML panel with an `http` link were
+  created in the real dialog, saved and reloaded: the API returned both links, the
+  buttons opened in a new tab with `noopener noreferrer` and showed the address on
+  hover, and `POST /dashboards/validate` rejected `javascript:` and 41-character text
+  with 422 `invalid_fields`. The journey found that the preview showed a button for an
+  invalid address; that was fixed and covered by the spec. Dashboard
+  `smoke-rev66 panel links` (`9b71677a…`) remains in Global. The side servers were
+  stopped.
+- Pins: domain `aadf551` pins contracts `54820a5`; api `c7f688e`, ingestion `6834255`,
+  processor `d9e2ca2`, correlation `753f796` and indexer `d2ef720` pin domain
+  `aadf551`; frontend `7513d9a` pins contracts `54820a5`; design is `acbf966`. This
+  change pins those branch heads in the manifest and `pyproject.toml`. Migrations are
+  unchanged. Merge after REV-65 with merge commits in that order, delivery last; PR CI
+  results are not recorded here.
+
 ## 2026-11-09 Threshold color picker (REV-64)
 
 The user asked for a Grafana-style color picker for count panel thresholds instead of
