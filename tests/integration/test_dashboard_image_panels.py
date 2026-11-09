@@ -37,7 +37,7 @@ def upload(configuration, data, media="image/png", command=None):
 
 def image_panel(x=0, **fields):
     return {"id": str(uuid4()), "type": "image", "title": None, "x": x, "y": 0, "w": 3, "h": 2,
-            "image_id": None, "url": None, "fit": "contain", "alt": None, **fields}
+            "image_id": None, "url": None, "fit": "contain", "alt": None, "link": None, **fields}
 
 
 def save(configuration, panels, *, dashboard=None, revision=None):
@@ -116,7 +116,7 @@ def test_image_panels_store_read_and_keep_history(configuration):
     uploaded = image_panel(0, image_id=image["id"], alt="Checkout service map", title="Map")
     linked = image_panel(3, url="https://wiki.example.com/map.png?v=2", fit="cover")
     counted = {"id": str(uuid4()), "preset_id": preset["id"], "title": None, "x": 6, "y": 0,
-               "w": 3, "h": 2, "thresholds": []}
+               "w": 3, "h": 2, "thresholds": [], "link": None}
     response = save(configuration, [uploaded, linked, counted])
     assert response.status_code == 201, response.text
     dashboard = response.json()["data"]

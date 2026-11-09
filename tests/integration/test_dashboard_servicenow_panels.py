@@ -16,7 +16,7 @@ pytestmark = pytest.mark.integration
 def servicenow_panel(x=6, **fields):
     return {"id": str(uuid4()), "type": "servicenow", "title": None, "x": x, "y": 0,
             "w": 3, "h": 3, "team": "NOC", "ticket_state": "open", "detection": "hamal",
-            "thresholds": [], **fields}
+            "thresholds": [], "link": None, **fields}
 
 
 def test_servicenow_panels_store_their_settings(configuration):

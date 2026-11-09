@@ -107,6 +107,10 @@ A ServiceNow tickets panel shows how many ServiceNow incidents (INCs) a team has
 
 Counts refresh about every minute, when you select **Refresh counts** and when you return to the browser tab; a count can be up to about a minute and a half old. When the team name is not known to ServiceNow, the panel says **Team not found**; check the spelling in **Edit panel**. When the counting service does not answer, the panel keeps its last count in grey, with no color and the time it was counted, and retries. When the service is not set up, the type cannot be chosen and existing panels say **ServiceNow isn't connected**. The service is set up in deployment configuration; super admins can check it on **Admin › Integrations**.
 
+## Panel links
+
+Any panel can have a link button, for example to a runbook, a Grafana dashboard or a wiki page. In the panel dialog, fill in **Panel link**: a **Link** that starts with `https://` or `http://`, and optional **Button text** (blank shows **Open link**, up to 40 characters). The preview shows the button at once. On the dashboard the button sits at the end of the title row; on an untitled image it sits in the top-right corner. It opens the address in a new tab, and hovering it shows where it goes. In a narrow panel only its icon shows. Select **Remove link** to take it away. Everyone who can open the dashboard sees the button, but they still need access to the linked site.
+
 ## Use color thresholds as a visual aid
 
 Thresholds compare the count to lower bounds. For example, set `1` to amber and `10` to red: zero remains neutral, 1–9 is amber and 10 or more is red. Up to three distinct increasing nonnegative whole-number bounds are supported. The largest bound reached determines the color.
