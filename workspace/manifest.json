@@ -36,7 +36,7 @@
     },
     "appchi-frontend": {
       "url": "https://github.com/appchi-alert-operations/appchi-frontend.git",
-      "revision": "9ddf00be49ecdfc391e9134f5002c13346b3b5ae"
+      "revision": "0d01fc64fd84d8b37edd55a0560b44ad40216d2b"
     },
     "appchi-design": {
       "url": "https://github.com/appchi-alert-operations/appchi-design.git",

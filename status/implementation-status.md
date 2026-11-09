@@ -1,5 +1,25 @@
 # Implementation status
 
+## 2026-11-09 Panel dialog field order and labels
+
+The user asked that count and alert table panels show the title first and the preset
+second, that the count title be labelled Title (optional) instead of Custom title
+(optional), and that the preset field be labelled Preset instead of Saved preset.
+Labels and order only; panel storage, contracts and preset search are unchanged, and
+the frontend UI guide records the change. The dated REV-52 decision note in the
+dashboard specification still names the field as it was then. Merged with a merge
+commit after CI `verify` passed: frontend #30 (`0d01fc6`, on top of `9ddf00b`); this
+change pins that head in the manifest.
+
+- Executed on 2026-11-09 on the branch code: frontend typecheck and Prettier passed;
+  `dashboard-counts`, `dashboard-layout`, `dashboard-panel-types`,
+  `dashboard-table-panels`, `dashboard-image-panels` and `preset-choices` passed
+  70/70 in Chrome. The count and table creation tests now assert the title field
+  precedes the preset field.
+- Local stack: the frontend `next dev` checkout was fast-forwarded to `0d01fc6`; signed
+  in at https://localhost:3443, the Create panel dialog showed Title (optional) above
+  Preset for both Alert count and Alert table, and was canceled without saving.
+
 ## 2026-11-09 Close button on the panel dialog
 
 The user asked for an X button in the top-right corner of the create/edit panel
