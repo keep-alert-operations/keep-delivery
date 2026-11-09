@@ -1,5 +1,21 @@
 # Implementation status
 
+## 2026-11-09 E opens Edit panel on dashboards (REV-61)
+
+The user asked that pressing E while hovering a dashboard panel open its Edit panel
+dialog. E now opens the same dialog as the panel options menu for the panel under the
+pointer, or else the panel holding keyboard focus. It needs edit access and is ignored
+in fullscreen, with Ctrl, Alt or Meta, while typing, while a dialog or menu is open,
+during a drag and while commands are locked. The Edit panel menu item shows a muted E.
+REV-61 and dashboard section 8 record the decision, and the client guide is updated.
+Branch `codex/panel-edit-shortcut` in frontend (`ab79c83`), design (`1d8003b`) and
+delivery; this change pins those heads in the manifest. Not yet merged.
+
+- Executed on 2026-11-09: frontend typecheck passed, and the `dashboard` specs passed
+  57/57 in Chrome against the dev server with mocked data. Design `check_docs.py` and
+  delivery `verify_documents.py` passed. The smoke baseline and a production build were
+  not run.
+
 ## 2026-11-04 Font size in HTML panels (REV-57 later decision)
 
 The user asked to change font sizes in HTML dashboard panels. `font-size` joins the
