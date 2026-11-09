@@ -1,5 +1,23 @@
 # Implementation status
 
+## 2026-11-09 Close button on the panel dialog
+
+The user asked for an X button in the top-right corner of the create/edit panel
+dialog. It sits beside the dialog heading, uses the dismiss dialog's close-button
+style and discards the draft edit like Cancel. No specification lists the dialog's
+buttons and the client guide already covers canceling a panel dialog, so no design or
+guide change was needed. Merged with a merge commit after CI `verify` passed:
+frontend #29 (`9ddf00b`, on top of REV-63's `1cc4bd2`); this change pins that head in
+the manifest.
+
+- Executed on 2026-11-09 on the merged code: frontend typecheck passed and Prettier
+  passed with line endings ignored (the Windows checkout uses CRLF).
+  `dashboard-layout`, `dashboard-panel-types`, `dashboard-table-panels` and
+  `dashboard-image-panels` passed 57/57 in Chrome; the Cancel test now also closes an
+  edited panel with the X and checks the title and Save state are unchanged.
+  Screenshots at 1280 px and 390 px showed the X aligned with the heading. Not checked
+  on the signed-in local stack.
+
 ## 2026-11-09 Alert table dashboard panels (REV-63)
 
 The user asked for a dashboard panel type that lists the latest X alerts of a preset
