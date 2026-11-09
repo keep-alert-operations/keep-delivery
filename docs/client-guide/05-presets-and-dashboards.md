@@ -81,7 +81,7 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 3. Click the dashboard name or its pen icon to rename it.
 4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. The preview on the right shows the panel at its size.
 5. Select **Create panel** in the dialog. This changes only your draft. A panel keeps its type; to show something else, create a new panel.
-6. Repeat for the required panels, up to 24. Use each panel's options for **Edit panel** or **Delete panel**.
+6. Repeat for the required panels, up to 24. Use each panel's options for **Edit panel** or **Delete panel**. To edit a panel quickly, point at it and press **E**.
 7. Arrange panels using the move grip and resize handle; arrow keys also work on either handle. Panels settle upward to close empty gaps. On narrow screens the dashboard shows the saved layout and panels cannot be rearranged.
 8. Select **Save** to save the entire shared name, panel configuration and layout together.
 
