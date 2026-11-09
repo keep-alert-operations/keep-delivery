@@ -1,5 +1,44 @@
 # Implementation status
 
+## 2026-11-09 Alert table dashboard panels (REV-63)
+
+The user asked for a dashboard panel type that lists the latest X alerts of a preset
+in a table, like the preset's results, and chose the design from the canvas at
+https://claude.ai/artifact/XscgPgm7y16jQqcwyAaVvi. An **Alert table** panel
+references a saved preset and shows its latest 1–50 alerts (10 by default), newest
+first by last received, in the preset's saved columns; columns that do not fit are
+hidden from the right and Alert stays. Rows open their alert; the title and an "Open
+preset" footer open the preset. Storage reuses `preset_id` and keeps `{"rows": n}` in
+`content` (migration 0063), so table panels block preset deletion and appear in
+preset references; they are not counted. Rows come from `POST /presets/preview` with a
+new `newest_first` flag on a saved preset. `rows` serializes as a number like the
+layout fields (contracts `wire`). REV-63 and dashboard sections 2, 3, 7, 14 and 16
+record the decision; the client guide is updated. Built beside REV-62 (image panels,
+also migration 0063): whichever merges second renumbers its migration and widens the
+panel type check. Open, not merged: design #33, migrations #12, contracts #12
+(`31778e7`), domain #23 (`bf50090`, pins contracts `31778e7`), api #19, frontend #28
+(pins contracts `31778e7`), and domain-pin-only ingestion #16, processor #15,
+correlation #14 and indexer #19; this change pins every `codex/table-panel` head in
+the manifest, `pyproject.toml` and `poetry.lock`.
+
+- Executed on 2026-11-09 on the `codex/table-panel` sources (before the pin commits),
+  each repository's sources ahead of the installed packages: migrations integration
+  39/39 on a disposable PostgreSQL 18 cluster (including 0063 constraints and the
+  preset foreign key); domain unit 616/616; contracts 58/58; API unit 228/228;
+  delivery integration `test_dashboard_table_panels.py`,
+  `test_dashboard_panel_types.py`, `test_configuration_deletion.py`,
+  `test_configuration_reads.py` 31/31 and `test_preset_grouping.py` 4/4 (newest-first
+  preview through the API with response-controlled Elasticsearch); frontend
+  typecheck, format check, production build and the mocked browser suite 260 passed,
+  10 skipped (real-stack suites) in Chrome. Design `check_docs.py` and delivery
+  `verify_documents.py` pass except the expected REV-62 gap (and missing workspace
+  entrypoints in the worktree folder). The CEL compiler's one-second subprocess
+  deadline intermittently failed unrelated domain and API tests under machine load;
+  reruns passed and main shows the same timing dependence.
+- Not run: the local stack journey and S1–S4. Applying this 0063 to the shared local
+  database would collide with REV-62's 0063, so it waits until the migration number is
+  settled.
+
 ## 2026-11-09 E opens Edit panel on dashboards (REV-61)
 
 The user asked that pressing E while hovering a dashboard panel open its Edit panel

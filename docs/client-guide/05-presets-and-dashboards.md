@@ -79,7 +79,7 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 1. Make sure the saved presets you need already exist in the same tenant.
 2. Open **Boards → New dashboard**, or open an existing dashboard.
 3. Click the dashboard name or its pen icon to rename it.
-4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. The preview on the right shows the panel at its size.
+4. Select **Create panel** and choose a **Panel type**. An **Alert count** panel counts a **Saved preset**, with an optional **Custom title** (blank uses the preset's name) and **Count thresholds**. An **Alert table** panel lists the latest alerts of a **Saved preset**: choose the preset, an optional **Custom title** and how many **Alerts to show** (1 to 50). An **HTML** panel shows your own notes, links and tables: give it an optional **Title** and write its **HTML**. The preview on the right shows the panel at its size.
 5. Select **Create panel** in the dialog. This changes only your draft. A panel keeps its type; to show something else, create a new panel.
 6. Repeat for the required panels, up to 24. Use each panel's options for **Edit panel** or **Delete panel**. To edit a panel quickly, point at it and press **E**.
 7. Arrange panels using the move grip and resize handle; arrow keys also work on either handle. Panels settle upward to close empty gaps. On narrow screens the dashboard shows the saved layout and panels cannot be rearranged.
@@ -88,6 +88,10 @@ A panel opens a fresh result view. New arrivals, changed alerts, a time-dependen
 There is no separate dashboard editor. **Apply changes** in a panel dialog updates the draft; it does not replace the dashboard-level Save. A new or changed preset reference says **Save the dashboard to count this panel** until saved. Canceling a panel dialog leaves the existing draft unchanged.
 
 The **Unsaved changes** chip identifies a changed draft. Save is disabled when there is nothing new to save. **Discard changes** asks for confirmation, then restores the current saved definition. Fullscreen hides editing controls, and automatic updates continue; there is no Pause updates control.
+
+## Alert table panels
+
+An alert table panel shows the newest alerts matching its preset's current saved query, newest first by last received, whatever the preset's own sort or grouping. It uses the preset's saved columns; when the panel is too narrow, columns are hidden from the right and **Alert** always stays. Rows that do not fit scroll inside the panel. Select an alert to open it, or the title or **Open preset** to open the preset's full results. The footer shows how many of the matching alerts are listed. Like counts, the table excludes suppressed alerts and refreshes with the dashboard. A preset used by an alert table panel cannot be deleted until the panel is removed or changed.
 
 ## HTML panels
 
