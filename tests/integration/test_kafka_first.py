@@ -11,16 +11,16 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.ingestion.kafka_admission import KafkaAdmission, KafkaPublisher
-from appchi.ingestion.native import canonical
-from appchi.kafka_source import (
+from keep.ingestion.kafka_admission import KafkaAdmission, KafkaPublisher
+from keep.ingestion.native import canonical
+from keep.kafka_source import (
     RECEIVE_LEAD_MARGIN,
     ReceiveTimeAhead,
     SourceConsumer,
     apply_record,
     topic_identity,
 )
-from appchi.shared.errors import AppError
+from keep.shared.errors import AppError
 
 pytestmark = pytest.mark.integration
 
@@ -51,7 +51,7 @@ def settings(db):
         clock_health_file=clock,
         environment="test-" + uuid4().hex,
         global_tenant_id=tenant,
-        kafka_bootstrap=os.getenv("APPCHI_TEST_KAFKA_BOOTSTRAP"),
+        kafka_bootstrap=os.getenv("KEEP_TEST_KAFKA_BOOTSTRAP"),
     )
 
 
@@ -238,7 +238,7 @@ def test_actual_broker_ack_and_transactional_output_offset(real_db, v1, restore_
     config = settings(real_db)
     if not config.kafka_bootstrap:
         pytest.skip("Requires isolated Kafka")
-    topics = [f"appchi.{config.environment}.alerts.{name}" for name in ("received", "changed")]
+    topics = [f"keep.{config.environment}.alerts.{name}" for name in ("received", "changed")]
     admin = AdminClient({"bootstrap.servers": config.kafka_bootstrap})
     for future in admin.create_topics([NewTopic(t, 1, 1) for t in topics]).values():
         future.result(15)
@@ -319,20 +319,20 @@ def test_actual_broker_ack_and_transactional_output_offset(real_db, v1, restore_
 
 def test_lost_manual_hint_reconciles_current_authority_and_watermark(real_db, v1, monkeypatch):
     from elasticsearch import Elasticsearch
-    from appchi.search.projection import index_mapping
-    from appchi.search.reconciliation import reconcile_page
-    from appchi.alerts.repository import store_alert, publish
-    from appchi.alerts.lifecycle import apply_command
-    from appchi import alert_notifications
+    from keep.search.projection import index_mapping
+    from keep.search.reconciliation import reconcile_page
+    from keep.alerts.repository import store_alert, publish
+    from keep.alerts.lifecycle import apply_command
+    from keep import alert_notifications
 
-    endpoint = os.getenv("APPCHI_TEST_ELASTICSEARCH_URL")
+    endpoint = os.getenv("KEEP_TEST_ELASTICSEARCH_URL")
     if not endpoint:
         pytest.skip("Requires isolated Elasticsearch")
     monkeypatch.setattr(alert_notifications, "_publisher", None)
     config = settings(real_db)
     changed = json.loads(apply(real_db, config, receipt(config, v1)))
     tenant, alert_id = config.global_tenant_id, UUID(changed["alert_id"])
-    index = "appchi-kafka-test-" + uuid4().hex
+    index = "keep-kafka-test-" + uuid4().hex
     epoch = uuid4().hex
     with real_db.transaction() as conn:
         conn.execute(
@@ -400,7 +400,7 @@ def test_real_broker_low_watermark_gap_is_recorded_and_fenced(
     config = settings(real_db)
     if not config.kafka_bootstrap:
         pytest.skip("Requires isolated Kafka")
-    topic = f"appchi.{config.environment}.alerts.received"
+    topic = f"keep.{config.environment}.alerts.received"
     admin = AdminClient({"bootstrap.servers": config.kafka_bootstrap})
     for future in admin.create_topics([NewTopic(topic, 1, 1)]).values():
         future.result(15)
@@ -412,7 +412,7 @@ def test_real_broker_low_watermark_gap_is_recorded_and_fenced(
     group = Consumer(
         {
             "bootstrap.servers": config.kafka_bootstrap,
-            "group.id": f"appchi.{config.environment}.source-v2",
+            "group.id": f"keep.{config.environment}.source-v2",
         }
     )
     try:
@@ -458,7 +458,7 @@ def test_real_broker_recreated_topic_is_refused_before_any_input(
     config = settings(real_db)
     if not config.kafka_bootstrap:
         pytest.skip("Requires isolated Kafka")
-    topic = f"appchi.{config.environment}.alerts.received"
+    topic = f"keep.{config.environment}.alerts.received"
     admin = AdminClient({"bootstrap.servers": config.kafka_bootstrap})
     for future in admin.create_topics([NewTopic(topic, 1, 1)]).values():
         future.result(15)

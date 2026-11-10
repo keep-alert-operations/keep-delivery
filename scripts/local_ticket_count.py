@@ -6,7 +6,7 @@ dashboards and journeys can exercise every panel state without ServiceNow:
 
 - a team starting with ``unknown`` answers ``{"Team not found": "<team>"}``;
 - a team starting with ``nocount`` answers ``{"status": "ok"}`` (valid JSON, no count);
-- a team starting with ``slow`` waits longer than Appchi's 5-second timeout;
+- a team starting with ``slow`` waits longer than Keep's 5-second timeout;
 - a team starting with ``error`` answers HTTP 500;
 - any other team answers ``{"count": n}``, stable for the team and parameters.
 
@@ -14,7 +14,7 @@ dashboards and journeys can exercise every panel state without ServiceNow:
 (``"count": null`` clears it), so a journey can push a count past a threshold.
 Every request is printed as one JSON line without logging anything secret.
 
-Run it next to the local API, which reads ``APPCHI_TICKET_COUNT_URL``:
+Run it next to the local API, which reads ``KEEP_TICKET_COUNT_URL``:
 
     .venv/Scripts/python.exe scripts/local_ticket_count.py --port 58090
 """
@@ -36,7 +36,7 @@ def synthetic(team, state, system_failure):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "appchi-local-ticket-count"
+    server_version = "keep-local-ticket-count"
 
     def _send(self, status, body):
         data = json.dumps(body).encode()
@@ -61,7 +61,7 @@ class Handler(BaseHTTPRequestHandler):
             time.sleep(8)
         if key.startswith("error"):
             return self._send(500, {"error": "synthetic failure"})
-        if key.startswith("unknown") or key == "__appchi_connection_check__":
+        if key.startswith("unknown") or key == "__keep_connection_check__":
             return self._send(200, {"Team not found": team})
         if key.startswith("nocount"):
             return self._send(200, {"status": "ok"})

@@ -23,7 +23,7 @@ class RestrictedDatabase:
     @contextmanager
     def transaction(self, *args, **kwargs):
         with self.database.transaction(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             self.roles.append(conn.execute("SELECT current_user AS role").fetchone()["role"])
             yield HookedConnection(conn, self.hook) if self.hook else conn
 
@@ -86,7 +86,7 @@ def test_restricted_role_uses_roster_revision_and_rejects_intervening_change(per
     after = client.get(path).json()
     assert after["meta"]["revision"] == "2"
     assert next(row for row in after["data"] if row["principal_id"] == str(other))["role"] == "view"
-    assert restricted.roles and set(restricted.roles) == {"appchi_api"}
+    assert restricted.roles and set(restricted.roles) == {"keep_api"}
     with real_db.transaction(tenant) as conn:
         assert (
             conn.execute(

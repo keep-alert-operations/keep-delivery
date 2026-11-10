@@ -16,42 +16,42 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BUILD_REPOS = tuple(f"appchi-{name}" for name in (
+BUILD_REPOS = tuple(f"keep-{name}" for name in (
     "api", "ingestion", "processor", "correlation", "indexer", "migrations", "frontend"))
 FILES = tuple(f"{repo}/{path}" for repo in BUILD_REPOS
               for path in ("Dockerfile", "scripts/git-askpass.sh")) + tuple(
-    f"{repo}/{path}" for repo in BUILD_REPOS if repo != "appchi-frontend"
+    f"{repo}/{path}" for repo in BUILD_REPOS if repo != "keep-frontend"
     for path in ("pyproject.toml", "poetry.toml", "poetry.lock")
 ) + (
-    "appchi-ingestion/kong/Dockerfile", "appchi-frontend/keycloak/Dockerfile",
-    "appchi-api/src/appchi/operators/proof.py", "appchi-api/docs/operator-proof.md",
-    "appchi-api/docs/operator-proof.example.json", "appchi-api/tests/unit/test_operator_proof.py",
-    "appchi-api/tests/integration/test_operator_proof_postgres.py",
-    "appchi-indexer/src/appchi/search/bootstrap.py",
-    "appchi-indexer/src/appchi/search/bootstrap_probe.py",
-    "appchi-indexer/tests/unit/test_search_bootstrap.py",
-    "appchi-indexer/tests/integration/test_search_bootstrap_integration.py",
-    "appchi-delivery/scripts/prepare_internal_build.py",
-    "appchi-delivery/scripts/deployment_overlay.py",
-    "appchi-delivery/docs/runbooks/openshift-load-testing.md",
-    "appchi-delivery/docs/runbooks/cluster-initialization.md",
-    "appchi-delivery/docs/runbooks/private-test-deployment.md",
-    "appchi-delivery/qualification/openshift-load-test-handoff.md",
-    "appchi-delivery/qualification/cluster-initialization-2026-10-05.md",
-    "appchi-delivery/qualification/load-test/.dockerignore",
-    "appchi-delivery/tests/unit/test_openshift_load_test_bundle.py",
-    "appchi-delivery/tests/unit/test_load_identity_prepare.py",
-    "appchi-delivery/tests/unit/test_load_test_harness.py",
-    "appchi-delivery/tests/unit/test_prepare_internal_build.py",
-    "appchi-delivery/tests/unit/test_deployment_overlay.py",
-    "appchi-delivery/qualification/private-test-deployment-2026-10-07.md",
+    "keep-ingestion/kong/Dockerfile", "keep-frontend/keycloak/Dockerfile",
+    "keep-api/src/keep/operators/proof.py", "keep-api/docs/operator-proof.md",
+    "keep-api/docs/operator-proof.example.json", "keep-api/tests/unit/test_operator_proof.py",
+    "keep-api/tests/integration/test_operator_proof_postgres.py",
+    "keep-indexer/src/keep/search/bootstrap.py",
+    "keep-indexer/src/keep/search/bootstrap_probe.py",
+    "keep-indexer/tests/unit/test_search_bootstrap.py",
+    "keep-indexer/tests/integration/test_search_bootstrap_integration.py",
+    "keep-delivery/scripts/prepare_internal_build.py",
+    "keep-delivery/scripts/deployment_overlay.py",
+    "keep-delivery/docs/runbooks/openshift-load-testing.md",
+    "keep-delivery/docs/runbooks/cluster-initialization.md",
+    "keep-delivery/docs/runbooks/private-test-deployment.md",
+    "keep-delivery/qualification/openshift-load-test-handoff.md",
+    "keep-delivery/qualification/cluster-initialization-2026-10-05.md",
+    "keep-delivery/qualification/load-test/.dockerignore",
+    "keep-delivery/tests/unit/test_openshift_load_test_bundle.py",
+    "keep-delivery/tests/unit/test_load_identity_prepare.py",
+    "keep-delivery/tests/unit/test_load_test_harness.py",
+    "keep-delivery/tests/unit/test_prepare_internal_build.py",
+    "keep-delivery/tests/unit/test_deployment_overlay.py",
+    "keep-delivery/qualification/private-test-deployment-2026-10-07.md",
 )
 DIRECTORIES = (
-    "appchi-delivery/deploy/openshift/load-test",
-    "appchi-delivery/deploy/images/postgres", "appchi-delivery/deploy/images/redis",
-    "appchi-delivery/qualification/load-test", "appchi-delivery/qualification/load-test-identity",
+    "keep-delivery/deploy/openshift/load-test",
+    "keep-delivery/deploy/images/postgres", "keep-delivery/deploy/images/redis",
+    "keep-delivery/qualification/load-test", "keep-delivery/qualification/load-test-identity",
 )
-REPOS = set(BUILD_REPOS) | {"appchi-delivery"}
+REPOS = set(BUILD_REPOS) | {"keep-delivery"}
 
 
 def digest(data):
@@ -119,7 +119,7 @@ def pack(root, output):
             continue
         payload[name] = current
         records[name] = {"sha256": digest(current), "base_sha256": digest(base) if base is not None else None}
-    manifest = {"format": "appchi-isolated-test-overlay-v1", "classification": "local source overlay; not a release",
+    manifest = {"format": "keep-isolated-test-overlay-v1", "classification": "local source overlay; not a release",
                 "repositories": revisions, "files": records}
     output.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(output, "w:gz") as archive:
@@ -146,7 +146,7 @@ def load_archive(path):
                 raise ValueError("Archive member is outside the affected repositories")
             contents[member.name] = archive.extractfile(member).read()
     manifest = json.loads(contents.pop("overlay-manifest.json"))
-    if (manifest["format"] != "appchi-isolated-test-overlay-v1"
+    if (manifest["format"] != "keep-isolated-test-overlay-v1"
             or set(contents) != set(manifest["files"])
             or set(manifest["repositories"]) != REPOS):
         raise ValueError("Archive manifest mismatch")

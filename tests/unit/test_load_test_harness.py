@@ -46,7 +46,7 @@ assert.deepEqual(arrivalSchedule({itemsPerSecond:66.7,batchSize:1}),{rate:667,ti
 
 @pytest.mark.parametrize("version", ["v1", "v2"])
 def test_payloads_match_actual_native_contract_and_identity(version):
-    from appchi.ingestion.native import canonical, identity, validate_native
+    from keep.ingestion.native import canonical, identity, validate_native
 
     bodies = json.loads(run_js("""
 import {payload} from './lib/workload.mjs';
@@ -131,7 +131,7 @@ assert.equal(admissionResult(202,null,2).unconfirmed,2);
 
 
 def test_encoded_byte_limits_preserve_actual_native_contract():
-    from appchi.ingestion.kafka_admission import validate_request
+    from keep.ingestion.kafka_admission import validate_request
 
     encoded = json.loads(run_js("""
 import assert from 'node:assert/strict';

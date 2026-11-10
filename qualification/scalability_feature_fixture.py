@@ -10,7 +10,7 @@ Imports stay local so multiprocessing worker startup does not load native CEL.
 def synthetic_feature_profile(profile, *, max_alerts_per_tenant):
     if type(max_alerts_per_tenant) is not int or max_alerts_per_tenant < 1:
         raise ValueError("A positive synthetic per-tenant alert bound is required")
-    from appchi.cel.compiler import COST_MODEL
+    from keep.cel.compiler import COST_MODEL
 
     return {
         **profile,
@@ -46,11 +46,11 @@ def install_feature_fixture(db, tenant_ids, *, profile):
     from datetime import timedelta
     from uuid import uuid4
 
-    from appchi.cel import compile_expression
-    from appchi.correlation import repository as correlation
-    from appchi.maintenance import repository as maintenance
-    from appchi.maintenance.models import Create
-    from appchi.shared.transactions import coordinator
+    from keep.cel import compile_expression
+    from keep.correlation import repository as correlation
+    from keep.maintenance import repository as maintenance
+    from keep.maintenance.models import Create
+    from keep.shared.transactions import coordinator
 
     if (
         profile.get("scope") != "isolated-synthetic-fixture"
@@ -63,8 +63,8 @@ def install_feature_fixture(db, tenant_ids, *, profile):
         raise ValueError("Supply distinct fixture tenants")
     with db.transaction() as conn:
         name = conn.execute("SELECT current_database() AS name").fetchone()["name"]
-        if not name.startswith("appchi_scale_"):
-            raise ValueError("Feature fixture requires a disposable appchi_scale_ database")
+        if not name.startswith("keep_scale_"):
+            raise ValueError("Feature fixture requires a disposable keep_scale_ database")
         if conn.execute("SELECT EXISTS(SELECT 1 FROM alerts) AS present").fetchone()["present"]:
             raise ValueError("Install features before seeding any alerts")
         actor = {"id": uuid4(), "display_name": "Synthetic scale feature fixture"}

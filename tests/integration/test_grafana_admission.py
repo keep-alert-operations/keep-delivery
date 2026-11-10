@@ -4,11 +4,11 @@
 import json
 from uuid import uuid4
 import pytest
-from appchi.ingestion.service import Admission
-from appchi.ingestion.gateway import GatewayIdentity
-from appchi.alerts.processor import process_one
-from appchi.operators.grafana import ADAPTER_VERSION
-from appchi.shared.errors import AppError
+from keep.ingestion.service import Admission
+from keep.ingestion.gateway import GatewayIdentity
+from keep.alerts.processor import process_one
+from keep.operators.grafana import ADAPTER_VERSION
+from keep.shared.errors import AppError
 from test_operator_repository import operators, ready, create  # noqa: F401
 from test_product import browser  # noqa: F401
 
@@ -34,7 +34,7 @@ def webhook(name, label_value="true"):
                 "status": "firing",
                 "startsAt": "2026-09-22T12:00:00Z",
                 "labels": {
-                    "Appchi - " + name: label_value,
+                    "Keep - " + name: label_value,
                     "alertname": "Grafana rule",
                     "application": "test-" + str(uuid4()),
                     "component": "cpu",
@@ -101,9 +101,9 @@ def test_grafana_unverified_transport_and_wrong_literal_label_rejected(
     identity = gateway(real_db, op["id"])
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
-    from appchi.config import Settings
-    from appchi.ingestion.main import create_app
-    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda *_: SimpleNamespace(close=lambda: None))
+    from keep.config import Settings
+    from keep.ingestion.main import create_app
+    monkeypatch.setattr("keep.ingestion.main.KafkaPublisher", lambda *_: SimpleNamespace(close=lambda: None))
     settings = Settings(role="private-ingestion", deployment_epoch="test",
                         kafka_bootstrap="unused:9092", global_tenant_id=op["tenant_id"])
     with TestClient(create_app(settings)) as client:

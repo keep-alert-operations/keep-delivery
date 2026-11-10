@@ -7,11 +7,11 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from appchi.config import Settings
-from appchi.main import create_app
-from appchi.ingestion.service import Admission
-from appchi.ingestion.native import canonical
-from appchi.alerts.processor import process_one
+from keep.config import Settings
+from keep.main import create_app
+from keep.ingestion.service import Admission
+from keep.ingestion.native import canonical
+from keep.alerts.processor import process_one
 
 pytestmark = pytest.mark.integration
 
@@ -50,7 +50,7 @@ def browser(real_db, cipher, browser_settings):
         **browser_settings,
     )
     with TestClient(create_app(settings, real_db), base_url="https://app.test") as client:
-        client.cookies.set("__Host-appchi_session", handle)
+        client.cookies.set("__Host-keep_session", handle)
         client.headers.update({"Origin": "https://app.test", "X-CSRF-Token": csrf})
         yield client, principal
     with real_db.transaction() as conn:

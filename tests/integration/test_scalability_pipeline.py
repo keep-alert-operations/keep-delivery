@@ -11,9 +11,9 @@ import json
 
 import pytest
 
-from appchi.search import reconciliation
-from appchi.search.projection import index_mapping
-from appchi.shared.errors import unavailable
+from keep.search import reconciliation
+from keep.search.projection import index_mapping
+from keep.shared.errors import unavailable
 from test_kafka_first import apply, receipt
 
 pytestmark = pytest.mark.integration
@@ -23,8 +23,8 @@ def configuration(tenant):
     return SimpleNamespace(
         environment="development",
         global_tenant_id=tenant,
-        elasticsearch_url=os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"),
-        elasticsearch_index="appchi-scale-" + uuid4().hex,
+        elasticsearch_url=os.getenv("KEEP_TEST_ELASTICSEARCH_URL"),
+        elasticsearch_index="keep-scale-" + uuid4().hex,
     )
 
 

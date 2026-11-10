@@ -3,7 +3,7 @@
 
 import pytest
 
-from appchi.cel import compiler
+from keep.cel import compiler
 from test_product import browser  # noqa: F401
 from test_maintenance_repository import maintenance_db  # noqa: F401
 
@@ -27,7 +27,7 @@ def editor(browser, real_db, tenant):
 
 
 def test_profile_catalog_and_viewer_native_validation(editor):
-    from appchi.cel.catalog import FIELDS, LEGACY_ACK_FIELDS, RULE_FIELDS
+    from keep.cel.catalog import FIELDS, LEGACY_ACK_FIELDS, RULE_FIELDS
 
     client, _, _, base = editor
     feed = client.get(base + "/profile")

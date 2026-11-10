@@ -11,10 +11,10 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from appchi.identity.directory import DirectoryObject, DirectoryUnavailable, PrincipalKey
-from appchi.identity.ldap import LDAPConfig, LDAPSchema
-from appchi.identity.selection import ConfiguredDirectorySearch
-from appchi.main import create_app
+from keep.identity.directory import DirectoryObject, DirectoryUnavailable, PrincipalKey
+from keep.identity.ldap import LDAPConfig, LDAPSchema
+from keep.identity.selection import ConfiguredDirectorySearch
+from keep.main import create_app
 
 from test_maintenance_repository import maintenance_browser, maintenance_db  # noqa: F401
 
@@ -243,7 +243,7 @@ def test_nonowner_api_role_can_queue_discovery_and_never_read_other_grants(direc
         @contextmanager
         def transaction(self, *args, **kwargs):
             with db.transaction(*args, **kwargs) as conn:
-                conn.execute("SET LOCAL ROLE appchi_api")
+                conn.execute("SET LOCAL ROLE keep_api")
                 yield conn
 
     app.state.db = APIIdentity()
@@ -322,7 +322,7 @@ class Connection:
 
 
 def test_configured_ldap_search_escapes_literal_and_requires_complete_pages():
-    from appchi.identity.ldap import LDAPDirectoryReader
+    from keep.identity.ldap import LDAPDirectoryReader
 
     connection = Connection()
     search = ConfiguredDirectorySearch(
@@ -349,8 +349,8 @@ def test_configured_ldap_search_escapes_literal_and_requires_complete_pages():
 
 
 def test_configured_search_factory_accepts_only_complete_qualified_profile(tmp_path, monkeypatch):
-    from appchi.identity.selection_config import configured_search
-    from appchi.identity import selection_config
+    from keep.identity.selection_config import configured_search
+    from keep.identity import selection_config
 
     config_path = tmp_path / "directory.json"
     profile_path = tmp_path / "search.json"

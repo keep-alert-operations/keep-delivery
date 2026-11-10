@@ -1,7 +1,7 @@
 # Kafka-first implementation record
 
 Requested 2026-09-30. This is delivery tracking, not a runtime specification.
-The authoritative contract is [Kafka-first alert pipeline](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-kafka-alert-pipeline.md),
+The authoritative contract is [Kafka-first alert pipeline](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-kafka-alert-pipeline.md),
 registered as REV-33. Existing uncommitted application and design work was retained.
 
 - [x] Read handoff, project guidance and affected design contracts.
@@ -22,7 +22,7 @@ Production deployment and shared company services are outside this work.
 
 ## Implemented scope
 
-Ingress has no Appchi database connection. It captures receipt UTC, validates strict
+Ingress has no Keep database connection. It captures receipt UTC, validates strict
 native or Grafana input, publishes batch members concurrently with three bounded
 attempts, and acknowledges only broker confirmation. Legacy sender IDs are syntax-only;
 receipt endpoints are removed. The generated received schema is version 2.

@@ -3,118 +3,118 @@
   "recorded_at_utc": "2026-10-01T16:52:43.068192+00:00",
   "verified_runs": [
     {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "revision": "0b8a1a351378d0a7952a405b6fac4db1d03c6096",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36858240552,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-api/actions/runs/36858240552"
+      "url": "https://github.com/keep-alert-operations/keep-api/actions/runs/36858240552"
     },
     {
-      "repository": "appchi-ingestion",
+      "repository": "keep-ingestion",
       "revision": "0d2ee23a7940c2c0866498aa0646587f101651bc",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36858037727,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-ingestion/actions/runs/36858037727"
+      "url": "https://github.com/keep-alert-operations/keep-ingestion/actions/runs/36858037727"
     },
     {
-      "repository": "appchi-processor",
+      "repository": "keep-processor",
       "revision": "4f7a3fc81483d193033c3eec9f54f6aaeb6a5392",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36858087217,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-processor/actions/runs/36858087217"
+      "url": "https://github.com/keep-alert-operations/keep-processor/actions/runs/36858087217"
     },
     {
-      "repository": "appchi-correlation",
+      "repository": "keep-correlation",
       "revision": "ad68f9f4838848f5d318888be4b0e067d5b51e5b",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36858140905,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-correlation/actions/runs/36858140905"
+      "url": "https://github.com/keep-alert-operations/keep-correlation/actions/runs/36858140905"
     },
     {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "revision": "ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36858197154,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-indexer/actions/runs/36858197154"
+      "url": "https://github.com/keep-alert-operations/keep-indexer/actions/runs/36858197154"
     },
     {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "revision": "830d4f65556d93692cca60695fafb522769fe122",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36856597962,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-domain/actions/runs/36856597962"
+      "url": "https://github.com/keep-alert-operations/keep-domain/actions/runs/36856597962"
     },
     {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "revision": "468ba80eeac6ca2ad4b95752edb7b8005aa354fb",
       "branch": "codex/ci-repair",
       "workflow": "Checks",
       "run_id": 36894818535,
       "run_attempt": 1,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-frontend/actions/runs/36894818535"
+      "url": "https://github.com/keep-alert-operations/keep-frontend/actions/runs/36894818535"
     },
     {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "revision": "bc10d1d55280929c40ddd1efc64fd363dd6f987c",
       "branch": "codex/ci-repair",
       "workflow": "Checks",
       "run_id": 36893244821,
       "run_attempt": 2,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-delivery/actions/runs/36893244821"
+      "url": "https://github.com/keep-alert-operations/keep-delivery/actions/runs/36893244821"
     },
     {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "revision": "42107e3814a07518878291929740f5fa120fbff1",
       "branch": "main",
       "workflow": "Checks",
       "run_id": 36855667197,
       "run_attempt": 1,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-contracts/actions/runs/36855667197"
+      "url": "https://github.com/keep-alert-operations/keep-contracts/actions/runs/36855667197"
     },
     {
-      "repository": "appchi-migrations",
+      "repository": "keep-migrations",
       "revision": "1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236",
       "branch": "codex/alembic-migrations",
       "workflow": "Checks",
       "run_id": 36888962145,
       "run_attempt": 1,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-migrations/actions/runs/36888962145"
+      "url": "https://github.com/keep-alert-operations/keep-migrations/actions/runs/36888962145"
     },
     {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "revision": "7bf631cf8613cca0e10139cc5cd2b391778f9d8e",
       "branch": "codex/ci-repair",
       "workflow": "Documents",
       "run_id": 36890562016,
       "run_attempt": 1,
       "conclusion": "success",
-      "url": "https://github.com/appchi-alert-operations/appchi-design/actions/runs/36890562016"
+      "url": "https://github.com/keep-alert-operations/keep-design/actions/runs/36890562016"
     }
   ],
   "legacy_workflow": {
-    "repository": "appchi",
+    "repository": "keep",
     "workflow": "application-checks",
     "workflow_id": 366360262,
     "state": "disabled_manually"

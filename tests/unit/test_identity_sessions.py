@@ -20,10 +20,10 @@ from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-from appchi.config import Settings
-from appchi.db import Database
-from appchi.identity.directory import DirectoryObject, DirectoryVerifier, PrincipalKey
-from appchi.identity.oidc import (
+from keep.config import Settings
+from keep.db import Database
+from keep.identity.directory import DirectoryObject, DirectoryVerifier, PrincipalKey
+from keep.identity.oidc import (
     LogoutEvent,
     OIDCClient,
     OIDCConfig,
@@ -32,22 +32,22 @@ from appchi.identity.oidc import (
     OIDCUnavailable,
     TokenSet,
 )
-from appchi.identity.publication import allocate_generation, publish
-from appchi.identity.session import SESSION_COOKIE, router
-from appchi.migrate import migrate
-from appchi.shared.errors import AppError
+from keep.identity.publication import allocate_generation, publish
+from keep.identity.session import SESSION_COOKIE, router
+from keep.migrate import migrate
+from keep.shared.errors import AppError
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="module")
 def identity_db():
-    admin_dsn = os.environ.get("APPCHI_IDENTITY_TEST_ADMIN_URL")
+    admin_dsn = os.environ.get("KEEP_IDENTITY_TEST_ADMIN_URL")
     if not admin_dsn:
         pytest.skip(
-            "Set APPCHI_IDENTITY_TEST_ADMIN_URL to an isolated local PostgreSQL cluster with CREATE DATABASE permission"
+            "Set KEEP_IDENTITY_TEST_ADMIN_URL to an isolated local PostgreSQL cluster with CREATE DATABASE permission"
         )
-    name = "appchi_identity_test_" + uuid4().hex
+    name = "keep_identity_test_" + uuid4().hex
     with psycopg.connect(admin_dsn, autocommit=True) as conn:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     params = conninfo_to_dict(admin_dsn)
@@ -66,7 +66,7 @@ class Provider(OIDCClient):
         super().__init__(
             OIDCConfig(
                 "https://identity.example/realms/test",
-                "appchi-web",
+                "keep-web",
                 "secret",
                 "https://app.example/auth/callback",
                 "https://app.example/signed-out",
@@ -172,7 +172,7 @@ def test_callback_is_one_use_cookie_secure_and_csrf_session_bound(browser):
     state, response = sign_in(client, provider)
     cookies = response.headers.get_list("set-cookie")
     assert any(
-        "__Host-appchi_session=" in c
+        "__Host-keep_session=" in c
         and "Secure" in c
         and "HttpOnly" in c
         and "SameSite=lax" in c
@@ -381,7 +381,7 @@ class Directory:
         self.failed = False
 
     def lookup(self, key):
-        from appchi.identity.directory import DirectoryUnavailable
+        from keep.identity.directory import DirectoryUnavailable
 
         if self.failed and key == self.nested:
             raise DirectoryUnavailable("unavailable")

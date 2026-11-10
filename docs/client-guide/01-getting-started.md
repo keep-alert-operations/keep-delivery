@@ -4,20 +4,20 @@
 
 ## Sign in and choose your workspace
 
-1. Open the Appchi address supplied by your organization.
-2. If Appchi shows its landing page, choose **Sign in with company account**. On the sign-in form, enter your company username and password and select **Sign in**. An existing company sign-in session may take you straight into Appchi.
+1. Open the Keep address supplied by your organization.
+2. If Keep shows its landing page, choose **Sign in with company account**. On the sign-in form, enter your company username and password and select **Sign in**. An existing company sign-in session may take you straight into Keep.
 3. Check the tenant selector beside the breadcrumb. Choose the team or service workspace you intend to work in.
 4. Check the access label. **View access** lets you investigate; **Edit access** also lets you change operational records and shared configuration.
 
-Appchi opens your last accessible tenant, otherwise **Global**. A tenant is a boundary for data and permissions, not a search filter across the whole company. The same search in two tenants can produce different results. Presets, dashboards, incidents and alert links stay within their tenant.
+Keep opens your last accessible tenant, otherwise **Global**. A tenant is a boundary for data and permissions, not a search filter across the whole company. The same search in two tenants can produce different results. Presets, dashboards, incidents and alert links stay within their tenant.
 
-![Appchi sign-in page with username, password, password visibility and Sign in controls](assets/sign-in.png)
+![Keep sign-in page with username, password, password visibility and Sign in controls](assets/sign-in.png)
 
 *The company sign-in form. Use your organization's supplied account, not the names shown in guide examples.*
 
-Global is the shared tenant for legacy alerts; eligible signed-in company users have Edit access there. Other tenants have their own access grants. If an expected tenant is missing, ask the team that manages Appchi access. Being assigned an alert does not grant access to its tenant.
+Global is the shared tenant for legacy alerts; eligible signed-in company users have Edit access there. Other tenants have their own access grants. If an expected tenant is missing, ask the team that manages Keep access. Being assigned an alert does not grant access to its tenant.
 
-Use your company's normal password reset or account unlock process if you cannot sign in. Appchi does not give you a separate company password. A stale sign-in attempt should be restarted from the page's sign-in control.
+Use your company's normal password reset or account unlock process if you cannot sign in. Keep does not give you a separate company password. A stale sign-in attempt should be restarted from the page's sign-in control.
 
 ## Understand the six main concepts
 
@@ -44,7 +44,7 @@ Use your company's normal password reset or account unlock process if you cannot
 | Acknowledged | The alert is firing and has an assignee. | Check the owner and current investigation. |
 | Resolved | The alert's lifecycle is resolved, whether or not an assignee remains. | Review recovery and history; watch for a new occurrence. |
 
-There is no separate Acknowledge action. Assigning a firing alert acknowledges responsibility. Unassigning it makes the visible status Firing again without changing the underlying monitored condition. Neither assigning nor resolving an Appchi record repairs the affected service.
+There is no separate Acknowledge action. Assigning a firing alert acknowledges responsibility. Unassigning it makes the visible status Firing again without changing the underlying monitored condition. Neither assigning nor resolving an Keep record repairs the affected service.
 
 ## Find your way around
 
@@ -69,14 +69,14 @@ These permissions do not remove other restrictions, such as a concurrent edit or
 
 ## Keep your session and work safe
 
-Appchi sessions expire after 30 minutes without accepted activity, or after 24 hours even with continued activity. A visible dashboard keeps the session active, but a hidden background tab does not. Save useful shared changes before leaving; drafts are held in the current tab and are not reliable storage across a reload or session loss.
+Keep sessions expire after 30 minutes without accepted activity, or after 24 hours even with continued activity. A visible dashboard keeps the session active, but a hidden background tab does not. Save useful shared changes before leaving; drafts are held in the current tab and are not reliable storage across a reload or session loss.
 
 Changing tenants clears that tenant's current selection and working context. If you have an unsaved definition, review the leave/discard prompt before switching. Access loss can clear protected content immediately; it does not wait for a draft to be saved.
 
-Appchi does not send product notifications in this release. Assignment and notes record coordination inside Appchi; use your team's established communication channel when someone needs to be told about a handoff.
+Keep does not send product notifications in this release. Assignment and notes record coordination inside Keep; use your team's established communication channel when someone needs to be told about a handoff.
 
 ## Reference
 
-[System concepts](../../../appchi-design/specs/spec-alerts-management-system.md) · [Access](../../../appchi-design/specs/spec-tenant-access.md) · [Sign-in](../../../appchi-design/specs/spec-identity-configuration.md) · [Current UI](../../../appchi-frontend/docs/ui-design.md)
+[System concepts](../../../keep-design/specs/spec-alerts-management-system.md) · [Access](../../../keep-design/specs/spec-tenant-access.md) · [Sign-in](../../../keep-design/specs/spec-identity-configuration.md) · [Current UI](../../../keep-frontend/docs/ui-design.md)
 
 Next: [Feed and search →](02-feed-and-search.md)

@@ -7,9 +7,9 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from appchi.config import Settings
-from appchi.ingestion.kafka_admission import KafkaPublisher
-from appchi.ingestion.main import create_app
+from keep.config import Settings
+from keep.ingestion.kafka_admission import KafkaPublisher
+from keep.ingestion.main import create_app
 
 
 def test_unavailable_broker_has_three_unconfirmed_attempts_without_database(monkeypatch, v1):
@@ -30,9 +30,9 @@ def test_unavailable_broker_has_three_unconfirmed_attempts_without_database(monk
                 calls.append((topic, key, value))
                 return await super().publish(topic, key, value)
 
-        monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", CountedPublisher)
+        monkeypatch.setattr("keep.ingestion.main.KafkaPublisher", CountedPublisher)
         monkeypatch.setattr(
-            "appchi.main.Database", lambda *a, **k: pytest.fail("Ingress opened PG")
+            "keep.main.Database", lambda *a, **k: pytest.fail("Ingress opened PG")
         )
         with TestClient(create_app(settings)) as client:
             started = monotonic()

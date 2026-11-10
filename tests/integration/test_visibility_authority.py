@@ -14,10 +14,10 @@ from psycopg.types.json import Jsonb
 from test_maintenance_repository import maintenance_db, maintenance_browser  # noqa: F401
 from test_visibility_inputs import inputs, register, seed  # noqa: F401
 
-from appchi.identity.directory import DirectoryEvidence, DirectoryObject, PrincipalKey
-from appchi.identity.publication import allocate_generation, publish
-from appchi.visibility.authority import prove_authority, recheck_authority
-from appchi.visibility.inputs import expand_input
+from keep.identity.directory import DirectoryEvidence, DirectoryObject, PrincipalKey
+from keep.identity.publication import allocate_generation, publish
+from keep.visibility.authority import prove_authority, recheck_authority
+from keep.visibility.inputs import expand_input
 
 pytestmark = pytest.mark.integration
 
@@ -32,7 +32,7 @@ def candidate(db, tenant, client):
 
 def prove(db, args):
     with db.transaction(args["tenant"]) as conn:
-        conn.execute("SET LOCAL ROLE appchi_worker")
+        conn.execute("SET LOCAL ROLE keep_worker")
         return prove_authority(conn, **args)
 
 
@@ -61,7 +61,7 @@ def test_gate_close_reopen_is_not_hidden_by_current_ready_or_supplied_generation
     original = prove(db, args)
     assert original.proven
     with db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         before = conn.execute(
             "SELECT generation FROM capability_gates WHERE capability='human_auth'"
         ).fetchone()["generation"]
@@ -93,17 +93,17 @@ def test_gate_close_reopen_is_not_hidden_by_current_ready_or_supplied_generation
 def test_runtime_roles_cannot_reset_or_remove_authority_fences(inputs):
     db, tenant, _ = inputs
     with db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_worker")
+        conn.execute("SET LOCAL ROLE keep_worker")
         conn.execute(
             "UPDATE authorization_guards SET directory_revision=directory_revision+1 WHERE scope='identity'"
         )
     with pytest.raises(psycopg.errors.RaiseException), db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_worker")
+        conn.execute("SET LOCAL ROLE keep_worker")
         conn.execute("UPDATE authorization_guards SET directory_revision=0 WHERE scope='identity'")
     for role, table in (
-        ("appchi_api", "authorization_guards"),
-        ("appchi_worker", "capability_gates"),
-        ("appchi_recovery", "capability_gates"),
+        ("keep_api", "authorization_guards"),
+        ("keep_worker", "capability_gates"),
+        ("keep_recovery", "capability_gates"),
     ):
         with pytest.raises(psycopg.errors.InsufficientPrivilege), db.transaction(tenant) as conn:
             conn.execute("SET LOCAL ROLE " + role)

@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.identity.cleanup import (
+from keep.identity.cleanup import (
     assignment_proof,
     cleanup_assignment,
     cleanup_assignments,
@@ -16,8 +16,8 @@ from appchi.identity.cleanup import (
     retire_audit,
     visible_assignee,
 )
-from appchi.maintenance.runtime import prepare_for_tenant
-from appchi.shared.errors import AppError
+from keep.maintenance.runtime import prepare_for_tenant
+from keep.shared.errors import AppError
 
 from test_maintenance_repository import Store, maintenance_browser, maintenance_db  # noqa: F401
 from test_maintenance_processing import PROFILE, publish_source
@@ -38,8 +38,8 @@ def cleanup_schema(maintenance_db):
 
 
 def assigned(maintenance_browser, maintenance_db):
-    from appchi.alerts.routes import router as alert_router
-    from appchi.incidents.routes import router as incident_router
+    from keep.alerts.routes import router as alert_router
+    from keep.incidents.routes import router as incident_router
 
     client, tenant, user, app = maintenance_browser
     db, _ = maintenance_db
@@ -282,7 +282,7 @@ def test_audit_batch_gate_and_missing_store_are_fail_closed(maintenance_browser,
 def test_audit_api_retains_protected_expiry_and_honors_retirement_fence(
     maintenance_browser, maintenance_db
 ):
-    from appchi.tenant_routes import router
+    from keep.tenant_routes import router
 
     client, tenant, user, app = maintenance_browser
     db, _ = maintenance_db

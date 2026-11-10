@@ -16,7 +16,7 @@ PARSER_SAMPLE = (
 
 def design_parser_errors(workspace):
     """Design CI mirrors the resolver's heading parser; both must read identical titles."""
-    script = workspace / "appchi-design" / "scripts" / "check_docs.py"
+    script = workspace / "keep-design" / "scripts" / "check_docs.py"
     # check_docs.py runs its checks at import time, so compile only the mirrored function.
     tree = ast.parse(script.read_text(encoding="utf-8"))
     function = next((node for node in tree.body if isinstance(node, ast.FunctionDef)
@@ -28,7 +28,7 @@ def design_parser_errors(workspace):
     exec(compile(module, str(script), "exec"), namespace)
     documents = [("parser sample", PARSER_SAMPLE)] + [
         (path.relative_to(workspace).as_posix(), path.read_text(encoding="utf-8-sig"))
-        for path in sorted((workspace / "appchi-design").rglob("*.md")) if ".git" not in path.parts
+        for path in sorted((workspace / "keep-design").rglob("*.md")) if ".git" not in path.parts
     ]
     errors = []
     for name, text in documents:

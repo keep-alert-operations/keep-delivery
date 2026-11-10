@@ -30,7 +30,7 @@ def seed(real_db, reader, table="presets", ages=(0,)):
         common = (resource, tenant, str(resource), str(resource), len(ages), actor, actor)
         extra = ",cel,profile,sort,columns" if table == "presets" else ""
         values = ",%s,%s,%s,%s" if table == "presets" else ""
-        args = common + (("true", "appchi-cel-v1", Jsonb([]), Jsonb([])) if extra else ())
+        args = common + (("true", "keep-cel-v1", Jsonb([]), Jsonb([])) if extra else ())
         conn.execute(
             sql.SQL(
                 "INSERT INTO {}(id,tenant_id,name,name_key,revision,created_by,updated_by,created_at,updated_at"

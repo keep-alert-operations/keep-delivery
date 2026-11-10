@@ -93,7 +93,7 @@ def test_asgi_timing_preserves_application_messages_and_only_adds_header(monkeyp
     assert sent[0]["status"] == 503
     assert sent[0]["headers"] == [
         (b"content-type", b"application/json"),
-        (b"x-appchi-diagnostic-asgi-ms", b"12.000"),
+        (b"x-keep-diagnostic-asgi-ms", b"12.000"),
     ]
     assert sent[1] is body
 
@@ -117,7 +117,7 @@ def test_client_diagnostics_separate_headers_body_and_server_time(monkeypatch):
     monkeypatch.setattr(fixture, "monotonic", lambda: clock[0])
 
     class Response:
-        headers = {"x-appchi-diagnostic-asgi-ms": "8.000"}
+        headers = {"x-keep-diagnostic-asgi-ms": "8.000"}
 
         async def aread(self):
             clock[0] += 0.030
@@ -196,7 +196,7 @@ def test_clock_sharing_retry_has_finite_deadline(tmp_path, monkeypatch):
 
 
 def test_process_adapter_keeps_production_lifecycle_and_private_settings(tmp_path, monkeypatch):
-    from appchi import config, kafka_source, pipeline_runtime
+    from keep import config, kafka_source, pipeline_runtime
 
     path = Path(__file__).resolve().parents[2] / "qualification/scalability_worker.py"
     spec = importlib.util.spec_from_file_location("scalability_worker_fixture", path)
@@ -206,10 +206,10 @@ def test_process_adapter_keeps_production_lifecycle_and_private_settings(tmp_pat
     stop = tmp_path / "stop"
     stop.touch()
     output = tmp_path / "metrics.json"
-    monkeypatch.setenv("APPCHI_SCALE_NAMESPACE", namespace)
-    monkeypatch.setenv("APPCHI_SCALE_STOP_FILE", str(stop))
-    monkeypatch.setenv("APPCHI_SCALE_MEASUREMENT_FILE", str(tmp_path / "measurement"))
-    monkeypatch.setenv("APPCHI_SCALE_METRICS_FILE", str(output))
+    monkeypatch.setenv("KEEP_SCALE_NAMESPACE", namespace)
+    monkeypatch.setenv("KEEP_SCALE_STOP_FILE", str(stop))
+    monkeypatch.setenv("KEEP_SCALE_MEASUREMENT_FILE", str(tmp_path / "measurement"))
+    monkeypatch.setenv("KEEP_SCALE_METRICS_FILE", str(output))
     monkeypatch.setattr(sys, "argv", [str(path), "source"])
     monkeypatch.setattr(
         config,

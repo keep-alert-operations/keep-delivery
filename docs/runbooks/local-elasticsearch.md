@@ -1,9 +1,9 @@
 # Legacy native Elasticsearch compatibility source
 
-The normal Appchi local runtime uses the Elasticsearch 9.0.0 container from the
+The normal Keep local runtime uses the Elasticsearch 9.0.0 container from the
 unified [local Compose stack](../local-runtime.md) on port 59201. This runbook
 describes the retained Windows ZIP instance on ports 59200/59300, used as the
-local migration source/rollback copy. It is not needed to start Appchi. Its
+local migration source/rollback copy. It is not needed to start Keep. Its
 authentication is disabled; keep it bound to loopback and do not point it at
 company services.
 
@@ -66,8 +66,8 @@ $instance = Join-Path $local ('esdata-' + [Guid]::NewGuid().ToString('N'))
 $data = (Join-Path $instance 'data').Replace('\', '/')
 $logs = (Join-Path $instance 'logs').Replace('\', '/')
 @"
-cluster.name: appchi-disposable-compatibility
-node.name: appchi-local-test
+cluster.name: keep-disposable-compatibility
+node.name: keep-local-test
 network.host: 127.0.0.1
 http.port: 59200
 transport.port: 59300
@@ -121,21 +121,21 @@ control was disabled to address that failure.
 
 ```powershell
 $previousPythonPath = $env:PYTHONPATH
-$previousSearch = $env:APPCHI_TEST_ELASTICSEARCH_URL
+$previousSearch = $env:KEEP_TEST_ELASTICSEARCH_URL
 try {
     $env:PYTHONPATH = $null
-    $env:APPCHI_TEST_ELASTICSEARCH_URL = 'http://127.0.0.1:59200'
-    ./.venv/Scripts/python.exe -m pytest ../appchi-indexer/tests/compatibility ../appchi-domain/tests/compatibility -q
+    $env:KEEP_TEST_ELASTICSEARCH_URL = 'http://127.0.0.1:59200'
+    ./.venv/Scripts/python.exe -m pytest ../keep-indexer/tests/compatibility ../keep-domain/tests/compatibility -q
     if ($LASTEXITCODE) { throw 'Real Elasticsearch compatibility failed' }
 } finally {
     [Environment]::SetEnvironmentVariable('PYTHONPATH', $previousPythonPath, 'Process')
-    [Environment]::SetEnvironmentVariable('APPCHI_TEST_ELASTICSEARCH_URL', $previousSearch, 'Process')
+    [Environment]::SetEnvironmentVariable('KEEP_TEST_ELASTICSEARCH_URL', $previousSearch, 'Process')
 }
 ```
 
 The suites come from the indexer and domain checkouts beside delivery and can run
 in either order: each has its own fixtures. Each fixture
-creates a unique `appchi-test-*` index and removes its own index on normal
+creates a unique `keep-test-*` index and removes its own index on normal
 teardown. Tests use the real mapping, CEL translation/search, PIT traversal
 and projection/tombstone paths. No route mock or in-memory substitute supplies the
 Elasticsearch result.

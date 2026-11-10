@@ -1,4 +1,4 @@
-# Appchi scalability, architecture and code-quality review — 2026-10-06
+# Keep scalability, architecture and code-quality review — 2026-10-06
 
 ## Conclusion and scope
 
@@ -16,7 +16,7 @@ P1 means address before load qualification or operational reliance. P2 means a m
 
 ### SCALE-01 · P1 · Indexing waits for Elasticsearch refresh separately for each document
 
-[Reconciliation](../../appchi-indexer/src/appchi/search/reconciliation.py), lines 110–117, invokes `publish([item])` per document. [ProjectionWriter](../../appchi-indexer/src/appchi/search/writer.py), lines 67–94, performs a visibility search, a bulk request with `refresh="wait_for"`, and another visibility search. It also rewrites unchanged equal-version documents. [Worker runtime](../../appchi-domain/src/appchi/pipeline_runtime.py), lines 52–57, performs reconciliation before each individual Kafka turn.
+[Reconciliation](../../keep-indexer/src/keep/search/reconciliation.py), lines 110–117, invokes `publish([item])` per document. [ProjectionWriter](../../keep-indexer/src/keep/search/writer.py), lines 67–94, performs a visibility search, a bulk request with `refresh="wait_for"`, and another visibility search. It also rewrites unchanged equal-version documents. [Worker runtime](../../keep-domain/src/keep/pipeline_runtime.py), lines 52–57, performs reconciliation before each individual Kafka turn.
 
 This serializes normal indexing around refresh latency. With a one-second refresh interval and no intervening forced refresh, the rough service-rate model is around one document per second per worker; processing a reconciliation document and then a hint can require two refresh waits. This is a conditional model, not a benchmark or a claim about the supplied cluster configuration. Elasticsearch explicitly recommends batching instead of serial `wait_for` calls in its [refresh documentation](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/refresh-parameter).
 
@@ -26,7 +26,7 @@ The two-second reconciliation setting is a wait between completed passes, not a 
 
 ### SCALE-02 · P1 · One unprojectable alert can starve search progress across tenants
 
-[Reconciliation](../../appchi-indexer/src/appchi/search/reconciliation.py), lines 205–207, selects the oldest tenant. A failure during publication at line 144 leaves `last_page_at` and the scan cursor unchanged. The outer [runtime](../../appchi-domain/src/appchi/pipeline_runtime.py), lines 52–78, retries that work before reaching Kafka hint consumption. A persistently failing oldest tenant can therefore prevent search progress for healthy tenants handled by the worker, and replicas can select the same failing tenant.
+[Reconciliation](../../keep-indexer/src/keep/search/reconciliation.py), lines 205–207, selects the oldest tenant. A failure during publication at line 144 leaves `last_page_at` and the scan cursor unchanged. The outer [runtime](../../keep-domain/src/keep/pipeline_runtime.py), lines 52–78, retries that work before reaching Kafka hint consumption. A persistently failing oldest tenant can therefore prevent search progress for healthy tenants handled by the worker, and replicas can select the same failing tenant.
 
 There is a reachable payload trigger. Each note may contain 10,000 code points, but current note search tokens accumulate into a document subject to a hardcoded 1 MiB projection cap. The offline reproduction built a projection with **120 notes of 8,999 characters**, yielding **1,297,840 bytes** and `projection_document_capacity` before any ES call. The reproduction verifies the document failure; whole-worker starvation follows from the inspected scheduling control flow.
 
@@ -34,9 +34,9 @@ There is a reachable payload trigger. Each note may contain 10,000 code points, 
 
 ### SCALE-03 · P1 · Ordinary browser refreshes generate ten full searches and retain unused snapshots
 
-[AlertFeed](../../appchi-frontend/src/components/alerts.tsx), lines 128–154, requests its main feed and invokes [quick-view counts](../../appchi-frontend/src/components/alert-table.tsx), lines 85–117, for eight separate feed queries plus a suppressed-inclusive query in the normal default view. Count requests use `limit=1` and discard their continuation cursors.
+[AlertFeed](../../keep-frontend/src/components/alerts.tsx), lines 128–154, requests its main feed and invokes [quick-view counts](../../keep-frontend/src/components/alert-table.tsx), lines 85–117, for eight separate feed queries plus a suppressed-inclusive query in the normal default view. Count requests use `limit=1` and discard their continuation cursors.
 
-[FeedReader](../../appchi-domain/src/appchi/search/reader.py), lines 165–168 and 232–236, opens a five-minute Elasticsearch point-in-time snapshot (PIT) and keeps it open when more results exist. Discarded count cursors and replaced main-feed first pages leave their PITs until expiry. The ordinary GET feed lacks the replacement/disposal mechanism available in preview flows. The [route](../../appchi-api/src/appchi/search_routes.py), around line 80, also creates a fresh ES client per request and traverses repeated authorization, watermark and retention transactions.
+[FeedReader](../../keep-domain/src/keep/search/reader.py), lines 165–168 and 232–236, opens a five-minute Elasticsearch point-in-time snapshot (PIT) and keeps it open when more results exist. Discarded count cursors and replaced main-feed first pages leave their PITs until expiry. The ordinary GET feed lacks the replacement/disposal mechanism available in preview flows. The [route](../../keep-api/src/keep/search_routes.py), around line 80, also creates a fresh ES client per request and traverses repeated authorization, watermark and retention transactions.
 
 Illustrative demand: **100 alert tabs refreshing once every two seconds × 10 searches = 500 search requests/second**. The nonempty first-page path uses ten DB transaction contexts, implying about 5,000 contexts/second in that scenario. With enough matching rows, discarded snapshots could accumulate toward 150,000 PIT openings over five minutes before limits/failures intervene. These are source-derived demand calculations, not observed successful throughput; actual refresh cadence and result distributions determine the workload.
 
@@ -44,25 +44,25 @@ Illustrative demand: **100 alert tabs refreshing once every two seconds × 10 se
 
 ### SCALE-04 · P1 · API session/live paths block the event loop on synchronous work
 
-[Session endpoints](../../appchi-api/src/appchi/identity/session.py), including `current_session` at line 197, are async but execute synchronous PostgreSQL operations. [Authentication](../../appchi-domain/src/appchi/identity/authentication.py), line 147 onward, also performs synchronous database phases. [Accessible tenant calculation](../../appchi-domain/src/appchi/access.py), line 21 onward, adds per-tenant queries. A poll for a user with access to all 50 tenants traverses approximately 124 SQL execute calls including transaction setup/guards. A tab polls every 30 seconds; 100 such tabs imply roughly 413 SQL calls/second from session polls alone. Access to fewer tenants reduces this estimate.
+[Session endpoints](../../keep-api/src/keep/identity/session.py), including `current_session` at line 197, are async but execute synchronous PostgreSQL operations. [Authentication](../../keep-domain/src/keep/identity/authentication.py), line 147 onward, also performs synchronous database phases. [Accessible tenant calculation](../../keep-domain/src/keep/access.py), line 21 onward, adds per-tenant queries. A poll for a user with access to all 50 tenants traverses approximately 124 SQL execute calls including transaction setup/guards. A tab polls every 30 seconds; 100 such tabs imply roughly 413 SQL calls/second from session polls alone. Access to fewer tenants reduces this estimate.
 
-Separately, [LiveRegistry](../../appchi-api/src/appchi/live.py), line 52, holds one process-wide `threading.RLock` across a PostgreSQL loader. Redis invalidation at line 81 takes that lock directly on the event loop. Slow SQL in a worker thread can therefore block HTTP dispatch, Redis handling and SSE activity on the same API process. The offline reproduction executed the actual class and observed synchronous invalidation blocked for **0.253 seconds** behind a simulated 0.250-second loader.
+Separately, [LiveRegistry](../../keep-api/src/keep/live.py), line 52, holds one process-wide `threading.RLock` across a PostgreSQL loader. Redis invalidation at line 81 takes that lock directly on the event loop. Slow SQL in a worker thread can therefore block HTTP dispatch, Redis handling and SSE activity on the same API process. The offline reproduction executed the actual class and observed synchronous invalidation blocked for **0.253 seconds** behind a simulated 0.250-second loader.
 
 **Recommendation:** keep synchronous DB phases off the event loop or use async database access; compute tenant roles using set-oriented queries; never hold a global blocking lock across I/O. Use per-tenant single-flight state loading with short metadata-only locks. Preserve current-grant/revocation and restore checks. Most ordinary API routes already use synchronous handlers correctly; this finding concerns the async paths.
 
 ### SCALE-05 · P1 · Lifetime maintenance history eventually stops recurring alert processing
 
-[Maintenance processing](../../appchi-domain/src/appchi/maintenance/processing.py), line 250, records source receipts including repeats. Lines 295–325 load the alert's entire retained receipt history on each reconciliation and reject histories exceeding `max_inputs`. [Runtime](../../appchi-domain/src/appchi/maintenance/runtime.py), lines 150–164, uses that path for source arrivals when maintenance is enabled, even without a matching current window. Work grows with inputs and historical segments under tenant coordination.
+[Maintenance processing](../../keep-domain/src/keep/maintenance/processing.py), line 250, records source receipts including repeats. Lines 295–325 load the alert's entire retained receipt history on each reconciliation and reject histories exceeding `max_inputs`. [Runtime](../../keep-domain/src/keep/maintenance/runtime.py), lines 150–164, uses that path for source arrivals when maintenance is enabled, even without a matching current window. Work grows with inputs and historical segments under tenant coordination.
 
 The actual function rejected **101 retained receipts with `max_inputs=100` and zero segments** in the offline reproduction. The value 100 is a test limit, not an assumed production allocation. Any finite limit has the same eventual failure for a sufficiently long-lived repeating alert. Its inputs are removed during retired-alert cleanup, not normal active-alert processing. At the cap, the accepted Kafka record cannot be applied and partition progress is blocked. Raising the cap delays the failure while increasing work.
 
-There is a related catalog problem: processing lines 105–110 load all historical maintenance segments against one cap, including ended history. Enough past windows can block new alerts too. [Maintenance specification](../../appchi-design/specs/spec-maintenance-operations.md), line 116, says ended non-deleted windows do not consume active evaluation quota. The implementation needs to distinguish active evaluation capacity from retained historical proof.
+There is a related catalog problem: processing lines 105–110 load all historical maintenance segments against one cap, including ended history. Enough past windows can block new alerts too. [Maintenance specification](../../keep-design/specs/spec-maintenance-operations.md), line 116, says ended non-deleted windows do not consume active evaluation quota. The implementation needs to distinguish active evaluation capacity from retained historical proof.
 
 **Recommendation:** verified incremental temporal checkpoints and bounded suffix replay, with separate current catalogs and historical proof. Preserve delayed-arrival/control semantics and no-backfill rules. Test years of repeated input/control history, not only fresh alerts. This does not require silently reinstating the deferred maintenance or retention workers.
 
 ### SCALE-06 · P1 · Correlation rewrites all evidence per changed input
 
-[`_persist`](../../appchi-domain/src/appchi/correlation/runtime.py), lines 510–542, deletes prepared rules' evidence and reinserts all surviving memberships individually. Each membership resolves its context through [a locking lookup](../../appchi-domain/src/appchi/correlation/repository.py), line 426. The work occurs under shared tenant coordination, and [the consumer](../../appchi-correlation/src/appchi/correlation/consumer.py), lines 69–86, may repeat arbitration within that transaction.
+[`_persist`](../../keep-domain/src/keep/correlation/runtime.py), lines 510–542, deletes prepared rules' evidence and reinserts all surviving memberships individually. Each membership resolves its context through [a locking lookup](../../keep-domain/src/keep/correlation/repository.py), line 426. The work occurs under shared tenant coordination, and [the consumer](../../keep-correlation/src/keep/correlation/consumer.py), lines 69–86, may repeat arbitration within that transaction.
 
 Executing the actual `_persist` function with SQL/context spies and 1,000 distinct membership objects produced **1,001 direct SQL executions plus 1,000 context lookups**. At 83.33 changed inputs/second concentrated in one such tenant, that shape implies roughly 167,000 SQL executions/second before the rest of processing. This is an operation-count model, not a database benchmark or a statement that every source repeat qualifies for correlation.
 
@@ -70,7 +70,7 @@ Executing the actual `_persist` function with SQL/context spies and 1,000 distin
 
 ### SCALE-07 · P2 · Alert operations lock the complete historical correlation context set
 
-[Correlation lock preparation](../../appchi-domain/src/appchi/correlation/runtime.py), lines 37–45, selects and locks all tenant rules and contexts. [Maintenance catalog locking](../../appchi-domain/src/appchi/maintenance/runtime.py), line 102, invokes this even without a maintenance catalog. Source application and ordinary alert commands reach it. Historical contexts are cleaned during deleted-rule cleanup rather than routine input handling, so work grows with lifetime group cardinality.
+[Correlation lock preparation](../../keep-domain/src/keep/correlation/runtime.py), lines 37–45, selects and locks all tenant rules and contexts. [Maintenance catalog locking](../../keep-domain/src/keep/maintenance/runtime.py), line 102, invokes this even without a maintenance catalog. Source application and ordinary alert commands reach it. Historical contexts are cleaned during deleted-rule cleanup rather than routine input handling, so work grows with lifetime group cardinality.
 
 The tenant ordering boundary is intentional, but the work inside it is too broad. A single tenant receiving 83.33 inputs/second has approximately 12 ms per arrival available for serialized source work before accounting for correlation and user commands. That necessary bound is not a measured latency.
 
@@ -78,15 +78,15 @@ The tenant ordering boundary is intentional, but the work inside it is too broad
 
 ### SCALE-08 · P2 · Session polling prevents the activity heartbeat from firing
 
-[Workspace](../../appchi-frontend/src/components/workspace.tsx), lines 92–111, installs a fresh session object on each successful 30-second poll. Its activity effect at line 164 starts a 60-second interval and depends on the entire session object. Each poll therefore cleans up and restarts the interval before the activity request fires.
+[Workspace](../../keep-frontend/src/components/workspace.tsx), lines 92–111, installs a fresh session object on each successful 30-second poll. Its activity effect at line 164 starts a 60-second interval and depends on the entire session object. Each poll therefore cleans up and restarts the interval before the activity request fires.
 
-[Authentication](../../appchi-domain/src/appchi/identity/authentication.py), line 65, applies a 30-minute idle limit. The source-derived timer model produced **zero activity callbacks over 30 minutes**, explaining how an actively used foreground session can expire. This is not yet an executed browser expiry test.
+[Authentication](../../keep-domain/src/keep/identity/authentication.py), line 65, applies a 30-minute idle limit. The source-derived timer model produced **zero activity callbacks over 30 minutes**, explaining how an actively used foreground session can expire. This is not yet an executed browser expiry test.
 
 **Recommendation:** key the interval to stable session identity and read current CSRF data through a ref or equivalent mechanism. Add a browser fake-clock regression spanning multiple polls and the idle deadline.
 
 ### SCALE-09 · P2 · Healthy SSE still incurs duplicate browser polling
 
-[Workspace](../../appchi-frontend/src/components/workspace.tsx), line 577, polls `/view-state` every two seconds even while SSE is healthy. [SSE](../../appchi-api/src/appchi/live.py), line 163 onward, independently reauthorizes/reconciles every two seconds. Each HTTP poll performs another authorization/state transaction.
+[Workspace](../../keep-frontend/src/components/workspace.tsx), line 577, polls `/view-state` every two seconds even while SSE is healthy. [SSE](../../keep-api/src/keep/live.py), line 163 onward, independently reauthorizes/reconciles every two seconds. Each HTTP poll performs another authorization/state transaction.
 
 For 100 visible tabs, that is approximately **100 authorization transaction contexts/second even in an otherwise idle system**, before feeds, counts, commands and session polling. Three simultaneously visible tabs per user triples that demand. Tenant vector caching does not coalesce session authorization or the polling transaction. The design's disconnected-browser fallback does not require this permanent duplicate polling.
 
@@ -94,7 +94,7 @@ For 100 visible tabs, that is approximately **100 authorization transaction cont
 
 ### SCALE-10 · P2 · Ordinary Product API requests have no aggregate handler deadline
 
-[HTTP middleware](../../appchi-domain/src/appchi/http.py), line 128, sets `asyncio.timeout(None)` outside ingestion. The [reliability contract](../../appchi-design/specs/spec-reliability-operations.md), section 8, specifies a ten-second ordinary API/search handler deadline. Individual SQL/ES timeouts do not bound total time across repeated queries, pool waits and external calls.
+[HTTP middleware](../../keep-domain/src/keep/http.py), line 128, sets `asyncio.timeout(None)` outside ingestion. The [reliability contract](../../keep-design/specs/spec-reliability-operations.md), section 8, specifies a ten-second ordinary API/search handler deadline. Individual SQL/ES timeouts do not bound total time across repeated queries, pool waits and external calls.
 
 Under contention, work can outlive the intended request budget and hold scarce resources after a caller or gateway gives up. Some specialized count/preview routes have explicit deadlines, so coverage is inconsistent.
 
@@ -139,17 +139,17 @@ All eleven checkout roots were verified independently. HEADs match the delivery 
 
 | Repository | HEAD | Review coverage / initial working state |
 |---|---|---|
-| appchi-api | `0b8a1a351378d0a7952a405b6fac4db1d03c6096` | Auth, live, search, command composition; existing operator-proof/executor, README, Dockerfile and test work. |
-| appchi-contracts | `42107e3814a07518878291929740f5fa120fbff1` | Native/event/schema ownership and generation; clean. |
-| appchi-correlation | `ad68f9f4838848f5d318888be4b0e067d5b51e5b` | Ordered consumer and shared evidence path; existing Dockerfile work. |
-| appchi-delivery | `2d1fc70b942eae2590855538d7ca7cc6d67128ca` | Release/deployment resources, harness, CI and qualification; existing initialization/load-test/local-runtime work. |
-| appchi-design | `7bf631cf8613cca0e10139cc5cd2b391778f9d8e` | Core design, scope, domain/reliability supplements and acceptance; existing pipeline/register/verification additions. |
-| appchi-domain | `830d4f65556d93692cca60695fafb522769fe122` | SQL, maintenance, correlation, search, identity, CEL, transaction boundaries; clean. |
-| appchi-frontend | `468ba80eeac6ca2ad4b95752edb7b8005aa354fb` | Session/live, feed/count fetching and state flow; existing Dockerfile, Keycloak image and browser-test work. |
-| appchi-indexer | `ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3` | Projection, reconciliation, bootstrap/rebuild boundaries; existing bootstrap/docs/image/tests work. |
-| appchi-ingestion | `0d2ee23a7940c2c0866498aa0646587f101651bc` | Validation, gateway context and concurrent Kafka admission; existing image work. |
-| appchi-migrations | `1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236` | Schema/index/partition review and checksum integrity; existing Dockerfile work. |
-| appchi-processor | `4f7a3fc81483d193033c3eec9f54f6aaeb6a5392` | Application/proof/offset ordering, concurrency and failures; existing Dockerfile work. |
+| keep-api | `0b8a1a351378d0a7952a405b6fac4db1d03c6096` | Auth, live, search, command composition; existing operator-proof/executor, README, Dockerfile and test work. |
+| keep-contracts | `42107e3814a07518878291929740f5fa120fbff1` | Native/event/schema ownership and generation; clean. |
+| keep-correlation | `ad68f9f4838848f5d318888be4b0e067d5b51e5b` | Ordered consumer and shared evidence path; existing Dockerfile work. |
+| keep-delivery | `2d1fc70b942eae2590855538d7ca7cc6d67128ca` | Release/deployment resources, harness, CI and qualification; existing initialization/load-test/local-runtime work. |
+| keep-design | `7bf631cf8613cca0e10139cc5cd2b391778f9d8e` | Core design, scope, domain/reliability supplements and acceptance; existing pipeline/register/verification additions. |
+| keep-domain | `830d4f65556d93692cca60695fafb522769fe122` | SQL, maintenance, correlation, search, identity, CEL, transaction boundaries; clean. |
+| keep-frontend | `468ba80eeac6ca2ad4b95752edb7b8005aa354fb` | Session/live, feed/count fetching and state flow; existing Dockerfile, Keycloak image and browser-test work. |
+| keep-indexer | `ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3` | Projection, reconciliation, bootstrap/rebuild boundaries; existing bootstrap/docs/image/tests work. |
+| keep-ingestion | `0d2ee23a7940c2c0866498aa0646587f101651bc` | Validation, gateway context and concurrent Kafka admission; existing image work. |
+| keep-migrations | `1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236` | Schema/index/partition review and checksum integrity; existing Dockerfile work. |
+| keep-processor | `4f7a3fc81483d193033c3eec9f54f6aaeb6a5392` | Application/proof/offset ordering, concurrency and failures; existing Dockerfile work. |
 
 ## Fresh verification and limits
 
@@ -167,7 +167,7 @@ Commands below ran on this workspace on 2026-10-06 using the prepared delivery P
 | Delivery `.venv/Scripts/python.exe -m ruff check --no-cache qualification/scalability-review-2026-10-06.py` | Passed. |
 
 ```powershell
-# From appchi-delivery
+# From keep-delivery
 .venv/Scripts/python.exe -m pytest tests/unit/test_maintenance_processing.py tests/unit/test_maintenance_temporal.py tests/unit/test_kafka_first_admission.py tests/unit/test_identity_sessions.py tests/unit/test_api_live_publisher.py tests/unit/test_load_test_harness.py -q -p no:cacheprovider --basetemp=.local/pytest-scalability-review-20261006
 .venv/Scripts/python.exe -B qualification/scalability-review-2026-10-06.py
 ```

@@ -2,9 +2,9 @@
 """Actual PostgreSQL lease, authority and durable label-journal fences."""
 
 import pytest
-from appchi.operators.executor_ledger import PostgresLedger
-from appchi.operators.worker import claim, work_input
-from appchi.shared.errors import AppError
+from keep.operators.executor_ledger import PostgresLedger
+from keep.operators.worker import claim, work_input
+from keep.shared.errors import AppError
 from test_operator_repository import operators, create, due  # noqa: F401
 from test_product import browser  # noqa: F401
 
@@ -23,9 +23,9 @@ def test_profile_and_label_journal_persist_across_attempts(operators, real_db, c
     work, ledger = attempt(operators, real_db, cipher)
     edit = {
         "uid": "rule1",
-        "old_key": "Appchi - Old",
+        "old_key": "Keep - Old",
         "old_value": "true",
-        "new_key": "Appchi - New",
+        "new_key": "Keep - New",
         "new_value": None,
     }
     ledger.record(edit)
@@ -78,7 +78,7 @@ def test_generation_revision_and_both_leases_fence_remote_work(operators, real_d
 def test_retry_after_is_persisted_without_shortening_backoff(
     operators, real_db, cipher, delay, expected
 ):
-    from appchi.operators.worker import failed
+    from keep.operators.worker import failed
 
     op, job, _ = create(operators)
     due(real_db, job["id"])

@@ -2,24 +2,24 @@ import ssl
 from uuid import UUID
 import httpx
 import pytest
-from appchi.identity.keycloak_directory import LocalKeycloakConfig
+from keep.identity.keycloak_directory import LocalKeycloakConfig
 
 def uid(number):
     return str(UUID(int=number))
 
 @pytest.fixture
 def config(monkeypatch):
-    monkeypatch.setenv("APPCHI_ENVIRONMENT", "development")
-    monkeypatch.setenv("APPCHI_LOCAL_DIRECTORY_SECRET", "test-secret")
+    monkeypatch.setenv("KEEP_ENVIRONMENT", "development")
+    monkeypatch.setenv("KEEP_LOCAL_DIRECTORY_SECRET", "test-secret")
     context = ssl.create_default_context()
     monkeypatch.setattr(
-        "appchi.identity.keycloak_directory.ssl.create_default_context", lambda **_: context
+        "keep.identity.keycloak_directory.ssl.create_default_context", lambda **_: context
     )
     return LocalKeycloakConfig(
-        issuer="https://localhost:58443/realms/appchi-local",
+        issuer="https://localhost:58443/realms/keep-local",
         source="keycloak-local",
-        client_id="appchi-directory",
-        client_secret_env="APPCHI_LOCAL_DIRECTORY_SECRET",
+        client_id="keep-directory",
+        client_secret_env="KEEP_LOCAL_DIRECTORY_SECRET",
         ca_file="trusted-local.pem",
         superadmin_group=uid(10),
         max_objects=50,
@@ -37,7 +37,7 @@ class Realm:
                 "id": uid(3),
                 "username": "service-account",
                 "enabled": True,
-                "serviceAccountClientId": "appchi-directory",
+                "serviceAccountClientId": "keep-directory",
             },
         ]
         self.groups = [{"id": uid(10), "name": "admins"}]
@@ -54,7 +54,7 @@ class Realm:
             return httpx.Response(200, json={"access_token": "test-token"})
         assert request.method == "GET"
         assert request.headers["authorization"] == "Bearer test-token"
-        path = request.url.path.removeprefix("/admin/realms/appchi-local")
+        path = request.url.path.removeprefix("/admin/realms/keep-local")
         if path == self.fail:
             return httpx.Response(503, text="sensitive upstream failure")
         if path == "/users":

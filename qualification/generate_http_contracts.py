@@ -1,8 +1,8 @@
 """Generate separate producer schemas and the frontend aggregate from installed apps."""
 import json
 from pathlib import Path
-from appchi.main import app as product
-from appchi.ingestion.main import app as ingestion
+from keep.main import app as product
+from keep.ingestion.main import app as ingestion
 
 
 def documents():
@@ -23,6 +23,6 @@ def documents():
 
 
 if __name__ == "__main__":
-    target = Path(__file__).resolve().parents[2] / "appchi-contracts/schemas"
+    target = Path(__file__).resolve().parents[2] / "keep-contracts/schemas"
     for name, content in documents().items():
         (target / name).write_text(json.dumps(content, indent=2)+"\n", encoding="utf-8")

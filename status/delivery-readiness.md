@@ -23,12 +23,12 @@ Require a validated, versioned environment manifest with each service's supporte
 | Elasticsearch team | Strict/wildcard mappings, external versions, PIT/msearch/search_after, exact totals/refresh visibility, index/alias/rebuild interfaces and allocation. Failed capability gates search; no script/full-scan fallback. |
 | Kafka team | Topic namespaces, logical-key received/tenant-key changed ordering, idempotent/transactional producer fencing, read_committed consumers, stable partition topology, message limits, offsets/replay/retention and allocation. No PG ingress queue; Kafka retention can lose accepted unprocessed inputs. |
 | Redis team | Authenticated Pub/Sub namespace and connection limits. Failure selects PG reconciliation/polling, not data loss. |
-| Kong/Grafana owners | Installed Appchi policy plugin, all-serving-node generation/digest/expiry proof, trusted host clocks, operator supplement's auth/private context, credential IDs, supported management APIs, exact Unicode routing-label round trip and external writer safety. Unsupported remote contract keeps operations pending. |
-| LDAP owner / Appchi Keycloak team | Immutable identity schema, nested/primary memberships, paged completeness, upstream visibility within the five-minute budget; installed OIDC/password sign-in/console MFA/refresh/logout behavior. Unknown facts never become trusted memberships. |
+| Kong/Grafana owners | Installed Keep policy plugin, all-serving-node generation/digest/expiry proof, trusted host clocks, operator supplement's auth/private context, credential IDs, supported management APIs, exact Unicode routing-label round trip and external writer safety. Unsupported remote contract keeps operations pending. |
+| LDAP owner / Keep Keycloak team | Immutable identity schema, nested/primary memberships, paged completeness, upstream visibility within the five-minute budget; installed OIDC/password sign-in/console MFA/refresh/logout behavior. Unknown facts never become trusted memberships. |
 | OpenShift/security/observability owners | Workload model/allocation, secret protection, trust, probes/grace, SSE flush/timeouts, metrics/traces/log interfaces and existing on-call routes. |
 | Recovery-evidence owner | Independently protected ordered append/checkpoint interface and demonstrable rollback survival for minimal fences. Deletion/restore gates remain enforced until verified. |
 
-Use adapter contract tests against a staging instance of the actual version. If a supplied service lacks a selected capability, the release stays gated and records a compatibility defect; no silent fallback that changes product behavior. Other teams choose infrastructure retention/backups/HA and perform service operations. Appchi chooses its schema/client usage and validates their offered guarantees. Do not claim a universal RPO/RTO or zero-loss service failover before those facts exist.
+Use adapter contract tests against a staging instance of the actual version. If a supplied service lacks a selected capability, the release stays gated and records a compatibility defect; no silent fallback that changes product behavior. Other teams choose infrastructure retention/backups/HA and perform service operations. Keep chooses its schema/client usage and validates their offered guarantees. Do not claim a universal RPO/RTO or zero-loss service failover before those facts exist.
 
 Collect the internal Keycloak/application hostnames, installed supported release, directory type/schema, TLS trust, LDAP read credentials/search bases, immutable-ID mapping and designated super-admin group ID. Confirm directory visibility and query capacity against section 7. These are integration inputs and qualification prerequisites; they do not reopen the selected configuration.
 
@@ -46,13 +46,13 @@ Use separate development/staging/production namespaces, realms, databases/namesp
 
 Roll out expand/read-compatible application changes, validate/backfill in bounded fenced jobs, then enable new writes/features only when old incompatible writers are drained. Canary stateless APIs by supported routing and workers by explicit tenant/role fencing; never let two incompatible worker generations concurrently write a tenant. Reconcile desired remote operator state rather than duplicate provisioning during rollout. Roll back application images only within declared schema/event compatibility, preserving monotonic versions/epochs and authoritative data; no database rewind as a deployment rollback. Follow the existing error-budget policy.
 
-**Timed dismissal (REV-49):** apply migration 0056, deploy the indexer and every writer, rebuild the search index so its strict mapping has `dismissed_until`, then set `APPCHI_ALERT_DISMISSAL_ENABLED=true` on the API and deploy the UI. Turning the flag off is the rollback; older code ignores the columns, so dismissed alerts become visible again. Not yet qualified.
+**Timed dismissal (REV-49):** apply migration 0056, deploy the indexer and every writer, rebuild the search index so its strict mapping has `dismissed_until`, then set `KEEP_ALERT_DISMISSAL_ENABLED=true` on the API and deploy the UI. Turning the flag off is the rollback; older code ignores the columns, so dismissed alerts become visible again. Not yet qualified.
 
 **Incident reports (REV-53):** apply migration 0058 in the stopped-writer migration window (its index builds block incident cycle and activity writes for one scan), then deploy the API and the UI. The report is read-only and has no flag; the API is correct without the indexes but slower. Rolling back the UI removes the Reports item; the indexes can stay. Not yet qualified.
 
 **Alert name (REV-54):** order matters. Apply migration 0059 (a nullable `alerts.name`, no rewrite, no stopped-writer window), then deploy the processor, correlation and API, which accept and resolve names while nothing sends one. Rebuild the search index under the strict mapping that adds `name` and `missing_name`, switch the alias, then deploy the indexer; until the switch `name` predicates match nothing. Deploy ingestion last: an older processor stops at the first named record and retries it, stalling that partition without loss. Unnamed v2 keys are unchanged; named alerts get identity format 2. Grafana members now need the `alertname` label, which Grafana always sets. Roll back ingestion first; the column stays. Not yet qualified.
 
-**Alert provider (REV-55):** apply migration 0060 (nullable `alerts.provider` and `alerts.alert_rule_url` with checks, no rewrite, no stopped-writer window), then deploy the processor, correlation and API. The processor derives both fields from the existing `adapter_version` and retained Grafana bytes, so Kafka envelopes and ingestion behavior are unchanged; ingestion only takes the new pins. Rebuild the search index under the strict mapping that adds `provider`, `alert_rule_url` and their missing flags, switch the alias, then deploy the indexer. Once every source processor runs this release, run `python -m appchi.provider_backfill` with the processor's bindings; writers keep running, and a rerun changes nothing. Rolling the processor back leaves its new rows without a provider; rerun the backfill after upgrading again. The columns stay. Not yet qualified.
+**Alert provider (REV-55):** apply migration 0060 (nullable `alerts.provider` and `alerts.alert_rule_url` with checks, no rewrite, no stopped-writer window), then deploy the processor, correlation and API. The processor derives both fields from the existing `adapter_version` and retained Grafana bytes, so Kafka envelopes and ingestion behavior are unchanged; ingestion only takes the new pins. Rebuild the search index under the strict mapping that adds `provider`, `alert_rule_url` and their missing flags, switch the alias, then deploy the indexer. Once every source processor runs this release, run `python -m keep.provider_backfill` with the processor's bindings; writers keep running, and a rerun changes nothing. Rolling the processor back leaves its new rows without a provider; rerun the backfill after upgrading again. The columns stay. Not yet qualified.
 
 **Incident list link counts (REV-56):** no migration and no new runtime role. Deploy the API with its domain pin; older UIs ignore the new `total_linked`, `suppressed` and `unavailable` list fields. Then deploy the frontend, whose Linked alerts column reads them. Roll back the API alone and the column shows "—" again. Not yet qualified.
 
@@ -62,7 +62,7 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 ## Runbooks and support
 
-The user's team is accountable for Appchi application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Appchi still has no product notifications.
+The user's team is accountable for Keep application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Keep still has no product notifications.
 
 Deliver runbooks with the following selected containment and exit checks:
 
@@ -94,14 +94,14 @@ a separately executed offline cutover; the disposable test migration is not that
 
 | Delivery record | Owner | Required output / completion evidence |
 |---|---|---|
-| DEL-01 Service bindings | Appchi integration lead + each service owner | Service bindings manifest above with actual versions/endpoints/identity references, capabilities, allocation, owner contacts and recovery guarantees. |
-| DEL-02 Implementation | Appchi engineering | APIs/UI/workers/DDL/adapters implementing the selected contracts, generated schema checks and traceability to the 55 IDs. |
-| DEL-03 Capacity qualification | Appchi performance lead + service owners | Shared system section 23 measured combined profile, selected numeric budgets, actual pool/resource settings and sustained/recovery results. |
-| DEL-04 Correctness/security/UX | Appchi engineering and reviewers | [Verification plan](https://github.com/appchi-alert-operations/appchi-design/blob/main/verification/verification-plan.md) acceptance executions, isolation/replay/permission tests, accessibility and redaction evidence. |
-| DEL-05 Recovery protection | Evidence/service owners + Appchi | Independent intent/fence contract, backup-restore handoff, credential/permission/deletion reconciliation and full rebuild exercise. |
-| DEL-06 Identity and remote integration | Appchi Keycloak/integration owners + LDAP/Kong/Grafana owners | Installed-version configuration tests, nested membership/five-minute evidence, exact routing labels, safe external writer mode and credential lifecycle verification. |
-| DEL-07 Release and support | Appchi release/support owners | Immutable release bundle, compatible rollout/rollback rehearsal, staffed contacts and exercised runbooks. |
-| DEL-08 Operational observation | Appchi + observability owner | Live SLI measurement/coverage and ongoing rolling-window results after deployment; preproduction tests alone cannot prove a production 30-day SLO. |
+| DEL-01 Service bindings | Keep integration lead + each service owner | Service bindings manifest above with actual versions/endpoints/identity references, capabilities, allocation, owner contacts and recovery guarantees. |
+| DEL-02 Implementation | Keep engineering | APIs/UI/workers/DDL/adapters implementing the selected contracts, generated schema checks and traceability to the 55 IDs. |
+| DEL-03 Capacity qualification | Keep performance lead + service owners | Shared system section 23 measured combined profile, selected numeric budgets, actual pool/resource settings and sustained/recovery results. |
+| DEL-04 Correctness/security/UX | Keep engineering and reviewers | [Verification plan](https://github.com/keep-alert-operations/keep-design/blob/main/verification/verification-plan.md) acceptance executions, isolation/replay/permission tests, accessibility and redaction evidence. |
+| DEL-05 Recovery protection | Evidence/service owners + Keep | Independent intent/fence contract, backup-restore handoff, credential/permission/deletion reconciliation and full rebuild exercise. |
+| DEL-06 Identity and remote integration | Keep Keycloak/integration owners + LDAP/Kong/Grafana owners | Installed-version configuration tests, nested membership/five-minute evidence, exact routing labels, safe external writer mode and credential lifecycle verification. |
+| DEL-07 Release and support | Keep release/support owners | Immutable release bundle, compatible rollout/rollback rehearsal, staffed contacts and exercised runbooks. |
+| DEL-08 Operational observation | Keep + observability owner | Live SLI measurement/coverage and ongoing rolling-window results after deployment; preproduction tests alone cannot prove a production 30-day SLO. |
 
 
 ### Local implementation checkpoint â€” 2026-09-23
@@ -134,7 +134,7 @@ with the nice-to-have worker. Explicit complete bootstrap/manual publication,
 immutable identity binding, nested membership, unknown-user/team refusal,
 last-trusted authorization and session/restore safeguards remain required. This
 does not close any DEL item or qualify company LDAP/Keycloak. See
-[worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
+[worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
 
 ## REV-36 live publishing scope
 

@@ -16,14 +16,14 @@ import tomllib
 from urllib.parse import urlsplit
 
 
-PYTHON_REPOS = {f"appchi-{name}" for name in (
+PYTHON_REPOS = {f"keep-{name}" for name in (
     "api", "ingestion", "processor", "correlation", "indexer", "migrations")}
-REPOS = PYTHON_REPOS | {"appchi-frontend"}
+REPOS = PYTHON_REPOS | {"keep-frontend"}
 INPUTS = ("Dockerfile", "pyproject.toml", "poetry.toml", "poetry.lock", "src", "scripts",
           "package.json", "package-lock.json", "next.config.ts", "next-env.d.ts",
           "tsconfig.json", "keycloak", ".dockerignore")
-ORIGINAL = ".appchi-source-poetry.lock"
-RECEIPT = ".appchi-internal-build.json"
+ORIGINAL = ".keep-source-poetry.lock"
+RECEIPT = ".keep-internal-build.json"
 
 
 def https_url(value):
@@ -84,7 +84,7 @@ def stage(workspace, repository, output):
     # These receipts and any accidental private inputs must never enter COPY layers.
     ignore = output / ".dockerignore"
     with ignore.open("a", encoding="utf-8") as stream:
-        stream.write("\n.appchi-*\n.env*\n*.pem\n*.key\n.netrc\n.npmrc\n")
+        stream.write("\n.keep-*\n.env*\n*.pem\n*.key\n.netrc\n.npmrc\n")
     return receipt
 
 

@@ -1,16 +1,16 @@
 # Development and verification runbook
 
-**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api).
+**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api).
 
-**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
 
-**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
 
-Unless stated otherwise, commands below run from `appchi-delivery`. The sibling
-frontend is `../appchi-frontend`. For the coordinated local stack and critical
+Unless stated otherwise, commands below run from `keep-delivery`. The sibling
+frontend is `../keep-frontend`. For the coordinated local stack and critical
 smoke suite, start with [Repeatable verification workflow](#repeatable-verification-workflow).
 
-These commands start the implemented Appchi components from the repository root.
+These commands start the implemented Keep components from the repository root.
 They do not create an authentication bypass, qualify a company integration, enable
 capability gates, or authorize production deployment. Consult
 [implementation status](../../status/implementation-status.md) for current coverage.
@@ -19,7 +19,7 @@ capability gates, or authorize production deployment. Consult
 
 Install Python 3.13, `Poetry 2.3.1`, Node.js 22.17 or newer, npm, and PowerShell 7 through approved
 development tooling. The scripts use the committed `poetry.lock` and
-`../appchi-frontend/package-lock.json`. They do not install or administer shared PostgreSQL,
+`../keep-frontend/package-lock.json`. They do not install or administer shared PostgreSQL,
 Kafka, Elasticsearch, Redis, LDAP, Keycloak, Kong or Grafana services.
 
 Inject configuration into the terminal environment through your approved secret
@@ -28,17 +28,17 @@ terminal transcripts. Scripts report missing variable names without echoing valu
 
 | Variable | Input |
 |---|---|
-| `APPCHI_DATABASE_URL` | Supplied application PostgreSQL DSN and application role. |
-| `APPCHI_MIGRATION_URL` | Supplied migration PostgreSQL DSN and dedicated migration role. Used only by the migration action. |
-| `APPCHI_WRAPPING_KEY` | Secret base64 encoding of exactly 32 bytes, with the environment's managed key lifecycle. |
-| `APPCHI_WRAPPING_KEY_ID` | Matching key identifier; persist the association while encrypted records use it. |
-| `APPCHI_DEPLOYMENT_EPOCH` | Supplied deployment/recovery epoch; do not casually change it on restart. |
-| `APPCHI_PUBLIC_ORIGIN` | Exact browser HTTPS origin. Local example: `https://localhost:3443`, without trailing slash. |
-| `APPCHI_CAPACITY_PROFILE` | Absolute path to the reviewed application capacity profile. |
-| `APPCHI_BACKEND_URL` | Trusted API origin for the Next.js development proxy; local example: `http://127.0.0.1:8000`. Never include credentials. |
-| `APPCHI_DEV_TLS_CERTIFICATE`, `APPCHI_DEV_TLS_KEY` | Local HTTPS certificate and private-key paths for the frontend development server. The certificate must cover the selected local hostname and be trusted by the browser. |
+| `KEEP_DATABASE_URL` | Supplied application PostgreSQL DSN and application role. |
+| `KEEP_MIGRATION_URL` | Supplied migration PostgreSQL DSN and dedicated migration role. Used only by the migration action. |
+| `KEEP_WRAPPING_KEY` | Secret base64 encoding of exactly 32 bytes, with the environment's managed key lifecycle. |
+| `KEEP_WRAPPING_KEY_ID` | Matching key identifier; persist the association while encrypted records use it. |
+| `KEEP_DEPLOYMENT_EPOCH` | Supplied deployment/recovery epoch; do not casually change it on restart. |
+| `KEEP_PUBLIC_ORIGIN` | Exact browser HTTPS origin. Local example: `https://localhost:3443`, without trailing slash. |
+| `KEEP_CAPACITY_PROFILE` | Absolute path to the reviewed application capacity profile. |
+| `KEEP_BACKEND_URL` | Trusted API origin for the Next.js development proxy; local example: `http://127.0.0.1:8000`. Never include credentials. |
+| `KEEP_DEV_TLS_CERTIFICATE`, `KEEP_DEV_TLS_KEY` | Local HTTPS certificate and private-key paths for the frontend development server. The certificate must cover the selected local hostname and be trusted by the browser. |
 
-`APPCHI_ENVIRONMENT=development` and the absolute path to
+`KEEP_ENVIRONMENT=development` and the absolute path to
 `qualification/development-capacity.json` select the explicitly **unqualified**
 local development capacity example. Its numbers are neither a production budget
 nor measured service capacity. It sets no correlation or maintenance budgets, so
@@ -49,14 +49,14 @@ page look successful.
 For real human sign-in, supply the issuer, confidential-client secret, protected
 immutable-directory claim/scope, exact password-authentication ACR/AMR mapping, directory source,
 super-admin team and any approved CA binding described in
-[identity implementation](https://github.com/appchi-alert-operations/appchi-api/blob/main/docs/identity-implementation.md#required-configuration).
+[identity implementation](https://github.com/keep-alert-operations/keep-api/blob/main/docs/identity-implementation.md#required-configuration).
 Use the actual configured Keycloak environment and exact callback/logout URLs.
 Company LDAP verification and the qualified directory bootstrap must publish
 trusted evidence before `human_auth` can become ready. The development launcher
 does not seed users/sessions or set that gate. The directory adapter's `run_cycle`
 remains available for explicit trusted publication. Directory polling and its
 five-minute propagation qualification are nice-to-have under REV-35. Run the
-configured company verifier explicitly with `python -m appchi.worker directory
+configured company verifier explicitly with `python -m keep.worker directory
 --once`; the development worker launcher excludes continuous directory startup. Other
 implemented roles are listed in `scripts/dev.ps1` and the relevant domain runbooks;
 each requires its own explicit binding, capacity and readiness prerequisites.
@@ -83,7 +83,7 @@ are also present; presence alone is not integration qualification.
 
 ## Migrate before starting writers
 
-With `APPCHI_MIGRATION_URL` supplied for the intended isolated development database:
+With `KEEP_MIGRATION_URL` supplied for the intended isolated development database:
 
 ```powershell
 ./scripts/dev.ps1 -Action Migrate
@@ -111,13 +111,13 @@ stops the selected workload. Nothing is registered as a background service.
 ./scripts/dev.ps1 -Action Start -Role Frontend -FrontendPort 3443
 ```
 
-Open the exact `APPCHI_PUBLIC_ORIGIN`. The UI uses backend OIDC and opaque Secure
+Open the exact `KEEP_PUBLIC_ORIGIN`. The UI uses backend OIDC and opaque Secure
 cookies; HTTP development pages are not an equivalent authentication test. TLS
 files may instead be passed with `-TlsCertificate` and `-TlsKey`. The API port and
-`APPCHI_BACKEND_URL` must agree. Without verified identity/bootstrap, sign-in is
+`KEEP_BACKEND_URL` must agree. Without verified identity/bootstrap, sign-in is
 gated, rather than replaced with a local password or synthetic user.
 
-Complete the [Kafka cutover](kafka-first.md) before starting new alert workers. Supply `APPCHI_KAFKA_BOOTSTRAP` and `APPCHI_ELASTICSEARCH_URL` for the separate source, correlation and indexer roles:
+Complete the [Kafka cutover](kafka-first.md) before starting new alert workers. Supply `KEEP_KAFKA_BOOTSTRAP` and `KEEP_ELASTICSEARCH_URL` for the separate source, correlation and indexer roles:
 
 ```powershell
 ./scripts/dev.ps1 -Action Start -Role Worker -WorkerRole source
@@ -158,11 +158,11 @@ TypeScript and the optimized production build. `Browser` runs all controlled
 browser regression files; it temporarily excludes any real-browser opt-in.
 Omit `-BrowserChannel` to use the pinned installed Playwright browser. Installing
 that browser is an explicit separate command: `npx playwright install chromium`
-from `../appchi-frontend`. Installed Chrome is a distinct compatibility environment, not a
+from `../keep-frontend`. Installed Chrome is a distinct compatibility environment, not a
 claim that the pinned browser download succeeded.
 
 For an explicitly isolated PostgreSQL test database, supply
-`APPCHI_TEST_DATABASE_URL` and run:
+`KEEP_TEST_DATABASE_URL` and run:
 
 ```powershell
 ./scripts/verify.ps1 -Suite Database
@@ -172,18 +172,18 @@ This applies migrations and writes synthetic records to that supplied test datab
 Never point it at production or shared company data. The ordinary integration suite
 does not automatically drop that caller-owned database.
 
-Only `APPCHI_TEST_DATABASE_URL` is required. Every case whose other binding is
+Only `KEEP_TEST_DATABASE_URL` is required. Every case whose other binding is
 absent is skipped silently, so a green run without them covers far less. Bind
 each variable only to isolated local services:
 
 | Variable | Enables |
 |---|---|
-| `APPCHI_TEST_DATABASE_URL` | Required. The caller-owned migrated database shared by session-scoped cases. |
-| `APPCHI_IDENTITY_TEST_ADMIN_URL` | A role with CREATE DATABASE on an isolated cluster. Search, pipeline, correlation, visibility, cutover and identity-session cases (unit and integration) create and drop their own `appchi_pipeline_test_*` database per test. |
-| `APPCHI_MAINTENANCE_TEST_ADMIN_URL` | The same privilege, for module-scoped `appchi_maintenance_test_*` databases (maintenance, restore fencing, alert detail). Falls back to `APPCHI_IDENTITY_TEST_ADMIN_URL`. |
-| `APPCHI_TEST_ELASTICSEARCH_URL` | An isolated unauthenticated Elasticsearch 9.0, for example `http://127.0.0.1:59201`. Cases create and delete their own uniquely prefixed indices. |
-| `APPCHI_TEST_KAFKA_BOOTSTRAP` | An isolated Kafka 4.0 configured like the [local Compose definition](../../deploy/local/compose.yaml), including its INTERNAL listener and `kafka` hostname. Cases use unique topic and group names. |
-| `APPCHI_TEST_LOCAL_KONG=1` | The Kong policy cases, against the configured [local v2](../local-v2.md) Kong. |
+| `KEEP_TEST_DATABASE_URL` | Required. The caller-owned migrated database shared by session-scoped cases. |
+| `KEEP_IDENTITY_TEST_ADMIN_URL` | A role with CREATE DATABASE on an isolated cluster. Search, pipeline, correlation, visibility, cutover and identity-session cases (unit and integration) create and drop their own `keep_pipeline_test_*` database per test. |
+| `KEEP_MAINTENANCE_TEST_ADMIN_URL` | The same privilege, for module-scoped `keep_maintenance_test_*` databases (maintenance, restore fencing, alert detail). Falls back to `KEEP_IDENTITY_TEST_ADMIN_URL`. |
+| `KEEP_TEST_ELASTICSEARCH_URL` | An isolated unauthenticated Elasticsearch 9.0, for example `http://127.0.0.1:59201`. Cases create and delete their own uniquely prefixed indices. |
+| `KEEP_TEST_KAFKA_BOOTSTRAP` | An isolated Kafka 4.0 configured like the [local Compose definition](../../deploy/local/compose.yaml), including its INTERNAL listener and `kafka` hostname. Cases use unique topic and group names. |
+| `KEEP_TEST_LOCAL_KONG=1` | The Kong policy cases, against the configured [local v2](../local-v2.md) Kong. |
 
 Before the run, prove the broker ready: an idempotent produce, a transactional
 init/produce/commit and a consumer-group offset commit must all succeed. A broker
@@ -191,27 +191,27 @@ that is not ready returns `kafka_publish_unconfirmed` or
 `cutover_group_state_unverified` on unmodified code too.
 
 Other suites have their own bindings. The frontend BrowserReal smoke uses
-`APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL`, plus `APPCHI_REAL_BROWSER_PYTHON` when
+`KEEP_REAL_BROWSER_DATABASE_ADMIN_URL`, plus `KEEP_REAL_BROWSER_PYTHON` when
 delivery's environment is not `.venv`. The S1/S2 suites opt in with
-`APPCHI_LOCAL_IDENTITY_TEST` and `APPCHI_LOCAL_RUNTIME_TEST`. Repository suites
-use `APPCHI_TEST_DATABASE_URL` and, where they need a disposable cluster,
-`APPCHI_MIGRATION_TEST_ADMIN_URL` (migrations), `APPCHI_PROOF_TEST_POSTGRES_ADMIN_DSN`
-(api operator proof) and `APPCHI_BOOTSTRAP_TEST_POSTGRES_ADMIN_DSN` (indexer, with
-optional `APPCHI_TEST_ELASTICSEARCH_CA` and `APPCHI_TEST_ELASTICSEARCH_API_KEY`).
+`KEEP_LOCAL_IDENTITY_TEST` and `KEEP_LOCAL_RUNTIME_TEST`. Repository suites
+use `KEEP_TEST_DATABASE_URL` and, where they need a disposable cluster,
+`KEEP_MIGRATION_TEST_ADMIN_URL` (migrations), `KEEP_PROOF_TEST_POSTGRES_ADMIN_DSN`
+(api operator proof) and `KEEP_BOOTSTRAP_TEST_POSTGRES_ADMIN_DSN` (indexer, with
+optional `KEEP_TEST_ELASTICSEARCH_CA` and `KEEP_TEST_ELASTICSEARCH_API_KEY`).
 
 For the real HTTPS browser/API/PostgreSQL smoke, supply
-`APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL` for a **local isolated cluster** whose role
+`KEEP_REAL_BROWSER_DATABASE_ADMIN_URL` for a **local isolated cluster** whose role
 can create/drop disposable databases:
 
 ```powershell
 ./scripts/verify.ps1 -Suite BrowserReal -BrowserChannel chrome
 ```
 
-That fixture creates and later drops only its randomized `appchi_browser_test_*`
+That fixture creates and later drops only its randomized `keep_browser_test_*`
 database, starts/stops its own unique-port API/UI process trees and uses synthetic
 database session evidence exclusively inside the test. It never adds a test login
 route or enables authentication on the ordinary application database. See the
-[frontend evidence](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/frontend.md#real-browserapipostgresql-smoke) for exact assertions
+[frontend evidence](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/frontend.md#real-browserapipostgresql-smoke) for exact assertions
 and the distinction from company Keycloak/LDAP qualification.
 
 The fixture seeds its alert through the Kafka-first path: it builds the admission
@@ -252,9 +252,9 @@ and record the restart before claiming the new code was tested.
 Before Start or Stop, inspect existing process ownership, listeners and data:
 
 ```powershell
-# From appchi-delivery. Status/ps do not prove application readiness.
+# From keep-delivery. Status/ps do not prove application readiness.
 ./scripts/local-runtime.ps1 -Action Status
-docker compose -p appchi-local-stack -f deploy/local/compose.yaml ps
+docker compose -p keep-local-stack -f deploy/local/compose.yaml ps
 Get-NetTCPConnection -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess
 ./scripts/dev.ps1 -Action Check
 ```
@@ -294,7 +294,7 @@ reload is needed; it can restart several processes and run migration/setup check
 
 ### Test access, isolation and run ledger
 
-Use only synthetic data in the local `appchi_local` database/loopback stack.
+Use only synthetic data in the local `keep_local` database/loopback stack.
 This is persistent development data, not an automatically disposable database.
 Authenticate through Keycloak using the generated local-admin/editor/viewer
 credentials described in [local identities](../local-keycloak.md). Read credentials
@@ -326,29 +326,29 @@ prepare/API reload/Start; never point it at shared company Kong/Grafana.
 | S1 Identity and access | Run the local identity suite; sign in as admin/editor/viewer, inspect Local Demo roles, remove/restore the viewer group with explicit publication, perform signed provider logout. | Normal password-only OIDC produces the expected principal; Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200; logged-out session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` automates these against real Keycloak/API/PG. Provider logout/group revocation test skips without the enrolled console factor: record partial coverage, not an S1 pass. |
 | S2 Native v1 and alert work | Run the local-runtime browser suite: submit its unique native v1 alert, wait for search, open Global Feed/detail, Assign to me, add a note, reload. | Admission returns 202 only after Kafka acknowledgement; exactly the created alert becomes visible in Global, Feed appears and live delivery reports connected with no update notice (REV-43), assignment acknowledges it, note survives reload and acknowledged CEL search includes its ID. A 202 alone does not prove processing/search. | `local-runtime.spec.ts` uses real login, ingestion, workers, Elasticsearch and browser. Its note reload is automated; additionally reload and confirm the assignee remains the acting user. The connected live status proves connection, not every SSE recovery path. |
 | S3 Native v2 isolation | Run gateway `verify`, then `send`; open the resulting IDs in Local Demo Feed/detail through the browser. | Missing/invalid/forged credentials rejected; duplicate/unsupported key transport rejected, direct private listener requires mTLS. Valid batch has 3 accepted results with 202; all 3 become searchable with expected components and names (REV-54), detail works only in the owning tenant, the same IDs under Global return 404. Browser shows the matching records. | `local_v2_verify.py` automates gateway/API/search assertions, including 401/400/404/422 distinctions; the final browser inspection is manual. No receipt lookup. It does not test Grafana's scheduled delivery or fleet propagation. |
-| S4 Manual incident lifecycle | As editor/admin in the S2 alert's tenant, open Incidents → New incident, enter a unique title and explicit severity, and create. Confirm open/unassigned state; use Link alerts on detail to select the run's unowned alert. Add a uniquely tagged note, reload, resolve, reload, reopen and reload. | Created incident, subsequent link and note persist after reload; severity remains immutable; resolve leaves alert status unchanged. With no competing owner, reopen succeeds, starts a new lifecycle cycle and retains the link/history. Inspect detail plus its normal API/history responses for results not visible in the UI. | Manual real-stack procedure; no dedicated automated end-to-end suite was found. Mocked creation/note tests and PG integration tests cover parts, not the full journey. Follow the authoritative [incident rules](../../../appchi-design/specs/spec-incident-operations.md). |
+| S4 Manual incident lifecycle | As editor/admin in the S2 alert's tenant, open Incidents → New incident, enter a unique title and explicit severity, and create. Confirm open/unassigned state; use Link alerts on detail to select the run's unowned alert. Add a uniquely tagged note, reload, resolve, reload, reopen and reload. | Created incident, subsequent link and note persist after reload; severity remains immutable; resolve leaves alert status unchanged. With no competing owner, reopen succeeds, starts a new lifecycle cycle and retains the link/history. Inspect detail plus its normal API/history responses for results not visible in the UI. | Manual real-stack procedure; no dedicated automated end-to-end suite was found. Mocked creation/note tests and PG integration tests cover parts, not the full journey. Follow the authoritative [incident rules](../../../keep-design/specs/spec-incident-operations.md). |
 
 For S4, record incident/alert IDs and statuses before/after every transition. If
 linking or reopening conflicts, inspect active ownership and the authoritative
 error, do not steal another incident's alert. Use another uniquely created fixture
 or record a failure. Resolve/reopen is not alert resolution. This small successful
 journey does not replace the incident conflict, permission, atomic membership or
-retention cases in the [verification plan](../../../appchi-design/verification/verification-plan.md).
+retention cases in the [verification plan](../../../keep-design/verification/verification-plan.md).
 For affected layouts, repeat the relevant journey at a narrow viewport and with
 keyboard interaction, using the existing UI acceptance requirements.
 
-Execute S1 and S2 from `appchi-frontend`, serially. Restore prior opt-in variable
+Execute S1 and S2 from `keep-frontend`, serially. Restore prior opt-in variable
 values afterward (use a dedicated test terminal if simpler):
 
 ```powershell
-$env:APPCHI_LOCAL_IDENTITY_TEST='1'
+$env:KEEP_LOCAL_IDENTITY_TEST='1'
 node node_modules/@playwright/test/cli.js test --config playwright.local-identity.config.ts
 # Inspect exit status and skipped tests before proceeding.
-$env:APPCHI_LOCAL_RUNTIME_TEST='1'
+$env:KEEP_LOCAL_RUNTIME_TEST='1'
 node node_modules/@playwright/test/cli.js test --config playwright.local-runtime.config.ts
 ```
 
-Execute S3 from `appchi-delivery` after the v2 setup prerequisites:
+Execute S3 from `keep-delivery` after the v2 setup prerequisites:
 
 ```powershell
 .venv/Scripts/python.exe scripts/local_v2_verify.py verify
@@ -389,7 +389,7 @@ for the binding selection and repair rules.
 Use the pipeline phase of `qualification/scalability_load.py` to compare pipeline
 throughput and latency between two package sets, for example `origin/main`
 before and after a performance merge. It is a local diagnostic, not release
-qualification. It does not use the shared `appchi-local-stack` containers or the
+qualification. It does not use the shared `keep-local-stack` containers or the
 local runtime. It skips the API and users. Production KafkaAdmission publishes
 fixed workload `pipeline-v1`. The production source, correlation and indexer worker
 processes consume it through `consume()`. Each scenario drains completely
@@ -427,14 +427,14 @@ add HEAD and a dirty flag), consumer batching settings, service versions and hos
 
 Run both sides with the same arguments on the same idle host, under the
 heavy-suite rules (one heavy run at a time). Run each side at least twice;
-single runs vary. From `appchi-delivery`, with an environment whose installed
+single runs vary. From `keep-delivery`, with an environment whose installed
 packages are the revision under test: a non-editable `poetry sync` of delivery's
 lock, or `scripts/workspace.py install --editable` for local siblings. On Windows,
 keep that environment path short (see workspace setup):
 
 ```powershell
 .venv/Scripts/python.exe qualification/scalability_services.py up
-$env:APPCHI_SCALE_ADMIN_URL = Get-Content .local/appchi-load-admin-url
+$env:KEEP_SCALE_ADMIN_URL = Get-Content .local/keep-load-admin-url
 .venv/Scripts/python.exe qualification/scalability_load.py --phase pipeline --features `
   --kafka-bootstrap 127.0.0.1:19293 --elasticsearch-url http://127.0.0.1:59401 `
   --redis-url redis://127.0.0.1:56580/0 --drain-seconds 1800 --output .local/pipeline-before-1.json
@@ -445,7 +445,7 @@ $env:APPCHI_SCALE_ADMIN_URL = Get-Content .local/appchi-load-admin-url
 .venv/Scripts/python.exe qualification/scalability_services.py down
 ```
 
-`scalability_services.py up` starts private `appchi-load-*` PostgreSQL,
+`scalability_services.py up` starts private `keep-load-*` PostgreSQL,
 Elasticsearch, Redis and Kafka containers. Kafka is configured like
 `deploy/local/compose.yaml`: INTERNAL inter-broker listener and hostname `kafka`.
 Readiness is proven before it returns, including an idempotent produce and a
@@ -498,14 +498,14 @@ action. Neither old passing evidence nor a documented procedure verifies new cod
 
 ## Frontend image and OpenShift artifact
 
-The [frontend Dockerfile](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/Dockerfile) builds standalone Next.js output.
-Supply `APPCHI_BACKEND_URL` as a **build argument** containing the trusted internal
+The [frontend Dockerfile](https://github.com/keep-alert-operations/keep-frontend/blob/main/Dockerfile) builds standalone Next.js output.
+Supply `KEEP_BACKEND_URL` as a **build argument** containing the trusted internal
 API origin. Next.js resolves its rewrites during the build; changing a runtime
 environment variable does not rewrite an already-built image's API routing.
 
 ```powershell
-# From appchi-frontend; supply private dependency access as described in workspace setup.
-docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN --build-arg APPCHI_BACKEND_URL='<supplied trusted internal API origin>' --tag '<local image name>' .
+# From keep-frontend; supply private dependency access as described in workspace setup.
+docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN --build-arg KEEP_BACKEND_URL='<supplied trusted internal API origin>' --tag '<local image name>' .
 ```
 
 This is a local build command, not a publish or deployment instruction. The Node
@@ -518,7 +518,7 @@ The [frontend OpenShift template](../../deploy/openshift/frontend.template.yaml)
 contains only a Deployment and ClusterIP Service. Every image, replica and resource
 input is required; no company allocation is invented. `FRONTEND_IMAGE_REPOSITORY`
 plus `FRONTEND_IMAGE_DIGEST` must resolve to an approved `repository@sha256:<64 hex>`
-image. `API_INTERNAL_URL` must exactly match its `APPCHI_BACKEND_URL` build argument;
+image. `API_INTERNAL_URL` must exactly match its `KEEP_BACKEND_URL` build argument;
 the template uses that exact variable name and records the binding annotation.
 
 Supply qualified replica count, CPU/memory/ephemeral-storage requests and limits,
@@ -566,9 +566,9 @@ preserves old history while later ends wait for source updates. Do not start old
 workers against the new schema. No application worker is required solely to end a
 maintenance window or age a resource out of this release.
 
-The Product API CONFIG_SECRET supplies `APPCHI_OPERATOR_DATABASE_URL`,
-`APPCHI_OPERATOR_GRAFANA_TOKEN`, `APPCHI_OPERATOR_KONG_TOKEN` and
-`APPCHI_OPERATOR_PROBE_TOKEN`. `APPCHI_OPERATOR_BINDING` references the mounted
+The Product API CONFIG_SECRET supplies `KEEP_OPERATOR_DATABASE_URL`,
+`KEEP_OPERATOR_GRAFANA_TOKEN`, `KEEP_OPERATOR_KONG_TOKEN` and
+`KEEP_OPERATOR_PROBE_TOKEN`. `KEEP_OPERATOR_BINDING` references the mounted
 verified binding. Use provisioning-role privileges on its separate bounded pool;
 ordinary API RLS remains separate. Confirm operator-route proxy timeouts (100s),
 per-replica pool allocation and required remote egress before rollout. The network policy template takes explicit egress rules; supplied

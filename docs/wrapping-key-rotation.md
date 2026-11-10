@@ -5,7 +5,7 @@ per-record data keys/nonces; it never generates platform wrapping secrets,
 changes customer API keys, or removes old wrapping versions. Existing v1
 envelopes remain readable when their key IDs remain supplied.
 
-Mount a restricted keyring JSON document through `APPCHI_WRAPPING_KEYRING`.
+Mount a restricted keyring JSON document through `KEEP_WRAPPING_KEYRING`.
 The schema is `{"current":"version-id","keys":{"version-id":"base64"},
 "purposes":{"session-csrf":"csrf-version","cursor":"cursor-version"}}`.
 Every referenced ID must exist in `keys`, with standard base64 encoding of
@@ -20,7 +20,7 @@ The optional purpose map and key-ID grammar (1–128 ASCII letters, digits,
 underscore, dot or hyphen, starting with a letter/digit) are assistant-selected
 configuration details. Duplicate JSON fields, unknown purposes, missing keys,
 malformed envelopes and authentication failures are rejected. The legacy single
-`APPCHI_WRAPPING_KEY`/`APPCHI_WRAPPING_KEY_ID` settings remain supported by the
+`KEEP_WRAPPING_KEY`/`KEEP_WRAPPING_KEY_ID` settings remain supported by the
 settings adapter; select either that source or a mounted keyring.
 
 Deploy readers with old and new versions before switching all writers to new
@@ -29,9 +29,9 @@ required tables. The existing worker role is exercised locally; deployment
 permissions and secret-store/recovery guarantees still require supplied evidence.
 
 ```sh
-python -m appchi.shared.rewrap operator-credentials --verify-only --limit 100
-python -m appchi.shared.rewrap operator-credentials --limit 100
-python -m appchi.shared.rewrap operator-credentials --cursor '<returned next_cursor>'
+python -m keep.shared.rewrap operator-credentials --verify-only --limit 100
+python -m keep.shared.rewrap operator-credentials --limit 100
+python -m keep.shared.rewrap operator-credentials --cursor '<returned next_cursor>'
 ```
 
 Run each family: `operator-credentials`, `session-tokens`, `session-csrf`,

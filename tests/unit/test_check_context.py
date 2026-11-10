@@ -10,10 +10,10 @@ SPEC.loader.exec_module(GATE)
 
 
 def design(tmp_path, source):
-    scripts = tmp_path / "appchi-design" / "scripts"
+    scripts = tmp_path / "keep-design" / "scripts"
     scripts.mkdir(parents=True)
     (scripts / "check_docs.py").write_text(source, encoding="utf-8")
-    (tmp_path / "appchi-design" / "spec.md").write_text("# Spec\n\n## Section\n", encoding="utf-8")
+    (tmp_path / "keep-design" / "spec.md").write_text("# Spec\n\n## Section\n", encoding="utf-8")
     return tmp_path
 
 

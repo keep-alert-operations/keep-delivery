@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.alerts import routes as alert_routes
+from keep.alerts import routes as alert_routes
 from test_product import browser  # noqa: F401
 from test_configuration_counts import environment  # noqa: F401
 from test_configuration_deletion import configuration, create as create_definition  # noqa: F401

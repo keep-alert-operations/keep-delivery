@@ -2,7 +2,7 @@
 from uuid import uuid4
 from datetime import timedelta
 import pytest
-from appchi.inactivity import expire_alert, expire_incident
+from keep.inactivity import expire_alert, expire_incident
 from test_product import browser, admit_alert  # noqa: F401
 
 pytestmark = pytest.mark.integration

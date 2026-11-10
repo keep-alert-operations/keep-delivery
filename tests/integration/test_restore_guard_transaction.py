@@ -10,10 +10,10 @@ import psycopg
 from psycopg.rows import dict_row
 import pytest
 
-from appchi.db import Database
-from appchi.recovery.guard import RESTORE_LOCK, runtime_guard
-from appchi.recovery.restore import begin_restore
-from appchi.shared.errors import AppError
+from keep.db import Database
+from keep.recovery.guard import RESTORE_LOCK, runtime_guard
+from keep.recovery.restore import begin_restore
+from keep.shared.errors import AppError
 from test_maintenance_repository import maintenance_db  # noqa: F401
 
 pytestmark = pytest.mark.integration

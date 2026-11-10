@@ -8,10 +8,10 @@ jobs:
     services:
       postgres:
         image: postgres:18.2
-        env: {POSTGRES_PASSWORD: test-only, POSTGRES_USER: appchi_migrator}
+        env: {POSTGRES_PASSWORD: test-only, POSTGRES_USER: keep_migrator}
         ports: ['5432:5432']
         options: >-
-          --health-cmd 'pg_isready -U appchi_migrator'
+          --health-cmd 'pg_isready -U keep_migrator'
           --health-interval 5s --health-timeout 5s --health-retries 12
       elasticsearch:
         # Exact existing local-development selection; not a company service binding.
@@ -25,32 +25,32 @@ jobs:
           --health-cmd 'curl --fail --silent http://localhost:9200/_cluster/health?wait_for_status=yellow'
           --health-interval 5s --health-timeout 10s --health-retries 30
     env:
-      APPCHI_TEST_DATABASE_URL: postgresql://appchi_migrator:test-only@localhost:5432/postgres
-      APPCHI_IDENTITY_TEST_ADMIN_URL: postgresql://appchi_migrator:test-only@localhost:5432/postgres
-      APPCHI_TEST_ELASTICSEARCH_URL: http://localhost:9200
+      KEEP_TEST_DATABASE_URL: postgresql://keep_migrator:test-only@localhost:5432/postgres
+      KEEP_IDENTITY_TEST_ADMIN_URL: postgresql://keep_migrator:test-only@localhost:5432/postgres
+      KEEP_TEST_ELASTICSEARCH_URL: http://localhost:9200
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with: {version: '0.10.8', python-version: '3.13.5'}
       - name: Prepare fresh run evidence directory
-        run: mkdir -p "$RUNNER_TEMP/appchi-evidence"
+        run: mkdir -p "$RUNNER_TEMP/keep-evidence"
       - run: uv sync --project backend --locked
       - run: uv run --project backend ruff check backend
       - run: uv run --project backend ruff check qualification/release_artifacts.py qualification/tests
       - run: uv run --project backend pytest qualification/tests
       - run: uv run --project backend python qualification/check_contracts.py
-      - run: uv run --project backend pytest backend/tests --junitxml="$RUNNER_TEMP/appchi-evidence/pytest-results.xml"
+      - run: uv run --project backend pytest backend/tests --junitxml="$RUNNER_TEMP/keep-evidence/pytest-results.xml"
       - name: Inventory actual source release inputs
         run: |
-          uv run --project backend python qualification/release_artifacts.py inventory --root . --source-revision "$GITHUB_SHA" --output "$RUNNER_TEMP/appchi-evidence/release-inventory.json"
-          uv run --project backend python qualification/release_artifacts.py verify-inventory "$RUNNER_TEMP/appchi-evidence/release-inventory.json" --root .
+          uv run --project backend python qualification/release_artifacts.py inventory --root . --source-revision "$GITHUB_SHA" --output "$RUNNER_TEMP/keep-evidence/release-inventory.json"
+          uv run --project backend python qualification/release_artifacts.py verify-inventory "$RUNNER_TEMP/keep-evidence/release-inventory.json" --root .
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-correctness-and-source-inventory
           path: |
-            ${{ runner.temp }}/appchi-evidence/pytest-results.xml
-            ${{ runner.temp }}/appchi-evidence/release-inventory.json
+            ${{ runner.temp }}/keep-evidence/pytest-results.xml
+            ${{ runner.temp }}/keep-evidence/release-inventory.json
           if-no-files-found: warn
   frontend:
     runs-on: ubuntu-latest

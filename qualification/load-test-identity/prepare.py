@@ -31,7 +31,7 @@ def generate(app_origin, keycloak_origin, users):
                   "password": secrets.token_urlsafe(24), "admin": False}
                  for i in range(1, users + 1)]
     realm = {
-        "realm": "appchi-local", "displayName": "Appchi isolated load test",
+        "realm": "keep-local", "displayName": "Keep isolated load test",
         "enabled": True, "sslRequired": "all", "registrationAllowed": False,
         "rememberMe": False, "resetPasswordAllowed": False,
         "bruteForceProtected": True, "failureFactor": 5,
@@ -39,42 +39,42 @@ def generate(app_origin, keycloak_origin, users):
         "accessTokenLifespan": 300, "revokeRefreshToken": True,
         "refreshTokenMaxReuse": 0,
         "attributes": {"CreateDefaultClientScopes": "true"},
-        "browserFlow": "appchi-password",
+        "browserFlow": "keep-password",
         "authenticationFlows": [{
-            "alias": "appchi-password", "providerId": "basic-flow",
+            "alias": "keep-password", "providerId": "basic-flow",
             "topLevel": True, "builtIn": False,
             "authenticationExecutions": [{
                 "authenticator": "auth-username-password-form", "requirement": "REQUIRED",
                 "priority": 10, "authenticatorFlow": False,
-                "authenticatorConfig": "appchi-password-evidence",
+                "authenticatorConfig": "keep-password-evidence",
             }],
         }],
-        "authenticatorConfig": [{"alias": "appchi-password-evidence", "config": {
+        "authenticatorConfig": [{"alias": "keep-password-evidence", "config": {
             "default.reference.value": "pwd", "default.reference.maxAge": "86400",
         }}],
-        "groups": [{"id": group_id, "name": "Appchi Load Administrators"}],
-        "clientScopes": [{"name": "appchi-directory", "protocol": "openid-connect",
+        "groups": [{"id": group_id, "name": "Keep Load Administrators"}],
+        "clientScopes": [{"name": "keep-directory", "protocol": "openid-connect",
                           "attributes": {"include.in.token.scope": "true"}}],
         "clients": [{
-            "clientId": "appchi-web", "enabled": True, "protocol": "openid-connect",
+            "clientId": "keep-web", "enabled": True, "protocol": "openid-connect",
             "publicClient": False, "secret": web_secret, "standardFlowEnabled": True,
             "directAccessGrantsEnabled": False, "implicitFlowEnabled": False,
             "serviceAccountsEnabled": False,
             "redirectUris": [app_origin + "/auth/callback"], "webOrigins": [app_origin],
             "attributes": {
-                "login_theme": "appchi", "pkce.code.challenge.method": "S256",
+                "login_theme": "keep", "pkce.code.challenge.method": "S256",
                 "post.logout.redirect.uris": app_origin + "/signed-out",
                 "backchannel.logout.url": app_origin + "/auth/backchannel-logout",
                 "backchannel.logout.session.required": "true",
             },
-            "defaultClientScopes": ["basic", "profile", "appchi-directory"],
+            "defaultClientScopes": ["basic", "profile", "keep-directory"],
             "optionalClientScopes": [],
             "protocolMappers": [{"name": name, "protocol": "openid-connect",
                                  "protocolMapper": f"oidc-{name}-mapper", "config": {
                                      "id.token.claim": "true", "access.token.claim": "true",
                                  }} for name in ("amr", "acr")],
         }, {
-            "clientId": "appchi-directory", "enabled": True,
+            "clientId": "keep-directory", "enabled": True,
             "protocol": "openid-connect", "publicClient": False,
             "secret": directory_secret, "standardFlowEnabled": False,
             "directAccessGrantsEnabled": False, "implicitFlowEnabled": False,
@@ -84,35 +84,35 @@ def generate(app_origin, keycloak_origin, users):
             "username": account["username"], "id": account["id"], "enabled": True,
             "firstName": "Load", "lastName": account["username"],
             "email": account["username"] + "@example.invalid", "emailVerified": True,
-            "groups": ["/Appchi Load Administrators"] if account["admin"] else [],
+            "groups": ["/Keep Load Administrators"] if account["admin"] else [],
             "credentials": [{"type": "password", "value": account["password"],
                              "temporary": False}],
         } for account in accounts] + [{
-            "username": "service-account-appchi-directory", "enabled": True,
-            "serviceAccountClientId": "appchi-directory",
+            "username": "service-account-keep-directory", "enabled": True,
+            "serviceAccountClientId": "keep-directory",
             "clientRoles": {"realm-management": ["view-users", "query-users", "query-groups"]},
         }],
     }
     directory = {
-        "issuer": "https://localhost:8443/realms/appchi-local", "source": "keycloak-local",
-        "client_id": "appchi-directory", "client_secret_env": "APPCHI_LOCAL_DIRECTORY_SECRET",
-        "ca_file": "/etc/appchi/keycloak-ca.crt", "superadmin_group": group_id,
+        "issuer": "https://localhost:8443/realms/keep-local", "source": "keycloak-local",
+        "client_id": "keep-directory", "client_secret_env": "KEEP_LOCAL_DIRECTORY_SECRET",
+        "ca_file": "/etc/keep/keycloak-ca.crt", "superadmin_group": group_id,
         "max_objects": 1000, "page_size": 100, "max_pages": 1000, "local_only": True,
     }
     api = {
-        "APPCHI_PUBLIC_ORIGIN": app_origin,
-        "APPCHI_OIDC_ISSUER": keycloak_origin + "/realms/appchi-local",
-        "APPCHI_OIDC_CLIENT_ID": "appchi-web", "APPCHI_OIDC_CLIENT_SECRET": web_secret,
-        "APPCHI_OIDC_DIRECTORY_SOURCE": "keycloak-local",
-        "APPCHI_OIDC_DIRECTORY_ID_CLAIM": "sub",
-        "APPCHI_OIDC_DIRECTORY_SCOPE": "appchi-directory",
-        "APPCHI_OIDC_REQUIRED_ACR": "1", "APPCHI_OIDC_REQUIRED_AMR": '["pwd"]',
-        "APPCHI_OIDC_CA_FILE": "/etc/appchi/keycloak-ca.crt",
-        "APPCHI_SUPERADMIN_GROUP": group_id,
+        "KEEP_PUBLIC_ORIGIN": app_origin,
+        "KEEP_OIDC_ISSUER": keycloak_origin + "/realms/keep-local",
+        "KEEP_OIDC_CLIENT_ID": "keep-web", "KEEP_OIDC_CLIENT_SECRET": web_secret,
+        "KEEP_OIDC_DIRECTORY_SOURCE": "keycloak-local",
+        "KEEP_OIDC_DIRECTORY_ID_CLAIM": "sub",
+        "KEEP_OIDC_DIRECTORY_SCOPE": "keep-directory",
+        "KEEP_OIDC_REQUIRED_ACR": "1", "KEEP_OIDC_REQUIRED_AMR": '["pwd"]',
+        "KEEP_OIDC_CA_FILE": "/etc/keep/keycloak-ca.crt",
+        "KEEP_SUPERADMIN_GROUP": group_id,
     }
-    return {"appchi-local-realm.json": realm, "local-directory.json": directory,
+    return {"keep-local-realm.json": realm, "local-directory.json": directory,
             "credentials.json": {"users": accounts}, "api-identity.env": api,
-            "publisher-identity.env": {"APPCHI_LOCAL_DIRECTORY_SECRET": directory_secret}}
+            "publisher-identity.env": {"KEEP_LOCAL_DIRECTORY_SECRET": directory_secret}}
 
 
 def main():

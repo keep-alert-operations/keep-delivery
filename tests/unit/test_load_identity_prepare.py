@@ -12,7 +12,7 @@ spec.loader.exec_module(prepare)
 
 def test_real_oidc_and_bounded_native_identities():
     result = prepare.generate("https://app.example.invalid", "https://id.example.invalid", 50)
-    realm = result["appchi-local-realm.json"]
+    realm = result["keep-local-realm.json"]
     assert len(realm["users"]) == 52
     web, directory = realm["clients"]
     assert not web["directAccessGrantsEnabled"] and web["standardFlowEnabled"]
@@ -23,13 +23,13 @@ def test_real_oidc_and_bounded_native_identities():
         "view-users", "query-users", "query-groups",
     ]
     assert result["local-directory.json"]["issuer"] == (
-        "https://localhost:8443/realms/appchi-local"
+        "https://localhost:8443/realms/keep-local"
     )
-    assert result["api-identity.env"]["APPCHI_OIDC_ISSUER"] == (
-        "https://id.example.invalid/realms/appchi-local"
+    assert result["api-identity.env"]["KEEP_OIDC_ISSUER"] == (
+        "https://id.example.invalid/realms/keep-local"
     )
-    assert web["secret"] == result["api-identity.env"]["APPCHI_OIDC_CLIENT_SECRET"]
-    assert directory["secret"] == result["publisher-identity.env"]["APPCHI_LOCAL_DIRECTORY_SECRET"]
+    assert web["secret"] == result["api-identity.env"]["KEEP_OIDC_CLIENT_SECRET"]
+    assert directory["secret"] == result["publisher-identity.env"]["KEEP_LOCAL_DIRECTORY_SECRET"]
     assert len({user["id"] for user in realm["users"][:-1]}) == 51
     assert sum(bool(user["groups"]) for user in realm["users"][:-1]) == 1
 

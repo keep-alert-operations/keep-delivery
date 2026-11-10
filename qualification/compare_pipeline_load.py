@@ -147,7 +147,7 @@ def main():
                 f"{label}: run {result['run']} passed={result.get('passed')} "
                 f"clean={result.get('clean')} packages="
                 + ", ".join(
-                    f"{name.removeprefix('appchi-')}@{((info or {}).get('commit') or '?')[:8]}"
+                    f"{name.removeprefix('keep-')}@{((info or {}).get('commit') or '?')[:8]}"
                     + ("+dirty" if (info or {}).get("dirty") else "")
                     for name, info in result["environment"]["packages"].items()
                 )

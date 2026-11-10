@@ -8,9 +8,9 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.correlation.deletion import resume_delete
-from appchi.recovery.evidence import DurableAck
-from appchi.shared.errors import AppError, unavailable
+from keep.correlation.deletion import resume_delete
+from keep.recovery.evidence import DurableAck
+from keep.shared.errors import AppError, unavailable
 from test_correlation_configuration import create, definition, edit, rules  # noqa: F401
 from test_product import browser  # noqa: F401
 

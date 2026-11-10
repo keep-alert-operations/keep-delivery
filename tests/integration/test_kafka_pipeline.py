@@ -8,12 +8,12 @@ from uuid import uuid4
 import pytest
 from confluent_kafka import Consumer, Producer, TopicPartition, OFFSET_BEGINNING
 from confluent_kafka.admin import AdminClient, NewTopic
-from appchi.ingestion.service import Admission
-from appchi.ingestion.native import canonical
-from appchi.alerts.processor import process_one
-from appchi.worker import relay_turn
-from appchi.pipeline import record_receipt, consume_once
-from appchi.shared.errors import AppError
+from keep.ingestion.service import Admission
+from keep.ingestion.native import canonical
+from keep.alerts.processor import process_one
+from keep.worker import relay_turn
+from keep.pipeline import record_receipt, consume_once
+from keep.shared.errors import AppError
 from test_search_pipeline import real_db  # noqa: F401
 
 pytestmark = [pytest.mark.integration, pytest.mark.compatibility]
@@ -30,16 +30,16 @@ def poll_record(client):
 
 
 def test_real_kafka_replay_durable_receipts_and_poison_offset(real_db, cipher, profile, v1):
-    bootstrap = os.getenv("APPCHI_TEST_KAFKA_BOOTSTRAP")
+    bootstrap = os.getenv("KEEP_TEST_KAFKA_BOOTSTRAP")
     if not bootstrap:
         pytest.skip("Requires a disposable real Kafka broker")
     env = "test-" + uuid4().hex
     settings = SimpleNamespace(environment=env, deployment_epoch=env, kafka_bootstrap=bootstrap)
-    topic = f"appchi.{env}.alerts.received"
+    topic = f"keep.{env}.alerts.received"
     admin = AdminClient({"bootstrap.servers": bootstrap})
     admin.create_topics([NewTopic(topic, num_partitions=1, replication_factor=1)])[topic].result(15)
     consumer = None
-    group = "appchi-test-" + uuid4().hex
+    group = "keep-test-" + uuid4().hex
 
     def connection():
         client = Consumer(

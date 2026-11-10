@@ -3,9 +3,9 @@ import base64
 from fastapi.testclient import TestClient
 import pytest
 
-from appchi.config import Settings
-from appchi.main import create_app
-from appchi.ingestion.main import create_app as create_ingestion_app
+from keep.config import Settings
+from keep.main import create_app
+from keep.ingestion.main import create_app as create_ingestion_app
 
 
 class UnusedDatabase:
@@ -30,7 +30,7 @@ class UnusedDatabase:
 def test_deployed_http_role_rejects_other_surfaces_before_body_or_database(role, paths, monkeypatch):
     from types import SimpleNamespace
     from uuid import uuid4
-    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda settings: SimpleNamespace(close=lambda: None))
+    monkeypatch.setattr("keep.ingestion.main.KafkaPublisher", lambda settings: SimpleNamespace(close=lambda: None))
     settings = Settings(
         database_url="unused",
         wrapping_key=base64.b64encode(b"k" * 32).decode(),

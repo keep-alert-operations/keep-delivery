@@ -33,12 +33,12 @@ def run(args, cwd, *, capture=False):
 def configuration():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     for name, item in manifest["repositories"].items():
-        if not name.startswith("appchi-") or Path(name).name != name:
+        if not name.startswith("keep-") or Path(name).name != name:
             raise ValueError("Invalid repository directory")
         if item["url"] != f"https://github.com/{manifest['organization']}/{name}.git":
             raise ValueError("Repository URL does not match the selected organization")
         revision = item.get("revision")
-        if name != "appchi-delivery" and (not isinstance(revision, str) or len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision)):
+        if name != "keep-delivery" and (not isinstance(revision, str) or len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision)):
             raise ValueError(f"Missing immutable revision for {name}")
     return manifest
 
@@ -62,9 +62,9 @@ def bootstrap(root, manifest):
     root.mkdir(parents=True, exist_ok=True)
     for name, item in manifest["repositories"].items():
         path = root / name
-        if name == "appchi-delivery":
+        if name == "keep-delivery":
             if path.resolve() != DELIVERY:
-                raise ValueError("Run bootstrap from appchi-delivery inside the target workspace")
+                raise ValueError("Run bootstrap from keep-delivery inside the target workspace")
             repository(root, name)
             continue
         if path.exists():
@@ -97,11 +97,11 @@ def inventory(root, manifest):
         dirty = bool(run(["git", "status", "--porcelain=v1"], path, capture=True))
         result["repositories"][name] = {
             "revision": revision, "dirty": dirty,
-            "matches_manifest": name == "appchi-delivery" or revision == item["revision"],
+            "matches_manifest": name == "keep-delivery" or revision == item["revision"],
         }
-    for path in sorted((root / "appchi-migrations/src/appchi/migration_sql").glob("*.sql")):
+    for path in sorted((root / "keep-migrations/src/keep/migration_sql").glob("*.sql")):
         result["migrations"][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
-    result["design_revision"] = result["repositories"]["appchi-design"]["revision"]
+    result["design_revision"] = result["repositories"]["keep-design"]["revision"]
     result["manifest_sha256"] = hashlib.sha256(MANIFEST.read_bytes()).hexdigest()
     return result
 
@@ -158,7 +158,7 @@ def install(root, manifest, editable):
         run(args, DELIVERY)
         install_unmet(python, sources)
         print("Local editable sources installed; release locks are unchanged.")
-    run(["npm.cmd" if os.name == "nt" else "npm", "ci"], root / "appchi-frontend")
+    run(["npm.cmd" if os.name == "nt" else "npm", "ci"], root / "keep-frontend")
 
 
 def main():

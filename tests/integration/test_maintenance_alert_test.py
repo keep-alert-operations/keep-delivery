@@ -3,7 +3,7 @@
 
 import pytest
 
-from appchi.maintenance import routes
+from keep.maintenance import routes
 from test_maintenance_repository import maintenance_db, body  # noqa: F401
 from test_product import browser, admit_alert  # noqa: F401
 

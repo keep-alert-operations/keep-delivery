@@ -6,10 +6,10 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.admin_operations import router
-from appchi.alerts.processor import process_one, record_failure
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
+from keep.admin_operations import router
+from keep.alerts.processor import process_one, record_failure
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
 
 from test_maintenance_repository import maintenance_browser  # noqa: F401
 from test_maintenance_repository import maintenance_db as database_fixture

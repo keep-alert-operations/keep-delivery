@@ -15,7 +15,7 @@ def entrypoint_errors(workspace):
     """Installed entrypoints must reflect their canonical delivery sources."""
     errors = []
     for name in ('AGENTS.md', 'CLAUDE.md'):
-        canonical = workspace / 'appchi-delivery' / 'workspace' / name
+        canonical = workspace / 'keep-delivery' / 'workspace' / name
         installed = workspace / name
         if not canonical.is_file() or not installed.is_file():
             errors.append([name, 'Missing canonical or installed workspace entrypoint; run bootstrap'])
@@ -31,7 +31,7 @@ def entrypoint_errors(workspace):
 
 def main():
     errors, documents = entrypoint_errors(WORKSPACE), 0
-    for repository in WORKSPACE.glob('appchi-*'):
+    for repository in WORKSPACE.glob('keep-*'):
         for directory, children, files in os.walk(repository):
             children[:] = [name for name in children if name not in IGNORED]
             for name in files:
@@ -46,7 +46,7 @@ def main():
                 prose = re.sub(r'^\s*(```|~~~).*?^\s*\1\s*$', '', text, flags=re.M | re.S)
                 for match in re.finditer(r'\]\(([^\n)]+)\)', prose):
                     link = match.group(1).strip().strip('<>')
-                    if re.match(r'https://github.com/appchi-alert-operations/appchi-[^/]+/(?:blob|tree)/main/', link):
+                    if re.match(r'https://github.com/keep-alert-operations/keep-[^/]+/(?:blob|tree)/main/', link):
                         parts = link.split('/', 7)
                         target = WORKSPACE / parts[4] / unquote(parts[7].split('#')[0])
                     elif re.match(r'[a-z]+:', link) or link.startswith('#'):
@@ -55,21 +55,21 @@ def main():
                         target = path.parent / unquote(link.split('#')[0])
                     if not target.exists():
                         errors.append([str(path.relative_to(WORKSPACE)), link])
-    inventory = json.loads((WORKSPACE / 'appchi-delivery/workspace/source-inventory.json').read_text())
+    inventory = json.loads((WORKSPACE / 'keep-delivery/workspace/source-inventory.json').read_text())
     for source, item in inventory['files'].items():
         if not (WORKSPACE / item['repository'] / item['path']).exists():
             errors.append([source, 'Missing assigned destination'])
-    register = (WORKSPACE / 'appchi-design/decisions/design-register.md').read_text(encoding='utf-8')
+    register = (WORKSPACE / 'keep-design/decisions/design-register.md').read_text(encoding='utf-8')
     ids = {int(value) for value in re.findall(r'^(?:\|\s*|##\s*)REV-(\d+)', register, re.M)}
-    if ids != set(range(1, 67)):
-        errors.append(['design-register.md', 'Expected REV-01 through REV-66'])
+    if ids != set(range(1, 68)):
+        errors.append(['design-register.md', 'Expected REV-01 through REV-67'])
     print(json.dumps({'documents': documents, 'source_entries': len(inventory['files']),
-                      'review_ids': 'REV-01..REV-66', 'errors': errors}, indent=2))
+                      'review_ids': 'REV-01..REV-67', 'errors': errors}, indent=2))
     if errors:
         raise SystemExit(1)
     subprocess.run(
-        [sys.executable, str(WORKSPACE / 'appchi-delivery/qualification/check_context.py')],
-        cwd=WORKSPACE / 'appchi-delivery', check=True,
+        [sys.executable, str(WORKSPACE / 'keep-delivery/qualification/check_context.py')],
+        cwd=WORKSPACE / 'keep-delivery', check=True,
     )
 
 

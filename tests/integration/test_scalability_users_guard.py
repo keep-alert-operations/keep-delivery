@@ -8,8 +8,8 @@ import psycopg
 from psycopg.rows import dict_row
 import pytest
 
-from appchi.recovery.guard import RESTORE_LOCK, runtime_guard
-from appchi.shared.errors import AppError
+from keep.recovery.guard import RESTORE_LOCK, runtime_guard
+from keep.shared.errors import AppError
 
 pytestmark = pytest.mark.integration
 

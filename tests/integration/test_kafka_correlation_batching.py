@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.correlation.consumer import correlate_record
+from keep.correlation.consumer import correlate_record
 from test_correlation_configuration import rules  # noqa: F401
 from test_kafka_maintenance_inline import CAPACITY, consume, receive, rule, setup  # noqa: F401
 from test_product import browser  # noqa: F401
@@ -48,9 +48,9 @@ def test_replayed_changed_event_after_postgres_commit_changes_nothing(setup, rea
 def test_real_broker_batches_commits_and_replays_uncommitted_inputs(setup, real_db, v1):
     from confluent_kafka import Producer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
-    from appchi.kafka_changed import ChangedConsumer
+    from keep.kafka_changed import ChangedConsumer
 
-    bootstrap = os.getenv("APPCHI_TEST_KAFKA_BOOTSTRAP")
+    bootstrap = os.getenv("KEEP_TEST_KAFKA_BOOTSTRAP")
     if not bootstrap:
         pytest.skip("Requires isolated Kafka")
     _, _, tenant, inline = setup
@@ -58,7 +58,7 @@ def test_real_broker_batches_commits_and_replays_uncommitted_inputs(setup, real_
     config = SimpleNamespace(
         environment="batch-" + uuid4().hex, global_tenant_id=tenant, kafka_bootstrap=bootstrap
     )
-    topic = f"appchi.{config.environment}.alerts.changed"
+    topic = f"keep.{config.environment}.alerts.changed"
     admin = AdminClient({"bootstrap.servers": bootstrap})
     for future in admin.create_topics([NewTopic(topic, 1, 1)]).values():
         future.result(15)

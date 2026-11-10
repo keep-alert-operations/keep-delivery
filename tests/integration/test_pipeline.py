@@ -6,10 +6,10 @@ from types import SimpleNamespace
 from uuid import uuid4
 import pytest
 
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
-from appchi.pipeline import claim, head, acknowledge, relay_once, record_receipt, consume_once
-from appchi.shared.errors import AppError
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
+from keep.pipeline import claim, head, acknowledge, relay_once, record_receipt, consume_once
+from keep.shared.errors import AppError
 from test_search_pipeline import real_db  # noqa: F401
 
 pytestmark = pytest.mark.integration
@@ -101,7 +101,7 @@ def test_receipt_proves_exact_reference_and_quarantines_mismatch(pipeline_db, ci
     event = head(db, lease)
     args = dict(
         consumer="processor",
-        topic="appchi.development.alerts.received",
+        topic="keep.development.alerts.received",
         partition=0,
         offset=1,
         key=lease.tenant.bytes,
@@ -127,7 +127,7 @@ def test_poison_record_cannot_commit_past_failed_offset(pipeline_db):
             return None
 
         def topic(self):
-            return "appchi.development.alerts.received"
+            return "keep.development.alerts.received"
 
         def partition(self):
             return 0

@@ -6,8 +6,8 @@ from uuid import uuid4
 import psycopg
 import pytest
 
-from appchi.alerts.presentation import present_alert
-from appchi.alerts.provider_backfill import backfill_tenant
+from keep.alerts.presentation import present_alert
+from keep.alerts.provider_backfill import backfill_tenant
 
 from test_alert_name import Source
 
@@ -21,7 +21,7 @@ def member(application, **extra):
         "status": "firing",
         "startsAt": "2026-10-31T12:00:00Z",
         "labels": {
-            "Appchi - Payments": "true",
+            "Keep - Payments": "true",
             "alertname": "High CPU",
             "application": application,
             "component": "cpu",

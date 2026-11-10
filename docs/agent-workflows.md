@@ -9,7 +9,7 @@ authoritative in design; this document governs engineering work and ownership.
 Paths inside code spans and command examples are relative to the workspace root
 unless a repository working directory is explicitly given. The canonical installed
 entrypoint is [workspace/AGENTS.md](../workspace/AGENTS.md). Use the
-[context guide](../../appchi-design/context/README.md) to select authoritative sections.
+[context guide](../../keep-design/context/README.md) to select authoritative sections.
 
 ## Sub-agent delegation policy
 
@@ -27,17 +27,17 @@ in sub-agents rather than creating user-visible chats.
 ```text
 <workspace>/
   AGENTS.md
-  appchi-frontend/
-  appchi-api/
-  appchi-ingestion/
-  appchi-processor/
-  appchi-correlation/
-  appchi-indexer/
-  appchi-domain/
-  appchi-contracts/
-  appchi-migrations/
-  appchi-delivery/
-  appchi-design/
+  keep-frontend/
+  keep-api/
+  keep-ingestion/
+  keep-processor/
+  keep-correlation/
+  keep-indexer/
+  keep-domain/
+  keep-contracts/
+  keep-migrations/
+  keep-delivery/
+  keep-design/
 ```
 
 Each child is an independent Git repository. The parent is a development workspace;
@@ -46,9 +46,9 @@ an incidental part of a feature task. Directory names alone do not prove that a
 child is an independent checkout: verify its resolved Git root.
 
 Keep the canonical entrypoint at
-`appchi-delivery/workspace/AGENTS.md` and have workspace setup copy it to
+`keep-delivery/workspace/AGENTS.md` and have workspace setup copy it to
 `<workspace>/AGENTS.md`. Keep the canonical and installed copies consistent when
-changing the entrypoint. Use `appchi-delivery/scripts/workspace.py bootstrap` to install the root copy.
+changing the entrypoint. Use `keep-delivery/scripts/workspace.py bootstrap` to install the root copy.
 
 Repository instructions add commands and local conventions. Preserve system
 contracts across repository boundaries. Explicit user decisions and later scope
@@ -95,26 +95,26 @@ it.
 
 | Repository | Owns |
 |---|---|
-| `appchi-frontend` | Next.js/TypeScript application, UI assets, generated API client, frontend tests and image, custom Keycloak login theme. |
-| `appchi-api` | Product HTTP API, human authentication/authorization, management endpoints, synchronous operator provisioning, live hint publishing, Redis subscription, SSE and connected-client reconciliation. |
-| `appchi-ingestion` | Native v1/v2 and Grafana admission, validation, trusted routing, Kafka publication, Appchi Kong policy plugin and its migrations. Public/private admission are workload variants. |
-| `appchi-processor` | Source consumer, source-application orchestration, immutable replay proof, changed-event publication and Kafka input-offset transactions; Kafka protocol cutover tooling. |
-| `appchi-correlation` | Changed-event consumption, rule/evidence evaluation orchestration and automatic incident creation/linking. Rule-management HTTP endpoints stay in the API. |
-| `appchi-indexer` | Elasticsearch writes, PostgreSQL reconciliation, searchable watermarks, index mapping application, rebuild and index switching. Search/count HTTP endpoints stay in the API. |
-| `appchi-domain` | Shared Python business rules and transactional operations: lifecycle, ownership, maintenance effects, correlation resets, CEL semantics, shared projection fields, persistence and lock helpers. No server or separate database. |
-| `appchi-contracts` | Shared native/event definitions, generated HTTP contract artifacts, compatibility fixtures and published language artifacts. No service orchestration or database access. |
-| `appchi-migrations` | Complete PostgreSQL migration chain, runner, schema/privilege tests and dedicated migration image. |
-| `appchi-delivery` | OpenShift manifests, local Compose/setup, sanitized Keycloak realm/client configuration, workspace tooling, release manifests, system integration/qualification tooling and evidence, operational runbooks and delivery status. |
-| `appchi-design` | Authoritative specifications, architecture diagrams, approved UX references, decision history/register and verification requirements. |
+| `keep-frontend` | Next.js/TypeScript application, UI assets, generated API client, frontend tests and image, custom Keycloak login theme. |
+| `keep-api` | Product HTTP API, human authentication/authorization, management endpoints, synchronous operator provisioning, live hint publishing, Redis subscription, SSE and connected-client reconciliation. |
+| `keep-ingestion` | Native v1/v2 and Grafana admission, validation, trusted routing, Kafka publication, Keep Kong policy plugin and its migrations. Public/private admission are workload variants. |
+| `keep-processor` | Source consumer, source-application orchestration, immutable replay proof, changed-event publication and Kafka input-offset transactions; Kafka protocol cutover tooling. |
+| `keep-correlation` | Changed-event consumption, rule/evidence evaluation orchestration and automatic incident creation/linking. Rule-management HTTP endpoints stay in the API. |
+| `keep-indexer` | Elasticsearch writes, PostgreSQL reconciliation, searchable watermarks, index mapping application, rebuild and index switching. Search/count HTTP endpoints stay in the API. |
+| `keep-domain` | Shared Python business rules and transactional operations: lifecycle, ownership, maintenance effects, correlation resets, CEL semantics, shared projection fields, persistence and lock helpers. No server or separate database. |
+| `keep-contracts` | Shared native/event definitions, generated HTTP contract artifacts, compatibility fixtures and published language artifacts. No service orchestration or database access. |
+| `keep-migrations` | Complete PostgreSQL migration chain, runner, schema/privilege tests and dedicated migration image. |
+| `keep-delivery` | OpenShift manifests, local Compose/setup, sanitized Keycloak realm/client configuration, workspace tooling, release manifests, system integration/qualification tooling and evidence, operational runbooks and delivery status. |
+| `keep-design` | Authoritative specifications, architecture diagrams, approved UX references, decision history/register and verification requirements. |
 
-Use **Ingestion API** in design prose and diagrams and `appchi-ingestion` for the
+Use **Ingestion API** in design prose and diagrams and `keep-ingestion` for the
 repository/application. Reserve ingress terminology for network routing when that
 is the intended meaning. A service-name change does not rename HTTP paths, event
 fields, runtime configuration keys, or historical migration identifiers.
 
 ## Read the design first
 
-Normative specifications live under `appchi-design/specs/`.
+Normative specifications live under `keep-design/specs/`.
 For behavior, architecture, or cross-repository changes, read the relevant system
 design in `spec-alerts-management-system.md` and scope in `spec-worker-scope.md`
 before making the change, then read the affected supplements and producer/consumer
@@ -130,16 +130,16 @@ it is not an unconditional startup checklist:
   `spec-dashboard-operations.md`.
 - `spec-system-completion.md`.
 
-Use `appchi-design/decisions/design-register.md` and
-`appchi-design/decisions/design-decisions-2026-09-22.md` for decision provenance.
+Use `keep-design/decisions/design-register.md` and
+`keep-design/decisions/design-decisions-2026-09-22.md` for decision provenance.
 Preserve all 55 original issue identifiers and the existing decision numbering.
-Acceptance requirements belong in `appchi-design/verification/verification-plan.md`.
-Current evidence belongs in `appchi-delivery/status/implementation-status.md` and
-`appchi-delivery/status/delivery-readiness.md`, including DEL-01 through DEL-08.
+Acceptance requirements belong in `keep-design/verification/verification-plan.md`.
+Current evidence belongs in `keep-delivery/status/implementation-status.md` and
+`keep-delivery/status/delivery-readiness.md`, including DEL-01 through DEL-08.
 
 Each contract has one authoritative home. If a path named here is missing, find
 its current home through the Specification map in `spec-alerts-management-system.md`
-or `appchi-delivery/workspace/source-inventory.json`; do not treat an absent path
+or `keep-delivery/workspace/source-inventory.json`; do not treat an absent path
 as an absent requirement. Later explicit corrections supersede earlier examples
 and deferred algorithms.
 
@@ -155,13 +155,13 @@ and deferred algorithms.
   atomic history/proof updates, active incident ownership and recovery fences.
 - Native v1 and v2 remain accepted. V1 is unauthenticated and routes to fixed
   Global; v2 uses Kong/operator keys and immutable owning-tenant routing. Ingestion
-  has no Appchi PostgreSQL, Elasticsearch, or Redis dependency. A successful 202
+  has no Keep PostgreSQL, Elasticsearch, or Redis dependency. A successful 202
   requires Kafka acknowledgement under the specified admission contract.
 - Source application commits PostgreSQL state and immutable replay proof before
   transactionally publishing changed events with Kafka input offsets. Preserve
   deduplication, source order, tenant correlation order and loss diagnostics;
   this is not an atomic transaction spanning PostgreSQL and Kafka.
-- Company LDAP remains authoritative for users/nested teams. The Appchi team owns
+- Company LDAP remains authoritative for users/nested teams. The Keep team owns
   Keycloak. Explicit trusted publication and last-known trusted identity data
   remain required; automatic directory polling and its five-minute propagation
   target are deferred under REV-35. Preserve current grants, known revocations,
@@ -178,7 +178,7 @@ and deferred algorithms.
   retirement/replay fences, no-backfill maintenance and shared view references.
   Deferred physical cleanup does not extend access windows or resurrect content.
 - One shared company Grafana uses the exact routing label
-  `Appchi - {operator name}` with literal string value `true`.
+  `Keep - {operator name}` with literal string value `true`.
 - Initial release excludes product notifications, recurring maintenance, personal
   presets/dashboards, enriched historical import and full event sourcing.
 
@@ -196,11 +196,11 @@ unhandled. Keep changes focused; unrelated cleanup is separate work.
 - Shared packages never import service routes or entrypoints. Services consume
   pinned package releases instead of importing sibling source trees or copying
   shared behavior. Extract shared helpers from route modules before moving code.
-- `appchi-domain` may depend on contracts. Put only shared behavior in
+- `keep-domain` may depend on contracts. Put only shared behavior in
   it; keep HTTP routes, service-specific consumers and process entrypoints in their
   service repositories. Shared bounded lifecycle mechanics may receive explicit
   service-owned handlers without importing them.
-- Event/native definitions have one source in `appchi-contracts`. API and ingestion
+- Event/native definitions have one source in `keep-contracts`. API and ingestion
   generate their HTTP schemas and publish snapshots with producer revisions.
   Regenerate derived schemas and frontend types with the actual repository tools;
   never patch generated artifacts alone or hand-maintain a second schema authority.
@@ -218,7 +218,7 @@ unhandled. Keep changes focused; unrelated cleanup is separate work.
 
 ## Database, cutover and release discipline
 
-Keep one ordered PostgreSQL migration chain in `appchi-migrations`. Preserve
+Keep one ordered PostgreSQL migration chain in `keep-migrations`. Preserve
 published/applied filenames, numbering gaps, exact bytes and checksums; use new
 forward migrations for changes. Check the current chain before choosing a number.
 Do not create per-service migration runners against the shared schema.
@@ -243,9 +243,9 @@ For example, after verifying that the API checkout exists and has its own Git ro
 these commands run from the parent workspace:
 
 ```powershell
-git -C ./appchi-api rev-parse --show-toplevel
-git -C ./appchi-api status --short --branch
-git -C ./appchi-api diff --stat
+git -C ./keep-api rev-parse --show-toplevel
+git -C ./keep-api status --short --branch
+git -C ./keep-api diff --stat
 ```
 
 Check staged and untracked changes as well as ordinary diffs before editing or
@@ -321,7 +321,7 @@ Proceed with necessary reversible work across affected repositories. Production
 deployment and changes to shared company services require separate authorization;
 existing explicit authorization remains valid for its stated scope.
 
-The Appchi team owns the application and Keycloak configuration/operation.
+The Keep team owns the application and Keycloak configuration/operation.
 Dedicated teams own LDAP, PostgreSQL, Elasticsearch, Kafka, Redis, OpenShift, Kong
 and Grafana infrastructure, including retention, backups, HA, topology, allocation
 and service recovery. Define application requirements and verify supplied service
@@ -332,7 +332,7 @@ completion, local execution, integration qualification and production readiness
 are separate states; report only what the current evidence establishes.
 
 For repository layout or ownership changes, read
-[repository layout](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-repository-layout.md) for REV-37.
+[repository layout](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-repository-layout.md) for REV-37.
 From delivery, use `python scripts/workspace.py bootstrap`, then
 `python scripts/workspace.py install --editable` for coordinated local development.
 Git dependency pins and locks remain the release authority; local editable code

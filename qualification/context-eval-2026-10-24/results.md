@@ -1,7 +1,7 @@
 # Paired context-layer evaluation — 2026-10-24
 
 This is the first paired trial of the context layer that the
-[context guide](../../../appchi-design/context/README.md#maintain-and-evaluate-the-layer)
+[context guide](../../../keep-design/context/README.md#maintain-and-evaluate-the-layer)
 asks for before claiming a benefit. It measures planning only: each trial agent
 read the workspace and wrote a plan; nothing was implemented. With one run per
 condition and task, it shows where the conditions differed on these six tasks. It
@@ -31,7 +31,7 @@ is **not** a statistically supported claim that the layer helps or costs more.
 ## Method
 
 - **Snapshot:** `git archive` of each repository's `origin/main` into two scratch
-  copies. The without copy had `appchi-design/context/`, `scripts/context.py` and
+  copies. The without copy had `keep-design/context/`, `scripts/context.py` and
   `qualification/check_context.py` removed, and its trial prompt said the routing
   layer was unavailable. Repository AGENTS.md files still mention the map in
   both copies.
@@ -49,17 +49,17 @@ is **not** a statistically supported claim that the layer helps or costs more.
 
 | Repository | Revision |
 |---|---|
-| appchi-api | `08bf1ec` |
-| appchi-contracts | `5420c8f` |
-| appchi-correlation | `5cad5e3` |
-| appchi-delivery | `b66649f` |
-| appchi-design | `60debd7` |
-| appchi-domain | `d4fb748` |
-| appchi-frontend | `f1e7938` |
-| appchi-indexer | `7639693` |
-| appchi-ingestion | `c019991` |
-| appchi-migrations | `e34fdea` |
-| appchi-processor | `476320f` |
+| keep-api | `08bf1ec` |
+| keep-contracts | `5420c8f` |
+| keep-correlation | `5cad5e3` |
+| keep-delivery | `b66649f` |
+| keep-design | `60debd7` |
+| keep-domain | `d4fb748` |
+| keep-frontend | `f1e7938` |
+| keep-indexer | `7639693` |
+| keep-ingestion | `c019991` |
+| keep-migrations | `e34fdea` |
+| keep-processor | `476320f` |
 
 The design snapshot predates the Current scope notes, so this measures the layer
 as it was before those notes existed.
@@ -88,7 +88,7 @@ as it was before those notes existed.
   misses them (T4 with). The per-section Current scope notes added to design on
   2026-10-24 cover the affected acceptance sections. Moving the paragraphs into
   the preamble is a separate structural change.
-- **Retained inactivity engine:** `appchi-domain/src/appchi/inactivity.py` checks
+- **Retained inactivity engine:** `keep-domain/src/keep/inactivity.py` checks
   the legacy `ingest_items` table that migration 0045 fences, so its pending-source
   check would need redesign if inactivity sweeps are ever reinstated (T1 without).
 - **Incident list:** the table's "Linked alerts" column reads totals that the list

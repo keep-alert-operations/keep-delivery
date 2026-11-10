@@ -14,13 +14,13 @@ and correlation stopped. The Job's `--ingestion-and-writers-stopped` flag is an
 operator declaration, not a command that stops those workloads. Confirm the
 actual replicas and absence of other clients with write access before applying it.
 
-Prepare `appchi-indexer-env` and `appchi-indexer-bindings` as in the main guide:
+Prepare `keep-indexer-env` and `keep-indexer-bindings` as in the main guide:
 
-- `APPCHI_ENVIRONMENT=development`, `APPCHI_ROLE=indexer` (set by the Job), the shared `APPCHI_DEPLOYMENT_EPOCH`, a
+- `KEEP_ENVIRONMENT=development`, `KEEP_ROLE=indexer` (set by the Job), the shared `KEEP_DEPLOYMENT_EPOCH`, a
   restricted worker login and the usual wrapping/profile settings.
-- `APPCHI_ELASTICSEARCH_URL=https://SUPPLIED_ES_HOST:PORT`, a valid CA file and
+- `KEEP_ELASTICSEARCH_URL=https://SUPPLIED_ES_HOST:PORT`, a valid CA file and
   the actual supported API-key or client-certificate authentication.
-- `APPCHI_ELASTICSEARCH_INDEX` equal to the reserved alias in the binding.
+- `KEEP_ELASTICSEARCH_INDEX` equal to the reserved alias in the binding.
 - Current host and PostgreSQL clock evidence at the paths mounted by the Job.
 - `search-binding.json`, based on the [example](../../deploy/openshift/load-test/search-binding.example.json).
   Replace its evidence reference with the real allocation/exclusive-writer
@@ -48,16 +48,16 @@ After rendering the full bundle:
 oc -n "$NAMESPACE" apply --dry-run=server -f "$PRIVATE/rendered/36-search-bootstrap.json"
 oc -n "$NAMESPACE" apply -f "$PRIVATE/rendered/36-search-bootstrap.json"
 oc -n "$NAMESPACE" wait --for=condition=complete --timeout=600s \
-  "job/appchi-search-bootstrap-$RELEASE_ID"
-oc -n "$NAMESPACE" logs "job/appchi-search-bootstrap-$RELEASE_ID" \
+  "job/keep-search-bootstrap-$RELEASE_ID"
+oc -n "$NAMESPACE" logs "job/keep-search-bootstrap-$RELEASE_ID" \
   > "$PRIVATE/search-bootstrap-result.log"
 ```
 
 The Job runs the indexer image's explicit command:
 
 ```bash
-python -m appchi.search.bootstrap \
-  --binding /etc/appchi/search-binding.json \
+python -m keep.search.bootstrap \
+  --binding /etc/keep/search-binding.json \
   --physical-index YOUR_RESERVED_PHYSICAL_INDEX \
   --index-epoch YOUR_PRESERVED_INDEX_EPOCH_UUID \
   --operation-reference YOUR_TEST_REFERENCE \
@@ -75,7 +75,7 @@ reported cause while keeping writers stopped. A new `release_id` can name a new
 Job attempt, but retain the same search identity and binding. Inspect orphaned
 probe resources before cleaning them; never remove an index merely because its
 name resembles a probe. Do not change SQL gates or erase the reserved intent.
-For populated deployments use the existing `appchi.search.rebuild_cli` protocol,
+For populated deployments use the existing `keep.search.rebuild_cli` protocol,
 including its recovery prerequisites.
 
 After activation, start the normal indexer and processor, admit one synthetic
@@ -92,13 +92,13 @@ Admin credentials.
 
 The test bundle uses a singleton Kong StatefulSet and a headless member Service.
 Keep it at one replica. Its direct proxy URL is
-`https://appchi-kong-0.appchi-kong-members:8443`; the public `appchi-kong` Service
+`https://keep-kong-0.keep-kong-members:8443`; the public `keep-kong` Service
 is for normal traffic. The Kong certificate must cover this exact direct DNS name
 as well as the existing internal/public names. Start it with:
 
 ```bash
-oc -n "$NAMESPACE" scale statefulset/appchi-kong --replicas=1
-oc -n "$NAMESPACE" rollout status statefulset/appchi-kong --timeout=10m
+oc -n "$NAMESPACE" scale statefulset/keep-kong --replicas=1
+oc -n "$NAMESPACE" rollout status statefulset/keep-kong --timeout=10m
 ```
 
 Run `31-kong-routes.json` as documented in the bundle. Record its actual
@@ -111,19 +111,19 @@ Copy the API-owned configuration example:
 
 ```bash
 mkdir -p "$PRIVATE/operator-proof-bindings"
-cp ../appchi-api/docs/operator-proof.example.json \
+cp ../keep-api/docs/operator-proof.example.json \
   "$PRIVATE/operator-proof-bindings/configuration.json"
 ```
 
 Set its member to the observed UUID and direct URLs ending in
-`/__appchi/operator-check` and `/__appchi/operator-auth-check`. Use the actual Kong
+`/__keep/operator-check` and `/__keep/operator-auth-check`. Use the actual Kong
 CA at the configured path. Keep the documented bounded deadline below the API
 caller's timeout; slow/missing/inconsistent members must fail the operation.
 
 Prepare the actual operator binding using the schema in
-`appchi-api/src/appchi/operators/binding.py`. Both API and proof helper must mount
+`keep-api/src/keep/operators/binding.py`. Both API and proof helper must mount
 the same binding. Its `probe_url` is
-`https://appchi-operator-proof:8443/operator-check`. Its CA bundle must trust the
+`https://keep-operator-proof:8443/operator-check`. Its CA bundle must trust the
 proof certificate as well as the other configured remote HTTPS endpoints.
 Record actual Grafana organization/version, Kong version, complete rule inventory,
 reserved namespace, controlled-writer agreement and verification evidence. Retain
@@ -134,40 +134,40 @@ Populate the proof binding directory with only:
 - `configuration.json` and identical `operator-binding.json`.
 - `postgres-ca.crt` and the referenced Kong CA/bundle.
 - `probe-token`: the bearer secret also supplied to the Product API as
-  `APPCHI_OPERATOR_PROBE_TOKEN`.
+  `KEEP_OPERATOR_PROBE_TOKEN`.
 - `gateway-probe-token`: the distinct token installed into the Kong probe plugins
   by gateway bootstrap. It is not an operator ingestion key.
 
 Create private `operator-proof.env`:
 
 ```dotenv
-APPCHI_DEPLOYMENT_EPOCH=THE_SHARED_TEST_DEPLOYMENT_EPOCH
-APPCHI_PROOF_DATABASE_URL=postgresql://appchi_proof_login:ENCODED_PASSWORD@appchi-postgres:5432/appchi?sslmode=verify-full&sslrootcert=/etc/appchi/postgres-ca.crt&connect_timeout=1
+KEEP_DEPLOYMENT_EPOCH=THE_SHARED_TEST_DEPLOYMENT_EPOCH
+KEEP_PROOF_DATABASE_URL=postgresql://keep_proof_login:ENCODED_PASSWORD@keep-postgres:5432/keep?sslmode=verify-full&sslrootcert=/etc/keep/postgres-ca.crt&connect_timeout=1
 ```
 
 The [runtime login script](../../deploy/openshift/load-test/runtime-logins.sql)
-creates `appchi_proof_login` with the existing worker role and read-only transaction
+creates `keep_proof_login` with the existing worker role and read-only transaction
 default. Assign its own password using the documented interactive procedure.
 The helper uses read-only transactions and a bounded pool; account for its
 connections separately from the API's provisioning pool. These existing worker
 privileges are broader than the helper's reads; this isolated test-role setup is
 not a claim of a separately qualified production least-privilege role.
 
-Provision its server certificate with SAN `appchi-operator-proof` (and the full
+Provision its server certificate with SAN `keep-operator-proof` (and the full
 Service DNS name if used). Then:
 
 ```bash
-oc -n "$NAMESPACE" create secret generic appchi-operator-proof-env \
+oc -n "$NAMESPACE" create secret generic keep-operator-proof-env \
   --from-env-file="$PRIVATE/operator-proof.env"
-oc -n "$NAMESPACE" create secret generic appchi-operator-proof-bindings \
+oc -n "$NAMESPACE" create secret generic keep-operator-proof-bindings \
   --from-file="$PRIVATE/operator-proof-bindings/"
-oc -n "$NAMESPACE" create secret tls appchi-operator-proof-tls \
+oc -n "$NAMESPACE" create secret tls keep-operator-proof-tls \
   --cert="$PRIVATE/operator-proof-tls/tls.crt" \
   --key="$PRIVATE/operator-proof-tls/tls.key"
 oc -n "$NAMESPACE" apply --dry-run=server -f "$PRIVATE/rendered/32-operator-proof.json"
 oc -n "$NAMESPACE" apply -f "$PRIVATE/rendered/32-operator-proof.json"
-oc -n "$NAMESPACE" scale deploy/appchi-operator-proof --replicas=1
-oc -n "$NAMESPACE" rollout status deploy/appchi-operator-proof --timeout=5m
+oc -n "$NAMESPACE" scale deploy/keep-operator-proof --replicas=1
+oc -n "$NAMESPACE" rollout status deploy/keep-operator-proof --timeout=5m
 ```
 
 There is no public Route. NetworkPolicy admits only the Product API to this

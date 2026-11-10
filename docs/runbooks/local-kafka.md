@@ -19,8 +19,8 @@ All files were under workspace `.local/`. The combined KRaft broker/controller b
 Do not point normal CI at this failed local instance. Run the test against disposable Kafka in the supplied supported nonproduction environment:
 
 ```powershell
-$env:APPCHI_IDENTITY_TEST_ADMIN_URL = '<isolated PostgreSQL admin DSN>'
-$env:APPCHI_TEST_KAFKA_BOOTSTRAP = '<disposable Kafka bootstrap addresses>'
+$env:KEEP_IDENTITY_TEST_ADMIN_URL = '<isolated PostgreSQL admin DSN>'
+$env:KEEP_TEST_KAFKA_BOOTSTRAP = '<disposable Kafka bootstrap addresses>'
 .venv/Scripts/python.exe -m pytest tests/integration/test_kafka_pipeline.py -q --basetemp=.local/pytest-kafka
 ```
 

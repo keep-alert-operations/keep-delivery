@@ -5,8 +5,8 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.operators import synchronous
-from appchi.shared.errors import unavailable
+from keep.operators import synchronous
+from keep.shared.errors import unavailable
 from test_product import browser  # noqa: F401
 from test_search_pipeline import real_db  # noqa: F401
 from test_operator_repository import VerifiedFixture

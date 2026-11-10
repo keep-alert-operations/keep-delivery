@@ -8,12 +8,12 @@ from uuid import uuid4
 import psycopg
 import pytest
 
-from appchi.alerts.lifecycle import apply_source
-from appchi.alerts.repository import store_alert
-from appchi.correlation import repository, runtime
-from appchi.correlation.evidence import group_key
-from appchi.correlation.models import grouping
-from appchi.shared.transactions import coordinator
+from keep.alerts.lifecycle import apply_source
+from keep.alerts.repository import store_alert
+from keep.correlation import repository, runtime
+from keep.correlation.evidence import group_key
+from keep.correlation.models import grouping
+from keep.shared.transactions import coordinator
 from test_correlation_configuration import TEST_CAPACITY, create, definition, rules
 from test_correlation_runtime import drain, running, source
 from test_product import browser
@@ -119,7 +119,7 @@ def test_live_scope_does_not_lock_or_load_unrelated_dormant_context(running, rea
 def test_correlation_prepares_incoming_and_live_attachment_targets(
     running, real_db, v1, monkeypatch
 ):
-    from appchi.maintenance import runtime as maintenance
+    from keep.maintenance import runtime as maintenance
 
     _, _, tenant, _ = running
     create(running, definition())

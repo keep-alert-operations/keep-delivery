@@ -10,15 +10,15 @@ from uuid import uuid4
 from psycopg.types.json import Jsonb
 import pytest
 
-from appchi.ingestion.native import canonical
-from appchi.recovery.command_retention import (
+from keep.ingestion.native import canonical
+from keep.recovery.command_retention import (
     expired,
     compact_ordinary_command,
     command_retention_turn,
 )
-from appchi.recovery.evidence import DurableAck
-from appchi.shared.errors import AppError, unavailable
-from appchi.shared.transactions import command_result
+from keep.recovery.evidence import DurableAck
+from keep.shared.errors import AppError, unavailable
+from keep.shared.transactions import command_result
 from test_search_pipeline import real_db as isolated_db
 from test_product import browser  # noqa: F401
 
@@ -227,7 +227,7 @@ def test_worker_role_bounded_scan(real_db, tenant):
     @contextmanager
     def role(*args, **kwargs):
         with original(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             yield conn
 
     real_db.transaction = role
@@ -284,12 +284,12 @@ def test_api_role_expiry_before_cleanup_and_conflict_precedence(real_db, tenant)
     key = seed(real_db, tenant)
     with pytest.raises(AppError, match="command_result_expired"):
         with real_db.transaction(tenant) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             command_result(conn, *key)
     assert receipt(real_db, key)["result"] is not None
     with pytest.raises(AppError, match="idempotency_conflict"):
         with real_db.transaction(tenant) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             command_result(conn, *key[:2], {**key[2], "name": "different"})
 
 
@@ -309,7 +309,7 @@ def test_http_preset_save_registers_and_expired_retry_cannot_reexecute(browser, 
     @contextmanager
     def api_role(*args, **kwargs):
         with original(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             yield conn
 
     real_db.transaction = api_role

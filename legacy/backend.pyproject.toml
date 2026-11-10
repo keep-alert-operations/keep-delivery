@@ -1,7 +1,7 @@
 [project]
-name = "appchi"
+name = "keep"
 version = "0.1.0"
-description = "Appchi alerts management"
+description = "Keep alerts management"
 requires-python = ">=3.13,<3.14"
 dependencies = [
   "fastapi>=0.115,<1",
@@ -28,7 +28,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["appchi"]
+packages = ["keep"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

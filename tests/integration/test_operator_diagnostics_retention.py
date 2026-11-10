@@ -10,12 +10,12 @@ import psycopg
 from psycopg.types.json import Jsonb
 import pytest
 
-from appchi.operators.cleanup import cleanup_operation, cleanup_turn
-from appchi.operators.executor_ledger import PostgresLedger
-from appchi.operators.worker import Work, VerifiedResult, complete
-from appchi.recovery.command_retention import compact_ordinary_command
-from appchi.shared.errors import AppError
-from appchi.shared.transactions import coordinator
+from keep.operators.cleanup import cleanup_operation, cleanup_turn
+from keep.operators.executor_ledger import PostgresLedger
+from keep.operators.worker import Work, VerifiedResult, complete
+from keep.recovery.command_retention import compact_ordinary_command
+from keep.shared.errors import AppError
+from keep.shared.transactions import coordinator
 from test_command_retention import Store, seed as receipt_seed
 from test_maintenance_repository import maintenance_db  # noqa: F401
 from test_operator_repository import operators  # noqa: F401
@@ -112,7 +112,7 @@ def test_bounded_resume_keeps_minimal_fence_and_rejects_late_workers(real_db, te
             (tenant, operator),
         )
     before = row(real_db, operation)
-    worker = RoleDB(real_db, "appchi_worker")
+    worker = RoleDB(real_db, "keep_worker")
     assert not cleanup_operation(worker, tenant, operator, operation, limit=1)
     assert not cleanup_operation(worker, tenant, operator, operation, limit=1)
     assert cleanup_operation(worker, tenant, operator, operation, limit=1)
@@ -246,7 +246,7 @@ def test_api_hides_expired_terminal_diagnostics_but_keeps_unfinished(operators, 
     path = f"{base}/{operator}/operations/"
     assert client.get(path + str(expired)).status_code == 404
     assert client.get(path + str(pending)).status_code == 200
-    api = RoleDB(real_db, "appchi_api")
+    api = RoleDB(real_db, "keep_api")
     assert cleanup_operation(real_db, tenant, operator, expired)
     with pytest.raises(psycopg.errors.CheckViolation), api.transaction(tenant) as conn:
         conn.execute(

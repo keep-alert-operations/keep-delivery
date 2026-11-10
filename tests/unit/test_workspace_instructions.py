@@ -11,7 +11,7 @@ def workspace(tmp_path, monkeypatch):
     spec = importlib.util.spec_from_file_location("workspace_setup", script)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    delivery = tmp_path / "appchi-delivery"
+    delivery = tmp_path / "keep-delivery"
     canonical = delivery / "workspace"
     canonical.mkdir(parents=True)
     (canonical / "AGENTS.md").write_text("Shared guidance\n", encoding="utf-8")
@@ -83,9 +83,9 @@ def editable_install(module, root, monkeypatch, *, pip=True, requires=None):
     and records each pinned package as installed, so the install loop converges.
     """
     resolver = load_requirements()
-    sibling = root / "appchi-api"
+    sibling = root / "keep-api"
     sibling.mkdir(exist_ok=True)
-    (sibling / "pyproject.toml").write_text("[project]\nname='appchi-api'\n")
+    (sibling / "pyproject.toml").write_text("[project]\nname='keep-api'\n")
     environment = root / "env"
     requires = requires or {}
     installed = set()
@@ -113,7 +113,7 @@ def editable_install(module, root, monkeypatch, *, pip=True, requires=None):
         module.subprocess, "run",
         lambda *a, **k: module.subprocess.CompletedProcess(a, 0 if pip else 1),
     )
-    module.install(root, {"repositories": {"appchi-api": {}}}, editable=True)
+    module.install(root, {"repositories": {"keep-api": {}}}, editable=True)
     python = environment / ("Scripts/python.exe" if module.os.name == "nt" else "bin/python")
     return calls, pins, sibling, str(python)
 
@@ -127,9 +127,9 @@ def test_install_validates_lock_then_syncs_before_editable_overrides(workspace, 
     assert calls[3] == ([python, "-m", "pip", "install", "--no-deps",
                          "--editable", str(sibling)], module.DELIVERY)
     assert calls[4][0][:2] == [python, str(module.REQUIREMENTS)]
-    assert module.json.loads(calls[4][0][2])["distributions"] == {"appchi-api": None}
+    assert module.json.loads(calls[4][0][2])["distributions"] == {"keep-api": None}
     assert calls[5][0][-1] == "ci"
-    assert calls[5][1] == root / "appchi-frontend"
+    assert calls[5][1] == root / "keep-frontend"
     assert pins == []
 
 
@@ -142,13 +142,13 @@ def test_install_restores_pip_in_an_environment_without_it(workspace, monkeypatc
 
 def test_requirement_added_by_local_source_installs_from_its_lock(workspace, monkeypatch):
     module, root, _ = workspace
-    (root / "appchi-api").mkdir()
-    (root / "appchi-api" / "poetry.lock").write_text(
+    (root / "keep-api").mkdir()
+    (root / "keep-api" / "poetry.lock").write_text(
         '[[package]]\nname = "httptools"\nversion = "0.8.0"\ngroups = ["main"]\n'
         'files = [{file = "a.whl", hash = "sha256:aa"}, {file = "b.tar.gz", hash = "sha256:bb"}]\n'
     )
     calls, pins, _, python = editable_install(
-        module, root, monkeypatch, requires={"appchi-api": ["httptools>=0.8,<1"]}
+        module, root, monkeypatch, requires={"keep-api": ["httptools>=0.8,<1"]}
     )
     assert pins == ["httptools==0.8.0 --hash=sha256:aa --hash=sha256:bb\n"]
     install = next(args for args, _ in calls if "-r" in args)
@@ -158,7 +158,7 @@ def test_requirement_added_by_local_source_installs_from_its_lock(workspace, mon
 def test_requirement_pinned_by_no_lock_stops_install(workspace, monkeypatch):
     module, root, _ = workspace
     with pytest.raises(ValueError, match="No sibling lock pins"):
-        editable_install(module, root, monkeypatch, requires={"appchi-api": ["unlocked-package"]})
+        editable_install(module, root, monkeypatch, requires={"keep-api": ["unlocked-package"]})
 
 
 def test_declaring_source_lock_wins_over_conflicting_sibling_lock():
@@ -169,7 +169,7 @@ def test_declaring_source_lock_wins_over_conflicting_sibling_lock():
         "api.lock": [{"name": "httptools", "version": "0.8.0", "groups": ["main"]}],
     }
     result = resolver.resolve(
-        {"appchi-api": "api.lock"}, locks, lambda name: ["httptools>=0.6,<1"], set()
+        {"keep-api": "api.lock"}, locks, lambda name: ["httptools>=0.6,<1"], set()
     )
     assert [(pin["version"], pin["lock"]) for pin in result["pins"]] == [("0.8.0", "api.lock")]
     assert result["unresolved"] == []
@@ -186,7 +186,7 @@ def test_lock_entries_outside_main_group_platform_or_specifier_are_rejected():
         {"name": "too-old", "version": "0.5", "groups": ["main"]},
     ]}
     requires = ["dev-only", "other-platform", "group-marker", "too-old>=0.8"]
-    result = resolver.resolve({"appchi-api": "api.lock"}, locks, lambda name: requires, set())
+    result = resolver.resolve({"keep-api": "api.lock"}, locks, lambda name: requires, set())
     assert result["pins"] == []
     assert len(result["unresolved"]) == 4
 
@@ -194,13 +194,13 @@ def test_lock_entries_outside_main_group_platform_or_specifier_are_rejected():
 def test_second_declarer_outside_the_chosen_version_is_unresolved():
     resolver = load_requirements()
     locks = {"api.lock": [{"name": "httptools", "version": "0.8.0", "groups": ["main"]}]}
-    requires = {"appchi-api": ["httptools>=0.8"], "appchi-ingestion": ["httptools<0.7"]}
+    requires = {"keep-api": ["httptools>=0.8"], "keep-ingestion": ["httptools<0.7"]}
     result = resolver.resolve(
-        {"appchi-api": "api.lock", "appchi-ingestion": "api.lock"}, locks,
+        {"keep-api": "api.lock", "keep-ingestion": "api.lock"}, locks,
         lambda name: requires[name], set(),
     )
     assert [pin["version"] for pin in result["pins"]] == ["0.8.0"]
-    assert result["unresolved"] == ["httptools<0.7 (required by appchi-ingestion; 0.8.0 chosen)"]
+    assert result["unresolved"] == ["httptools<0.7 (required by keep-ingestion; 0.8.0 chosen)"]
 
 
 def test_invalid_lock_stops_before_sync_or_editable_changes(workspace, monkeypatch):

@@ -9,11 +9,11 @@ operator serving-pool proof. Usage is in
 
 | Repository | Starting revision | Task changes |
 | --- | --- | --- |
-| appchi-indexer | `ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3` | Explicit initial-development bootstrap, live disposable ES probe, durable retry ownership, SQL activation fences and tests |
-| appchi-api | `0b8a1a351378d0a7952a405b6fac4db1d03c6096` | Internal HTTPS proof service with exact member/binding validation, before/after read-only SQL checks, bounded direct gateway probes and tests |
-| appchi-delivery | `2d1fc70b942eae2590855538d7ca7cc6d67128ca` | Bootstrap Job, proof Deployment/Secrets/network rules, direct singleton Kong StatefulSet DNS, restricted login setup and operating instructions |
-| appchi-design | `7bf631cf8613cca0e10139cc5cd2b391778f9d8e` | Assistant-selected implementation boundaries and acceptance scenarios under existing REV-33/34 |
-| appchi-ingestion | `0d2ee23a7940c2c0866498aa0646587f101651bc` | Existing Kong probe contract consumed; no plugin source change |
+| keep-indexer | `ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3` | Explicit initial-development bootstrap, live disposable ES probe, durable retry ownership, SQL activation fences and tests |
+| keep-api | `0b8a1a351378d0a7952a405b6fac4db1d03c6096` | Internal HTTPS proof service with exact member/binding validation, before/after read-only SQL checks, bounded direct gateway probes and tests |
+| keep-delivery | `2d1fc70b942eae2590855538d7ca7cc6d67128ca` | Bootstrap Job, proof Deployment/Secrets/network rules, direct singleton Kong StatefulSet DNS, restricted login setup and operating instructions |
+| keep-design | `7bf631cf8613cca0e10139cc5cd2b391778f9d8e` | Assistant-selected implementation boundaries and acceptance scenarios under existing REV-33/34 |
+| keep-ingestion | `0d2ee23a7940c2c0866498aa0646587f101651bc` | Existing Kong probe contract consumed; no plugin source change |
 
 These are local working-tree changes on the listed bases, not new published
 release commits. Existing Dockerfile, local-runtime, workspace and executor
@@ -85,21 +85,21 @@ Reproduction entry points, from their owning repositories with the documented
 editable delivery environment and the integration-specific private environment:
 
 ```text
-appchi-api:     python -m pytest tests/unit -q
-appchi-api:     python -m pytest tests/integration/test_operator_proof_postgres.py -q
-appchi-indexer: python -m pytest tests/unit -q
-appchi-indexer: python -m pytest tests/integration/test_search_bootstrap_integration.py tests/compatibility/test_search_elasticsearch.py -q
-appchi-delivery: python -m pytest tests/unit -q --basetemp=.local/pytest-cluster-delivery-final --tb=short
-appchi-delivery: python qualification/check_contracts.py
-appchi-delivery: python qualification/verify_boundaries.py
-appchi-delivery: python qualification/verify_documents.py
-appchi-design: python scripts/check_docs.py
+keep-api:     python -m pytest tests/unit -q
+keep-api:     python -m pytest tests/integration/test_operator_proof_postgres.py -q
+keep-indexer: python -m pytest tests/unit -q
+keep-indexer: python -m pytest tests/integration/test_search_bootstrap_integration.py tests/compatibility/test_search_elasticsearch.py -q
+keep-delivery: python -m pytest tests/unit -q --basetemp=.local/pytest-cluster-delivery-final --tb=short
+keep-delivery: python qualification/check_contracts.py
+keep-delivery: python qualification/verify_boundaries.py
+keep-delivery: python qualification/verify_documents.py
+keep-design: python scripts/check_docs.py
 ```
 
 The service READMEs describe required test environment variables. Integration
 fixtures use fresh synthetic databases and live TLS/authenticated Elasticsearch;
 do not point them at shared application data. The final search JUnit file is
-retained locally at `appchi-indexer/.local/search-bootstrap-final.xml`; private
+retained locally at `keep-indexer/.local/search-bootstrap-final.xml`; private
 credentials and fixture files remain ignored and are not release evidence.
 
 ## Remaining environment execution

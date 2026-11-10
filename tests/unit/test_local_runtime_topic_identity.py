@@ -30,8 +30,8 @@ def control(monkeypatch, row):
         database_url=SimpleNamespace(get_secret_value=lambda: "postgresql://"),
         deployment_epoch="local",
     )
-    monkeypatch.setattr("appchi.config.Settings", lambda: settings)
-    monkeypatch.setattr("appchi.db.Database", Database)
+    monkeypatch.setattr("keep.config.Settings", lambda: settings)
+    monkeypatch.setattr("keep.db.Database", Database)
 
 
 @pytest.mark.parametrize(

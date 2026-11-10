@@ -8,11 +8,11 @@ from uuid import uuid4
 import pytest
 from psycopg.types.json import Jsonb
 
-from appchi.kafka_cutover import activate, inspect_rules, require_drained
-from appchi.kafka_source import same_topic, topic_identity
-from appchi.ingestion.service import Admission
-from appchi.ingestion.native import canonical
-from appchi.shared.errors import AppError
+from keep.kafka_cutover import activate, inspect_rules, require_drained
+from keep.kafka_source import same_topic, topic_identity
+from keep.ingestion.service import Admission
+from keep.ingestion.native import canonical
+from keep.shared.errors import AppError
 from test_correlation_configuration import rules, create, definition, edit  # noqa: F401
 from test_product import browser  # noqa: F401
 from test_search_pipeline import real_db  # noqa: F401
@@ -27,7 +27,7 @@ def test_offline_cutover_blocks_saved_assignee_and_starts_after_old_records(
     from confluent_kafka import Consumer, Producer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
 
-    bootstrap = os.getenv("APPCHI_TEST_KAFKA_BOOTSTRAP")
+    bootstrap = os.getenv("KEEP_TEST_KAFKA_BOOTSTRAP")
     if not bootstrap:
         pytest.skip("Requires isolated Kafka")
     row, command = create(rules)
@@ -53,7 +53,7 @@ def test_offline_cutover_blocks_saved_assignee_and_starts_after_old_records(
     assert any(str(value[1]) == row["id"] for value in inspect_rules(real_db))
     env = "cutover-" + uuid4().hex
     config = SimpleNamespace(environment=env, kafka_bootstrap=bootstrap)
-    topics = [f"appchi.{env}.alerts.{stream}" for stream in ("received", "changed")]
+    topics = [f"keep.{env}.alerts.{stream}" for stream in ("received", "changed")]
     admin = AdminClient({"bootstrap.servers": bootstrap})
     for future in admin.create_topics([NewTopic(t, 1, 1) for t in topics]).values():
         future.result(15)
@@ -71,7 +71,7 @@ def test_offline_cutover_blocks_saved_assignee_and_starts_after_old_records(
         assert same_topic(topic_id, topic_identity(admin, topic))
     for role, positions in result.items():
         assert positions[0]["next_offset"] == 1
-        consumer = Consumer({"bootstrap.servers": bootstrap, "group.id": f"appchi.{env}.{role}-v2"})
+        consumer = Consumer({"bootstrap.servers": bootstrap, "group.id": f"keep.{env}.{role}-v2"})
         try:
             assert (
                 consumer.committed([TopicPartition(positions[0]["topic"], 0)], timeout=5)[0].offset

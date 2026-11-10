@@ -101,7 +101,7 @@ Windows workstation with 16 GiB host RAM and a Docker allocation of 12 CPUs/8 Gi
 Existing unrelated application containers and their volumes were preserved;
 the three BI containers were temporarily paused only after explicit user approval
 and restarted after the isolated capacity attempt. Heavy native CEL,
-database/search workloads and browser/build suites are serialized. Existing Appchi
+database/search workloads and browser/build suites are serialized. Existing Keep
 PostgreSQL, Kafka, Elasticsearch and Redis containers/volumes are reused; integration
 tests create uniquely named disposable databases/indexes/topics and clean their
 own fixtures. No shared or production service is exercised.
@@ -298,14 +298,14 @@ calls reported Docker exit-event/zombie errors before inspection confirmed all
 three exited. Their volumes and configuration were preserved. Restoration is
 recorded below and was confirmed again at handoff.
 
-During a subsequent small fixture's database creation, Appchi PostgreSQL logged
+During a subsequent small fixture's database creation, Keep PostgreSQL logged
 an untracked child exiting with code 2 and restarted its server processes. It
 completed recovery at 2026-10-06 21:36:41 UTC. PostgreSQL was PID 1; the exact
 origin of the orphan is unproven. Its [postmaster source](https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/postmaster/postmaster.c)
 confirms that this exit status takes the child-crash path. Local Compose now
 enables [`init`](https://docs.docker.com/reference/compose-file/services/#init)
 for both PostgreSQL containers, delegating orphan reaping to an init process.
-Only the Appchi PostgreSQL container was recreated at this point, retaining its
+Only the Keep PostgreSQL container was recreated at this point, retaining its
 named volume; configuration validation, `HostConfig.Init=true`, container health
 and `pg_isready` all passed. This is local runtime hardening, not a change to the
 company database service. The uncertain fixture database was confirmed absent.
@@ -328,7 +328,7 @@ After that attempt, all three exact previously running BI containers were
 restarted. Their current state and health observations are recorded in
 `status/evidence/scalability-container-restoration.json`; no BI configuration or
 volume was changed. Both configured health checks (Elasticsearch and SQL Server)
-passed; Kibana is running without a configured health check. Appchi's unused
+passed; Kibana is running without a configured health check. Keep's unused
 Kafka/Elasticsearch containers were then temporarily stopped, preserving volumes,
 to give the restored services and controlled-browser checks memory headroom.
 Both were restarted before the subsequent real-service checks and paced baseline.
@@ -429,7 +429,7 @@ fixtures and successful unit tests do not close those deployment gates.
 
 ## Final verification commands
 
-The persistent isolated `appchi_local` database was migrated through 0050 with
+The persistent isolated `keep_local` database was migrated through 0050 with
 the dedicated migration identity while application writers were stopped.
 Initial full local startup then encountered Windows' reserved TCP range
 58447â€“58546, covering the existing Kong Admin and Grafana bindings. The
@@ -441,13 +441,13 @@ configuration and Compose consume the same validated values. **29 local setup
 unit cases**, Ruff, PowerShell syntax and Compose configuration checks passed.
 This does not prescribe company infrastructure ports or alter Windows networking.
 
-Commands below run from `appchi-delivery` unless a repository is named. Private
+Commands below run from `keep-delivery` unless a repository is named. Private
 loopback credentials are loaded by the ignored helper, never placed in command
 arguments or evidence. Each real database fixture has a unique disposable name.
 
 ```powershell
 .venv/Scripts/python.exe scripts/workspace.py test
-.venv/Scripts/python.exe .local/run_scale_checks.py appchi-delivery ../appchi-migrations/tests/unit ../appchi-migrations/tests/integration/test_alembic.py ../appchi-indexer/tests/compatibility/test_search_elasticsearch.py ../appchi-domain/tests/compatibility/test_count_elasticsearch.py -q --tb=short --junitxml=qualification/pytest-local-runtime-es.xml
+.venv/Scripts/python.exe .local/run_scale_checks.py keep-delivery ../keep-migrations/tests/unit ../keep-migrations/tests/integration/test_alembic.py ../keep-indexer/tests/compatibility/test_search_elasticsearch.py ../keep-domain/tests/compatibility/test_count_elasticsearch.py -q --tb=short --junitxml=qualification/pytest-local-runtime-es.xml
 ```
 
 A final coordinated unit attempt stopped at 383 domain passes and one failure
@@ -477,5 +477,5 @@ agent-setup work remains local. Ignored credentials, runtime state and build
 outputs are excluded. Earlier execution used the documented dirty editable
 combination and is not proof of a clean checkout of these publication branches.
 No local tests were rerun after the user stopped testing. Dependency resolution
-changed only Appchi references, not third-party package records. Publication
+changed only Keep references, not third-party package records. Publication
 does not merge the branches, deploy services or close capacity/readiness gates.

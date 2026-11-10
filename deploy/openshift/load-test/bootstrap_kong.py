@@ -53,7 +53,7 @@ def validate(config):
         raise ValueError("Supply the private-ingestion DNS hostname")
     if type(config["upstream_port"]) is not int or not 1 <= config["upstream_port"] <= 65535:
         raise ValueError("Supply the private-ingestion TLS port")
-    if config["clock_health_file"] != "/run/appchi-clock/health.json":
+    if config["clock_health_file"] != "/run/keep-clock/health.json":
         raise ValueError("Use the mounted, continuously refreshed clock evidence")
 
 
@@ -62,8 +62,8 @@ def routes(probe_token, member_id, clock_file):
     result = []
     for short, path in (("native", "/api/ingest/v2/"),
                         ("grafana", "/api/ingest/v2/grafana"),
-                        ("probe", "/__appchi/operator-check"),
-                        ("active-probe", "/__appchi/operator-auth-check")):
+                        ("probe", "/__keep/operator-check"),
+                        ("active-probe", "/__keep/operator-auth-check")):
         pre = HEADER_CLEANUP + (GRAFANA_AUTH if short == "grafana" else NATIVE_AUTH)
         plugins = [{"name": "pre-function", "config": {"access": [pre]}}]
         if short != "probe":
@@ -71,12 +71,12 @@ def routes(probe_token, member_id, clock_file):
                 "key_names": ["X-API-Key"], "hide_credentials": True,
                 "key_in_header": True, "key_in_query": False, "key_in_body": False,
             }})
-        plugins.append({"name": "appchi-policy", "config": {
+        plugins.append({"name": "keep-policy", "config": {
             "member_id": member_id, "probe": short == "probe",
             "probe_active": short == "active-probe", "probe_token": probe_token,
             "clock_health_file": clock_file, "unqualified_local_clock": False,
         }})
-        result.append((f"appchi-test-{short}", path, plugins))
+        result.append((f"keep-test-{short}", path, plugins))
     return result
 
 
@@ -91,14 +91,14 @@ def bootstrap(config, request, probe_token, upstream_ca):
         existing = request("GET", f"/{kind}?size=1")
         if existing.get("data") or existing.get("next"):
             raise ValueError(f"Kong {kind} are not empty; inspect partial/existing setup manually")
-    node = request("GET", "/appchi-policy-node")
+    node = request("GET", "/keep-policy-node")
     member_id = node.get("member_id")
     if not isinstance(member_id, str) or not member_id:
-        raise ValueError("Installed Appchi plugin did not return a serving member identity")
+        raise ValueError("Installed Keep plugin did not return a serving member identity")
     ca_id = str(uuid4())
     request("PUT", "/ca_certificates/" + ca_id, {"cert": upstream_ca})
-    service = request("PUT", "/services/appchi-test-v2", {
-        "name": "appchi-test-v2", "protocol": "https", "host": config["upstream_host"],
+    service = request("PUT", "/services/keep-test-v2", {
+        "name": "keep-test-v2", "protocol": "https", "host": config["upstream_host"],
         "port": config["upstream_port"], "tls_verify": True, "ca_certificates": [ca_id],
     })
     for name, path, plugins in routes(probe_token, member_id, config["clock_health_file"]):

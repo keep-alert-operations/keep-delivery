@@ -4,10 +4,10 @@
 import json
 from uuid import uuid4
 import pytest
-from appchi.operators.routes import router
-from appchi.operators.worker import run_one as single_turn, VerifiedResult
-from appchi.operators.remote import CapabilityManifest, REQUIRED_CAPABILITIES
-from appchi.operators.repository import routing
+from keep.operators.routes import router
+from keep.operators.worker import run_one as single_turn, VerifiedResult
+from keep.operators.remote import CapabilityManifest, REQUIRED_CAPABILITIES
+from keep.operators.repository import routing
 from test_product import browser  # noqa: F401
 
 pytestmark = pytest.mark.integration
@@ -91,7 +91,7 @@ def operators(browser, real_db, tenant, monkeypatch):
     # State-machine tests deliberately step the retained engine themselves.
     # The unmodified HTTP lifecycle is tested in test_operator_synchronous.py.
     from fastapi.responses import JSONResponse
-    monkeypatch.setattr("appchi.operators.routes.finish",
+    monkeypatch.setattr("keep.operators.routes.finish",
                         lambda request, tenant, result: JSONResponse(result, status_code=202))
     client, actor = browser
     if not any(
@@ -240,8 +240,8 @@ def test_revoke_during_external_attempt_fences_activation(operators, real_db, ci
 def test_replacement_supersedes_keyless_cleanup_and_fences_late_completion(
     operators, real_db, cipher, phase, revoke_one
 ):
-    from appchi.operators.executor_ledger import PostgresLedger
-    from appchi.operators.worker import claim, complete, work_input
+    from keep.operators.executor_ledger import PostgresLedger
+    from keep.operators.worker import claim, complete, work_input
 
     client, base, _ = operators
     if phase == "initial_rename":
@@ -261,9 +261,9 @@ def test_replacement_supersedes_keyless_cleanup_and_fences_late_completion(
             rename_ledger = PostgresLedger(real_db).begin(rename_work, "profile-digest")
             rename_edit = {
                 "uid": "rule1",
-                "old_key": "Appchi - " + op["name"],
+                "old_key": "Keep - " + op["name"],
                 "old_value": "true",
-                "new_key": "Appchi - " + op["pending_name"],
+                "new_key": "Keep - " + op["pending_name"],
                 "new_value": None,
             }
             rename_ledger.record(rename_edit)
@@ -336,7 +336,7 @@ def test_rename_claims_are_global_and_commit_only_after_verification(operators, 
         assert client.post(base, json={"command_id": str(uuid4()), "name": name}).status_code == 409
     with real_db.transaction() as conn:
         row = conn.execute("SELECT * FROM operators WHERE id=%s", (op["id"],)).fetchone()
-        assert routing(conn, row).labels() == ("Appchi - " + old, "Appchi - " + new)
+        assert routing(conn, row).labels() == ("Keep - " + old, "Keep - " + new)
     due(real_db, response.json()["data"]["operation"]["id"])
     assert run_one(real_db, cipher, VerifiedFixture())
     result = client.get(path).json()["data"]
@@ -349,9 +349,9 @@ def test_keyless_cancellation_can_prepare_replacement_without_losing_restoration
     operators, real_db, cipher, original
 ):
     from dataclasses import replace
-    from appchi.operators.executor_ledger import PostgresLedger
-    from appchi.operators.worker import claim, complete, work_input
-    from appchi.shared.errors import AppError
+    from keep.operators.executor_ledger import PostgresLedger
+    from keep.operators.worker import claim, complete, work_input
+    from keep.shared.errors import AppError
 
     client, base, _ = operators
     op = create(operators)[0] if original == "delete_initial" else ready(operators, real_db, cipher)
@@ -375,9 +375,9 @@ def test_keyless_cancellation_can_prepare_replacement_without_losing_restoration
     journal = PostgresLedger(real_db).begin(original_work, "profile-digest")
     edit = {
         "uid": "rule1",
-        "old_key": "Appchi - " + old_name,
+        "old_key": "Keep - " + old_name,
         "old_value": "true",
-        "new_key": "Appchi - " + pending["operator"]["pending_name"]
+        "new_key": "Keep - " + pending["operator"]["pending_name"]
         if original == "rename"
         else None,
         "new_value": None,
@@ -496,7 +496,7 @@ def test_operator_authorization_and_cross_tenant_concealment(operators, browser,
 
 
 def test_activation_restore_gate_and_expired_material_cleanup(operators, real_db, cipher):
-    from appchi.operators.worker import expire_due
+    from keep.operators.worker import expire_due
 
     client, base, _ = operators
     op, job, _ = create(operators)
@@ -555,8 +555,8 @@ def test_initial_delete_cancel_resumes_same_prepared_setup(operators, real_db, c
 
 
 def test_name_conflict_stays_generic_under_runtime_rls(operators, real_db):
-    from appchi.operators.repository import claim_name
-    from appchi.shared.errors import AppError
+    from keep.operators.repository import claim_name
+    from keep.shared.errors import AppError
 
     op, _, _ = create(operators)
     other = str(uuid4())
@@ -567,7 +567,7 @@ def test_name_conflict_stays_generic_under_runtime_rls(operators, real_db):
         )
     with pytest.raises(AppError) as error:
         with real_db.transaction(other) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             new = conn.execute(
                 "INSERT INTO operators(id,tenant_id,name,name_key,lifecycle) VALUES(%s,%s,%s,%s,'setup_pending') RETURNING *",
                 (uuid4(), other, op["name"], op["name"].casefold()),
@@ -579,9 +579,9 @@ def test_name_conflict_stays_generic_under_runtime_rls(operators, real_db):
 def test_pending_native_input_blocks_delete_without_changing_keys(
     operators, real_db, cipher, profile
 ):
-    from appchi.ingestion.service import Admission
-    from appchi.ingestion.gateway import GatewayIdentity
-    from appchi.ingestion.native import canonical
+    from keep.ingestion.service import Admission
+    from keep.ingestion.gateway import GatewayIdentity
+    from keep.ingestion.native import canonical
 
     client, base, _ = operators
     op = ready(operators, real_db, cipher)

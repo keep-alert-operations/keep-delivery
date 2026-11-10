@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 500" role="img" aria-labelledby="title desc">
-<title id="title">How Appchi concepts connect</title><desc id="desc">A tenant contains alerts, incidents, presets and dashboards. Incidents coordinate related alerts. Presets select alerts and dashboards count the selections. Suppression excludes alerts from ordinary views without deleting them.</desc>
+<title id="title">How Keep concepts connect</title><desc id="desc">A tenant contains alerts, incidents, presets and dashboards. Incidents coordinate related alerts. Presets select alerts and dashboards count the selections. Suppression excludes alerts from ordinary views without deleting them.</desc>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#56736f" stroke-width="1.5"/></marker></defs>
 <rect width="1100" height="500" rx="24" fill="#f3f5f1"/>
 <g font-family="Arial, sans-serif" fill="#193c37"><text x="38" y="47" font-size="25" font-weight="bold">One tenant · shared data and access</text><text x="38" y="78" font-size="18">Start by choosing the workspace you intend to investigate.</text></g>

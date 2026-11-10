@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.correlation.consumer import correlate_record
+from keep.correlation.consumer import correlate_record
 from test_correlation_configuration import TEST_CAPACITY, create, definition, rules  # noqa: F401
 # Host-clock receipts may lead the database clock; wait it out like the consumer.
 from test_kafka_first import apply_waiting, receipt
@@ -72,7 +72,7 @@ def receive(db, config, payload, offset=0, received=None):
 def consume(db, config, changed, offset=0):
     envelope = json.loads(changed)
     message = SimpleNamespace(value=lambda: changed, key=lambda: config.global_tenant_id.bytes,
-        topic=lambda: "appchi.inline-test.alerts.changed", partition=lambda: 0, offset=lambda: offset)
+        topic=lambda: "keep.inline-test.alerts.changed", partition=lambda: 0, offset=lambda: offset)
     correlate_record(db, config, CAPACITY, message)
     return UUID(envelope["alert_id"])
 

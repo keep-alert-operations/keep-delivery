@@ -3,8 +3,8 @@
 Status: implementation plan with an isolated prerequisite implementation, **not a
 normative supplement, completed measurement feature, or qualification claim**.
 The interfaces below are assistant-selected implementation proposals. Normative
-requirements remain in [alerts/history technical section 21](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-history-technical.md)
-and [reliability sections 4, 7 and 19](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-reliability-operations.md).
+requirements remain in [alerts/history technical section 21](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-alert-history-technical.md)
+and [reliability sections 4, 7 and 19](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-reliability-operations.md).
 
 ## Measurement boundary and existing capabilities
 
@@ -29,7 +29,7 @@ responses disappear from the denominator.
 
 ## Phase 1: bounded registry implemented, explicitly configured
 
-The new `backend/appchi/visibility/` package implements only strict DTOs,
+The new `backend/keep/visibility/` package implements only strict DTOs,
 deterministic sampling, and durable reported view lifecycle. Migration
 `migrations/0031_visibility_registry.sql` was published after parent review and
 isolated PostgreSQL tests. The subsequent producer increment mounts the registry
@@ -323,7 +323,7 @@ Older snapshots lacking the versioned evidence cannot be inferred complete.
 
 The capacity profile may contain an explicit `visibility` object with exactly
 `version`, `policy_epoch`, `deployment_epoch`, `qualification`, `inputs` and
-`registry`. Version is `appchi-visibility-capture-v1`; the two allocation objects
+`registry`. Version is `keep-visibility-capture-v1`; the two allocation objects
 use the `InputLimits` and `RegistryLimits` fields above. No deployment allocation
 or retention default is supplied. A missing object disables new capture; malformed
 configuration or a deployment epoch mismatch prevents workload startup.
@@ -346,7 +346,7 @@ rollback rolls its observation link back too. Existing seeds continue linking
 after capture configuration is removed. Storage exhaustion records gaps while
 otherwise valid product work continues.
 
-Run `python -m appchi.worker visibility-capture` after migrations and the normal
+Run `python -m keep.worker visibility-capture` after migrations and the normal
 recovery gate. Each turn seals at most one due expiry boundary and expands one
 bounded historical view page. Selection skips busy tenant coordinators, and the
 persisted seed allocations bound resumed work. This worker neither classifies
@@ -531,7 +531,7 @@ failure-path evidence before the measurement capability can be qualified.
 
 Phase-1 local evidence: the final focused run passed 27 tests (19 model/sampling
 unit tests and eight isolated PostgreSQL tests) in 4.41 seconds. PostgreSQL API
-calls used the restricted `appchi_api` role. Coverage includes lifecycle/replay,
+calls used the restricted `keep_api` role. Coverage includes lifecycle/replay,
 cross-session isolation, current authorization/CSRF before replay, an authorization
 writer preceding a waiting request, revision and active-capacity concurrency,
 unchanged session activity, capacity/body bounds and canonical path IDs. The
@@ -555,7 +555,7 @@ historical views from another deployment as explicit unclassified coverage.
 
 Maintenance producer evidence: eight new isolated PostgreSQL cases and fifteen
 existing maintenance API regressions passed together (23 tests, 12.68 seconds).
-New API cases use `appchi_api`. They cover create/replay identity and original
+New API cases use `keep_api`. They cover create/replay identity and original
 end, metadata/timezone/no-op stability, end supersession with and without current
 capture configuration, disable/re-enable/delete lifecycle, atomic rollback,
 explicit capacity gaps without losing product schedules, and overdue seed

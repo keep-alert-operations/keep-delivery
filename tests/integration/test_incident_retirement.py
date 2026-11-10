@@ -7,10 +7,10 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.recovery.incidents import retire_incident
-from appchi.recovery.cleanup import cleanup_incident
-from appchi.recovery.evidence import DurableAck
-from appchi.shared.errors import AppError, unavailable
+from keep.recovery.incidents import retire_incident
+from keep.recovery.cleanup import cleanup_incident
+from keep.recovery.evidence import DurableAck
+from keep.shared.errors import AppError, unavailable
 from test_product import browser, admit_alert  # noqa: F401
 from test_search_pipeline import real_db as isolated_db
 
@@ -273,7 +273,7 @@ def test_cleanup_is_fenced_until_final_ack_and_rejects_a_late_hold(incident, rea
 
 def test_scheduled_worker_connects_retirement_and_cleanup(incident, real_db):
     """Requirements: I4, REV-34; incident operations 13."""
-    from appchi.recovery.runtime import incident_retirement_turn
+    from keep.recovery.runtime import incident_retirement_turn
 
     _, tenant, identity, *_ = incident
     store = Store()
@@ -319,8 +319,8 @@ def test_cancelled_hold_attempt_cannot_cancel_later_success(incident, real_db):
 
 def test_counterpart_link_expires_when_alert_retires_after_incident_cleanup(incident, real_db):
     """Requirements: I3, I4, REV-34; incident operations 7 and 13."""
-    from appchi.recovery.retirement import retire_alert
-    from appchi.recovery.runtime import incident_retirement_turn
+    from keep.recovery.retirement import retire_alert
+    from keep.recovery.runtime import incident_retirement_turn
 
     client, tenant, identity, alert, *_ = incident
     store = Store()

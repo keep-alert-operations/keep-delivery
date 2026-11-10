@@ -1,4 +1,4 @@
-# Appchi developer onboarding guide
+# Keep developer onboarding guide
 
 Open [the interactive guide](index.html) directly in a browser. It has thirteen
 chapters, an eleven-repository explorer, six pipeline scenarios, an alert-state
@@ -6,14 +6,14 @@ playground, dependency failure explanations, learning tracks, quizzes and local
 reading progress. No server, installation or network access is needed for the guide.
 
 Source links require the existing sibling workspace layout. The guide's simulations
-use synthetic local data and never call Appchi or execute the displayed commands.
+use synthetic local data and never call Keep or execute the displayed commands.
 
 ## Maintain the guide
 
 Edit the HTML fragments in `parts/`, `guide.css` or `guide.js`, then regenerate:
 
 ```powershell
-# Working directory: appchi-delivery
+# Working directory: keep-delivery
 node docs/developer-guide/build.mjs
 node --check docs/developer-guide/guide.js
 python qualification/verify_documents.py

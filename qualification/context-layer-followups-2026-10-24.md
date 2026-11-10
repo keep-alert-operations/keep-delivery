@@ -11,11 +11,11 @@ schema, contract or deployment changed.
 
 | Repository | Branch / commit | State |
 |---|---|---|
-| appchi-design | `9390d25`, merge of design#10 (`6474d81`) | Merged after both CI checks passed |
-| appchi-design | `codex/current-scope-notes`: `697baec`, `ec40ad4` on `9390d25` | Local, not pushed |
-| appchi-delivery | `codex/context-layer-followups`: `707f3e6`, `99ef85c` and this record, on `b66649f` | Local, not pushed |
+| keep-design | `9390d25`, merge of design#10 (`6474d81`) | Merged after both CI checks passed |
+| keep-design | `codex/current-scope-notes`: `697baec`, `ec40ad4` on `9390d25` | Local, not pushed |
+| keep-delivery | `codex/context-layer-followups`: `707f3e6`, `99ef85c` and this record, on `b66649f` | Local, not pushed |
 
-`workspace/manifest.json` pins appchi-design to `9390d25`. The scope notes branch
+`workspace/manifest.json` pins keep-design to `9390d25`. The scope notes branch
 is not pinned until it is merged.
 
 ## Changes
@@ -41,7 +41,7 @@ is not pinned until it is merged.
 - **Requirement-ID convention:** a test of specified behavior names its IDs and
   design sections in its docstring, such as
   `Requirements: I5; incident operations 14.` **Assistant-selected:** the
-  user-chosen pilot named appchi-api and appchi-domain, but neither has incident
+  user-chosen pilot named keep-api and keep-domain, but neither has incident
   tests. Incident behavior is tested in this repository, so the pilot covers the 22
   incident tests in the listing, note-revision, retirement and inactivity
   integration suites.

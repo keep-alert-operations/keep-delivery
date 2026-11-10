@@ -65,17 +65,17 @@ def test_persisted_ports_drive_python_and_compose_endpoints(tmp_path, monkeypatc
         '{"kong_admin":58647,"grafana":58648}', encoding="utf-8-sig"
     )
     # A stale shell variable must not split Python and launcher configuration.
-    monkeypatch.setenv("APPCHI_LOCAL_KONG_ADMIN_PORT", "60000")
+    monkeypatch.setenv("KEEP_LOCAL_KONG_ADMIN_PORT", "60000")
     loaded = runpy.run_path(str(copied))
     assert loaded["KONG"] == "https://localhost:58647"
     assert loaded["GRAFANA"] == "https://localhost:58648"
     assert loaded["compose_ports"]() == {
-        "APPCHI_LOCAL_KONG_ADMIN_PORT": "58647",
-        "APPCHI_LOCAL_GRAFANA_PORT": "58648",
+        "KEEP_LOCAL_KONG_ADMIN_PORT": "58647",
+        "KEEP_LOCAL_GRAFANA_PORT": "58648",
     }
     compose = (local.ROOT / "deploy/local/compose.yaml").read_text()
-    assert "127.0.0.1:${APPCHI_LOCAL_KONG_ADMIN_PORT:-58447}:8444" in compose
-    assert "127.0.0.1:${APPCHI_LOCAL_GRAFANA_PORT:-58448}:3000" in compose
+    assert "127.0.0.1:${KEEP_LOCAL_KONG_ADMIN_PORT:-58447}:8444" in compose
+    assert "127.0.0.1:${KEEP_LOCAL_GRAFANA_PORT:-58448}:3000" in compose
     for launcher in ("local-v2.ps1", "local-identity.ps1"):
         source = (local.ROOT / "scripts" / launcher).read_text()
         assert source.index("scripts/local_v2.py ports") < source.index("docker compose")
@@ -112,7 +112,7 @@ def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
             assert request.headers["Authorization"] == "Bearer vena_test"
             member = json.loads(request.content)["alerts"][0]
             labels = member["labels"]
-            assert labels["Appchi - Local Demo"] == "true"
+            assert labels["Keep - Local Demo"] == "true"
             rows.append({"id": str(uuid4()), "component": labels["component"],
                          "name": labels["alertname"], "node_name": labels["node_name"],
                          "provider": "grafana", "alert_rule_url": member["generatorURL"]})
@@ -161,20 +161,20 @@ def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
 @pytest.mark.parametrize(
     "scope,url",
     [
-        ("production", "postgresql://worker@127.0.0.1/appchi_local"),
-        ("development", "postgresql://worker@company.example/appchi_local"),
+        ("production", "postgresql://worker@127.0.0.1/keep_local"),
+        ("development", "postgresql://worker@company.example/keep_local"),
         ("development", "postgresql://worker@localhost/shared"),
-        ("development", "dbname=appchi_local host=localhost hostaddr=192.0.2.1"),
-        ("development", "dbname=appchi_local host=localhost service=shared"),
+        ("development", "dbname=keep_local host=localhost hostaddr=192.0.2.1"),
+        ("development", "dbname=keep_local host=localhost service=shared"),
     ],
 )
 def test_only_isolated_development_database(monkeypatch, scope, url):
-    monkeypatch.setattr(local, "read", lambda _: {"APPCHI_LOCAL_WORKER_DATABASE_URL": url})
+    monkeypatch.setattr(local, "read", lambda _: {"KEEP_LOCAL_WORKER_DATABASE_URL": url})
     monkeypatch.setattr(
-        "appchi.config.Settings",
+        "keep.config.Settings",
         lambda: SimpleNamespace(environment=scope, database_url=SecretStr(url)),
     )
-    monkeypatch.setenv("APPCHI_DATABASE_URL", "preserved-by-monkeypatch")
+    monkeypatch.setenv("KEEP_DATABASE_URL", "preserved-by-monkeypatch")
     with pytest.raises(RuntimeError, match="isolated"):
         local.environment()
 

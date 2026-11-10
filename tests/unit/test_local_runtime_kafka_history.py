@@ -8,8 +8,8 @@ SOURCE = Path(__file__).resolve().parents[2] / "scripts/local_runtime.py"
 spec = importlib.util.spec_from_file_location("local_runtime", SOURCE)
 runtime = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtime)
-RECEIVED = "appchi.development.alerts.received"
-CHANGED = "appchi.development.alerts.changed"
+RECEIVED = "keep.development.alerts.received"
+CHANGED = "keep.development.alerts.changed"
 DELIVERY = "3732b86c-24c5-4601-84b4-4f8720b1fac2"
 
 

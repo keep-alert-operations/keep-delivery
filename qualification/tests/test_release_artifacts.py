@@ -24,10 +24,10 @@ def bundle(tmp_path):
         "backend/uv.lock",
         "frontend/package.json",
         "frontend/package-lock.json",
-        "backend/appchi/cel/compiler.py",
-        "backend/appchi/cel/catalog.py",
-        "backend/appchi/maintenance/timezones.py",
-        "backend/appchi/operators/policy.py",
+        "backend/keep/cel/compiler.py",
+        "backend/keep/cel/catalog.py",
+        "backend/keep/maintenance/timezones.py",
+        "backend/keep/operators/policy.py",
         "deploy/backend.Dockerfile",
         "frontend/Dockerfile",
         "deploy/openshift/test.json",
@@ -44,9 +44,9 @@ def bundle(tmp_path):
         "frontend/package.json": '{"version":"0.1.0"}',
         "contracts/openapi.json": '{"info":{"version":"0.1.0"}}',
         "contracts/alerts.changed.v1.schema.json": '{"properties":{"schema_version":{"const":1}}}',
-        "backend/appchi/cel/compiler.py": 'PROFILE="fixture-profile"\nCOST_MODEL="fixture-cost"\n',
-        "backend/appchi/maintenance/timezones.py": 'PINNED_TZDATA_VERSION="fixture-tz"\n',
-        "backend/appchi/operators/policy.py": 'if unicodedata.unidata_version != "15.1.0":\n    pass\n',
+        "backend/keep/cel/compiler.py": 'PROFILE="fixture-profile"\nCOST_MODEL="fixture-cost"\n',
+        "backend/keep/maintenance/timezones.py": 'PINNED_TZDATA_VERSION="fixture-tz"\n',
+        "backend/keep/operators/policy.py": 'if unicodedata.unidata_version != "15.1.0":\n    pass\n',
     }
     for path, body in bodies.items():
         (tmp_path / path).write_text(body, encoding="utf-8")

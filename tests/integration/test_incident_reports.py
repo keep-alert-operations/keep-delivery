@@ -231,7 +231,7 @@ def test_report_figures_match_seeded_history(reports, real_db):
 
 def test_report_is_partial_when_assignment_history_is_out_of_time(reports, real_db, monkeypatch):
     """Requirements: REV-53, N3; incident operations 20; reliability operations 5."""
-    import appchi.reports.incidents as module
+    import keep.reports.incidents as module
 
     client, _, tenant, path = reports
     now = db_now(real_db)
@@ -311,7 +311,7 @@ def test_ninety_day_report_on_twenty_thousand_cycles_is_within_budget(reports, r
         )
     # Production history grows gradually and autovacuum keeps visibility current;
     # measure the report, not the first read after a bulk load.
-    with psycopg.connect(os.environ["APPCHI_TEST_DATABASE_URL"], autocommit=True) as conn:
+    with psycopg.connect(os.environ["KEEP_TEST_DATABASE_URL"], autocommit=True) as conn:
         for table in ("incident_cycles", "incident_activity", "incidents", "incident_identities"):
             conn.execute(f"VACUUM ANALYZE {table}")
     now = db_now(real_db)  # After seeding, so every seeded opening is inside the period.

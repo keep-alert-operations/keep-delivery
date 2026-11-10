@@ -11,10 +11,10 @@ from psycopg import sql
 from psycopg.types.json import Jsonb
 import pytest
 
-from appchi.maintenance.cleanup import cleanup_window, cleanup_turn
-from appchi.maintenance.processing import prepare_catalog, reconcile_alert, record_input
-from appchi.shared.errors import AppError
-from appchi.shared.transactions import coordinator
+from keep.maintenance.cleanup import cleanup_window, cleanup_turn
+from keep.maintenance.processing import prepare_catalog, reconcile_alert, record_input
+from keep.shared.errors import AppError
+from keep.shared.transactions import coordinator
 from test_maintenance_repository import body, create, maintenance_browser, maintenance_db  # noqa: F401
 from test_maintenance_processing import snapshot
 
@@ -294,20 +294,20 @@ def test_worker_role_can_clean_but_api_cannot_add_holds_or_change_retired_fence(
         @contextmanager
         def transaction(self, *args, **kwargs):
             with db.transaction(*args, **kwargs) as conn:
-                conn.execute("SET LOCAL ROLE appchi_worker")
+                conn.execute("SET LOCAL ROLE keep_worker")
                 yield conn
 
     converge(Worker(), tenant, window["id"])
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         with db.transaction(tenant) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             conn.execute(
                 "INSERT INTO maintenance_configuration_holds(id,tenant_id,window_id,reason) VALUES(%s,%s,%s,'forbidden')",
                 (uuid4(), tenant, window["id"]),
             )
     with pytest.raises(psycopg.errors.RaiseException, match="immutable"):
         with db.transaction(tenant) as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             conn.execute(
                 "UPDATE maintenance_identities SET deleted_at=NULL WHERE tenant_id=%s AND id=%s",
                 (tenant, window["id"]),

@@ -8,17 +8,17 @@ import sys
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 ENTRYPOINTS = {
-    "appchi-api": "appchi.main",
-    "appchi-ingestion": "appchi.ingestion.main",
-    "appchi-processor": "appchi.processor.main",
-    "appchi-correlation": "appchi.correlation.main",
-    "appchi-indexer": "appchi.search.main",
+    "keep-api": "keep.main",
+    "keep-ingestion": "keep.ingestion.main",
+    "keep-processor": "keep.processor.main",
+    "keep-correlation": "keep.correlation.main",
+    "keep-indexer": "keep.search.main",
 }
 
 
 def ownership():
     owners = {}
-    for repository in WORKSPACE.glob("appchi-*"):
+    for repository in WORKSPACE.glob("keep-*"):
         source = repository / "src"
         for path in source.rglob("*.py"):
             module = ".".join(path.relative_to(source).with_suffix("").parts)
@@ -35,9 +35,9 @@ class Boundary(importlib.abc.MetaPathFinder):
 
     def find_spec(self, fullname, path=None, target=None):
         owner = self.owners.get(fullname)
-        if owner and owner not in {self.selected, "appchi-contracts", "appchi-domain"}:
+        if owner and owner not in {self.selected, "keep-contracts", "keep-domain"}:
             raise ImportError(f"{self.selected} attempted import from {owner}: {fullname}")
-        if self.selected == "appchi-ingestion" and fullname.split(".")[0] in {
+        if self.selected == "keep-ingestion" and fullname.split(".")[0] in {
             "psycopg", "psycopg_pool", "elasticsearch", "redis", "celpy", "authlib", "ldap3"
         }:
             raise ImportError(f"Stateless ingestion imported an unrelated adapter: {fullname}")

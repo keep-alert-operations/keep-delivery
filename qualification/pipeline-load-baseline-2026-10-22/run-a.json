@@ -43,7 +43,7 @@
     "production_qualified": false,
     "qualification_notice": "Synthetic feature-gate input; not production capacity evidence",
     "correlation": {
-      "cost_model": "appchi-cel-cost-v1",
+      "cost_model": "keep-cel-cost-v1",
       "enabled_rules_per_tenant": 1,
       "live_groups_per_rule": 2,
       "live_evidence_per_rule": 322,
@@ -102,35 +102,35 @@
       "dirty": true
     },
     "packages": {
-      "appchi-domain": {
+      "keep-domain": {
         "version": "0.1.0",
         "commit": "6d4cfa6f1acf11ef3a369a002f0cceb99bab2e3c"
       },
-      "appchi-contracts": {
+      "keep-contracts": {
         "version": "0.1.0",
         "commit": "eb555e8bd307c2dbc3f20a9134351696a4f5eba2"
       },
-      "appchi-ingestion": {
+      "keep-ingestion": {
         "version": "0.1.0",
         "commit": "cc80542fe1ee28fff97e0bb802eaeca8962b945d"
       },
-      "appchi-processor": {
+      "keep-processor": {
         "version": "0.1.0",
         "commit": "f483832e50aca3efc58f778517d3010467c16792"
       },
-      "appchi-correlation": {
+      "keep-correlation": {
         "version": "0.1.0",
         "commit": "d3cd9331c20da40f93d1dc5bb10a489649327872"
       },
-      "appchi-indexer": {
+      "keep-indexer": {
         "version": "0.1.0",
         "commit": "c335a201116be5b5ee8b617bea8f36aa843eb62c"
       },
-      "appchi-migrations": {
+      "keep-migrations": {
         "version": "0.1.0",
         "commit": "c5f3e9c80184080ff98217313793e7f16cd3fd8e"
       },
-      "appchi-api": {
+      "keep-api": {
         "version": "0.1.0",
         "commit": "aad9bf61f664cea44c6319470bbbc223aabe68cf"
       }

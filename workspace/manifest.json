@@ -1,49 +1,49 @@
 {
   "schema_version": 1,
-  "organization": "appchi-alert-operations",
+  "organization": "keep-alert-operations",
   "repositories": {
-    "appchi-contracts": {
-      "url": "https://github.com/appchi-alert-operations/appchi-contracts.git",
+    "keep-contracts": {
+      "url": "https://github.com/keep-alert-operations/keep-contracts.git",
       "revision": "e67c19b8e1a682248098064fa24d1a4361635906"
     },
-    "appchi-domain": {
-      "url": "https://github.com/appchi-alert-operations/appchi-domain.git",
+    "keep-domain": {
+      "url": "https://github.com/keep-alert-operations/keep-domain.git",
       "revision": "71a79f56606cf0e2df7909125beeb701a34639fd"
     },
-    "appchi-migrations": {
-      "url": "https://github.com/appchi-alert-operations/appchi-migrations.git",
+    "keep-migrations": {
+      "url": "https://github.com/keep-alert-operations/keep-migrations.git",
       "revision": "25eb46cae9ffe34bfaab0eaa7391f6fa6e1c3fac"
     },
-    "appchi-api": {
-      "url": "https://github.com/appchi-alert-operations/appchi-api.git",
+    "keep-api": {
+      "url": "https://github.com/keep-alert-operations/keep-api.git",
       "revision": "8260817f43d0c29d5198d57bb5fed66c1c2a266b"
     },
-    "appchi-ingestion": {
-      "url": "https://github.com/appchi-alert-operations/appchi-ingestion.git",
+    "keep-ingestion": {
+      "url": "https://github.com/keep-alert-operations/keep-ingestion.git",
       "revision": "8ee904f6182b9dd2b1c78bc260077531355b0faf"
     },
-    "appchi-processor": {
-      "url": "https://github.com/appchi-alert-operations/appchi-processor.git",
+    "keep-processor": {
+      "url": "https://github.com/keep-alert-operations/keep-processor.git",
       "revision": "897f20e27e21f06240ef6fd9809b3465a0013ac7"
     },
-    "appchi-correlation": {
-      "url": "https://github.com/appchi-alert-operations/appchi-correlation.git",
+    "keep-correlation": {
+      "url": "https://github.com/keep-alert-operations/keep-correlation.git",
       "revision": "48471ae47428fc2ab80693f2f03bed1979f1cfb9"
     },
-    "appchi-indexer": {
-      "url": "https://github.com/appchi-alert-operations/appchi-indexer.git",
+    "keep-indexer": {
+      "url": "https://github.com/keep-alert-operations/keep-indexer.git",
       "revision": "3097571522be528bdf17c497a5dd60a659eefbcd"
     },
-    "appchi-frontend": {
-      "url": "https://github.com/appchi-alert-operations/appchi-frontend.git",
+    "keep-frontend": {
+      "url": "https://github.com/keep-alert-operations/keep-frontend.git",
       "revision": "126308dadde192211e4322571e0d362a4de7c09a"
     },
-    "appchi-design": {
-      "url": "https://github.com/appchi-alert-operations/appchi-design.git",
+    "keep-design": {
+      "url": "https://github.com/keep-alert-operations/keep-design.git",
       "revision": "bfdfb1b8318c789e5679c1677a1a62288c932e06"
     },
-    "appchi-delivery": {
-      "url": "https://github.com/appchi-alert-operations/appchi-delivery.git",
+    "keep-delivery": {
+      "url": "https://github.com/keep-alert-operations/keep-delivery.git",
       "revision": "self"
     }
   }

@@ -9,10 +9,10 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.db import Database
-from appchi.recovery.guard import RESTORE_LOCK
-from appchi.recovery.restore import begin_restore
-from appchi.shared.errors import AppError
+from keep.db import Database
+from keep.recovery.guard import RESTORE_LOCK
+from keep.recovery.restore import begin_restore
+from keep.shared.errors import AppError
 from test_maintenance_repository import maintenance_db, maintenance_browser  # noqa: F401
 
 pytestmark = pytest.mark.integration
@@ -111,7 +111,7 @@ def test_begin_invalidates_sessions_and_application_roles_cannot_reopen(
     @contextmanager
     def recovery_role(*args, **kwargs):
         with original(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_recovery")
+            conn.execute("SET LOCAL ROLE keep_recovery")
             yield conn
 
     admin.transaction = recovery_role
@@ -134,11 +134,11 @@ def test_begin_invalidates_sessions_and_application_roles_cannot_reopen(
 
     with pytest.raises(psycopg.errors.CheckViolation):
         with admin.transaction() as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             conn.execute("UPDATE capability_gates SET ready=true WHERE capability='human_auth'")
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         with admin.transaction() as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             conn.execute("UPDATE restore_control SET fenced=false")
     with pytest.raises(AppError):
         with runtime.transaction():
@@ -159,14 +159,14 @@ def test_restore_rejects_reused_or_conflicting_epoch(recovery):
 
 def test_partial_collection_is_staged_but_never_ready_and_retry_uses_new_scan(recovery):
     from dataclasses import asdict
-    from appchi.recovery.evidence import (
+    from keep.recovery.evidence import (
         EvidenceBinding,
         Evidence,
         CheckpointPage,
         checkpoint_page_digest,
         PAGED_CHECKPOINT_VERSION,
     )
-    from appchi.recovery.restore import collect_restore, status
+    from keep.recovery.restore import collect_restore, status
 
     admin, runtime = recovery
     body = inputs()
@@ -255,9 +255,9 @@ def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(
     import base64
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
-    from appchi.config import Settings
-    from appchi.ingestion.main import create_app as create_ingestion_app
-    from appchi.main import create_app
+    from keep.config import Settings
+    from keep.ingestion.main import create_app as create_ingestion_app
+    from keep.main import create_app
 
     admin, runtime = recovery
     begin_restore(admin, **inputs())
@@ -271,7 +271,7 @@ def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(
     # Admission is served by the stateless ingestion app, not the product API;
     # quiescing it during restore is its configuration, with no PG to consult.
     monkeypatch.setattr(
-        "appchi.ingestion.main.KafkaPublisher", lambda *_: SimpleNamespace(close=lambda: None)
+        "keep.ingestion.main.KafkaPublisher", lambda *_: SimpleNamespace(close=lambda: None)
     )
     ingestion = settings.model_copy(update={"role": "ingestion-api"})
     with TestClient(create_ingestion_app(ingestion)) as client:
@@ -297,8 +297,8 @@ def test_quiesced_kafka_admission_and_restored_human_paths_remain_closed(
 
 def test_restore_keeps_protocol_selection_and_fences_kafka_workers(recovery):
     from types import SimpleNamespace
-    from appchi.kafka_source import SourceConsumer
-    from appchi.kafka_changed import ChangedConsumer
+    from keep.kafka_source import SourceConsumer
+    from keep.kafka_changed import ChangedConsumer
 
     admin, runtime = recovery
     with admin.transaction() as conn:

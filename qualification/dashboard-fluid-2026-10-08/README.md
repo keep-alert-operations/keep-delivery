@@ -18,16 +18,16 @@ permissions, conflicts, count observations and Escape/cancel semantics continue.
 This refines the earlier [inline editing evidence](../dashboard-inline-2026-10-08/README.md).
 No dependency, HTTP schema, migration, backend rollout or production deployment
 changed. User requirements and assistant-selected presentation are recorded in
-[dashboard section 4](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-dashboard-operations.md#4-layout-and-responsive-behavior).
+[dashboard section 4](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-dashboard-operations.md#4-layout-and-responsive-behavior).
 
 ## Revisions and execution
 
 | Repository | Local HEAD | Scope |
 |---|---|---|
-| appchi-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Uncommitted layout, count board, workspace, styles, tests and UI notes |
-| appchi-design | `99c5def93c761386e7d5161c44f482ae4cbd7539` | Later user correction and acceptance requirements |
-| appchi-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | This evidence and status entry |
-| appchi-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` | Existing running API; no task changes |
+| keep-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Uncommitted layout, count board, workspace, styles, tests and UI notes |
+| keep-design | `99c5def93c761386e7d5161c44f482ae4cbd7539` | Later user correction and acceptance requirements |
+| keep-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | This evidence and status entry |
+| keep-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` | Existing running API; no task changes |
 
 Unrelated existing changes were preserved. Contract dependency remains
 `eb555e8bd307c2dbc3f20a9134351696a4f5eba2`. Browser checks use installed Chrome,
@@ -47,7 +47,7 @@ external runtime services are outside that fingerprint.
 | `PLAYWRIGHT_CHANNEL=chrome node node_modules/@playwright/test/cli.js test --config .local/dashboard-layout.config.ts dashboard-layout.spec.ts dashboard-counts.spec.ts preset-choices.spec.ts configuration-history.spec.ts --workers=1` | 57 passed in 2.1 minutes |
 | `node node_modules/typescript/bin/tsc --noEmit --incremental false` | Passed |
 | Prettier `--check` on 14 changed dashboard source/test files and UI notes | Passed |
-| `node node_modules/next/dist/bin/next build` with `APPCHI_NEXT_DIST_DIR=.next-dashboard-build` | Passed; original tsconfig/next-env bytes restored; before/after fingerprint matched |
+| `node node_modules/next/dist/bin/next build` with `KEEP_NEXT_DIST_DIR=.next-dashboard-build` | Passed; original tsconfig/next-env bytes restored; before/after fingerprint matched |
 | Installed openapi-typescript generation CLI, Prettier, `git diff --exit-code -- src/lib/generated.ts` | Passed; no generated contract drift |
 | `git diff --check` in frontend, design and delivery | Passed |
 | Full repository `node node_modules/prettier/bin/prettier.cjs --check src tests '*.ts' '*.json'` | Failed on 62 files outside this task; unchanged files were preserved |

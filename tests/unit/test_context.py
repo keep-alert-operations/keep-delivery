@@ -10,7 +10,7 @@ import pytest
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts/context.py"
-SPEC = importlib.util.spec_from_file_location("appchi_context", SCRIPT)
+SPEC = importlib.util.spec_from_file_location("keep_context", SCRIPT)
 context = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(context)
 
@@ -20,7 +20,7 @@ def topic(topic_id, *, aliases=(), requires=(), sources=(), paths=(), related=()
             "ask_like": [f"How does {topic_id} work?", f"Change {topic_id}"], "aliases": list(aliases),
             "path_globs": list(paths), "requires": list(requires), "orientation": list(orientation),
             "sources": list(sources), "evidence": list(evidence), "related": list(related),
-            "repositories": ["appchi-design"], "checks": ["Run applicable repository checks"]}
+            "repositories": ["keep-design"], "checks": ["Run applicable repository checks"]}
 
 
 def intent(intent_id, cues, *, override=False, show=("code", "related", "checks"), sources=()):
@@ -31,7 +31,7 @@ def intent(intent_id, cues, *, override=False, show=("code", "related", "checks"
 
 @pytest.fixture
 def workspace(tmp_path):
-    directory = tmp_path / "appchi-design"
+    directory = tmp_path / "keep-design"
     (directory / "context").mkdir(parents=True)
     (directory / "AGENTS.md").write_text("# Instructions\n", encoding="utf-8")
     (directory / "spec.md").write_text(
@@ -41,7 +41,7 @@ def workspace(tmp_path):
         "## Scheduler cadence\nClock protection rule.\n",
         encoding="utf-8")
     (directory / "overview.md").write_text("# Overview\nServices and data flow.\n", encoding="utf-8")
-    agents = tmp_path / "appchi-delivery/workspace/AGENTS.md"
+    agents = tmp_path / "keep-delivery/workspace/AGENTS.md"
     agents.parent.mkdir(parents=True)
     agents.write_text(f"# Workspace\n\nBefore.\n\n{context.INDEX_BEGIN}\n{context.INDEX_END}\n\nAfter.\n",
                       encoding="utf-8")
@@ -54,18 +54,18 @@ def workspace(tmp_path):
                     intent("review", ["review"], override=True),
                     intent("investigate", ["error", "stopped"], override=True, sources=["baseline"])],
         "scope_sections": {},
-        "find_roots": [{"path": "appchi-design", "authority": "normative"}],
+        "find_roots": [{"path": "keep-design", "authority": "normative"}],
         "sources": {
-            "baseline": {"path": "appchi-design/spec.md", "authority": "scope",
+            "baseline": {"path": "keep-design/spec.md", "authority": "scope",
                          "sections": ["Required"], "include_preamble": True},
-            "detail": {"path": "appchi-design/spec.md", "authority": "normative",
+            "detail": {"path": "keep-design/spec.md", "authority": "normative",
                        "sections": ["Déjà: next!"], "include_preamble": True},
-            "overview": {"path": "appchi-design/overview.md", "authority": "normative",
+            "overview": {"path": "keep-design/overview.md", "authority": "normative",
                          "sections": [], "include_preamble": True},
         },
         "topics": [topic("foundation", sources=["baseline"], orientation=["overview"]),
                    topic("incident", aliases=["incident", "correlation"], requires=["foundation"],
-                         sources=["detail"], paths=["appchi-api/incidents/*"],
+                         sources=["detail"], paths=["keep-api/incidents/*"],
                          related=[{"when": "Schema changes", "topic": "database"}]),
                    topic("database", aliases=["database"], requires=["foundation"]),
                    topic("ui", aliases=["spacing", "ui"], requires=["foundation"]),
@@ -106,7 +106,7 @@ def test_matching_uses_word_boundaries_stems_and_normalized_paths(workspace):
     assert catalog.plan(task="build incidental helpers")["status"] == "unresolved"
     assert ids(catalog.plan(task="Improve UI spacing")["topics"]) == ["foundation", "ui"]
     assert "incident" in ids(catalog.plan(task="How are alerts correlated?")["topics"])
-    plan = catalog.plan(paths=[r"appchi-api\incidents\routes.py"])
+    plan = catalog.plan(paths=[r"keep-api\incidents\routes.py"])
     assert ids(plan["topics"]) == ["foundation", "incident"]
     assert "Path:" in plan["topics"][1]["reasons"][0]
 
@@ -125,7 +125,7 @@ def test_automatic_selection_is_capped_and_paths_always_win(workspace):
     automatic = [t for t in plan["topics"] if "Required" not in t["reasons"][0]]
     assert len(automatic) == context.AUTO_TOPIC_LIMIT
     assert ids(plan["suggestions"]) == ["search", "live"]
-    plan = catalog.plan(task="database ui search live", paths=["appchi-api/incidents/x.py"])
+    plan = catalog.plan(task="database ui search live", paths=["keep-api/incidents/x.py"])
     assert "incident" in ids(plan["topics"])
 
 
@@ -202,7 +202,7 @@ def test_unresolved_plans_offer_find_candidates_instead_of_nothing(workspace):
     assert plan["status"] == "unresolved" and plan["topics"] == []
     best = plan["candidates"][0]
     assert (best["path"], best["title"], best["authority"], best["topics"]) == (
-        "appchi-design/spec.md", "Scheduler cadence", "normative", [])
+        "keep-design/spec.md", "Scheduler cadence", "normative", [])
     assert context.Context(root).plan(task="zebra xylophone")["candidates"] == []
 
 
@@ -268,13 +268,13 @@ def test_check_reports_specification_sections_no_topic_reaches(workspace):
 
 def test_scope_sections_join_every_partial_read_of_their_document(workspace):
     root, data = workspace
-    data["scope_sections"] = {"appchi-design/spec.md": ["Scheduler cadence"]}
+    data["scope_sections"] = {"keep-design/spec.md": ["Scheduler cadence"]}
     save(root, data)
     source = context.Context(root).source("detail")
     assert "Clock protection rule." in source["content"]
     assert [(s["title"], s["scope"]) for s in source["sections"]] == [("Déjà: next!", False),
                                                                       ("Scheduler cadence", True)]
-    data["scope_sections"] = {"appchi-design/spec.md": ["Missing"]}
+    data["scope_sections"] = {"keep-design/spec.md": ["Missing"]}
     save(root, data)
     with pytest.raises(context.ContextError, match="found 0"):
         context.Context(root).source("detail")
@@ -295,16 +295,16 @@ def test_preamble_child_sections_and_overlap_are_preserved_once(workspace):
 def test_full_file_sources_do_not_omit_any_content(workspace):
     root, data = workspace
     data["sources"]["baseline"]["sections"] = []
-    data["scope_sections"] = {"appchi-design/spec.md": ["Scheduler cadence"]}
+    data["scope_sections"] = {"keep-design/spec.md": ["Scheduler cadence"]}
     save(root, data)
-    assert context.Context(root).source("baseline")["content"] == (root / "appchi-design/spec.md").read_text(encoding="utf-8")
+    assert context.Context(root).source("baseline")["content"] == (root / "keep-design/spec.md").read_text(encoding="utf-8")
 
 
 def test_source_hash_changes_with_current_bytes_even_on_same_context_instance(workspace):
     root, _ = workspace
     catalog = context.Context(root)
     before = catalog.plan(topics=["incident"], intent="change")["sources"][0]["sha256"]
-    path = root / "appchi-design/spec.md"
+    path = root / "keep-design/spec.md"
     path.write_text(path.read_text(encoding="utf-8") + "Changed source bytes.\n", encoding="utf-8")
     after = catalog.plan(topics=["incident"], intent="change")["sources"][0]["sha256"]
     assert before != after
@@ -319,8 +319,8 @@ def test_fenced_and_indented_headings_are_not_sections():
     assert [h["anchor"] for h in result] == ["root", "déjà-next", "repeat", "repeat-1", "setext"]
 
 
-@pytest.mark.parametrize("path", ["../secret.md", "/secret.md", "C:/secret.md", "appchi-design/../secret.md",
-                                  "appchi-design\\spec.md", "unknown/spec.md", "appchi-design/./spec.md"])
+@pytest.mark.parametrize("path", ["../secret.md", "/secret.md", "C:/secret.md", "keep-design/../secret.md",
+                                  "keep-design\\spec.md", "unknown/spec.md", "keep-design/./spec.md"])
 def test_rejects_unsafe_catalog_paths(workspace, path):
     root, data = workspace
     data["sources"]["baseline"]["path"] = path
@@ -333,19 +333,19 @@ def test_rejects_symlink_escape_before_reading(workspace, tmp_path):
     root, _ = workspace
     outside = tmp_path.parent / f"{tmp_path.name}-outside.md"
     outside.write_text("Private content", encoding="utf-8")
-    link = root / "appchi-design/link.md"
+    link = root / "keep-design/link.md"
     try:
         link.symlink_to(outside)
     except OSError as exc:
         pytest.skip(f"Host does not permit symlinks: {exc}")
     with pytest.raises(context.ContextError, match="escapes"):
-        context.safe_path(root, "appchi-design/link.md")
+        context.safe_path(root, "keep-design/link.md")
 
 
 def test_resolved_escape_guard_runs_without_host_symlink_privileges(workspace, monkeypatch):
     root, _ = workspace
     original = Path.resolve
-    candidate = root / "appchi-design/link.md"
+    candidate = root / "keep-design/link.md"
 
     def resolve(path, *args, **kwargs):
         if path == candidate:
@@ -354,7 +354,7 @@ def test_resolved_escape_guard_runs_without_host_symlink_privileges(workspace, m
 
     monkeypatch.setattr(Path, "resolve", resolve)
     with pytest.raises(context.ContextError, match="escapes"):
-        context.safe_path(root, "appchi-design/link.md")
+        context.safe_path(root, "keep-design/link.md")
 
 
 def test_wildcard_repository_globs_remain_bounded_to_declared_repositories(workspace):
@@ -362,8 +362,8 @@ def test_wildcard_repository_globs_remain_bounded_to_declared_repositories(works
     data["topics"][2]["path_globs"] = ["*/pyproject.toml"]
     save(root, data)
     catalog = context.Context(root)
-    assert ids(catalog.plan(paths=["appchi-api/pyproject.toml"])["topics"]) == ["foundation", "database"]
-    with pytest.raises(context.ContextError, match="declared Appchi"):
+    assert ids(catalog.plan(paths=["keep-api/pyproject.toml"])["topics"]) == ["foundation", "database"]
+    with pytest.raises(context.ContextError, match="declared Keep"):
         catalog.plan(paths=["keepHQ/pyproject.toml"])
     data["topics"][2]["path_globs"] = ["*/../private/*"]
     save(root, data)
@@ -373,7 +373,7 @@ def test_wildcard_repository_globs_remain_bounded_to_declared_repositories(works
 
 def test_rejects_missing_and_ambiguous_headings(workspace):
     root, _ = workspace
-    path = root / "appchi-design/spec.md"
+    path = root / "keep-design/spec.md"
     path.write_text("# Spec\n## Required\nA\n## Required\nB\n", encoding="utf-8")
     with pytest.raises(context.ContextError, match="found 2"):
         context.Context(root).source("baseline")
@@ -416,7 +416,7 @@ def test_unknown_topic_and_source_are_errors(workspace):
     (lambda data: data["sources"]["detail"].update(intents=["guess"]), "unknown intent"),
     (lambda data: data["sources"]["detail"].update(intents=[]), "intents"),
     (lambda data: data["intents"].append(copy.deepcopy(data["intents"][0])), "Duplicate intent"),
-    (lambda data: data.update(scope_sections={"keepHQ/spec.md": ["Required"]}), "declared Appchi"),
+    (lambda data: data.update(scope_sections={"keepHQ/spec.md": ["Required"]}), "declared Keep"),
     (lambda data: data.update(find_roots=[]), "find_roots"),
 ])
 def test_catalog_validation_is_strict(workspace, mutation, expected):
@@ -429,7 +429,7 @@ def test_catalog_validation_is_strict(workspace, mutation, expected):
 
 def test_missing_source_reports_dependency_and_does_not_succeed_empty(workspace):
     root, _ = workspace
-    (root / "appchi-design/spec.md").unlink()
+    (root / "keep-design/spec.md").unlink()
     with pytest.raises(context.ContextError, match="Missing or non-regular"):
         context.Context(root).plan(topics=["incident"])
 
@@ -440,11 +440,11 @@ def test_generated_views_and_index_are_deterministic_linked_and_checked_for_drif
     with pytest.raises(context.ContextError, match="drift"):
         catalog.generated()
     catalog.generated(write=True)
-    pages = list((root / "appchi-design/context").rglob("*.md")) + [root / context.INDEX_TARGET]
+    pages = list((root / "keep-design/context").rglob("*.md")) + [root / context.INDEX_TARGET]
     first = {p: p.read_bytes() for p in pages}
     catalog.generated(write=True)
     assert first == {p: p.read_bytes() for p in first}
-    text = (root / "appchi-design/context/topics/incident.md").read_text(encoding="utf-8")
+    text = (root / "keep-design/context/topics/incident.md").read_text(encoding="utf-8")
     assert "[Foundation](foundation.md)" in text
     assert "Schema changes [Database](database.md)" in text
     assert "../.." in text and "#d%C3%A9j%C3%A0-next" in text
@@ -453,7 +453,7 @@ def test_generated_views_and_index_are_deterministic_linked_and_checked_for_drif
     assert "| Product | `incident` | Everything about incident. |" in agents
     assert "`question` (question work)" in agents
     assert catalog.check()["evaluation_cases"] == 20
-    target = root / "appchi-design/context/map.md"
+    target = root / "keep-design/context/map.md"
     target.write_text(target.read_text() + "Edited view", encoding="utf-8")
     with pytest.raises(context.ContextError, match="drift"):
         catalog.generated()
@@ -475,11 +475,11 @@ def test_index_needs_markers_and_stays_within_its_line_limit(workspace):
 
 def test_render_refuses_unowned_files_before_any_writes(workspace):
     root, _ = workspace
-    target = root / "appchi-design/context/map.md"
+    target = root / "keep-design/context/map.md"
     target.write_text("My manually maintained map", encoding="utf-8")
     with pytest.raises(context.ContextError, match="unowned"):
         context.Context(root).generated(write=True)
-    assert not (root / "appchi-design/context/topics").exists()
+    assert not (root / "keep-design/context/topics").exists()
     assert target.read_text() == "My manually maintained map"
 
 
@@ -488,7 +488,7 @@ def test_stale_generated_pages_need_explicit_review_not_deletion(workspace):
     catalog = context.Context(root)
     catalog.generated(write=True)
     for folder in ("topics", "routes"):
-        stale = root / f"appchi-design/context/{folder}/old.md"
+        stale = root / f"keep-design/context/{folder}/old.md"
         stale.parent.mkdir(exist_ok=True)
         stale.write_text(context.GENERATED + "\nOld page", encoding="utf-8")
         with pytest.raises(context.ContextError, match="Stale generated page"):
@@ -546,7 +546,7 @@ def test_cli_read_errors_nonzero_and_prints_provenance(workspace, capsys):
 
 def test_plan_read_command_works_from_documented_delivery_directory(workspace):
     root, _ = workspace
-    delivery = root / 'appchi-delivery'
+    delivery = root / 'keep-delivery'
     (delivery / 'scripts').mkdir(parents=True)
     (delivery / 'scripts/context.py').write_bytes(SCRIPT.read_bytes())
     plan = subprocess.run(

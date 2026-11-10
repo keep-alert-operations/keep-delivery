@@ -4,7 +4,7 @@
 
 Use **Feed** to answer a question now: what needs attention, what happened to an application, or where a particular message appeared. For a view you use every shift, open a shared [preset](05-presets-and-dashboards.md).
 
-![Appchi Feed showing the query bar, quick views, alert rows and pagination.](assets/feed-desktop.png)
+![Keep Feed showing the query bar, quick views, alert rows and pagination.](assets/feed-desktop.png)
 
 *Feed with synthetic example data. The illustration explains the controls; it does not show your tenant's alerts. This screenshot predates the current quick views and colours: it still shows the removed **Active** view, and it does not show **Assigned to me** or **Group by**.*
 
@@ -97,4 +97,4 @@ If results still seem wrong, check the tenant, applied expression, text search, 
 
 ## Reference
 
-The guide's source documents are [alert operations](../../../appchi-design/specs/spec-alert-operations.md), [search and history semantics](../../../appchi-design/specs/spec-alert-history-technical.md), [current worker scope](../../../appchi-design/specs/spec-worker-scope.md), and [frontend UI design](../../../appchi-frontend/docs/ui-design.md).
+The guide's source documents are [alert operations](../../../keep-design/specs/spec-alert-operations.md), [search and history semantics](../../../keep-design/specs/spec-alert-history-technical.md), [current worker scope](../../../keep-design/specs/spec-worker-scope.md), and [frontend UI design](../../../keep-frontend/docs/ui-design.md).

@@ -2,7 +2,7 @@
 
 User scope: committed repositories already transferred to a private network;
 internal-only build mirrors; supplied Kafka, Elasticsearch and Grafana 12;
-deploy PostgreSQL, Redis, Kong, Keycloak and Appchi to isolated OpenShift.
+deploy PostgreSQL, Redis, Kong, Keycloak and Keep to isolated OpenShift.
 Every environment URL remains a placeholder. No credentials were requested.
 
 See the [private test procedure](../docs/runbooks/private-test-deployment.md).

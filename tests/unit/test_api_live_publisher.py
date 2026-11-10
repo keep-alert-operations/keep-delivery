@@ -8,9 +8,9 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from appchi.config import Settings
-from appchi.live import hint_publisher
-from appchi.main import create_app
+from keep.config import Settings
+from keep.live import hint_publisher
+from keep.main import create_app
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_publisher_retries_failure_without_terminating_api_task(monkeypatc
             raise ConnectionError("private dependency details")
         stop.set()
 
-    monkeypatch.setattr("appchi.live.publish_hints", publish)
+    monkeypatch.setattr("keep.live.publish_hints", publish)
     await asyncio.wait_for(hint_publisher(None, None, stop, interval=0), 2)
     assert len(calls) == 2
     assert "live_hint_publication_unavailable" in caplog.text
@@ -60,9 +60,9 @@ async def test_api_keeps_serving_and_drains_publication_before_closing_sql(monke
     async def listener(*args):
         await asyncio.Event().wait()
 
-    monkeypatch.setattr("appchi.main.Database", lambda *args, **kwargs: Database())
-    monkeypatch.setattr("appchi.live.publish_hints", publish)
-    monkeypatch.setattr("appchi.live.redis_listener", listener)
+    monkeypatch.setattr("keep.main.Database", lambda *args, **kwargs: Database())
+    monkeypatch.setattr("keep.live.publish_hints", publish)
+    monkeypatch.setattr("keep.live.redis_listener", listener)
     app = create_app(settings())
     context = app.router.lifespan_context(app)
     await context.__aenter__()
@@ -94,11 +94,11 @@ async def test_ingress_does_not_start_live_tasks_even_with_redis_configured(role
         def close(self):
             pass
 
-    monkeypatch.setattr("appchi.main.Database", forbidden)
-    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda settings: Publisher())
-    monkeypatch.setattr("appchi.live.hint_publisher", forbidden)
-    monkeypatch.setattr("appchi.live.redis_listener", forbidden)
-    from appchi.ingestion.main import create_app as create_ingestion_app
+    monkeypatch.setattr("keep.main.Database", forbidden)
+    monkeypatch.setattr("keep.ingestion.main.KafkaPublisher", lambda settings: Publisher())
+    monkeypatch.setattr("keep.live.hint_publisher", forbidden)
+    monkeypatch.setattr("keep.live.redis_listener", forbidden)
+    from keep.ingestion.main import create_app as create_ingestion_app
     app = create_ingestion_app(settings(role))
     async with app.router.lifespan_context(app):
         assert app.state.db is None
@@ -106,7 +106,7 @@ async def test_ingress_does_not_start_live_tasks_even_with_redis_configured(role
 
 @pytest.mark.parametrize("once", [False, True])
 def test_separate_live_worker_is_rejected_before_loading_settings(once, monkeypatch, capsys):
-    from appchi.worker import main
+    from keep.worker import main
 
     monkeypatch.setattr("sys.argv", ["worker", "live"] + (["--once"] if once else []))
     with pytest.raises(SystemExit) as error:

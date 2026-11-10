@@ -77,7 +77,7 @@ def require_topic_history(settings, kafka, topics, positions, recorded):
     consumer = Consumer(
         {
             "bootstrap.servers": settings.kafka_bootstrap,
-            "group.id": f"appchi-local-probe-{uuid4()}",
+            "group.id": f"keep-local-probe-{uuid4()}",
             "enable.auto.commit": False,
             "enable.auto.offset.store": False,
         }
@@ -118,8 +118,8 @@ def require_topic_history(settings, kafka, topics, positions, recorded):
 
 
 def probe():
-    from appchi.config import Settings
-    from appchi.db import Database
+    from keep.config import Settings
+    from keep.db import Database
     from confluent_kafka import KafkaException
     from confluent_kafka.admin import AdminClient, NewTopic
     from elasticsearch import Elasticsearch
@@ -149,7 +149,7 @@ def probe():
             if not redis.ping():
                 raise RuntimeError("Redis did not respond")
         kafka = AdminClient({"bootstrap.servers": settings.kafka_bootstrap})
-        topics = [f"appchi.development.alerts.{name}" for name in ("received", "changed")]
+        topics = [f"keep.development.alerts.{name}" for name in ("received", "changed")]
         for _ in range(30):
             try:
                 metadata = kafka.list_topics(timeout=3)
@@ -186,8 +186,8 @@ def probe():
 
 
 def require_kafka_cutover():
-    from appchi.config import Settings
-    from appchi.db import Database
+    from keep.config import Settings
+    from keep.db import Database
     settings=Settings()
     db=Database(settings.database_url.get_secret_value(),1,deployment_epoch=settings.deployment_epoch)
     try:
@@ -199,14 +199,14 @@ def require_kafka_cutover():
                 # The source refuses until the cutover's topic incarnation is recorded (REV-41).
                 raise RuntimeError(
                     "Kafka topic identity is not recorded; with workers stopped, apply migration 0054 and run "
-                    f"python -m appchi.kafka_cutover --record-topic-identity (see {RECOVERY})"
+                    f"python -m keep.kafka_cutover --record-topic-identity (see {RECOVERY})"
                 )
     finally:
         db.close()
 
 
 def wait_workers():
-    from appchi.worker_health import probe as healthy
+    from keep.worker_health import probe as healthy
 
     records = json.loads((STATE / "workers.json").read_text(encoding="utf-8-sig"))
     for _ in range(60):
@@ -238,7 +238,7 @@ def wait_workers():
 
 def migrate_search():
     """Copy the existing local serving projection into the Compose Elasticsearch volume."""
-    from appchi.config import Settings
+    from keep.config import Settings
     from elasticsearch import Elasticsearch, helpers
 
     settings = Settings()
@@ -257,10 +257,10 @@ def migrate_search():
         else:
             raise RuntimeError("Compose Elasticsearch did not become ready")
         if target.indices.exists_alias(name=index_alias):
-            print("Compose Elasticsearch already has the Appchi serving alias.")
+            print("Compose Elasticsearch already has the Keep serving alias.")
             return
         if not source.ping():
-            if (ROOT / ".local/runtime/appchi-local-migration.dump").exists():
+            if (ROOT / ".local/runtime/keep-local-migration.dump").exists():
                 raise RuntimeError("The existing local Elasticsearch projection is unavailable")
             print("No previous local Elasticsearch projection to migrate.")
             return

@@ -2,7 +2,7 @@
 
 from time import perf_counter
 
-TIMING_HEADER = b"x-appchi-diagnostic-asgi-ms"
+TIMING_HEADER = b"x-keep-diagnostic-asgi-ms"
 
 
 class ResponseTiming:
@@ -31,6 +31,6 @@ class ResponseTiming:
 def create_app():
     # Preserve the production app, middleware, authorization, budgets and lifespan.
     # It does not inspect request headers/bodies or log response contents.
-    from appchi.main import app
+    from keep.main import app
 
     return ResponseTiming(app)

@@ -12,21 +12,21 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from pydantic import SecretStr
 import pytest
 
-from appchi.db import Database
-from appchi.migrate import migrate
-from appchi.search.local_bootstrap import ALIAS, PHYSICAL, REASON, bootstrap
-from appchi.search.projection import index_mapping
-from appchi.shared.errors import AppError
+from keep.db import Database
+from keep.migrate import migrate
+from keep.search.local_bootstrap import ALIAS, PHYSICAL, REASON, bootstrap
+from keep.search.projection import index_mapping
+from keep.shared.errors import AppError
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
 def isolated_database():
-    admin = os.getenv("APPCHI_IDENTITY_TEST_ADMIN_URL")
+    admin = os.getenv("KEEP_IDENTITY_TEST_ADMIN_URL")
     if not admin:
         pytest.skip("Requires isolated local PostgreSQL admin DSN")
-    name = "appchi_local_bootstrap_test_" + uuid4().hex
+    name = "keep_local_bootstrap_test_" + uuid4().hex
     with psycopg.connect(admin, autocommit=True) as conn:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     parameters = conninfo_to_dict(admin)
@@ -50,7 +50,7 @@ def test_worker_bootstrap_and_restore_rejection_without_restore_write_privilege(
     @contextmanager
     def transaction(*args, **kwargs):
         with database.transaction(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             yield conn
 
     worker = SimpleNamespace(transaction=transaction)
@@ -61,12 +61,12 @@ def test_worker_bootstrap_and_restore_rejection_without_restore_write_privilege(
         ).fetchone()
         assert privileges == {"can_read": True, "can_write": False}
     # The injected DB is disposable; these settings only exercise the independent
-    # local-scope validator and never connect to the interactive appchi_local DB.
+    # local-scope validator and never connect to the interactive keep_local DB.
     settings = SimpleNamespace(
         environment="development",
         elasticsearch_url="http://localhost:59200",
         elasticsearch_index=ALIAS,
-        database_url=SecretStr("postgresql://worker@localhost/appchi_local"),
+        database_url=SecretStr("postgresql://worker@localhost/keep_local"),
     )
     client = MagicMock()
     client.indices.exists_alias.return_value = False

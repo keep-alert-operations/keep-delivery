@@ -15,9 +15,9 @@ no dependency, database migration or coordinated backend rollout.
 
 | Repository | Local HEAD | Task scope |
 |---|---|---|
-| appchi-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Uncommitted layout implementation, tests and UI notes |
-| appchi-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` | Existing local API; no task changes |
-| appchi-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | This evidence and implementation-status entry |
+| keep-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Uncommitted layout implementation, tests and UI notes |
+| keep-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` | Existing local API; no task changes |
+| keep-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | This evidence and implementation-status entry |
 
 Existing unrelated edits in these checkouts were preserved. The workspace
 manifest and dependency pins were inspected; the frontend contract dependency
@@ -27,7 +27,7 @@ available at `https://localhost:3443` throughout the checks.
 
 ## Executed verification
 
-Commands ran from `appchi-frontend`, with engineering receipts recorded for the
+Commands ran from `keep-frontend`, with engineering receipts recorded for the
 final browser, type, changed-file formatting and isolated build checks.
 
 | Check | Result |
@@ -35,7 +35,7 @@ final browser, type, changed-file formatting and isolated build checks.
 | `PLAYWRIGHT_CHANNEL=chrome node node_modules/@playwright/test/cli.js test --config .local/dashboard-layout.config.ts tests/dashboard-layout.spec.ts tests/dashboard-counts.spec.ts tests/preset-choices.spec.ts tests/configuration-history.spec.ts --workers=1` | 33 passed in 1.2 minutes |
 | `node node_modules/typescript/bin/tsc --noEmit` | Passed |
 | Prettier `--check` on the six changed TypeScript/TSX/CSS/test files | Passed |
-| `node node_modules/next/dist/bin/next build`, with `APPCHI_NEXT_DIST_DIR=.next-dashboard-build` | Passed; compiled and generated all three static pages |
+| `node node_modules/next/dist/bin/next build`, with `KEEP_NEXT_DIST_DIR=.next-dashboard-build` | Passed; compiled and generated all three static pages |
 | `git diff --check` | Passed |
 | `npm run format:check` | Failed on 66 unchanged baseline files; no unrelated formatting applied |
 
@@ -81,4 +81,4 @@ inspected. They supplement interaction assertions.
 - [Saved layout at 800 pixels](saved-800.png)
 - [Saved layout at 390 pixels](saved-390.png)
 
-Frontend behavior is documented in [UI design notes](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md).
+Frontend behavior is documented in [UI design notes](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/ui-design.md).

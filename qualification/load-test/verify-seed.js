@@ -18,7 +18,7 @@ export const options = {scenarios: {verification: {
   thresholds: {checks: ['rate==1']}, systemTags: ['status', 'method', 'name']};
 
 export default function () {
-  http.cookieJar().set(origin, '__Host-appchi_session', account.cookie, {path: '/', secure: true});
+  http.cookieJar().set(origin, '__Host-keep_session', account.cookie, {path: '/', secure: true});
   const query = encodeURIComponent(`application == "load-${runId}"`);
   const until = Date.now() + 10 * 60 * 1000;
   while (Date.now() < until) {

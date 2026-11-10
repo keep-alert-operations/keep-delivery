@@ -5,6 +5,6 @@
   "alembic_head": "0047",
   "interfaces": [
     "migrate(dsn)",
-    "appchi-migrate"
+    "keep-migrate"
   ]
 }

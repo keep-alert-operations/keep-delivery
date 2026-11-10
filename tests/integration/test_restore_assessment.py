@@ -9,16 +9,16 @@ from uuid import uuid4
 import psycopg
 import pytest
 
-from appchi.recovery.assessment import assess_restore
-from appchi.recovery.evidence import (
+from keep.recovery.assessment import assess_restore
+from keep.recovery.evidence import (
     Evidence,
     EvidenceBinding,
     CheckpointPage,
     checkpoint_page_digest,
     PAGED_CHECKPOINT_VERSION,
 )
-from appchi.recovery.restore import begin_restore, collect_restore
-from appchi.shared.errors import AppError
+from keep.recovery.restore import begin_restore, collect_restore
+from keep.shared.errors import AppError
 from test_maintenance_repository import maintenance_db  # noqa: F401
 from test_restore_fencing import recovery, inputs  # noqa: F401
 
@@ -238,7 +238,7 @@ def test_assessment_has_no_writes_or_content_and_runs_as_recovery_role(recovery)
     @contextmanager
     def recovery_role(*args, **kwargs):
         with original(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_recovery")
+            conn.execute("SET LOCAL ROLE keep_recovery")
             yield conn
 
     db.transaction = recovery_role
@@ -259,5 +259,5 @@ def test_assessment_has_no_writes_or_content_and_runs_as_recovery_role(recovery)
         )
     )
     with pytest.raises(psycopg.errors.InsufficientPrivilege), db.transaction() as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         conn.execute("SELECT * FROM restore_evidence_stage")

@@ -199,7 +199,7 @@ def comparison_result(path, name, *, valid=True, scenarios=("steady",), commit="
             {
                 "run": name,
                 "workload": {"version": "pipeline-v1"},
-                "environment": {"packages": {"appchi-domain": {"commit": commit}}},
+                "environment": {"packages": {"keep-domain": {"commit": commit}}},
                 "pipeline": {
                     "correctness_passed": valid,
                     "scenarios": [
@@ -263,7 +263,7 @@ def test_editable_provenance_parses_file_urls_and_rejects_failed_git(tmp_path, m
     monkeypatch.setattr(phase.importlib.metadata, "distribution", lambda name: Distribution())
     packages = phase.package_provenance()
     assert Path(seen[0]) == tmp_path / "my repo"
-    assert packages["appchi-domain"] == {"version": "0.1.0", "editable": True, "commit": "c"}
+    assert packages["keep-domain"] == {"version": "0.1.0", "editable": True, "commit": "c"}
     assert git_revision(str(tmp_path / "not-a-checkout")) == {
         "commit": None,
         "dirty": None,

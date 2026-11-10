@@ -9,8 +9,8 @@ from uuid import uuid4
 from confluent_kafka import TopicPartition
 import pytest
 
-from appchi.operators.kafka_drain import require_drain
-from appchi.shared.errors import AppError
+from keep.operators.kafka_drain import require_drain
+from keep.shared.errors import AppError
 from test_operator_repository import operators, create  # noqa: F401
 from test_product import browser  # noqa: F401
 
@@ -34,7 +34,7 @@ def test_request_lifetime_and_every_partition_must_cross_the_frozen_barrier(
     settings = SimpleNamespace(
         environment="drain-" + uuid4().hex, kafka_bootstrap="fixture:9092", clock_health_file=health
     )
-    topic = f"appchi.{settings.environment}.alerts.received"
+    topic = f"keep.{settings.environment}.alerts.received"
     work = SimpleNamespace(
         operator_id=operator["id"],
         tenant_id=operators[2],

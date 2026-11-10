@@ -9,10 +9,10 @@ from elasticsearch import Elasticsearch
 import psycopg
 import pytest
 
-from appchi.search.rebuild import RebuildBinding, bind_serving_index, start_rebuild, rebuild_turn
-from appchi.search.projection import index_mapping
-from appchi.shared.errors import AppError
-from appchi.worker import projection_turn
+from keep.search.rebuild import RebuildBinding, bind_serving_index, start_rebuild, rebuild_turn
+from keep.search.projection import index_mapping
+from keep.shared.errors import AppError
+from keep.worker import projection_turn
 from test_product import browser, admit_alert  # noqa: F401
 from test_search_pipeline import real_db as isolated_db
 
@@ -31,10 +31,10 @@ def real_db():
 
 @pytest.fixture
 def index(real_db):
-    url = os.getenv("APPCHI_TEST_ELASTICSEARCH_URL")
+    url = os.getenv("KEEP_TEST_ELASTICSEARCH_URL")
     if not url:
         pytest.skip("Requires real Elasticsearch")
-    prefix = "appchi-rebuild-test-" + uuid4().hex + "-"
+    prefix = "keep-rebuild-test-" + uuid4().hex + "-"
     alias, source = prefix + "alias", prefix + "source"
     binding = RebuildBinding(
         alias=alias,
@@ -69,7 +69,7 @@ def index(real_db):
 def browser_settings(index):
     # The API reads through the serving alias that `index` bound.
     return {
-        "elasticsearch_url": os.environ["APPCHI_TEST_ELASTICSEARCH_URL"],
+        "elasticsearch_url": os.environ["KEEP_TEST_ELASTICSEARCH_URL"],
         "elasticsearch_index": index[1].alias,
     }
 
@@ -199,7 +199,7 @@ def test_corrupt_target_blocks_validation_without_mutating_source(
 def test_retired_alert_before_indexing_is_covered_by_final_tombstone(
     index, browser, real_db, cipher, profile, v1
 ):
-    from appchi.recovery.retirement import retire_alert
+    from keep.recovery.retirement import retire_alert
     from test_incident_retirement import Store
 
     es, binding, source = index
@@ -240,7 +240,7 @@ def test_retired_alert_before_indexing_is_covered_by_final_tombstone(
 def test_rebuild_preserves_independent_gate_and_cancellation_resumes_old_epoch(
     index, browser, real_db, cipher, profile, v1
 ):
-    from appchi.search.rebuild import cancel_rebuild
+    from keep.search.rebuild import cancel_rebuild
 
     es, binding, source = index
     tenant, _ = admit_alert(real_db, cipher, profile, v1)
@@ -284,7 +284,7 @@ def test_new_tenant_inherits_epoch_under_restricted_api_role(index, browser, rea
     @contextmanager
     def restricted(*args, **kwargs):
         with original(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             yield conn
 
     real_db.transaction = restricted

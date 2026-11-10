@@ -9,11 +9,11 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from appchi.live import LiveRegistry
-from appchi.search.counts import CountQuery, CountReader, CountState
-from appchi.search.reader import SearchReader, SearchScope
-from appchi.shared.crypto import EnvelopeCipher
-from appchi.shared.errors import AppError
+from keep.live import LiveRegistry
+from keep.search.counts import CountQuery, CountReader, CountState
+from keep.search.reader import SearchReader, SearchScope
+from keep.shared.crypto import EnvelopeCipher
+from keep.shared.errors import AppError
 
 
 def test_live_invalidation_does_not_wait_for_slow_tenant_load():
@@ -43,7 +43,7 @@ def test_live_invalidation_does_not_wait_for_slow_tenant_load():
 
 @pytest.mark.asyncio
 async def test_activity_sql_runs_in_worker_while_event_loop_remains_responsive(monkeypatch):
-    from appchi.identity import session
+    from keep.identity import session
 
     event_loop_thread = get_ident()
     started, release = Event(), Event()
@@ -163,7 +163,7 @@ def test_cleanup_token_is_bound_to_session_tenant_epoch_and_cleanup_purpose():
 
 
 def test_search_client_reuses_transport_and_keeps_short_cleanup_budget():
-    from appchi.search_clients import search_client
+    from keep.search_clients import search_client
 
     calls = []
 
@@ -184,8 +184,8 @@ def test_search_client_reuses_transport_and_keeps_short_cleanup_budget():
 
 
 def test_expired_database_budget_prevents_next_statement():
-    from appchi.db import BudgetConnection
-    from appchi.request_budget import deadline
+    from keep.db import BudgetConnection
+    from keep.request_budget import deadline
 
     calls = []
     connection = BudgetConnection(SimpleNamespace(execute=lambda *a, **kw: calls.append(a)))
@@ -199,9 +199,9 @@ def test_expired_database_budget_prevents_next_statement():
 
 
 def test_database_cursor_bounds_repeated_work_and_reads(monkeypatch):
-    from appchi.db import BudgetConnection
-    from appchi.request_budget import request_budget
-    import appchi.request_budget as budget
+    from keep.db import BudgetConnection
+    from keep.request_budget import request_budget
+    import keep.request_budget as budget
 
     clock = [100.0]
     monkeypatch.setattr(budget, "monotonic", lambda: clock[0])
@@ -232,8 +232,8 @@ def test_database_cursor_bounds_repeated_work_and_reads(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_product_handler_has_aggregate_deadline(monkeypatch):
-    from appchi.http import create_http_app
-    import appchi.http as module
+    from keep.http import create_http_app
+    import keep.http as module
 
     original_timeout = asyncio.timeout
     monkeypatch.setattr(module.asyncio, "timeout", lambda _: original_timeout(0.03))

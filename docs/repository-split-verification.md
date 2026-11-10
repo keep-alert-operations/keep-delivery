@@ -1,6 +1,6 @@
 # Repository split verification — 2026-10-01
 
-The eleven private repositories are owned by `appchi-alert-operations`. The source
+The eleven private repositories are owned by `keep-alert-operations`. The source
 monorepo is retained. Each repository has filtered Git history, its owned source,
 README, scoped agent instructions and checks appropriate to its contents. Internal
 dependencies and the workspace manifest pin exact commits.
@@ -9,7 +9,7 @@ The immutable source checkpoint was captured from original Git commit
 `13ea15ff53364b0ef1df1b9126fd075b013333ec` plus the user's local working state.
 `workspace/source-inventory.json` records file provenance and destinations;
 each repository's `SOURCE.md` records extraction provenance. The final workspace
-is a sibling directory, `appchi-workspace`, with independent checkouts and the
+is a sibling directory, `keep-workspace`, with independent checkouts and the
 system-wide `AGENTS.md` copied from delivery.
 
 ## Executed checks

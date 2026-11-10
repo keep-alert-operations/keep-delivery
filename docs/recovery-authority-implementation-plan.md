@@ -2,15 +2,15 @@
 
 This is a **non-normative, assistant-selected implementation proposal**, not an
 amendment to the accepted recovery contracts or a qualification result. The new
-[authority record models](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/recovery/authority_records.py) are
+[authority record models](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/recovery/authority_records.py) are
 unconnected to runtime writers, the independent evidence adapter, database
 migrations, restore collection and capability gates. Validating a record does not
 prove publication, durability, complete coverage or safe recovery.
 
-The governing requirements remain [shared system completion §20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-system-completion.md),
-[identity configuration §§11–12](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-identity-configuration.md),
-[operator operations §28](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-operator-operations.md) and
-[reliability and operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-reliability-operations.md). In particular,
+The governing requirements remain [shared system completion §20](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-system-completion.md),
+[identity configuration §§11–12](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md),
+[operator operations §28](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-operator-operations.md) and
+[reliability and operations](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-reliability-operations.md). In particular,
 permission uncertainty keeps human authorization gated; unproved credential
 state requires invalidation, and unproved operator existence remains fenced.
 Fresh directory data cannot reconstruct post-backup local grant revocations.
@@ -25,7 +25,7 @@ SHA-256 hex. Required fields cannot be omitted or null. They contain no roles,
 grants, usernames, operator names, configuration bodies, raw keys, verifiers,
 ciphertext, key-wrapping metadata or arbitrary attributes.
 
-An `appchi-authority-attempt-v1` descriptor binds an immutable attempt ID,
+An `keep-authority-attempt-v1` descriptor binds an immutable attempt ID,
 producer epoch/version, tenant/resource IDs, adjacent base/after revisions,
 distinct before/after digests and one typed effect. Permission effects scope the
 resource ID to the tenant. Operator effects cover creation, readiness and
@@ -35,19 +35,19 @@ other operator/credential transitions require an existing revision. These are
 proposed dedicated authority revisions, not a claim that today's row revisions
 already advance for every required transition.
 
-An `appchi-authority-evidence-v1` record binds that complete attempt to intent,
+An `keep-authority-evidence-v1` record binds that complete attempt to intent,
 final or cancel. Its UUIDv5 ID uses the attempt UUID as namespace and the exact
-name `appchi-authority-evidence-v1:{phase}`. Its digest covers the entire record
+name `keep-authority-evidence-v1:{phase}`. Its digest covers the entire record
 except the digest field, including phase, identity and attempt. A later collector
 must reject conflicting descriptors for one attempt, final/cancel conflicts,
 missing intents and broken per-resource predecessor chains. A single model
 cannot validate a history, prove a transition's actual state, or establish an
 acknowledged independent write. Hashes are integrity commitments, not signatures.
 
-Coverage uses `appchi-authority-coverage-descriptor-v1` inside a digested
-`appchi-authority-coverage-v1` record. Each producer epoch belongs to **one tenant
+Coverage uses `keep-authority-coverage-descriptor-v1` inside a digested
+`keep-authority-coverage-v1` record. Each producer epoch belongs to **one tenant
 and one immutable sorted set of covered families**. The UUIDv5 namespace is that
-epoch and the name is `appchi-authority-coverage-v1:{baseline|opened|closed}`.
+epoch and the name is `keep-authority-coverage-v1:{baseline|opened|closed}`.
 Changing scope within an epoch therefore creates a conflicting immutable ID,
 which the eventual ledger/adapter must reject; it must never overwrite it.
 
@@ -92,7 +92,7 @@ operator are rejected. No restore helper extends or regenerates a deadline.
 
 Both digest functions hash ASCII JSON with escaped non-ASCII characters, sorted
 object keys, compact separators and no NaN, inside distinct versioned envelopes:
-`appchi-permission-state-v1` and `appchi-operator-authority-state-v1`. This binds
+`keep-permission-state-v1` and `keep-operator-authority-state-v1`. This binds
 deadlines and lifecycle metadata without exporting them. Ciphertext presence
 does not prove decryption, encryption AAD, key identity or remote authorization;
 those checks remain separate. Models must be constructed through validation,

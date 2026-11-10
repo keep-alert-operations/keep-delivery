@@ -2,12 +2,12 @@
 
 **Later correction — REV-35:** automatic directory synchronization is now
 nice-to-have. The earlier REV-34 identity statements below are historical;
-[current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)
+[current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)
 governs explicit publication and deferred propagation.
 
 Implemented 2026-09-30 following the user's corrections and explicit clarification
 that the next source update may clear ended maintenance suppression. This is
-delivery evidence, not a runtime contract. [Worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md)
+delivery evidence, not a runtime contract. [Worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md)
 is authoritative and registered as REV-34. Existing uncommitted work was preserved.
 
 ## Delivered changes

@@ -19,7 +19,7 @@ def test_superadmin_can_create_tenant_under_api_role(browser, real_db, monkeypat
     @contextmanager
     def restricted(*args, **kwargs):
         with transaction(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             yield conn
 
     body = {
@@ -34,7 +34,7 @@ def test_superadmin_can_create_tenant_under_api_role(browser, real_db, monkeypat
         assert client.post("/api/tenants", json=body).json() == response.json()
     tenant_id = response.json()["data"]["id"]
     with transaction(tenant_id) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         assert conn.execute("SELECT count(*) AS n FROM live_hint_outbox WHERE tenant_id=%s", (tenant_id,)).fetchone()["n"] == 1
         assert conn.execute("SELECT tenant_id FROM live_hint_outbox WHERE tenant_id=%s", (tenant_id,)).fetchone()[
             "tenant_id"

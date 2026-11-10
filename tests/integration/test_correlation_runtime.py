@@ -6,10 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from appchi.alerts.lifecycle import apply_source
-from appchi.alerts.repository import publish, store_alert
-from appchi.correlation import runtime
-from appchi.shared.transactions import coordinator
+from keep.alerts.lifecycle import apply_source
+from keep.alerts.repository import publish, store_alert
+from keep.correlation import runtime
+from keep.shared.transactions import coordinator
 from test_correlation_configuration import TEST_CAPACITY, create, definition, rules  # noqa: F401
 from test_product import browser  # noqa: F401
 
@@ -22,7 +22,7 @@ def running(request):
 
 
 def source(db, tenant, payload, previous=None, capacity=TEST_CAPACITY):
-    from appchi.maintenance.runtime import prepare_for_tenant, apply_transition
+    from keep.maintenance.runtime import prepare_for_tenant, apply_transition
 
     catalog = prepare_for_tenant(db, tenant, capacity)
     with db.transaction(tenant) as conn:

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="6" time="15.782" timestamp="2026-09-30T15:45:51.476201+03:00" hostname="guy_rozenbaum3"><testcase classname="tests.integration.test_operator_synchronous" name="test_create_finishes_both_gateway_phases_and_replay_creates_nothing" time="1.976" /><testcase classname="tests.integration.test_operator_synchronous" name="test_failed_remote_attempt_returns_failure_and_explicit_retry_resumes_same_key" time="1.924" /><testcase classname="tests.integration.test_operator_synchronous" name="test_request_budget_exhaustion_reports_operation_without_background_work" time="1.628" /><testcase classname="tests.integration.test_operator_synchronous" name="test_deleted_operator_final_policy_failure_remains_retryable" time="2.843"><failure message="AssertionError: {&quot;error&quot;:{&quot;code&quot;:&quot;not_found&quot;,&quot;message&quot;:&quot;Operator unavailable.&quot;,&quot;request_id&quot;:&quot;54b225a0-fcac-4132-b2bb-bde446aed3b7&quot;}}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">api = (&lt;starlette.testclient.TestClient object at 0x000001FE0E5656E0&gt;, '/api/tenants/8dc3ad24-55a2-4065-b78b-74732caf1633/operators', &lt;test_operator_repository.VerifiedFixture object at 0x000001FE0E60E520&gt;)
 monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000001FE0EA31370&gt;
-real_db = &lt;appchi.db.Database object at 0x000001FE0E566520&gt;
+real_db = &lt;keep.db.Database object at 0x000001FE0E566520&gt;
 
     def test_deleted_operator_final_policy_failure_remains_retryable(api, monkeypatch, real_db):
         client, base, adapter = api
@@ -30,7 +30,7 @@ E       assert 404 == 200
 E        +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
 
 backend\tests\integration\test_operator_synchronous.py:101: AssertionError</failure></testcase><testcase classname="tests.integration.test_source_driven_maintenance" name="test_suppression_survives_read_note_and_correlation_until_source[expiry]" time="2.766"><failure message="KeyError: 'received_at'">setup = ((&lt;starlette.testclient.TestClient object at 0x000001FE0E60C180&gt;, UUID('7f3fcec6-5783-4abe-be30-c1a8e50330f7'), UUID('...33-c57d3428b506'), namespace(environment='inline-test', global_tenant_id=UUID('c13ea9ef-ded3-4043-9733-c57d3428b506')))
-real_db = &lt;appchi.db.Database object at 0x000001FE0E60E650&gt;
+real_db = &lt;keep.db.Database object at 0x000001FE0E60E650&gt;
 v1 = {'application': 'test-6470a63e-aad7-4ea2-9650-237bc56f8915', 'object': 'cpu', 'node_name': 'n1', 'message': 'firing', ...}
 end_kind = 'expiry'
 
@@ -70,7 +70,7 @@ end_kind = 'expiry'
 E           KeyError: 'received_at'
 
 backend\tests\integration\test_source_driven_maintenance.py:48: KeyError</failure></testcase><testcase classname="tests.integration.test_source_driven_maintenance" name="test_suppression_survives_read_note_and_correlation_until_source[disable]" time="2.564"><failure message="KeyError: 'received_at'">setup = ((&lt;starlette.testclient.TestClient object at 0x000001FE0EDCDEB0&gt;, UUID('8a652829-7178-48b5-8c22-880a153aacdf'), UUID('...61-bc76d82a40c3'), namespace(environment='inline-test', global_tenant_id=UUID('c618fb24-7a2d-4ae0-ad61-bc76d82a40c3')))
-real_db = &lt;appchi.db.Database object at 0x000001FE0ECB9250&gt;
+real_db = &lt;keep.db.Database object at 0x000001FE0ECB9250&gt;
 v1 = {'application': 'test-dff67008-61f0-4381-8d8f-532f6d8f9534', 'object': 'cpu', 'node_name': 'n1', 'message': 'firing', ...}
 end_kind = 'disable'
 

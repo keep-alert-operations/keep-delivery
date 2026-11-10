@@ -6,9 +6,9 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.access import accessible_tenants
-from appchi.request_budget import request_budget
-from appchi.shared.errors import AppError
+from keep.access import accessible_tenants
+from keep.request_budget import request_budget
+from keep.shared.errors import AppError
 from test_configuration_counts import environment  # noqa: F401, F811
 from test_product import browser  # noqa: F401
 
@@ -60,7 +60,7 @@ def test_set_based_roles_preserve_precedence_revocations_and_global_access(real_
 
     def read():
         with real_db.transaction() as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             return accessible_tenants(conn, principal)
 
     rows = read()
@@ -141,7 +141,7 @@ def test_cursor_result_iteration_respects_aggregate_deadline(real_db):
 
 
 def test_production_restore_guard_preserves_statement_budget_across_transactions(real_db, tenant):
-    from appchi.db import Database
+    from keep.db import Database
 
     database = Database(real_db.pool.conninfo, deployment_epoch="scalability-users")
     try:
@@ -199,7 +199,7 @@ def test_production_restore_guard_preserves_statement_budget_across_transactions
 def test_incident_metadata_skips_maintenance_preparation_but_keeps_authorization(
     browser, real_db, tenant, monkeypatch
 ):  # noqa: F811
-    import appchi.incidents.routes as routes
+    import keep.incidents.routes as routes
 
     client, actor = browser
     with real_db.transaction() as conn:

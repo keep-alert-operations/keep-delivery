@@ -59,13 +59,13 @@ link" meant the removed ticket queue link).
 
 ## 2026-11-09 ServiceNow ticket panels (REV-65)
 
-The user asked for a dashboard panel type like Keep's "Service Now" widget and approved
+The user asked for a dashboard panel type like KeepHQ's "Service Now" widget and approved
 the canvas at https://claude.ai/artifact/Cz4RDE8QUBt35p4d1KrZ1e, without its queue
 link. A `servicenow` panel shows how many ServiceNow incidents a team has: team,
 ticket state (open, in_progress, both), detection (hamal, direct, all) and count
-thresholds. The Product API asks the company's ticket counting service with Keep's
+thresholds. The Product API asks the company's ticket counting service with KeepHQ's
 parameters (`team`, `state=new|in_progress|all`, `system_failure=true|false|absent`),
-from the deployment secret `APPCHI_TICKET_COUNT_URL` (user decision: no UI editing),
+from the deployment secret `KEEP_TICKET_COUNT_URL` (user decision: no UI editing),
 and reuses answers for 30 seconds per process (user decision). Team not found and
 missing counts are shown as such instead of 0; a failing service keeps the last count
 greyed. Built on `codex/servicenow-panel`: design (REV-65, dashboard spec, verification
@@ -98,7 +98,7 @@ REV bound).
   local database (dropped afterwards), and 10/10 with the counting service configured
   against the fake service. Its first run on the fresh database had one failure that
   did not reproduce and was not captured.
-- Local stack journey: migration 0065 was applied to `appchi_local` (user approved
+- Local stack journey: migration 0065 was applied to `keep_local` (user approved
   before merge). A side API on 58020 and the branch UI on 3446 ran beside the main
   stack, with the fake counting service on 58090. Signed in as local-editor, two
   ServiceNow panels were created in the dialog (live preview count, threshold, Team
@@ -288,7 +288,7 @@ frontend #26 (`1cbf4fa`); this change pins those heads in the manifest.
 ## 2026-11-04 Font size in HTML panels (REV-57 later decision)
 
 The user asked to change font sizes in HTML dashboard panels. `font-size` joins the
-inline style allowlist on the server (`appchi.configuration.html`) and in the browser
+inline style allowlist on the server (`keep.configuration.html`) and in the browser
 (`lib/panel-html.ts`), with the same value rules and no size limit. No API or stored
 data changes. Domain `5b66a43` is pinned in API, ingestion, processor, correlation and
 indexer. Not yet merged.
@@ -403,7 +403,7 @@ generated alarm (a heavy action-trailer loop, 27.4 s), the
 implementation (register REV-58; preset operations 3, 8 and 16). Merged with merge
 commits at the user's request after CI `verify` passed on each pull request:
 migrations #9 (`20a16bd`), domain #19 (`d8229ae`), contracts #9 (`0523e26`), API #15
-(`3db8abe`, pins domain `d8229ae`), frontend #18 (`6737ad1`, pins `@appchi/contracts`
+(`3db8abe`, pins domain `d8229ae`), frontend #18 (`6737ad1`, pins `@keep/contracts`
 `0523e26`; `npm run generate` reproduces the committed client), and the domain-pin-only
 ingestion #12 (`6acf1a9`), processor #11 (`42146f7`), correlation #10 (`f0559d6`) and
 indexer #15 (`b36cfed`), which keep one domain in the delivery environment. The user held
@@ -492,7 +492,7 @@ manifest, the service pins in `pyproject.toml` and the lock; the services pin do
   settings left and preview right; HTML panels with a line-numbered editor, live
   preview and the server's removal report; `HtmlTile` with a second DOMPurify 3.4.17
   pass (`lib/panel-html.ts`); no count request for a dashboard of only HTML panels.
-  Pins `@appchi/contracts` `258e77e`; `npm run generate` reproduces the client.
+  Pins `@keep/contracts` `258e77e`; `npm run generate` reproduces the client.
 - Ingestion, processor, correlation and indexer move their domain pins to `1a8d71c` so
   the delivery environment resolves one domain.
 - Design: REV-57, spec notes, verification plan "Panel types (REV-57)", `check_docs.py`
@@ -544,7 +544,7 @@ return the detail's counts on every list row (register REV-56; incident operatio
 14 and 16; system completion 10). Merged with merge commits on 2026-11-02 at the user's
 request, after rebasing each branch onto main and repinning: domain #18 (`40e5b17`, which
 also contains the count-test fixture, domain #17 `6142bf4`), API #14 (`c9c5a12`, pins domain
-`40e5b17`), contracts #8 (`b1f9988`), frontend #17 (`054dc33`, pins `@appchi/contracts`
+`40e5b17`), contracts #8 (`b1f9988`), frontend #17 (`054dc33`, pins `@keep/contracts`
 `b1f9988`; `npm run generate` reproduces the committed client), design #22 (`1f9672e`) and
 this delivery change. CI `verify` passed on each pull request before it merged. This
 delivery change pins the merged main heads in the manifest and the service pins in
@@ -663,10 +663,10 @@ request; it was not redeployed from main.
   retained bytes, outside the identity, semantic revision and rule fields;
   `alert_provider()` reads a missing provider as `api` for v1 and none for v2 in CEL,
   presentation and search documents; `provider` (nullable enum) and `alert_rule_url`
-  join the searchable catalog and allowed columns. `appchi.alerts.provider_backfill`
+  join the searchable catalog and allowed columns. `keep.alerts.provider_backfill`
   fills live alerts from their latest applied source event under the tenant
   coordinator and publishes a non-semantic `provider-backfill` projection change.
-- Processor: `python -m appchi.provider_backfill` (README). Indexer: the Elasticsearch
+- Processor: `python -m keep.provider_backfill` (README). Indexer: the Elasticsearch
   equivalence test adds provider and rule-URL cases. API, correlation and ingestion:
   no code change.
 - Frontend: alert detail shows Provider and an Open alert rule button beside Open
@@ -696,7 +696,7 @@ request; it was not redeployed from main.
   in installed Chrome: `alert-provider.spec.ts` 3, `alert-name.spec.ts` 3,
   `preset-columns.spec.ts` 8 and `redesign.spec.ts` 6 passed. The stack's UI dev server
   was stopped for this run and restarted by Start.
-- Shared local stack, 2026-10-31, at the user's request: backed up `appchi_local` to
+- Shared local stack, 2026-10-31, at the user's request: backed up `keep_local` to
   `.local/runtime/pre-0060-provider.dump`; `Start -Restart` applied 0060 (head 0060) and
   stopped at `search_mapping_mismatch`; the search rebuild (job `dca59f01`) completed
   and switched the alias; `Start` then `local-v2.ps1 -Action Start -Restart` (17 gateway
@@ -721,7 +721,7 @@ request; it was not redeployed from main.
 
 The user asked for an optional v2 `name` defaulting to `key_field`, with Grafana alerts
 named by the alert rule, and approved the plan with one change: a supplied name is part
-of the v2 identity. Register REV-54; [alert operations](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-operations.md#5-v2-identity-encoding)
+of the v2 identity. Register REV-54; [alert operations](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-alert-operations.md#5-v2-identity-encoding)
 field inventory, 1, 3, 5, 7 and 24; operator operations 18. Committed on 2026-10-31
 on `codex/alert-name` branches cut from main, opened as pull requests and merged with merge
 commits at the user's request: contracts #6 (`9aad257`), domain #15 (`42cbf58`), migrations
@@ -732,7 +732,7 @@ merged. Branch heads: contracts `97f374e`, domain `5ce59b3` (pins contracts `97f
 migrations `8f2e4fc`, design `bb56bcf`, API `40a3f4a`, indexer `62e5fd1`, processor
 `74c763a`, correlation `b156344` and ingestion `a398431` (each pins domain `5ce59b3`;
 processor, correlation and ingestion change nothing else) and frontend `7967efb` (pins
-`@appchi/contracts` `97f374e`). This delivery change pins the merged main heads in the manifest
+`@keep/contracts` `97f374e`). This delivery change pins the merged main heads in the manifest
 and the service pins in `pyproject.toml` and the lock; the services' own locks keep domain
 `5ce59b3` and contracts `97f374e`, which have the same trees as their merge commits.
 Redeployed on the shared local stack from these main heads;
@@ -804,9 +804,9 @@ not deployed elsewhere.
 - Shared local stack, 2026-10-31, run `cfd8f14b-14a6-4067-aac9-54fb4b97020d` (ledger and
   screenshots under ignored `.local/verification/`), at the user's request: stopped the
   stale REV-53 worktree API (58100) and UI (3443) after the user approved it; `Start
-  -Restart` applied 0058 and 0059 to `appchi_local` (head 0059) and stopped at
+  -Restart` applied 0058 and 0059 to `keep_local` (head 0059) and stopped at
   `search_mapping_mismatch` as expected; the search rebuild (job `8e70281c`) copied all 52
-  documents into `appchi-local-alerts-8e70281c-…` and switched the alias, existing v2 alerts
+  documents into `keep-local-alerts-8e70281c-…` and switched the alias, existing v2 alerts
   named by their key; `Start` then started the workers; `local-v2.ps1 -Action Start
   -Restart` was also needed, because plain Start leaves the v2 private ingestion on old
   code (a first send against it rejected `name` as an unknown field and admitted a Grafana
@@ -842,7 +842,7 @@ not deployed elsewhere.
 The user approved the [incident reports mock](https://claude.ai/artifact/NxBWGUChKyvq1CnRJmxoky)
 (option A, incidents only; noise reports left for later) and the
 [implementation plan](../docs/incident-reports-implementation-plan.md). Register REV-53;
-[incident operations 20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-incident-operations.md#20-incident-reports-i5-n3-rev-53).
+[incident operations 20](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-incident-operations.md#20-incident-reports-i5-n3-rev-53).
 Merged to main through pull requests with merge commits on 2026-10-31, after REV-52
 (design #17 `dbccc7a`, frontend #13 `06a8d7b`), at the user's request: design #18
 (`bb0a03e`), contracts #5 (`b01b099`), migrations #6 (`4abfd60`), API #10 (`81638f5`)
@@ -906,7 +906,7 @@ Domain, ingestion, processor, correlation and indexer are unchanged.
   API ran on 127.0.0.1:58100 and the worktree UI replaced the main UI on
   https://localhost:3443; the main API, ingestion and workers were unchanged, and Kafka
   was started from the main Compose configuration. Migration 0058 was not applied to
-  `appchi_local`, so main's migration history stays valid; the report is correct
+  `keep_local`, so main's migration history stays valid; the report is correct
   without it. S1 identity 5 passed and S2 native v1 1 passed (run from the main
   frontend checkout as black-box suites). S4 with real Keycloak sign-in as
   `local-editor` passed in installed Chrome: explicit High severity, link to the run's
@@ -1046,12 +1046,12 @@ pins those heads in the manifest and lock.
   qualifier. Search documents carry `dismissed_until` only when present; feed, group
   and count responses return `next_change_at` from a global aggregation in the same
   request.
-- API: `set_dismissal` behind `APPCHI_ALERT_DISMISSAL_ENABLED` (default off), the reason
+- API: `set_dismissal` behind `KEEP_ALERT_DISMISSAL_ENABLED` (default off), the reason
   written as a note in the same transaction, command and detail responses with
   `dismissal`.
 - Frontend: `dismiss-dialog.tsx`; Dismiss…, Change dismissal… and Undismiss in the row
   menu and on the alert page; "Suppressed · until" indicator; detail band and history
-  labels; Feed and alert page refresh at the end. Client regenerated with `@appchi/contracts`
+  labels; Feed and alert page refresh at the end. Client regenerated with `@keep/contracts`
   pinned to `ae5ce85`.
 - Rollout: run 0056; deploy the indexer and writers; rebuild the search index so it has
   the `dismissed_until` mapping (strict mapping; local bootstrap compares it exactly);
@@ -1065,10 +1065,10 @@ pins those heads in the manifest and lock.
   `test_dismissal.py` (domain, 10), contracts `test_alert_dismissal_command.py` and
   delivery `test_alert_dismissal.py` (4, with `test_product` 9) passed. The delivery
   integration suite run file by file had failures in 20 files; rerunning those files on
-  this branch and on `main` (`appchi-workspace` checkout, same bindings) gave 17 failing
+  this branch and on `main` (`keep-workspace` checkout, same bindings) gave 17 failing
   tests here and 69 on `main`. The only branch-only failures were `test_cel_routes`
   compile-deadline timeouts, which then passed 2 of 3 reruns, matching `main`'s latency.
-  Kafka-bound cases were skipped without `APPCHI_TEST_KAFKA_BOOTSTRAP`. Design
+  Kafka-bound cases were skipped without `KEEP_TEST_KAFKA_BOOTSTRAP`. Design
   `check_docs.py`, delivery `verify_documents.py`, `check_context.py` (after
   `context.py render`), `check_contracts.py` and `verify_boundaries.py` passed.
   Frontend with installed Chrome: `tsc --noEmit` and Prettier on changed files passed;
@@ -1087,12 +1087,12 @@ pins those heads in the manifest and lock.
 ## 2026-10-28 Link an alert to an incident from the alert (REV-48)
 
 The user asked to link an alert to an incident from the alert page and from the Feed
-row's ⋯ menu. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-48--link-an-alert-to-an-incident-from-the-alert-2026-10-28).
+row's ⋯ menu. See the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-48--link-an-alert-to-an-incident-from-the-alert-2026-10-28).
 Frontend only: it reuses the existing link and move commands; no API, contract or
 migration change. Merged to main through pull requests on 2026-10-28 by rebase:
-frontend [#9](https://github.com/appchi-alert-operations/appchi-frontend/pull/9) as
+frontend [#9](https://github.com/keep-alert-operations/keep-frontend/pull/9) as
 `4fb364c` (on `79412f6`, which merged drag-to-select as #8) and design
-[#13](https://github.com/appchi-alert-operations/appchi-design/pull/13) as `d2f1f1f`.
+[#13](https://github.com/keep-alert-operations/keep-design/pull/13) as `d2f1f1f`.
 The workspace manifest names those heads. Tests and the local journey ran on
 drag-to-select commit `4c5fb8f` plus this change; `4c5fb8f` and `79412f6` have
 identical trees, and the rebased commit passes `tsc`. CI: frontend and design
@@ -1133,11 +1133,11 @@ identical trees, and the rebased commit passes `tsc`. CI: frontend and design
 
 The user found the preset create/update screen overloaded and chose option D of the
 [preset editor options canvas](https://claude.ai/artifact/CkERUg32kLwT2AuWdzSJML),
-keeping Validate CEL. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-47--preset-editor-settings-in-tabs-beside-the-preview-2026-10-28).
+keeping Validate CEL. See the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-47--preset-editor-settings-in-tabs-beside-the-preview-2026-10-28).
 
 Merged to main through pull requests on 2026-10-28: frontend
-[#7](https://github.com/appchi-alert-operations/appchi-frontend/pull/7) as `e578791`
-and design [#12](https://github.com/appchi-alert-operations/appchi-design/pull/12) as
+[#7](https://github.com/keep-alert-operations/keep-frontend/pull/7) as `e578791`
+and design [#12](https://github.com/keep-alert-operations/keep-design/pull/12) as
 `715eb5a`, both rebased onto unchanged mains (`9270f25`, `b63ac17`). The workspace
 manifest names those heads. Frontend only: no API, contract or migration change.
 CI: design `verify` passed; frontend `verify` (format, typecheck, `next build`) passed
@@ -1178,7 +1178,7 @@ The user asked to merge the grouping work together with the then-uncommitted REV
 and REV-46 code and the client-guide refresh. Each is its own commit; every repository
 fast-forwarded main to its branch (`codex/alert-grouping`, or
 `codex/always-on-correlation-maintenance` for correlation, processor, indexer and
-ingestion). Python services pin appchi-domain `98986b6`, frontend pins appchi-contracts
+ingestion). Python services pin keep-domain `98986b6`, frontend pins keep-contracts
 `749f670`, and delivery's manifest and lock name the merged heads.
 
 Executed on the final code before the repins, with editable siblings (Windows, Python
@@ -1206,7 +1206,7 @@ The local stack's database was already at 0055.
 ## 2026-10-27 Resolve an incident when all its linked alerts resolve (REV-46)
 
 The user asked that an incident resolve when all of its linked alerts are resolved. See
-the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-46--resolve-an-incident-when-all-its-linked-alerts-resolve-2026-10-27).
+the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-46--resolve-an-incident-when-all-its-linked-alerts-resolve-2026-10-27).
 
 Committed on `codex/alert-grouping` in domain, API, frontend, design and delivery,
 above the REV-39–41 code commits, and merged to main with REV-39–46 on 2026-10-27. No
@@ -1251,7 +1251,7 @@ migration or contract change: `cause` is free text.
 The user asked for a quick filter for alerts assigned to them, for pressing a selected
 quick view again to return to All, and for the grouping toolbar's Reset to saved button
 to read Reset. See the
-[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-45--assigned-to-me-quick-view-toggle-and-a-shorter-reset-2026-10-27).
+[design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-45--assigned-to-me-quick-view-toggle-and-a-shorter-reset-2026-10-27).
 
 Committed locally on the `codex/alert-grouping` branches, not pushed: design
 `9d18998` (from `1326e47`), frontend `7d72ad9` (from `04e6827`) and this delivery
@@ -1289,7 +1289,7 @@ quick-count batch allows 24 queries.
 The user asked to group Feed and saved-preset alerts by a field, each group a mini
 table, approved the [alert grouping mock](https://claude.ai/artifact/FhJsfdk4VB7kAXkjBfx9Dm)
 and the plan, and chose most-alerts-first ordering with a 1,000-value cap. See the
-[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-44--group-alert-results-by-one-field-2026-10-26).
+[design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-44--group-alert-results-by-one-field-2026-10-26).
 
 Committed locally on new `codex/alert-grouping` branches, one per repository, not
 pushed: design `1326e47` (from `dbe6c9c`), migrations `322e72e` (from `e34fdea`),
@@ -1321,7 +1321,7 @@ work.
 - Frontend (`codex/ui-cleanup` @ `55ed846`): Group by control, grouped results
   (`alert-groups.tsx`), Feed and preset wiring with Reset to saved, editor field,
   history comparison, styles, `DESIGN.md` and `docs/ui-design.md`; `generated.ts`
-  regenerated from the local contracts snapshot (the `@appchi/contracts` pin still
+  regenerated from the local contracts snapshot (the `@keep/contracts` pin still
   needs advancing after contracts are committed).
 - Indexer: no change; every groupable field already has an exact keyword mapping.
 - Delivery: `tests/integration/test_preset_grouping.py`; `check_docs.py` and
@@ -1344,7 +1344,7 @@ work.
     display-name and new grouping suites 66 passed, and the search pipeline, restore
     fencing, product and scalability suites 37 passed; ruff check passed.
   - Frontend: TypeScript passed; Prettier passed on every changed file. The controlled
-    Chrome suite (installed Chrome 155, isolated `APPCHI_NEXT_DIST_DIR` server) ran 206
+    Chrome suite (installed Chrome 155, isolated `KEEP_NEXT_DIST_DIR` server) ran 206
     passed, 8 skipped, 0 failed, including the new `tests/grouping.spec.ts` (6). Two
     earlier runs against the shared HTTPS dev server each had one failure of
     `scalability-users.spec.ts:150`, which passed 6 of 6 alone and in the isolated run.
@@ -1362,8 +1362,8 @@ work.
 - Local runtime stack, 2026-10-27, at the user's request: after the user hit
   `request_failed` (the API still ran pre-grouping code and returned 405), the
   launcher stopped the API, ingestion, frontend and workers. It restarted the stopped
-  Kafka, Kong and Grafana containers and migrated `appchi_local` from 0053 through
-  0054 and 0055 with the workers stopped. `python -m appchi.kafka_cutover
+  Kafka, Kong and Grafana containers and migrated `keep_local` from 0053 through
+  0054 and 0055 with the workers stopped. `python -m keep.kafka_cutover
   --record-topic-identity` then verified the broker history and recorded both topic
   IDs, and `local-runtime.ps1 -Action Start` restarted everything on the current
   code (3 workers healthy, local v2 17 gateway checks passed). Two earlier launcher
@@ -1386,15 +1386,15 @@ work.
   p99 search targets are unmeasured.
 - Pending: the migrations branch needs the user's 0053 and 0054 committed beneath it
   (0055's `down_revision` is `0054`); pushing; advancing the API's domain pin, the
-  frontend's `@appchi/contracts` pin and their locks to published commits; and
+  frontend's `@keep/contracts` pin and their locks to published commits; and
   delivery manifest pins. The checks above ran on the combined working trees before
   the commits split them.
 
 ## 2026-10-26 Quieter alert, preset and dashboard screens (REV-43)
 
 The user asked to quieten the Feed, saved presets and dashboards and approved a mock
-before implementation. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-43--quieter-alert-preset-and-dashboard-screens-2026-10-26)
-and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md).
+before implementation. See the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-43--quieter-alert-preset-and-dashboard-screens-2026-10-26)
+and the frontend [UI mapping](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/ui-design.md).
 
 - Frontend commit `55ed846` on local branch `codex/ui-cleanup` (from `4b9ed52`), also
   fast-forwarded into local `main`; not pushed: row ⋯ menus with Assign to me or
@@ -1404,7 +1404,7 @@ and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-
   text, no source line or New chip in rows; times relative to now with the exact time
   in the tooltip. `DESIGN.md`, `.impeccable/design.json` and the docs follow.
 - Checks on the final code: TypeScript and Prettier passed; the controlled Chrome
-  suite (installed Chrome 155, isolated `APPCHI_NEXT_DIST_DIR`) ran 200
+  suite (installed Chrome 155, isolated `KEEP_NEXT_DIST_DIR`) ran 200
   passed, 7 skipped, 0 failed; the preset specs reran 23 passed after a late presets-list
   grid fix. Prettier flags only the checkout's CRLF copies.
   New `tests/ui-cleanup.spec.ts` covers the quick views, the row menu (keyboard,
@@ -1426,11 +1426,11 @@ and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-
 
 After a redesign round with five palette prototypes, the user kept the existing
 frontend design and replaced only its colors with the Ocean palette, in light and
-dark. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-42--ocean-palette-on-the-existing-design-2026-10-26)
-and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md).
+dark. See the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-42--ocean-palette-on-the-existing-design-2026-10-26)
+and the frontend [UI mapping](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/ui-design.md).
 
 - Frontend local branch `design/6-ocean-palette`: `329cf83` recolors the UI and the
-  Appchi Keycloak theme; `4b9ed52` adds `DESIGN.md` and `.impeccable/design.json`.
+  Keep Keycloak theme; `4b9ed52` adds `DESIGN.md` and `.impeccable/design.json`.
   Not pushed or merged. Every color is a semantic role in `src/app/theme.css`, defined
   once per theme; layout, type, components, copy and behavior are unchanged.
 - On that branch: TypeScript passed; Prettier passed apart from the checkout's existing
@@ -1449,7 +1449,7 @@ and the frontend [UI mapping](https://github.com/appchi-alert-operations/appchi-
 ## 2026-10-26 Kafka topic incarnation detection (REV-41)
 
 Follow-up to the REV-40 reset: the source processor itself now refuses a recreated
-received topic. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-41--kafka-topic-incarnation-detection-in-the-source-2026-10-26)
+received topic. See the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-41--kafka-topic-incarnation-detection-in-the-source-2026-10-26)
 and [evidence](../qualification/kafka-topic-incarnation-2026-10-26.md).
 
 - Migration 0054 adds `received_topic_id` and `changed_topic_id`; cutover records both.
@@ -1459,7 +1459,7 @@ and [evidence](../qualification/kafka-topic-incarnation-2026-10-26.md).
 - Another delivery at a recorded coordinate is `source_coordinate_conflict` and fences
   the partition with no timed retry. Retained failures log the exception class and
   AppError code or SQLSTATE in the message.
-- `python -m appchi.kafka_cutover --record-topic-identity` records the IDs for an
+- `python -m keep.kafka_cutover --record-topic-identity` records the IDs for an
   earlier cutover or after a reviewed reset, only while broker history matches.
 - IDs compare by the low 32 bits of each half: confluent-kafka 2.15.1 on Windows
   reports no more.
@@ -1472,12 +1472,12 @@ and [evidence](../qualification/kafka-topic-incarnation-2026-10-26.md).
 User decision: correlation rules and maintenance windows are always on, with no
 capability gate; per-rule and per-window Enable/Disable stays. An unset capacity
 budget is unlimited, and restore no longer turns these features off. See the
-[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-39--always-on-correlation-and-maintenance-2026-10-24).
+[design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-39--always-on-correlation-and-maintenance-2026-10-24).
 
 - Migration 0053 deletes the `correlation` and `maintenance` gate rows and restarts
   rules saved blocked with `consumer_not_integrated` at a new evaluation epoch.
   Stop every writer before applying it.
-- Domain `appchi.shared.capacity` treats a missing or null budget as unlimited and
+- Domain `keep.shared.capacity` treats a missing or null budget as unlimited and
   rejects an invalid one with `capacity_profile_invalid`; correlation and
   maintenance budgets no longer need `qualified`.
 - Removed: the maintenance activation command and runbook, the REV-30
@@ -1506,7 +1506,7 @@ disposable container for tests):
   (four further modules skipped for the same import); correlation/maintenance
   real-CEL subset rerun after the compiler change: 44 passed, 2 REV-34 skips.
   Frontend `tsc --noEmit` passed.
-- Local stack: `appchi_local` backed up to
+- Local stack: `keep_local` backed up to
   `.local/runtime/pre-always-on-20261025.dump`, Start applied 0051–0053, warmup
   completed 22/22 Global and 12/12 Local Demo alerts. Browser (real sign-in): feed
   and alert detail load; a maintenance window was created; a native v1 alert
@@ -1726,7 +1726,7 @@ See [per-repository hosted evidence and changes](../qualification/ci-repair-2026
 
 ## 2026-10-01 Alembic migration runner (REV-38)
 
-`appchi-migrations` now executes its unchanged 44 SQL files through one Alembic
+`keep-migrations` now executes its unchanged 44 SQL files through one Alembic
 revision chain. Verified legacy adoption preserves checksum history/timestamps,
 uses the original transaction/advisory lock, and rejects inconsistent histories.
 Both migration ledgers deny API/worker access. Existing deployment entrypoints
@@ -1772,7 +1772,7 @@ The running stack was not restarted and no company service was changed.
 
 User-requested worker deferrals and synchronous operator provisioning are tracked
 in [the implementation record](../docs/worker-scope-implementation.md), with the
-normative correction in [worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Earlier Kafka-first
+normative correction in [worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md). Earlier Kafka-first
 qualification remains historical evidence, not verification of this later change.
 No shared service or running local application rollout was performed for this change.
 
@@ -1785,7 +1785,7 @@ Kafka-triggered correlation, inline maintenance effects, manual resolve invalida
 versioned search reconciliation, packaged Kong policy enforcement and fenced offline
 cutover. Forward migrations and generated HTTP/event/frontend contracts accompany
 the code. All eight previously open technical decisions are explicitly labelled
-assistant-selected in [the normative pipeline](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-kafka-alert-pipeline.md).
+assistant-selected in [the normative pipeline](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-kafka-alert-pipeline.md).
 
 Executed evidence includes **530 backend unit passes (65 optional-service skips)**,
 7 real Kafka/PG/ES protocol checks, 3 cutover checks, 8 search/rebuild checks,
@@ -1823,7 +1823,7 @@ This preview is not DEL-03 capacity qualification: the 250/s 24-hour run, 500/s 
 
 ### Bare CEL field identifiers â€” 2026-09-27
 
-CEL accepts allow-listed fields as bare identifiers such as `application` and `has(application)`. Assistant-selected compatibility keeps `alert.application` accepted for saved source; new editor suggestions, field chips, string-method signatures, `has()` completion, quick views and examples use bare names. Unknown identifiers and context-disallowed fields remain rejected. The change is additive within `appchi-cel-v1`; saved source is not rewritten and no data/index migration is needed (REV-29).
+CEL accepts allow-listed fields as bare identifiers such as `application` and `has(application)`. Assistant-selected compatibility keeps `alert.application` accepted for saved source; new editor suggestions, field chips, string-method signatures, `has()` completion, quick views and examples use bare names. Unknown identifiers and context-disallowed fields remain rejected. The change is additive within `keep-cel-v1`; saved source is not rewritten and no data/index migration is needed (REV-29).
 
 Frontend TypeScript checking, scoped Python lint and Markdown link/fence plus REV-number checks passed. Runtime test suites were not run for this request.
 
@@ -1853,7 +1853,7 @@ The existing primary link on each preset row now covers the full row. Edit, Hist
 
 Consolidated PostgreSQL 18.2, Elasticsearch 9.0.0, Redis 7.4.2, Kafka 4.0.0, Keycloak 26.7.4, Kong 3.9.1, Kong's PostgreSQL 16 database and Grafana 11.6.0 under [`deploy/local/compose.yaml`](../deploy/local/compose.yaml). The Python API, Next.js UI and workers remain editable host processes started by the local launcher. All container ports bind to loopback.
 
-The existing Appchi database was exported locally and restored into the Compose PostgreSQL volume; 24 documents were copied from the prior local Elasticsearch projection. The previous native database and Elasticsearch data files remain available as rollback copies. All eight long-running Compose services report healthy and the Kong migration job completed. The API `/livez` returned HTTP 200; an unauthenticated session check returned its expected HTTP 401 instead of `database_unavailable`, all nine workers completed healthy turns, and the existing 16 local v2 gateway checks passed. The Appchi login page is at https://localhost:3443. This local stack does not qualify production or the initial release.
+The existing Keep database was exported locally and restored into the Compose PostgreSQL volume; 24 documents were copied from the prior local Elasticsearch projection. The previous native database and Elasticsearch data files remain available as rollback copies. All eight long-running Compose services report healthy and the Kong migration job completed. The API `/livez` returned HTTP 200; an unauthenticated session check returned its expected HTTP 401 instead of `database_unavailable`, all nine workers completed healthy turns, and the existing 16 local v2 gateway checks passed. The Keep login page is at https://localhost:3443. This local stack does not qualify production or the initial release.
 
 ### Local authenticated v2 ingress â€” 2026-09-24
 
@@ -1877,10 +1877,10 @@ TypeScript and changed-file formatting passed. **22 existing Chrome browser chec
 
 ### User-selectable dark mode â€” 2026-09-24
 
-Added a Light/Dark switch to the account menu and Appchi sign-in screen (REV-20).
+Added a Light/Dark switch to the account menu and Keep sign-in screen (REV-20).
 The reference light palette remains the first-use default even when the OS prefers
 dark. An explicit choice is stored locally and applied before page content paints,
-including on navigation, reload and signed-out Appchi pages. Every reference CSS
+including on navigation, reload and signed-out Keep pages. Every reference CSS
 color now has a dark counterpart across the shared shell and feature styles;
 the preference stores no tenant or identity data. External Keycloak pages retain
 their separate appearance.
@@ -1949,12 +1949,12 @@ Prettier checks passed. No backend or stored preset migration was needed.
 
 ### Username/password sign-in â€” 2026-09-24
 
-At the user's request, Appchi login now requires only username and password.
+At the user's request, Keep login now requires only username and password.
 The running isolated Keycloak application flow and enrollment settings were
 updated, and the API was restarted with protected `pwd` authentication evidence.
 Existing accounts, passwords and groups were preserved. Fresh setup and the
 saved import use the same policy; the separate Keycloak console retains MFA.
-The current [identity contract](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-identity-configuration.md) supersedes the
+The current [identity contract](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md) supersedes the
 historical application TOTP behavior recorded in the September 23 results below.
 
 Executed evidence: **5 real browser tests passed in 40.6 seconds**, covering all
@@ -1982,7 +1982,7 @@ Follow-up access fix: the interactive browser initially rejected the generated
 certificate with `ERR_CERT_AUTHORITY_INVALID`. After explicit user approval,
 the exact development certificate was added to Windows `CurrentUser\Root`.
 Both services passed normal Windows HTTPS validation, and the Codex browser
-displayed Appchi and Keycloak sign-in without an exception. This later approval
+displayed Keep and Keycloak sign-in without an exception. This later approval
 supersedes the earlier observation below that Windows trust was unchanged.
 The launcher itself still does not modify OS trust.
 
@@ -2067,61 +2067,61 @@ The full application suites were not rerun for this identity-only increment.
 
 ## All 55 original issue IDs
 
-Every row is **partial**; listed tests do not establish acceptance of the whole issue. Authoritative descriptions remain in [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md). Test evidence is in [backend tests](../tests) and [browser tests](https://github.com/appchi-alert-operations/appchi-frontend).
+Every row is **partial**; listed tests do not establish acceptance of the whole issue. Authoritative descriptions remain in [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md). Test evidence is in [backend tests](../tests) and [browser tests](https://github.com/keep-alert-operations/keep-frontend).
 
 | ID | Implemented entry point | Evidence and remaining acceptance |
 |---|---|---|
-| A1 | [Tenant create/rename and fixed Global](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/tenant_routes.py) | Restricted API-role tenant creation/replay passed; global administration create UI and browser checks added |
-| A2 | [OIDC, LDAP nested graph and publication](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/identity) | Adapter/session and real PG checks; actual local Keycloak native-user MFA/group/logout acceptance passed; company LDAP/Keycloak qualification pending |
-| A3 | [Trusted evidence and session guards](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/identity) | Outage/negative evidence tests; real five-minute propagation and restore pending |
-| A4 | [Grants and assignee authorization](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/access.py) | PG role/continuity and assignment cleanup checks; actual directory propagation qualification pending |
-| A5 | [Tenant isolation, CSRF and audit APIs](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/tenant_routes.py) | Isolation/admin-read and protected audit cleanup checks; wider privilege review pending |
-| L1 | [Strict native validation and raw bytes](https://github.com/appchi-alert-operations/appchi-ingestion/tree/main/src/appchi/ingestion) | Native/HTTP validation tests pass |
-| L2 | [Immutable identity and occurrences](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/alerts/lifecycle.py) | Real PG duplicate/conflict and lifecycle tests |
-| L3 | [Durable admission, retry and capacity](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/ingestion/service.py) | Real PG concurrent caps/replay; complete transport/temporal qualification pending |
-| L4 | [Manual revisions, no-ops and pending guards](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/alerts/routes.py) | Commands/bulk and maintenance-enabled command tests |
-| L5 | [History, raw source and notes](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/alerts/history.py) | PG history tests; full render/read-your-writes protocols pending |
-| L6 | [Inactivity and protected alert retirement](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/inactivity.py) | Expiry/intent/final/cancel and physical cleanup tests; rollback reconstruction remains |
-| O1 | [Pinned mTLS and Grafana admission](https://github.com/appchi-alert-operations/appchi-ingestion/tree/main/src/appchi/ingestion) | Real TLS tests; Grafana provenance/partial batches/retry tests; installed Kong pending |
-| O2 | [Operator SQL/API and durable jobs](https://github.com/appchi-alert-operations/appchi-api/tree/main/src/appchi/operators) | Ten PG workflow tests; executable bound executor and HTTP/PG ledger tests; installed-service qualification pending |
-| O3 | [Prepared/current/retiring keys and erasure](https://github.com/appchi-alert-operations/appchi-api/tree/main/src/appchi/operators) | PG copy/rotate/revoke/generation tests; independent revocation restore fences incomplete |
-| O4 | [Routing labels and remote capability/CAS adapter](https://github.com/appchi-alert-operations/appchi-api/tree/main/src/appchi/operators) | Controlled remote facts only; executable controlled-writer profile connected; installed Kong/Grafana qualification pending |
-| Q1 | [Checked native CEL and ES translator](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/cel) | 63 CEL checks and actual ES parity; measured cost budgets pending |
-| Q2 | [Typed field/predicate profile](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/cel) | Null/presence/string/time and catalog/editor/span checks; upgrade/capacity qualification pending |
-| Q3 | [Suppression and exact count batches](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/configuration/count_routes.py) | Shared-PIT counts/preview and incident authoritative derived counts connected; private combined-load qualification pending |
-| Q4 | [PIT pagination, sort and captured clock](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/search/reader.py) | Real ES/API tests; all browser query workflows pending |
-| C1 | [Condition evidence and persisted rules](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/correlation) | Native core, PG configuration and automatic SQL runtime tests; qualified capacity missing |
-| C2 | [Expiry, repeats and resets](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/correlation/evidence.py) | Durable historical replay and delayed maintenance qualifier tests; rollback restore still missing |
-| C3 | [Eligibility, ownership and grouping](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/correlation) | Cross-resource runtime, concurrent consumer and context-boundary tests; private qualification pending |
-| C4 | [Rule validation, diagnostics and budgets](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/correlation/routes.py) | PG/native validation and tests; full editor/capacity qualification pending |
-| C5 | [Deterministic complete winner selection](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/correlation/evidence.py) | 150-alert pure core and 102-alert atomic PG attachment tests passed; sustained workload qualification missing |
-| C6 | [Rule CRUD, epochs and histories](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/correlation/routes.py) | Revision/group reset and protected deletion/physical cleanup tested; exact retained-name discovery and no-revival holds tested; private qualification pending |
-| C7 | [Incident and alert boundaries](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/incidents/routes.py) | Manual PG races and automatic context hooks, including deleted-origin resolve/reopen; restore qualification pending |
-| C8 | [Durable journal and correlation state](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/correlation) | Automatic processing, exact replay and concurrent consumer tests; generalized recovery pending |
-| M1 | [Maintenance SQL configuration and source bridge](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/maintenance) | Real source/manual and input-head-fenced warmup tests; atomic activation checks implemented; capacity qualification pending |
-| M2 | [Temporal causes and delayed reconstruction](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/maintenance/temporal.py) | Overlap/delay/fan-out and exact correlation replay tests; private qualification pending |
-| M3 | [Pinned timezone conversion and revisions](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/maintenance) | Timezone/API and DST-aware schedule editor tests pass; private timezone/deployment qualification pending |
-| M4 | [Suppression with unchanged lifecycle](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/maintenance/runtime.py) | Source repeat/ack/no-op/note/inactivity tests; combined automatic incidents pending |
-| M5 | [Durable bounded fan-out and qualifier effects](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/maintenance/processing.py) | SQL job/materialization/correction tests; atomic baseline activation tested; rendered observations/capacity pending |
-| I1 | [Atomic manual incident creation](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/incidents/routes.py) | PG/API/browser and automatic creation/attachment checks; capacity qualification pending |
-| I2 | [Incident status/cycles/assignment](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/incidents/routes.py) | PG lifecycle/reopen, automatic context reopen and assignment cleanup checks; private qualification pending |
-| I3 | [Link/unlink/move and retained reads](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/incidents) | PG ownership/move/retired-reference tests |
-| I4 | [Qualifying activity and inactivity](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/inactivity.py) | Real PG expiry plus ten protected retirement/cleanup tests; private recovery qualification remains |
-| I5 | [Token search, counters, notes and history](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/incidents) | Note history and complete list filters/sorts implemented; 16 PG query tests and four focused browser cases pass; private qualification pending |
-| D1 | [Immutable projections, journal and outbox](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/alerts/repository.py) | PG atomicity and referenced content digest verification; strict received/changed schemas and durable rebuild hold; broader consumer cleanup qualification pending |
-| D2 | [Leased relay, receipt checkpoints and workers](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/pipeline.py) | Four real PG crash/fence/poison checks; actual Kafka transport test passed; Windows broker cleanup failed, full compatibility pending |
-| D3 | [Independent evidence and alert retirement](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/recovery) | Failure-injection tests; real ES rebuild/cutover tested; restore fencing and checkpoint staging tested; evidence reconstruction/reopening missing |
-| D4 | [Coordinator, locks, receipts and references](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/shared/transactions.py) | Real PG races; complete cross-domain qualification pending |
-| D5 | [SQL migrations, partitions and RLS](https://github.com/appchi-alert-operations/appchi-migrations) | Migration/partition denial checks; least-privilege review and remaining families pending |
-| R1 | [30-day inactivity and 90-day resolution lifetime](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/inactivity.py) | PG lifecycle/expiry checks; all-resource retirement missing |
-| R2 | [Logical retirement and replay fences](https://github.com/appchi-alert-operations/appchi-domain/blob/main/src/appchi/recovery/retirement.py) | Alert/incident body and command cleanup tested; ordinary command and configuration/maintenance/rule cleanup implemented; rollback reconstruction remains |
-| R3 | [Resource histories and audit APIs](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/configuration/read_routes.py) | Preset/dashboard event references, revision holds and deletion fences tested; audit filters/UI connected; other families ongoing |
-| R4 | [Stable intent/final/cancel evidence IDs](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/recovery) | Cancellation/retry/race tests; generalized cleanup/restore missing |
-| U1 | [Tenant-scoped product UI](https://github.com/appchi-alert-operations/appchi-frontend) | 79 controlled browser cases and fresh real HTTPS/PG browser flow passed; 11 later history/test cases passed; final integrated rerun pending; UX/accessibility qualification ongoing |
-| U2 | [Shared native compiler and validation APIs](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/cel) | Native compiler/profile and connected autocomplete/span editor tests; remaining domain-test UX/qualification pending |
-| U3 | [Shared presets, dashboards, references and counts](https://github.com/appchi-alert-operations/appchi-domain/tree/main/src/appchi/configuration) | PG definitions/references/protected delete/cleanup and real ES counts; history reuse UI and retained-only deleted discovery tested; full UX qualification pending |
-| U4 | [Redis hints and coalesced PG/SSE reconciliation](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/live.py) | Registry/outbox and fetch-stream heartbeat tests; actual Redis, rendered observations and combined-load qualification pending |
-| U5 | [Strict HTTP, receipts and opaque cursors](https://github.com/appchi-alert-operations/appchi-api/blob/main/src/appchi/main.py) | HTTP/PG tests; complete response/event types and remaining endpoints pending |
+| A1 | [Tenant create/rename and fixed Global](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/tenant_routes.py) | Restricted API-role tenant creation/replay passed; global administration create UI and browser checks added |
+| A2 | [OIDC, LDAP nested graph and publication](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/identity) | Adapter/session and real PG checks; actual local Keycloak native-user MFA/group/logout acceptance passed; company LDAP/Keycloak qualification pending |
+| A3 | [Trusted evidence and session guards](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/identity) | Outage/negative evidence tests; real five-minute propagation and restore pending |
+| A4 | [Grants and assignee authorization](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/access.py) | PG role/continuity and assignment cleanup checks; actual directory propagation qualification pending |
+| A5 | [Tenant isolation, CSRF and audit APIs](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/tenant_routes.py) | Isolation/admin-read and protected audit cleanup checks; wider privilege review pending |
+| L1 | [Strict native validation and raw bytes](https://github.com/keep-alert-operations/keep-ingestion/tree/main/src/keep/ingestion) | Native/HTTP validation tests pass |
+| L2 | [Immutable identity and occurrences](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/alerts/lifecycle.py) | Real PG duplicate/conflict and lifecycle tests |
+| L3 | [Durable admission, retry and capacity](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/ingestion/service.py) | Real PG concurrent caps/replay; complete transport/temporal qualification pending |
+| L4 | [Manual revisions, no-ops and pending guards](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/alerts/routes.py) | Commands/bulk and maintenance-enabled command tests |
+| L5 | [History, raw source and notes](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/alerts/history.py) | PG history tests; full render/read-your-writes protocols pending |
+| L6 | [Inactivity and protected alert retirement](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/inactivity.py) | Expiry/intent/final/cancel and physical cleanup tests; rollback reconstruction remains |
+| O1 | [Pinned mTLS and Grafana admission](https://github.com/keep-alert-operations/keep-ingestion/tree/main/src/keep/ingestion) | Real TLS tests; Grafana provenance/partial batches/retry tests; installed Kong pending |
+| O2 | [Operator SQL/API and durable jobs](https://github.com/keep-alert-operations/keep-api/tree/main/src/keep/operators) | Ten PG workflow tests; executable bound executor and HTTP/PG ledger tests; installed-service qualification pending |
+| O3 | [Prepared/current/retiring keys and erasure](https://github.com/keep-alert-operations/keep-api/tree/main/src/keep/operators) | PG copy/rotate/revoke/generation tests; independent revocation restore fences incomplete |
+| O4 | [Routing labels and remote capability/CAS adapter](https://github.com/keep-alert-operations/keep-api/tree/main/src/keep/operators) | Controlled remote facts only; executable controlled-writer profile connected; installed Kong/Grafana qualification pending |
+| Q1 | [Checked native CEL and ES translator](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/cel) | 63 CEL checks and actual ES parity; measured cost budgets pending |
+| Q2 | [Typed field/predicate profile](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/cel) | Null/presence/string/time and catalog/editor/span checks; upgrade/capacity qualification pending |
+| Q3 | [Suppression and exact count batches](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/configuration/count_routes.py) | Shared-PIT counts/preview and incident authoritative derived counts connected; private combined-load qualification pending |
+| Q4 | [PIT pagination, sort and captured clock](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/search/reader.py) | Real ES/API tests; all browser query workflows pending |
+| C1 | [Condition evidence and persisted rules](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/correlation) | Native core, PG configuration and automatic SQL runtime tests; qualified capacity missing |
+| C2 | [Expiry, repeats and resets](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/correlation/evidence.py) | Durable historical replay and delayed maintenance qualifier tests; rollback restore still missing |
+| C3 | [Eligibility, ownership and grouping](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/correlation) | Cross-resource runtime, concurrent consumer and context-boundary tests; private qualification pending |
+| C4 | [Rule validation, diagnostics and budgets](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/correlation/routes.py) | PG/native validation and tests; full editor/capacity qualification pending |
+| C5 | [Deterministic complete winner selection](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/correlation/evidence.py) | 150-alert pure core and 102-alert atomic PG attachment tests passed; sustained workload qualification missing |
+| C6 | [Rule CRUD, epochs and histories](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/correlation/routes.py) | Revision/group reset and protected deletion/physical cleanup tested; exact retained-name discovery and no-revival holds tested; private qualification pending |
+| C7 | [Incident and alert boundaries](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/incidents/routes.py) | Manual PG races and automatic context hooks, including deleted-origin resolve/reopen; restore qualification pending |
+| C8 | [Durable journal and correlation state](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/correlation) | Automatic processing, exact replay and concurrent consumer tests; generalized recovery pending |
+| M1 | [Maintenance SQL configuration and source bridge](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/maintenance) | Real source/manual and input-head-fenced warmup tests; atomic activation checks implemented; capacity qualification pending |
+| M2 | [Temporal causes and delayed reconstruction](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/maintenance/temporal.py) | Overlap/delay/fan-out and exact correlation replay tests; private qualification pending |
+| M3 | [Pinned timezone conversion and revisions](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/maintenance) | Timezone/API and DST-aware schedule editor tests pass; private timezone/deployment qualification pending |
+| M4 | [Suppression with unchanged lifecycle](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/maintenance/runtime.py) | Source repeat/ack/no-op/note/inactivity tests; combined automatic incidents pending |
+| M5 | [Durable bounded fan-out and qualifier effects](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/maintenance/processing.py) | SQL job/materialization/correction tests; atomic baseline activation tested; rendered observations/capacity pending |
+| I1 | [Atomic manual incident creation](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/incidents/routes.py) | PG/API/browser and automatic creation/attachment checks; capacity qualification pending |
+| I2 | [Incident status/cycles/assignment](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/incidents/routes.py) | PG lifecycle/reopen, automatic context reopen and assignment cleanup checks; private qualification pending |
+| I3 | [Link/unlink/move and retained reads](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/incidents) | PG ownership/move/retired-reference tests |
+| I4 | [Qualifying activity and inactivity](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/inactivity.py) | Real PG expiry plus ten protected retirement/cleanup tests; private recovery qualification remains |
+| I5 | [Token search, counters, notes and history](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/incidents) | Note history and complete list filters/sorts implemented; 16 PG query tests and four focused browser cases pass; private qualification pending |
+| D1 | [Immutable projections, journal and outbox](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/alerts/repository.py) | PG atomicity and referenced content digest verification; strict received/changed schemas and durable rebuild hold; broader consumer cleanup qualification pending |
+| D2 | [Leased relay, receipt checkpoints and workers](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/pipeline.py) | Four real PG crash/fence/poison checks; actual Kafka transport test passed; Windows broker cleanup failed, full compatibility pending |
+| D3 | [Independent evidence and alert retirement](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/recovery) | Failure-injection tests; real ES rebuild/cutover tested; restore fencing and checkpoint staging tested; evidence reconstruction/reopening missing |
+| D4 | [Coordinator, locks, receipts and references](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/shared/transactions.py) | Real PG races; complete cross-domain qualification pending |
+| D5 | [SQL migrations, partitions and RLS](https://github.com/keep-alert-operations/keep-migrations) | Migration/partition denial checks; least-privilege review and remaining families pending |
+| R1 | [30-day inactivity and 90-day resolution lifetime](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/inactivity.py) | PG lifecycle/expiry checks; all-resource retirement missing |
+| R2 | [Logical retirement and replay fences](https://github.com/keep-alert-operations/keep-domain/blob/main/src/keep/recovery/retirement.py) | Alert/incident body and command cleanup tested; ordinary command and configuration/maintenance/rule cleanup implemented; rollback reconstruction remains |
+| R3 | [Resource histories and audit APIs](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/configuration/read_routes.py) | Preset/dashboard event references, revision holds and deletion fences tested; audit filters/UI connected; other families ongoing |
+| R4 | [Stable intent/final/cancel evidence IDs](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/recovery) | Cancellation/retry/race tests; generalized cleanup/restore missing |
+| U1 | [Tenant-scoped product UI](https://github.com/keep-alert-operations/keep-frontend) | 79 controlled browser cases and fresh real HTTPS/PG browser flow passed; 11 later history/test cases passed; final integrated rerun pending; UX/accessibility qualification ongoing |
+| U2 | [Shared native compiler and validation APIs](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/cel) | Native compiler/profile and connected autocomplete/span editor tests; remaining domain-test UX/qualification pending |
+| U3 | [Shared presets, dashboards, references and counts](https://github.com/keep-alert-operations/keep-domain/tree/main/src/keep/configuration) | PG definitions/references/protected delete/cleanup and real ES counts; history reuse UI and retained-only deleted discovery tested; full UX qualification pending |
+| U4 | [Redis hints and coalesced PG/SSE reconciliation](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/live.py) | Registry/outbox and fetch-stream heartbeat tests; actual Redis, rendered observations and combined-load qualification pending |
+| U5 | [Strict HTTP, receipts and opaque cursors](https://github.com/keep-alert-operations/keep-api/blob/main/src/keep/main.py) | HTTP/PG tests; complete response/event types and remaining endpoints pending |
 | N1 | [Development capacity profile](../qualification/development-capacity.json) | Explicitly unqualified; no sustained-load or allocation evidence |
 | N2 | [Locked stack and workload artifacts](../deploy/) | Local install/build checks; separate migration/API/worker/network templates structurally checked; actual OpenShift validation and service bindings pending |
 | N3 | [Readiness and private qualification handoff](../docs/runbooks/private-qualification.md) | Failure gates implemented; real outage/recovery/SLO evidence absent |
@@ -2170,20 +2170,20 @@ No capability is enabled merely to remove an unavailable response. Maintenance/c
 
 ## Resume and run
 
-Use the [development runbook](../docs/runbooks/development.md), [frontend verification](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/frontend.md), [local Elasticsearch runbook](../docs/runbooks/local-elasticsearch.md) and [private qualification](../docs/runbooks/private-qualification.md). The user will supply bindings inside the private network; no private endpoint or credential needs to be sent here.
+Use the [development runbook](../docs/runbooks/development.md), [frontend verification](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/frontend.md), [local Elasticsearch runbook](../docs/runbooks/local-elasticsearch.md) and [private qualification](../docs/runbooks/private-qualification.md). The user will supply bindings inside the private network; no private endpoint or credential needs to be sent here.
 
 ```powershell
 scripts/dev.ps1 -Action Install
 scripts/dev.ps1 -Action Check
-$env:APPCHI_TEST_DATABASE_URL='postgresql://appchi_migrator@127.0.0.1:55432/postgres?connect_timeout=5'
-$env:APPCHI_IDENTITY_TEST_ADMIN_URL=$env:APPCHI_TEST_DATABASE_URL
-$env:APPCHI_TEST_ELASTICSEARCH_URL='http://127.0.0.1:59200'
+$env:KEEP_TEST_DATABASE_URL='postgresql://keep_migrator@127.0.0.1:55432/postgres?connect_timeout=5'
+$env:KEEP_IDENTITY_TEST_ADMIN_URL=$env:KEEP_TEST_DATABASE_URL
+$env:KEEP_TEST_ELASTICSEARCH_URL='http://127.0.0.1:59200'
 backend/.venv/Scripts/python.exe -m pytest backend/tests -q --basetemp=.local/pytest-final -p no:cacheprovider --junitxml=qualification/pytest-results.xml
-backend/.venv/Scripts/ruff.exe check backend/appchi backend/tests
+backend/.venv/Scripts/ruff.exe check backend/keep backend/tests
 backend/.venv/Scripts/python.exe qualification/check_contracts.py
 scripts/verify.ps1 -Suite Browser -BrowserChannel chrome
 scripts/verify.ps1 -Suite Build
-$env:APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL=$env:APPCHI_TEST_DATABASE_URL
+$env:KEEP_REAL_BROWSER_DATABASE_ADMIN_URL=$env:KEEP_TEST_DATABASE_URL
 scripts/verify.ps1 -Suite BrowserReal -BrowserChannel chrome
 ```
 
@@ -2191,13 +2191,13 @@ Serialize the full native-CEL backend suite, Next build and browser runs on this
 
 ## Consequential decisions and release state
 
-Assistant-selected implementation choices preserve the normative contracts: bounded child-process CEL compilation; immutable migration checksums; transport-derived private TLS identity; PostgreSQL leases/ordering/reconciliation; explicit service bindings and capacity allocations; historical names left unknown when no snapshot exists; and conservative unavailable states when proof is missing. [REV-06â€“REV-10](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md) record the API/implementation clarifications. No owner service versions, capacity guarantees, infrastructure retention or backup policy were invented.
+Assistant-selected implementation choices preserve the normative contracts: bounded child-process CEL compilation; immutable migration checksums; transport-derived private TLS identity; PostgreSQL leases/ordering/reconciliation; explicit service bindings and capacity allocations; historical names left unknown when no snapshot exists; and conservative unavailable states when proof is missing. [REV-06â€“REV-10](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md) record the API/implementation clarifications. No owner service versions, capacity guarantees, infrastructure retention or backup policy were invented.
 
 **Locally runnable:** implemented workflows verified with isolated services and test-only synthetic identity; ordinary sign-in needs real identity configuration. **Integration-qualified:** no. **Production-ready:** no. Actual service bindings, trust/schema/version compatibility, independent recovery guarantees, measured allocations, container/security evidence and OpenShift rollout remain required. Production deployment and changes to shared services are neither authorized nor performed.
 
 ## UI reference implementation â€” 2026-09-24
 
-The frontend now uses the user's supplied Option B full-system visual reference across the application shell, alerts, details, shared lists/editors/history, incidents, rules, maintenance, dashboards and administration. The [UI mapping](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md) records provenance and adaptations; REV-12 updates the visual contract. Warm light surfaces, local Geist fonts, icon navigation, compact tables and CEL controls, split editors/details, notes alongside history and threshold count cards replace the prior presentation. Quick views and inline alert commands use the existing API contracts.
+The frontend now uses the user's supplied Option B full-system visual reference across the application shell, alerts, details, shared lists/editors/history, incidents, rules, maintenance, dashboards and administration. The [UI mapping](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/ui-design.md) records provenance and adaptations; REV-12 updates the visual contract. Warm light surfaces, local Geist fonts, icon navigation, compact tables and CEL controls, split editors/details, notes alongside history and threshold count cards replace the prior presentation. Quick views and inline alert commands use the existing API contracts.
 
 Executed for this change with installed Microsoft Edge through Playwright 1.63.0: **100 passed, 7 skipped** in the complete 107-case browser run (3.0 minutes). The seven opt-in real-environment cases were not executed in that run. After the final action-column width and query-hint spacing adjustment, all **3 focused redesign checks passed** (10.7 seconds). `tsc --noEmit` passed, and the final isolated Next production build compiled, checked TypeScript and generated its routes successfully. These browser cases use intercepted synthetic data and do not qualify backend or identity integrations.
 
@@ -2222,11 +2222,11 @@ The browser suite reused the controlled server on loopback port 3100. Manual pre
 
 ## Approved login theme â€” 2026-09-27
 
-Implemented the approved Appchi password form as a client-specific Keycloak 26.7.4
+Implemented the approved Keep password form as a client-specific Keycloak 26.7.4
 theme (REV-23), with local Geist, light/dark appearance, password visibility,
 provider errors and directory-support help. The unified local Compose file mounts
 the theme read-only; fresh imports and the existing-installation configuration
-step select it only for `appchi-web`. Initial unauthenticated entry starts the
+step select it only for `keep-web`. Initial unauthenticated entry starts the
 OIDC flow with the requested local path. Signed-out and expired-sign-in recovery
 remain explicit; authenticated workspace navigation retains its mounted session.
 

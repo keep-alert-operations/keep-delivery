@@ -62,17 +62,17 @@ working changes were exercised. This is not a new published release manifest.
 
 | Repository | HEAD | Working changes exercised |
 |---|---|---|
-| appchi-api | `0b8a1a3` | Executor proof fix and rotation regression checks |
-| appchi-frontend | `468ba80` | Real local runtime browser check |
-| appchi-delivery | `2d1fc70` | Launcher, v2 preparation/verification, regression checks, fresh ES report, runbooks/evidence |
-| appchi-ingestion | `0d2ee23` | None |
-| appchi-processor | `4f7a3fc` | None |
-| appchi-correlation | `ad68f9f` | None; worker not activated |
-| appchi-indexer | `ff88bec` | None |
-| appchi-domain | `830d4f6` | None |
-| appchi-contracts | `42107e3` | None |
-| appchi-migrations | `1ebe4cf` | None; existing local chain migrated |
-| appchi-design | `7bf631c` | None |
+| keep-api | `0b8a1a3` | Executor proof fix and rotation regression checks |
+| keep-frontend | `468ba80` | Real local runtime browser check |
+| keep-delivery | `2d1fc70` | Launcher, v2 preparation/verification, regression checks, fresh ES report, runbooks/evidence |
+| keep-ingestion | `0d2ee23` | None |
+| keep-processor | `4f7a3fc` | None |
+| keep-correlation | `ad68f9f` | None; worker not activated |
+| keep-indexer | `ff88bec` | None |
+| keep-domain | `830d4f6` | None |
+| keep-contracts | `42107e3` | None |
+| keep-migrations | `1ebe4cf` | None; existing local chain migrated |
+| keep-design | `7bf631c` | None |
 
 Delivery's pre-existing workspace setup/docs/instruction edits and untracked
 instruction test were preserved. No repository commits, package publication or
@@ -88,12 +88,12 @@ access required host execution where the Windows sandbox denied it.
 | Repository | Command/check | Actual outcome |
 |---|---|---|
 | delivery | `.venv/Scripts/python.exe -m pytest tests/unit/test_local_v2_setup.py tests/unit/test_local_identity_setup.py -q` | 19 passed; deprecation/cache warnings |
-| API | `../appchi-delivery/.venv/Scripts/python.exe -m pytest tests/unit/test_operator_executor.py tests/unit/test_operator_keys.py tests/unit/test_operator_remote.py -q` | 37 passed |
+| API | `../keep-delivery/.venv/Scripts/python.exe -m pytest tests/unit/test_operator_executor.py tests/unit/test_operator_keys.py tests/unit/test_operator_remote.py -q` | 37 passed |
 | API | Ruff on executor and its unit file | Passed |
 | delivery | Ruff on `local_v2.py`, `local_v2_verify.py`, `test_local_v2_setup.py` | Passed |
 | frontend | `node node_modules/typescript/bin/tsc --noEmit` | Passed |
 | frontend | Prettier check on `tests/local-runtime.spec.ts` | Passed after formatting |
-| frontend | `APPCHI_LOCAL_RUNTIME_TEST=1`, `node node_modules/@playwright/test/cli.js test --config playwright.local-runtime.config.ts` | 1 passed, 24.8 seconds |
+| frontend | `KEEP_LOCAL_RUNTIME_TEST=1`, `node node_modules/@playwright/test/cli.js test --config playwright.local-runtime.config.ts` | 1 passed, 24.8 seconds |
 | delivery | Real Elasticsearch search/count compatibility checks below | 2 passed; fresh [JUnit report](pytest-local-runtime-es.xml) |
 | delivery | `scripts/local-runtime.ps1 -Action Start` | Exit 0; both required workers completed healthy turns; local v2 verified |
 | delivery | `scripts/local-runtime.ps1 -Action Status` | All eight dependency services healthy; API/public ingestion/UI/private ingestion/proof/source/indexer running |
@@ -106,16 +106,16 @@ The real ES command used disposable test indices, with explicit owning-test
 paths and report classnames accepted by the existing search bootstrap:
 
 ```powershell
-$env:APPCHI_TEST_ELASTICSEARCH_URL='http://127.0.0.1:59201'
-$env:PYTHONPATH=(Resolve-Path '../appchi-indexer/tests/compatibility').Path
-.venv/Scripts/python.exe -m pytest -c pyproject.toml --rootdir=.. ../appchi-indexer/tests/compatibility/test_search_elasticsearch.py ../appchi-domain/tests/compatibility/test_count_elasticsearch.py -q --junitxml=qualification/pytest-local-runtime-es.xml
+$env:KEEP_TEST_ELASTICSEARCH_URL='http://127.0.0.1:59201'
+$env:PYTHONPATH=(Resolve-Path '../keep-indexer/tests/compatibility').Path
+.venv/Scripts/python.exe -m pytest -c pyproject.toml --rootdir=.. ../keep-indexer/tests/compatibility/test_search_elasticsearch.py ../keep-domain/tests/compatibility/test_count_elasticsearch.py -q --junitxml=qualification/pytest-local-runtime-es.xml
 ```
 
 The cutover used the recovered worker environment while admission and legacy
 workers were stopped:
 
 ```powershell
-.venv/Scripts/python.exe -m appchi.kafka_cutover --ingress-and-legacy-workers-stopped --local-config .local/runtime/kafka-protocol.json
+.venv/Scripts/python.exe -m keep.kafka_cutover --ingress-and-legacy-workers-stopped --local-config .local/runtime/kafka-protocol.json
 ```
 
 The API regression failed before the proof fix and passed afterward. Earlier

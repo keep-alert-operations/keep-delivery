@@ -8,7 +8,7 @@ Source revision context and existing discrepancies are recorded in [Sources and 
 
 ## Checks
 
-Executed from `appchi-delivery`:
+Executed from `keep-delivery`:
 
 - `node docs/client-guide/build-guide.mjs <bundled-marked-module>`: passed. Generated seven chapters plus the contents article, with all images embedded. The supplied module was the existing bundled `marked/lib/marked.esm.js`; no dependencies were installed or locks changed.
 - `python qualification/verify_documents.py`: passed across 136 workspace Markdown files and 566 ownership entries; no broken local links or unbalanced fences, and existing REV-01 through REV-38 numbering remained intact.

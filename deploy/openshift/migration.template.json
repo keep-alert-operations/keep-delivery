@@ -2,7 +2,7 @@
   "apiVersion": "template.openshift.io/v1",
   "kind": "Template",
   "metadata": {
-    "name": "appchi-migration"
+    "name": "keep-migration"
   },
   "parameters": [
     {
@@ -59,7 +59,7 @@
       "apiVersion": "batch/v1",
       "kind": "Job",
       "metadata": {
-        "name": "appchi-migrate-${RELEASE_ID}"
+        "name": "keep-migrate-${RELEASE_ID}"
       },
       "spec": {
         "backoffLimit": 0,
@@ -74,7 +74,7 @@
                 "command": [
                   "python",
                   "-m",
-                  "appchi.migrate"
+                  "keep.migrate"
                 ],
                 "image": "${MIGRATIONS_IMAGE}",
                 "envFrom": [
@@ -116,7 +116,7 @@
                   },
                   {
                     "name": "bindings",
-                    "mountPath": "/etc/appchi",
+                    "mountPath": "/etc/keep",
                     "readOnly": true
                   }
                 ]

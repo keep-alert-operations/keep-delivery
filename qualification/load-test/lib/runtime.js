@@ -11,19 +11,19 @@ validateConfig(config, runId, endpoint);
 const apiKey = config.version === 'v2' ? open(__ENV.API_KEY_FILE || '/auth/operator-key').trim() : null;
 requireThat(config.version !== 'v2' || (apiKey && !/[\r\n]/.test(apiKey)), 'Provide one normal, active operator key via API_KEY_FILE');
 
-export const attempted = new Counter('appchi_items_attempted');
-export const accepted = new Counter('appchi_items_accepted');
-export const rejected = new Counter('appchi_items_rejected');
-export const unconfirmed = new Counter('appchi_items_unconfirmed');
-export const newItems = new Counter('appchi_new_items_attempted');
-export const updates = new Counter('appchi_updates_attempted');
-export const resolutions = new Counter('appchi_resolution_updates_attempted');
-export const admissionOK = new Rate('appchi_admission_ok');
-export const admissionMs = new Trend('appchi_admission_ms', true);
-export const rawMemberBytes = new Trend('appchi_raw_member_bytes');
-export const normalizedMemberBytes = new Trend('appchi_normalized_member_bytes');
-export const envelopeBytes = new Trend('appchi_envelope_bytes');
-export const sentBytes = new Counter('appchi_request_body_bytes_attempted');
+export const attempted = new Counter('keep_items_attempted');
+export const accepted = new Counter('keep_items_accepted');
+export const rejected = new Counter('keep_items_rejected');
+export const unconfirmed = new Counter('keep_items_unconfirmed');
+export const newItems = new Counter('keep_new_items_attempted');
+export const updates = new Counter('keep_updates_attempted');
+export const resolutions = new Counter('keep_resolution_updates_attempted');
+export const admissionOK = new Rate('keep_admission_ok');
+export const admissionMs = new Trend('keep_admission_ms', true);
+export const rawMemberBytes = new Trend('keep_raw_member_bytes');
+export const normalizedMemberBytes = new Trend('keep_normalized_member_bytes');
+export const envelopeBytes = new Trend('keep_envelope_bytes');
+export const sentBytes = new Counter('keep_request_body_bytes_attempted');
 
 export function post(body, count) {
   let encoded;
@@ -60,8 +60,8 @@ export const basicOptions = {
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)'],
   systemTags: ['status', 'method', 'name', 'scenario', 'expected_response'],
   thresholds: {
-    appchi_admission_ok: ['rate==1'],
-    appchi_admission_ms: ['p(99)<1000'],
+    keep_admission_ok: ['rate==1'],
+    keep_admission_ms: ['p(99)<1000'],
     checks: ['rate==1'],
   },
 };

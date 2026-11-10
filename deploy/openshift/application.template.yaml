@@ -2,9 +2,9 @@
   "apiVersion": "template.openshift.io/v1",
   "kind": "Template",
   "metadata": {
-    "name": "appchi-product-api",
+    "name": "keep-product-api",
     "annotations": {
-      "description": "Product API owns synchronous operator provisioning and background live hint publishing. CONFIG_SECRET supplies APPCHI_REDIS_URL and, optionally, APPCHI_TICKET_COUNT_URL (REV-65 ServiceNow ticket counting service, https; may carry an access key); apply migration 0047 for minimal hint-outbox publication privileges. No separate live worker or worker database credential is needed. CONFIG_SECRET supplies APPCHI_OPERATOR_DATABASE_URL and operator management tokens; BINDING_SECRET supplies the verified operator binding. Qualify a 100-second operator-route gateway timeout; other routes retain their own budgets."
+      "description": "Product API owns synchronous operator provisioning and background live hint publishing. CONFIG_SECRET supplies KEEP_REDIS_URL and, optionally, KEEP_TICKET_COUNT_URL (REV-65 ServiceNow ticket counting service, https; may carry an access key); apply migration 0047 for minimal hint-outbox publication privileges. No separate live worker or worker database credential is needed. CONFIG_SECRET supplies KEEP_OPERATOR_DATABASE_URL and operator management tokens; BINDING_SECRET supplies the verified operator binding. Qualify a 100-second operator-route gateway timeout; other routes retain their own budgets."
     }
   },
   "parameters": [
@@ -66,20 +66,20 @@
       "apiVersion": "apps/v1",
       "kind": "Deployment",
       "metadata": {
-        "name": "appchi-product-api"
+        "name": "keep-product-api"
       },
       "spec": {
         "replicas": "${{REPLICAS}}",
         "selector": {
           "matchLabels": {
-            "app": "appchi-product-api"
+            "app": "keep-product-api"
           }
         },
         "template": {
           "metadata": {
             "labels": {
-              "app": "appchi-product-api",
-              "app.kubernetes.io/part-of": "appchi"
+              "app": "keep-product-api",
+              "app.kubernetes.io/part-of": "keep"
             }
           },
           "spec": {
@@ -97,16 +97,16 @@
                 ],
                 "env": [
                   {
-                    "name": "APPCHI_ROLE",
+                    "name": "KEEP_ROLE",
                     "value": "product-api"
                   },
                   {
-                    "name": "APPCHI_CLOCK_HEALTH_FILE",
-                    "value": "/run/appchi-clock/health.json"
+                    "name": "KEEP_CLOCK_HEALTH_FILE",
+                    "value": "/run/keep-clock/health.json"
                   },
                   {
-                    "name": "APPCHI_DATABASE_CLOCK_HEALTH_FILE",
-                    "value": "/run/appchi-clock/pg-health.json"
+                    "name": "KEEP_DATABASE_CLOCK_HEALTH_FILE",
+                    "value": "/run/keep-clock/pg-health.json"
                   }
                 ],
                 "livenessProbe": {
@@ -176,12 +176,12 @@
                   },
                   {
                     "name": "bindings",
-                    "mountPath": "/etc/appchi",
+                    "mountPath": "/etc/keep",
                     "readOnly": true
                   },
                   {
                     "name": "clock-health",
-                    "mountPath": "/run/appchi-clock",
+                    "mountPath": "/run/keep-clock",
                     "readOnly": true
                   }
                 ]
@@ -215,11 +215,11 @@
       "apiVersion": "v1",
       "kind": "Service",
       "metadata": {
-        "name": "appchi-product-api"
+        "name": "keep-product-api"
       },
       "spec": {
         "selector": {
-          "app": "appchi-product-api"
+          "app": "keep-product-api"
         },
         "ports": [
           {

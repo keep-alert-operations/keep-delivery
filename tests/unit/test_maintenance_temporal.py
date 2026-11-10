@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.maintenance.temporal import (
+from keep.maintenance.temporal import (
     AlertTransition,
     Boundary,
     MaintenanceConflict,
@@ -260,7 +260,7 @@ def test_reenable_creates_new_segment_and_retains_closed_old_segment():
 
 
 def test_reducer_runs_the_shared_native_cel_program():
-    from appchi.cel import compile_expression
+    from keep.cel import compile_expression
 
     compiled = compile_expression('alert.message == "match"', rule=True)
     s = replace(segment(), program=compiled)

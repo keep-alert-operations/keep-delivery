@@ -3,11 +3,11 @@
 
 import pytest
 
-from appchi.maintenance.processing import record_input
-from appchi.maintenance.runtime import prepare_for_tenant
-from appchi.maintenance.warmup import warmup_page, warmup_status
-from appchi.shared.errors import AppError
-from appchi.shared.transactions import coordinator
+from keep.maintenance.processing import record_input
+from keep.maintenance.runtime import prepare_for_tenant
+from keep.maintenance.warmup import warmup_page, warmup_status
+from keep.shared.errors import AppError
+from keep.shared.transactions import coordinator
 
 from test_maintenance_processing import PROFILE, publish_source
 from test_maintenance_repository import maintenance_browser, maintenance_db  # noqa: F401

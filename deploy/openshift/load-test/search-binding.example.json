@@ -1,7 +1,7 @@
 {
-  "profile": "appchi-es-rebuild-v1",
-  "alias": "appchi-test-alerts",
-  "index_prefix": "appchi-test-alerts-",
+  "profile": "keep-es-rebuild-v1",
+  "alias": "keep-test-alerts",
+  "index_prefix": "keep-test-alerts-",
   "capability_evidence": "REQUIRED_ES_ALLOCATION_AND_EXCLUSIVE_ALIAS_WRITER_REFERENCE",
   "atomic_alias_switch": true,
   "exclusive_alias_writer": true,

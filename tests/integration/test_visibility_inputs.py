@@ -12,9 +12,9 @@ import pytest
 
 from test_maintenance_repository import maintenance_db, maintenance_browser  # noqa: F401
 
-from appchi.shared.errors import AppError
-from appchi.shared.transactions import coordinator
-from appchi.visibility.inputs import (
+from keep.shared.errors import AppError
+from keep.shared.transactions import coordinator
+from keep.visibility.inputs import (
     InputLimits,
     SamplingPolicy,
     coverage,
@@ -26,8 +26,8 @@ from appchi.visibility.inputs import (
     registry_checkpoint,
     seal_expiry_boundary,
 )
-from appchi.visibility.limits import RegistryLimits
-from appchi.visibility.routes import router
+from keep.visibility.limits import RegistryLimits
+from keep.visibility.routes import router
 
 pytestmark = pytest.mark.integration
 LIMITS = InputLimits(100, 100, 100, 100000, 2000, 1)
@@ -394,25 +394,25 @@ def test_expansion_obeys_coordinator_before_seed_lock(inputs):
 def test_restricted_roles_cannot_rewrite_original_proof_or_cross_tenant(inputs):
     db, tenant, _ = inputs
     with db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         original = seed(conn, tenant)["input"]
         rejected(conn, tenant, original["id"])
     with db.transaction(uuid4()) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         assert (
             conn.execute("SELECT * FROM visibility_inputs WHERE tenant_id=%s", (tenant,)).fetchone()
             is None
         )
     with pytest.raises(psycopg.errors.InsufficientPrivilege), db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         conn.execute("DELETE FROM visibility_inputs WHERE tenant_id=%s", (tenant,))
     with pytest.raises(psycopg.errors.InsufficientPrivilege), db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_worker")
+        conn.execute("SET LOCAL ROLE keep_worker")
         conn.execute(
             "UPDATE visibility_applications SET error_code='forged' WHERE tenant_id=%s", (tenant,)
         )
     with db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_worker")
+        conn.execute("SET LOCAL ROLE keep_worker")
         assert expand_input(conn, tenant=tenant, input_id=original["id"])["status"] == "expanded"
 
 
@@ -430,7 +430,7 @@ def test_worker_skips_busy_tenant_before_acquiring_any_seed(inputs):
 
     def work():
         with db.transaction() as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             conn.execute("SET LOCAL lock_timeout='1s'")
             return expand_next(conn)
 
@@ -454,7 +454,7 @@ def test_rejected_application_database_constraint_requires_error_code(inputs):
         original = seed(conn, tenant)["input"]
     # Bypass Python validation as the producer role to verify SQL's NULL handling.
     with pytest.raises(psycopg.errors.CheckViolation), db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         conn.execute(
             """INSERT INTO visibility_applications
             (tenant_id,input_id,id,disposition,error_code,fingerprint,byte_charge)
