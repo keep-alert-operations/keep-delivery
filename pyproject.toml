@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "Workspace setup, local dependencies, deployments, release inventory and system verification."
 requires-python = ">=3.13,<3.14"
 dependencies = [
-  "keep-api @ git+https://github.com/keep-alert-operations/keep-api.git@418f08ca10a51a6c2aa0972e0f066ce2730cc039",
-  "keep-ingestion @ git+https://github.com/keep-alert-operations/keep-ingestion.git@621df6c82ac00d3edc388a08113e4b8b6a2f6827",
-  "keep-processor @ git+https://github.com/keep-alert-operations/keep-processor.git@3b28f3cd06d4336e92f7c2883b55c0fbe77408fe",
-  "keep-correlation @ git+https://github.com/keep-alert-operations/keep-correlation.git@7ecf6fabad302211d881d36027d76092942e053c",
-  "keep-indexer @ git+https://github.com/keep-alert-operations/keep-indexer.git@942e816735f82091c15c6732da4f8fa2c9b1ac2b",
-  "keep-migrations @ git+https://github.com/keep-alert-operations/keep-migrations.git@4884d36cd636a6a8873dfa505899cc472a36690d"
+  "keep-api @ git+https://github.com/keep-alert-operations/keep-api.git@e5cf0719b85d2f5aa1d1929d85ccc0423cb7c6bb",
+  "keep-ingestion @ git+https://github.com/keep-alert-operations/keep-ingestion.git@25a74ad4fd31105e1860109619612caf70b74b19",
+  "keep-processor @ git+https://github.com/keep-alert-operations/keep-processor.git@ef214b940188c6694cb19c29330eebb03a5a45e5",
+  "keep-correlation @ git+https://github.com/keep-alert-operations/keep-correlation.git@3dfa154b9853fddb4bffafbed7580a16c5ba4ff8",
+  "keep-indexer @ git+https://github.com/keep-alert-operations/keep-indexer.git@ae88d61a9c9c99cf6744d7b597b68f1898f7bc20",
+  "keep-migrations @ git+https://github.com/keep-alert-operations/keep-migrations.git@4d4e060ee7bfc6ec199c7c0eea677fe2253f2a76"
 ]
 
 [dependency-groups]
