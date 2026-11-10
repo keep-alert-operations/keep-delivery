@@ -1,5 +1,44 @@
 # Implementation status
 
+## 2026-11-10 Grafana panels (REV-68)
+
+The user asked for a panel type like KeepHQ's Grafana panel widget, approved the canvas
+at https://claude.ai/artifact/LPwZUY8L9QzEKYuJkkisF4 (without its theme option, with
+the "Open in Grafana" button attached to the address box) and said "build it". A
+`grafana` panel frames one live Grafana panel from a Grafana listed in
+`KEEP_GRAFANA_PANEL_ORIGINS`, in the viewer's Keep theme, with the REV-68 address checks
+in the browser and on save. Built on `codex/grafana-panel`: design (REV-68, dashboard
+spec, verification plan, REV bound), migrations (0067), domain (`GrafanaPanel`,
+`keep.configuration.grafana`, settings), contracts (regenerated OpenAPI), api (save
+check, status and super-admin routes), frontend (type, dialog, frame, states, HTML
+hint, Integrations card, generated client) and this repository (template description,
+OpenShift runbook, local runtime and fake Grafana `scripts/local_grafana.py`, client
+guide, integration test, REV bound). Not built: a `frame-src` Content-Security-Policy
+(left for a user decision).
+
+- Executed on 2026-11-10 on the branch code: migrations 50 passed including alembic
+  tests on a throwaway PostgreSQL 18; domain 803 tests, one CEL timing failure that
+  passed on rerun; api 309 passed on two of four runs, the others failing only in
+  CEL-compiler deadline tests under machine load; contracts 58 passed; ruff clean.
+  `check_contracts.py`, `verify_boundaries.py`, `check_context.py` and design
+  `check_docs.py` passed; `verify_documents.py` reported REV-01..68 and only the missing
+  workspace entrypoint of the worktree layout. Frontend typecheck and Prettier on
+  changed files passed; the mocked Playwright suite passed 299 (11 skipped).
+- Integration: `tests/integration/test_dashboard_grafana_panels.py` passed 14/14 on an
+  isolated database; with the panel-type, panel-link and ServiceNow neighbours one run
+  had a CEL deadline failure in setup that passed on rerun.
+- Browser journey through the real API on a copy of the local database migrated to
+  0067 (UI 3448, API 58030, fake Grafana 58091; the copy was dropped afterwards):
+  embed code gave "Using" and the facts; the live preview and board framed the fake
+  Grafana with the stated sandbox, `no-referrer`, lazy loading and `theme=light`, and
+  `theme=dark` after switching Keep's theme; "Add Open in Grafana link" filled the
+  panel link; the dashboard saved and read back as type `grafana`, 6 × 6; the API
+  refused a non-allowed Grafana and a whole-dashboard address with
+  `grafana_url_invalid`; the Integrations card showed the allowed list and the Grafana
+  settings; after removing the fake Grafana from the list the board showed "Grafana
+  panel blocked" with no frame, an unchanged address still saved, and an `ftp://`
+  entry was listed as ignored. Not run: a real Grafana, and the S1–S4 smoke baseline.
+
 ## 2026-11-10 Client guide screenshots retaken after the Keep rename
 
 The three PNG screenshots in the [daily user guide](../docs/client-guide/README.md)
