@@ -61,6 +61,26 @@ type disabled. The Product API must reach
 that address through network policy and egress; Keep never logs its path or query.
 After deploying, a super admin confirms **Admin › Integrations › Test connection**.
 
+Grafana panels (REV-68) are on only when the Product API's `CONFIG_SECRET` supplies
+`KEEP_GRAFANA_PANEL_ORIGINS`: the Grafana instances panels may frame, comma-separated
+`https` addresses, each with an optional base path for a Grafana served under a
+sub-path (`https://grafana.example.com,https://tools.example.com/grafana`). It is not
+a secret. List only Grafana trusted as much as Keep: a framed panel runs Grafana's
+scripts in the viewer's browser. Unusable entries are ignored and logged at start-up;
+super admins see the list and the ignored entries on **Admin › Integrations**. The
+Product API never contacts Grafana for these panels; browsers do. Ask each listed
+Grafana's owners for these settings, also shown on that page:
+
+- `[security] allow_embedding = true`, or panels stay blank.
+- When Keep and Grafana are on different sites, `cookie_samesite = none` and
+  `cookie_secure = true`, so framed panels get the viewer's Grafana sign-in; otherwise
+  use Grafana's anonymous access.
+- `content_security_policy = true` with `frame-ancestors <Keep's origin>` in
+  `content_security_policy_template`, so only Keep can frame Grafana.
+
+Single sign-on pages usually refuse to be framed; viewers sign in to Grafana in
+another tab first.
+
 For private ingestion, configure the four `KEEP_GATEWAY_*` TLS/peer settings
 documented in `private-qualification.md`; the template binds port 8443 to all pod
 interfaces. Certificate verification and approved peer fingerprints still apply.

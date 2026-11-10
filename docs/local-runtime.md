@@ -298,6 +298,22 @@ panel state can be checked. `POST /__set` with `{"team": "NOC", "count": 25}` pi
 count. Without the fake service running, ServiceNow panels show that the count is
 unavailable; with the variable empty, the type is disabled.
 
+## Grafana panels (REV-68)
+
+The local API reads `KEEP_GRAFANA_PANEL_ORIGINS` from the generated environment, which
+allows `http://127.0.0.1:58091` unless `KEEP_LOCAL_GRAFANA_PANEL_ORIGINS` overrides
+it. Plain `http` is accepted only for loopback addresses in development. Start the fake
+Grafana next to the API:
+
+```powershell
+.venv/Scripts/python.exe scripts/local_grafana.py --port 58091
+```
+
+It serves single-panel pages at `/d-solo/<uid>/<slug>?panelId=N` that follow the
+`theme` parameter, and plain dashboard pages at `/d/…` for the panel link. Use an
+address such as `http://127.0.0.1:58091/d-solo/local/checkout?orgId=1&panelId=4` in
+the panel dialog. With the variable empty, the type is disabled.
+
 ## Fresh start after the Keep rename (REV-67)
 
 The rename to Keep changed every stored format tag, so a stack from before it cannot
