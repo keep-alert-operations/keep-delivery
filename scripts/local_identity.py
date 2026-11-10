@@ -291,8 +291,12 @@ def environment():
     capacity_profile = ROOT / "qualification/development-capacity.json"
     operator_path = ROOT / ".local/operators/credentials.json"
     operator_values = {}
-    if operator_path.exists():
-        operator_credentials = json.loads(operator_path.read_text(encoding="utf-8"))
+    operator_credentials = (
+        json.loads(operator_path.read_text(encoding="utf-8")) if operator_path.exists() else {}
+    )
+    # A fresh workspace has prepared operator credentials but no Grafana token until
+    # local_v2.py configure runs, which itself needs this environment file first.
+    if "grafana_token" in operator_credentials:
         operator_values = {
             "KEEP_OPERATOR_BINDING": str(ROOT / ".local/operators/binding.json"),
             "KEEP_OPERATOR_DATABASE_URL": os.environ.get("KEEP_LOCAL_WORKER_URL",

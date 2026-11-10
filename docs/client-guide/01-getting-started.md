@@ -44,7 +44,7 @@ Use your company's normal password reset or account unlock process if you cannot
 | Acknowledged | The alert is firing and has an assignee. | Check the owner and current investigation. |
 | Resolved | The alert's lifecycle is resolved, whether or not an assignee remains. | Review recovery and history; watch for a new occurrence. |
 
-There is no separate Acknowledge action. Assigning a firing alert acknowledges responsibility. Unassigning it makes the visible status Firing again without changing the underlying monitored condition. Neither assigning nor resolving an Keep record repairs the affected service.
+There is no separate Acknowledge action. Assigning a firing alert acknowledges responsibility. Unassigning it makes the visible status Firing again without changing the underlying monitored condition. Neither assigning nor resolving a Keep record repairs the affected service.
 
 ## Find your way around
 

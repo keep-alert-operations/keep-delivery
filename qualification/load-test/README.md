@@ -56,7 +56,7 @@ Mount the cluster CA bundle as `/trust/ca-bundle.pem`; do not add `--insecure-sk
    `/auth/login` flow after trusted publication and grants. Obtain the
    `__Host-keep_session` cookie value using the browser's protected developer
    tools and that user's `principal.id` from `/auth/session`. Do not create a
-   database session, accept a raw Keycloak token as an Keep session, or change
+   database session, accept a raw Keycloak token as a Keep session, or change
    the application to bypass OIDC. Do not share one session between simulated
    users.
 4. Create `private/sessions.json` as an array with one `{ "principal_id": "...",

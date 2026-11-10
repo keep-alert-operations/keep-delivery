@@ -297,3 +297,26 @@ It answers stable synthetic counts per team. Teams starting with `unknown`, `noc
 panel state can be checked. `POST /__set` with `{"team": "NOC", "count": 25}` pins a
 count. Without the fake service running, ServiceNow panels show that the count is
 unavailable; with the variable empty, the type is disabled.
+
+## Fresh start after the Keep rename (REV-67)
+
+The rename to Keep changed every stored format tag, so a stack from before it cannot
+be read and starts empty. The Compose volumes now have `keep-` names; the old
+`appchi-local-*` volumes stay untouched as a rollback copy until you remove them
+yourself. Move the old `.local/keycloak`, `.local/runtime` and `.local/operators`
+aside (keep `.local/keycloak/tls` so the certificate stays the same), then:
+
+1. `.\scripts\local-runtime.ps1 -Action Start` migrates `keep_local` to the head and
+   starts the API and UI. On an empty broker it stops before the workers because no
+   Kafka cutover is recorded yet.
+2. With `.local/keycloak/app-environment.json` loaded and `KEEP_DATABASE_URL` set to
+   the worker URL, run `.venv/Scripts/python.exe scripts/local_runtime.py probe`
+   (creates the two `keep.development.alerts.*` topics), then
+   `.venv/Scripts/python.exe -m keep.kafka_cutover --ingress-and-legacy-workers-stopped --local-config .local/runtime/kafka-protocol.json`.
+   A first attempt can report `cutover_group_state_unverified` while the new broker's
+   group coordinator is still loading; run it again.
+3. `.\scripts\local-runtime.ps1 -Action Start -Restart` starts ingestion and the workers.
+4. For local v2: `.\scripts\local-v2.ps1 -Action Start` creates the Grafana token and
+   then stops at operator provisioning (HTTP 503), because the API started without it.
+   Run `.\scripts\local-identity.ps1 -Action Start -Restart` and then
+   `.\scripts\local-v2.ps1 -Action Start` again.

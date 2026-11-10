@@ -256,8 +256,8 @@ the cluster's approved credential procedure; never use a password CLI flag.
 | `keep-kong-env` | `KONG_PG_PASSWORD` matching its isolated DB. Additional approved Kong settings as needed. |
 | `keep-kong-tls` | `server.crt`, `server.key` for proxy/admin HTTPS, with SANs for the public v2 host, `keep-kong` and direct `keep-kong-0.keep-kong-members`; `kong.crt`, `kong.key` for private-ingestion client mTLS; `ca-bundle.crt` trusts the Kong DB and private-ingestion server. |
 | `keep-api-env`, `keep-api-bindings` | Product API settings and referenced files; include CA files, development capacity profile, operator/recovery bindings when qualified. |
-| `keep-ingestion-env`, `keep-ingestion-bindings` | Public ingestion settings and Kafka CA/client files only; never an Keep database credential. |
-| `keep-private-ingestion-env`, `keep-private-ingestion-bindings` | Private ingestion settings, Kafka files, gateway server/client CA and probe credentials; never an Keep database credential. |
+| `keep-ingestion-env`, `keep-ingestion-bindings` | Public ingestion settings and Kafka CA/client files only; never a Keep database credential. |
+| `keep-private-ingestion-env`, `keep-private-ingestion-bindings` | Private ingestion settings, Kafka files, gateway server/client CA and probe credentials; never a Keep database credential. |
 | `keep-processor-env`, `keep-processor-bindings` | Source worker settings and referenced TLS/profile files. |
 | `keep-indexer-env`, `keep-indexer-bindings` | Projection worker settings and referenced TLS/profile files. |
 | `keep-operator-proof-env` | `KEEP_PROOF_DATABASE_URL` using its dedicated read-only-default login and actual `KEEP_DEPLOYMENT_EPOCH`. |

@@ -120,7 +120,7 @@ Theme inheritance and installation follow the
 Manage custom users and groups in the local Keycloak administration console at
 `https://localhost:58443/admin/`. Use the separate local Keycloak administrator
 credentials from the generated file. A Keycloak console administrator is not
-automatically an Keep global administrator.
+automatically a Keep global administrator.
 
 The console account is `bootstrap-admin`; it requires TOTP. In this workspace
 the console factor has been enrolled and its local development seed is in the
