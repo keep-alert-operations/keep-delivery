@@ -28,6 +28,8 @@ Prepared on 11 October 2026 using these checked-out revisions **plus their exist
 
 **Revised 10 November 2026:** after the rename to Keep (REV-67), the three PNG screenshots were retaken from the running local stack at keep-frontend `17172034c3537b4b96959e5df008b77299434c2c` (main, clean). They now show the Keep name, the K brand mark and the Ocean palette. The Feed and dashboard were captured at 1440x900 while signed in as the synthetic `local-editor` user in Global, using eight synthetic native v1 alerts, three presets and one dashboard created for the capture. The Feed uses an example query that leaves out an earlier local smoke-test alert; the dashboard name was edited, unsaved, to show the **Unsaved changes** state. The sign-in form was captured at 1421x701 from `/auth/login?fresh=true`, matching the earlier framing. The Feed and Presets and dashboards captions and the guide contents note about the former **Alerts** label were updated to match; other chapter text was not re-inspected.
 
+**Revised 10 November 2026 (REV-70):** the Incidents chapter gained **Link a ServiceNow ticket**, written from keep-frontend branch `codex/incident-ticket` (based on `184bc58`) and its approved design; labels were checked against that source and the running local stack. Other chapters were not re-inspected.
+
 The guide does not replace the specifications. [Worker scope](../../../keep-design/specs/spec-worker-scope.md) overrides older automatic maintenance-release, inactivity, retention and assignment-cleanup algorithms. Current UI corrections override older acknowledgement and dashboard controls. [Delivery readiness](../../status/delivery-readiness.md) keeps production gates open; this guide does not close them.
 
 ## Chapter authority map

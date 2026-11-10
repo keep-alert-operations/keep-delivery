@@ -333,6 +333,15 @@ It serves single-panel pages at `/d-solo/<uid>/<slug>?panelId=N` that follow the
 address such as `http://127.0.0.1:58091/d-solo/local/checkout?orgId=1&panelId=4` in
 the panel dialog. With the variable empty, the type is disabled.
 
+## ServiceNow tickets on incidents (REV-70)
+
+The local API reads `KEEP_SERVICENOW_URL` from the generated environment, which is
+`https://servicenow.example` unless `KEEP_LOCAL_SERVICENOW_URL` overrides it. Keep
+never calls it: incidents accept ticket links only into that address and Create in
+ServiceNow opens its new incident form in a browser tab, which does not load for the
+reserved `.example` name. Point it at a real ServiceNow instance you may use to check
+the prefilled form. With the variable empty, incidents show no ticket row.
+
 ## Fresh start after the Keep rename (REV-67)
 
 The rename to Keep changed every stored format tag, so a stack from before it cannot

@@ -73,6 +73,18 @@ Notes may contain up to 10,000 characters and must include nonblank text. Editor
 
 Use **Activity** to understand who changed status, responsibility or membership and when. Use **Cycles** to distinguish the original investigation from later reopenings. Keep does not send product notifications; use your team's normal communication channel when another person must act.
 
+## Link a ServiceNow ticket
+
+When your deployment has ServiceNow set up, the status and assignee panel ends with a **ServiceNow ticket** row. Select the ticket number to open the ticket in ServiceNow in a new tab. Keep stores only the ticket's link and number: it never reads, creates or changes tickets.
+
+Editors can:
+
+- Select **Link existing ticket…** and paste the ticket's link from ServiceNow or type its number, such as `INC0041235`. Keep checks the entry as you type and accepts only links to your company's ServiceNow. When a pasted link does not include the number, you may add it so others recognise the ticket without opening it.
+- Select **Create in ServiceNow…** to start a new ticket. Adjust **Ticket Title** and **Description**, which start from the incident and end with a link back to it, then select **Open ServiceNow form**. ServiceNow's new incident form opens in a new tab with those fields filled in; complete and submit it there. Back in Keep, paste the new ticket's link or number and select **Link ticket**, or select **Link later**.
+- Select **Change…** to link a different ticket or unlink the current one.
+
+A ticket can be linked in any status; resolving or reopening the incident keeps it. **Activity** records each link, change and unlink. Viewers see and open the ticket but cannot change it. If ServiceNow is not set up, the row appears only on incidents that already have a ticket, which can still be opened and unlinked.
+
 ## Resolve, then reopen only if necessary
 
 When the investigation is complete, add a final note and select **Resolved**. A note is useful but not required. Check the linked alerts separately: they keep their own firing/resolved state. The incident releases its active ownership of those alerts while preserving relationships in history.
