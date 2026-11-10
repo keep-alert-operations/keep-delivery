@@ -350,6 +350,10 @@ def environment():
             + os.environ.get("KEEP_LOCAL_GRAFANA_PANEL_PORT", "58449")
             + ",http://127.0.0.1:58091",
         ),
+        # REV-70: incident ticket links must point into this ServiceNow address.
+        "KEEP_SERVICENOW_URL": os.environ.get(
+            "KEEP_LOCAL_SERVICENOW_URL", "https://servicenow.example"
+        ),
         "PYTHONPATH": "",
     }
 

@@ -81,6 +81,15 @@ Grafana's owners for these settings, also shown on that page:
 Single sign-on pages usually refuse to be framed; viewers sign in to Grafana in
 another tab first.
 
+ServiceNow tickets on incidents (REV-70) need the Product API's `CONFIG_SECRET` to
+supply `KEEP_SERVICENOW_URL`: the company's ServiceNow address, for example
+`https://<instance>.service-now.com`, `https` with an optional base path and no
+query. It is not a secret. Incidents may store ticket links only into that address,
+and browsers open its new incident form; Keep's server never contacts it, so no
+egress is needed. Leave it out to hide ticket linking; tickets linked earlier still
+show and can be unlinked. Apply migration 0069 before the Product API. A super admin
+sees the address on **Admin › Integrations**.
+
 For private ingestion, configure the four `KEEP_GATEWAY_*` TLS/peer settings
 documented in `private-qualification.md`; the template binds port 8443 to all pod
 interfaces. Certificate verification and approved peer fingerprints still apply.

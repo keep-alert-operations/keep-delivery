@@ -1,5 +1,56 @@
 # Implementation status
 
+## 2026-11-10 ServiceNow tickets on incidents (REV-70)
+
+The user described KeepHQ's incident ticketing, approved the mock canvas (renaming the
+Create dialog's first field to "Ticket Title") and the plan, and asked to build it. An
+incident carries one ServiceNow ticket in new `incidents` columns (migration 0069):
+`POST /incidents/{id}/ticket` links, changes or unlinks it under the incident command
+contract (edit permission, expected revision, idempotent command, one `ticket`
+activity per change, not qualifying activity); links must point into
+`KEEP_SERVICENOW_URL` (422 `ticket_url_invalid`; 409 `servicenow_not_configured` when
+unset, while unlinking still works); `GET /servicenow/status` gives the browser the
+address. Keep never calls ServiceNow: Create opens its prefilled `incident.do` form and
+links the new ticket back in the dialog's second step. Built on `codex/incident-ticket`
+in design, migrations, domain, contracts, api, frontend and this repository, first as
+REV-68/0067 and renumbered to REV-70/0069 after Grafana panels (REV-68, 0067) and
+incident count panels (REV-69, 0068) merged; all seven branches were rebased on main.
+Pins are not yet bumped: the worker repositories need the domain pin and this
+repository every head once the branches are pushed.
+
+- Executed on 2026-11-10 on the rebased code: migrations unit 5 passed, and the alembic
+  integration cases for the ticket columns, Grafana and incident count panels, fresh
+  install and the two-process lock passed 10/10 against a throwaway PostgreSQL 18 (the
+  full suite passed 48/50 before rebasing; the 2 failures were stale chain-length
+  assertions, fixed and rerun). Domain unit 842 passed (one run had a single timing
+  failure that passed on two reruns). API unit 314 passed. Contracts 58 passed.
+  Delivery unit 297 passed, 65 skipped. Delivery integration
+  `test_incident_tickets` (18 cases: link, change, unlink, retry, no-op, stale revision,
+  10 invalid links, resolved and reopened incidents, viewer 403, unset ServiceNow, list
+  rows) with the incident listing, note revision, display name and product suites:
+  37 passed, 20 skipped. `generate_http_contracts.py` added only the ticket route, the
+  status route and the ticket read fields; `check_contracts.py`, `verify_boundaries.py`,
+  `check_context.py`, `verify_documents.py` and design `check_docs.py` passed. Frontend
+  typecheck, the 5 new helper specs and `next build` passed; Prettier passed on the
+  committed changed files. Before rebasing, `test_incident_reports` 20,000-cycle budget
+  case failed here and also failed on unmodified main.
+- Local journey: a copy of the local database (`keep_ticket_journey`, the ticket
+  columns applied by hand, since dropped) with the branch API on 58030 and UI on
+  `https://127.0.0.1:3447`, signed in through synthetic sessions inserted into that copy
+  for the local administrator and viewer (Keycloak allows only port 3443, which another
+  dev server held). Checked: the row and buttons; another host refused with the
+  button disabled; a bare number linked with the pill opening the stored address in a
+  new tab without a referrer; last activity unchanged; Link a different ticket with a
+  link lacking a number offering the number field; a ticket linked through the API
+  behind an open dialog giving the conflict notice, keeping the entry, and saving only
+  on Link and replace (this found and fixed a dialog that saved with the live revision);
+  unlink; Create prefilling Ticket Title and Description, opening
+  `incident.do?sys_id=-1` with `^` written as `^^`, then linking the new ticket; the
+  Integrations card; a viewer seeing only the link; phone width without horizontal
+  scrolling; dark theme. Re-checked on the rebased code: all three Integrations cards
+  and a link and unlink. Not covered: a real ServiceNow instance (the form was
+  captured, not opened) and the S1-S4 suites.
+
 ## 2026-11-10 Incident count panels (REV-69)
 
 The user asked for a dashboard panel that shows how many incidents the alerts of a
