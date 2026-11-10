@@ -343,6 +343,9 @@ def environment():
         "KEEP_TICKET_COUNT_URL": os.environ.get(
             "KEEP_LOCAL_TICKET_COUNT_URL", "http://127.0.0.1:58090/count"
         ),
+        "KEEP_GRAFANA_PANEL_ORIGINS": os.environ.get(
+            "KEEP_LOCAL_GRAFANA_PANEL_ORIGINS", "http://127.0.0.1:58091"
+        ),
         "PYTHONPATH": "",
     }
 
