@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 from psycopg import sql
 
-from appchi.configuration.cleanup import cleanup_configuration
+from keep.configuration.cleanup import cleanup_configuration
 from test_maintenance_repository import maintenance_db  # noqa: F401
 from test_product import browser  # noqa: F401
 from test_configuration_deletion import configuration, create, headers  # noqa: F401
@@ -172,7 +172,7 @@ def test_cleanup_keeps_held_event_references_then_erases_only_content(configurat
     with pytest.raises(Exception, match="Retired configuration identity"):
         with real_db.transaction() as conn:
             conn.execute(
-                "INSERT INTO presets(id,tenant_id,name,name_key,revision,cel,profile,sort,columns,created_at,updated_at,created_by,updated_by) VALUES(%s,%s,'reused','reused',1,'true','appchi-cel-v1','[]','[]',clock_timestamp(),clock_timestamp(),%s,%s)",
+                "INSERT INTO presets(id,tenant_id,name,name_key,revision,cel,profile,sort,columns,created_at,updated_at,created_by,updated_by) VALUES(%s,%s,'reused','reused',1,'true','keep-cel-v1','[]','[]',clock_timestamp(),clock_timestamp(),%s,%s)",
                 (resource, tenant, preset["created_by"], preset["updated_by"]),
             )
 
@@ -244,14 +244,14 @@ def test_worker_role_dashboard_cleanup_and_api_hold_denial(configuration, real_d
         @contextmanager
         def transaction(self, *args, **kwargs):
             with real_db.transaction(*args, **kwargs) as conn:
-                conn.execute("SET LOCAL ROLE appchi_worker")
+                conn.execute("SET LOCAL ROLE keep_worker")
                 yield conn
 
     assert cleanup_configuration(Worker(), tenant, "dashboard", dashboard["id"])
     assert client.get(base + "/presets/" + preset["id"]).status_code == 200
     with pytest.raises(Exception, match="permission denied"):
         with real_db.transaction(tenant) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             conn.execute(
                 "INSERT INTO configuration_retention_holds(id,tenant_id,resource_kind,resource_id,reason) VALUES(%s,%s,'preset',%s,'forbidden')",
                 (uuid4(), tenant, preset["id"]),
@@ -308,8 +308,8 @@ def test_removing_intermediate_revision_keeps_original_supersession_clock(config
 def test_retired_identity_is_immutable_to_api_and_job_label_scrubbing_is_held(
     configuration, real_db
 ):
-    from appchi.configuration.cleanup import configuration_cleanup_turn
-    from appchi.recovery.command_retention import compact_ordinary_command
+    from keep.configuration.cleanup import configuration_cleanup_turn
+    from keep.recovery.command_retention import compact_ordinary_command
 
     client, base, store, tenant, _ = configuration
     preset, _ = create(configuration)
@@ -317,7 +317,7 @@ def test_retired_identity_is_immutable_to_api_and_job_label_scrubbing_is_held(
     assert client.delete(base + "/presets/" + resource, headers=headers()).status_code == 200
     with pytest.raises(Exception, match="fence is immutable"):
         with real_db.transaction(tenant) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             conn.execute(
                 "UPDATE configuration_identities SET final_revision=NULL,deleted_at=NULL WHERE resource_id=%s",
                 (resource,),
@@ -361,7 +361,7 @@ def test_retired_identity_is_immutable_to_api_and_job_label_scrubbing_is_held(
 def test_older_only_hold_erases_current_body_keeps_history_and_exact_deleted_name(
     configuration, real_db, table
 ):
-    from appchi.configuration.cleanup import configuration_cleanup_turn
+    from keep.configuration.cleanup import configuration_cleanup_turn
     from test_audit_browsing import RestrictedDatabase
 
     client, base, _, tenant, _ = configuration
@@ -562,7 +562,7 @@ def test_deleted_cursor_changes_when_hold_release_changes_retained_collection(
 def test_deleted_name_warmup_commits_bounded_progress_before_unavailable(
     configuration, real_db, monkeypatch
 ):
-    import appchi.configuration.retention as retention
+    import keep.configuration.retention as retention
 
     client, base, _, tenant, _ = configuration
     prefix = uuid4().hex
@@ -638,7 +638,7 @@ def test_deleted_name_filter_uses_latest_retained_snapshot_not_any_older_match(
 
 
 def test_old_revision_hold_does_not_hold_later_deletion_actor_snapshot(configuration, real_db):
-    from appchi.recovery.command_retention import compact_ordinary_command
+    from keep.recovery.command_retention import compact_ordinary_command
 
     client, base, store, tenant, _ = configuration
     preset, body = create(configuration)

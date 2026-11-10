@@ -62,9 +62,9 @@ def up(args):
         "postgres": [
             "--init",
             "-e",
-            "POSTGRES_DB=appchi",
+            "POSTGRES_DB=keep",
             "-e",
-            "POSTGRES_USER=appchi_migrator",
+            "POSTGRES_USER=keep_migrator",
             "-e",
             "POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password",
             "--mount",
@@ -113,7 +113,7 @@ def up(args):
     }
     for service, options in runs.items():
         docker("run", "-d", "--name", f"{args.prefix}-{service}", *options, IMAGES[service])
-    admin = f"postgresql://appchi_migrator:{password}@127.0.0.1:{args.postgres_port}/appchi"
+    admin = f"postgresql://keep_migrator:{password}@127.0.0.1:{args.postgres_port}/keep"
     state = ROOT / ".local" / f"{args.prefix}-admin-url"
     state.parent.mkdir(exist_ok=True)
     state.write_text(admin)
@@ -167,7 +167,7 @@ def ready(args, admin):
             return sock.recv(16).startswith(b"+PONG")
 
     bootstrap = f"127.0.0.1:{args.kafka_port}"
-    topic = "appchi-load-readiness-" + uuid4().hex
+    topic = "keep-load-readiness-" + uuid4().hex
 
     def kafka_topic():
         admin_client = AdminClient({"bootstrap.servers": bootstrap})
@@ -223,14 +223,14 @@ def down(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("action", choices=("up", "down"))
-    parser.add_argument("--prefix", default="appchi-load")
+    parser.add_argument("--prefix", default="keep-load")
     parser.add_argument("--postgres-port", type=int, default=55633)
     parser.add_argument("--elasticsearch-port", type=int, default=59401)
     parser.add_argument("--redis-port", type=int, default=56580)
     parser.add_argument("--kafka-port", type=int, default=19293)
     args = parser.parse_args()
-    if not args.prefix.startswith("appchi-load"):
-        parser.error("Use an appchi-load prefix so owned containers stay identifiable")
+    if not args.prefix.startswith("keep-load"):
+        parser.error("Use an keep-load prefix so owned containers stay identifiable")
     (up if args.action == "up" else down)(args)
 
 

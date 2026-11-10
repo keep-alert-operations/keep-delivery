@@ -315,7 +315,7 @@
   "cleanup_completed": true,
   "environment_notes": {
     "bi_containers": "Three original BI containers running",
-    "services": "Appchi core healthy; unused Keycloak/KongDB stopped before this run",
+    "services": "Keep core healthy; unused Keycloak/KongDB stopped before this run",
     "deadlines": "Production request/admission/compiler limits unchanged",
     "clock_followup": "This run used offloaded clock validation with frozen request received_at; a subsequent deterministic race fix is separate evidence"
   },

@@ -7,9 +7,9 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.alerts.presentation import present_alert
-from appchi.ingestion.kafka_admission import KafkaAdmission
-from appchi.ingestion.native import canonical
+from keep.alerts.presentation import present_alert
+from keep.ingestion.kafka_admission import KafkaAdmission
+from keep.ingestion.native import canonical
 
 from test_kafka_first import Capture, apply_waiting, settings
 
@@ -141,7 +141,7 @@ def test_grafana_rule_name_is_the_alert_name(real_db, tenant):
         "status": "firing",
         "startsAt": "2026-10-31T12:00:00Z",
         "labels": {
-            "Appchi - Payments": "true",
+            "Keep - Payments": "true",
             "alertname": "High CPU",
             "application": "test-" + uuid4().hex,
             "component": "cpu",

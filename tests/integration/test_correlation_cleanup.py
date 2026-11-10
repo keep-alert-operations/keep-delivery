@@ -10,9 +10,9 @@ from uuid import uuid4
 import pytest
 import psycopg
 
-from appchi.correlation.cleanup import cleanup_rule, correlation_cleanup_turn, warm_history_names
-from appchi.shared.errors import AppError
-from appchi.shared.transactions import coordinator
+from keep.correlation.cleanup import cleanup_rule, correlation_cleanup_turn, warm_history_names
+from keep.shared.errors import AppError
+from keep.shared.transactions import coordinator
 from test_correlation_configuration import create, definition, edit, rules  # noqa: F401
 from test_correlation_deletion import protected, remove  # noqa: F401
 from test_product import browser  # noqa: F401
@@ -228,7 +228,7 @@ class Worker:
     @contextmanager
     def transaction(self, *args, **kwargs):
         with self.db.transaction(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             yield conn
 
 
@@ -260,7 +260,7 @@ def test_name_warmup_is_bounded_and_unknown_profile_is_explicitly_unavailable(pr
     assert client.get(base, params={"state": "deleted"}).status_code == 200
     with real_db.transaction() as conn:
         conn.execute(
-            "UPDATE correlation_rule_revisions SET snapshot=jsonb_set(snapshot,'{name_profile}','\"appchi-rule-name-unicode15.1-v1\"') WHERE rule_id=%s AND revision=2",
+            "UPDATE correlation_rule_revisions SET snapshot=jsonb_set(snapshot,'{name_profile}','\"keep-rule-name-unicode15.1-v1\"') WHERE rule_id=%s AND revision=2",
             (row["id"],),
         )
     assert (

@@ -1,7 +1,7 @@
 # Alembic migration execution
 
-REV-38 changes the `appchi-migrations` runner to Alembic. The deployment command
-remains `python -m appchi.migrate`, with `APPCHI_MIGRATION_URL` supplied through
+REV-38 changes the `keep-migrations` runner to Alembic. The deployment command
+remains `python -m keep.migrate`, with `KEEP_MIGRATION_URL` supplied through
 the dedicated migration secret. The OpenShift migration Job remains the owner;
 runtime services do not migrate at startup. SQL files and their original
 checksums are unchanged. The package owns `migration_sql/checksums.json` and
@@ -40,16 +40,16 @@ Use a reviewed forward migration when a schema correction is necessary.
 ## Local development and verification
 
 The existing editable workspace setup installs the migration package; reinstall
-after dependency changes. From `appchi-migrations`, use the locked Alembic
+after dependency changes. From `keep-migrations`, use the locked Alembic
 `history`, `heads`, `current` and `upgrade head` commands documented in its README.
 `current` is read-only and identifies a verified legacy database without adopting
 it. History/heads do not require a database. Supply the dedicated migration
 identity through the environment, never a checked-in connection string.
 
-Migration tests use `APPCHI_MIGRATION_TEST_ADMIN_URL` for a disposable isolated
+Migration tests use `KEEP_MIGRATION_TEST_ADMIN_URL` for a disposable isolated
 PostgreSQL cluster and create/drop unique test databases. API/maintenance/search
 compatibility tests use the existing isolated test-admin bindings. Release evidence
 must distinguish editable development code, wheel execution and qualified images.
 
 See [conversion evidence](../qualification/alembic-migrations.md) and the
-[normative contract](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-repository-layout.md#alembic-migration-execution-rev-38).
+[normative contract](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-repository-layout.md#alembic-migration-execution-rev-38).

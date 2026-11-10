@@ -12,14 +12,14 @@ spec:
   template:
     metadata:
       labels:
-        app: appchi-load-generator
+        app: keep-load-generator
     spec:
       restartPolicy: Never
-      serviceAccountName: appchi-load-test
+      serviceAccountName: keep-load-test
       automountServiceAccountToken: false
       containers:
         - name: k6
-          image: REPLACE_PRIVATE_REGISTRY/appchi-load-test@sha256:REPLACE_DIGEST
+          image: REPLACE_PRIVATE_REGISTRY/keep-load-test@sha256:REPLACE_DIGEST
           args: [run, /work/seed.js]
           securityContext:
             allowPrivilegeEscalation: false
@@ -53,11 +53,11 @@ spec:
             - {name: temporary, mountPath: /tmp}
       volumes:
         - name: profile
-          configMap: {name: appchi-load-profile}
+          configMap: {name: keep-load-profile}
         - name: auth
-          secret: {secretName: appchi-load-auth, defaultMode: 0440}
+          secret: {secretName: keep-load-auth, defaultMode: 0440}
         - name: trust
-          configMap: {name: appchi-load-trust}
+          configMap: {name: keep-load-trust}
         - name: results
           persistentVolumeClaim: {claimName: REPLACE_STAGE_RESULT_PVC}
         - name: temporary

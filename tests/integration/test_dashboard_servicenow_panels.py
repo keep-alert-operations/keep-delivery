@@ -87,7 +87,7 @@ def test_ticket_count_status_follows_configuration(configuration):
     client, base, *_ = configuration
     status = client.get(base + "/ticket-counts/status")
     assert status.status_code == 200, status.text
-    assert status.json()["data"]["configured"] is bool(os.environ.get("APPCHI_TICKET_COUNT_URL"))
+    assert status.json()["data"]["configured"] is bool(os.environ.get("KEEP_TICKET_COUNT_URL"))
 
 
 def test_ticket_counts_answer_each_query(configuration):
@@ -102,7 +102,7 @@ def test_ticket_counts_answer_each_query(configuration):
     assert response.status_code == 200, response.text
     results = response.json()["data"]["results"]
     assert len(results) == 3
-    if not os.environ.get("APPCHI_TICKET_COUNT_URL"):
+    if not os.environ.get("KEEP_TICKET_COUNT_URL"):
         assert {item["status"] for item in results} == {"not_configured"}
         return
     assert results[0] == results[1]

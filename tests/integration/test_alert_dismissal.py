@@ -2,9 +2,9 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.alerts.processor import process_one
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
+from keep.alerts.processor import process_one
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
 
 from test_product import admit_alert, browser  # noqa: F401  (fixture reuse)
 

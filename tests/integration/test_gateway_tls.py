@@ -94,11 +94,11 @@ def _certificate(directory, name, *, ca=None, server=False):
 
 async def _probe(scope, receive, send):
     from starlette.requests import Request
-    from appchi.ingestion.gateway import gateway_identity
-    from appchi.shared.errors import AppError
+    from keep.ingestion.gateway import gateway_identity
+    from keep.shared.errors import AppError
 
     status = 200
-    result = {"verified": bool(scope.get("appchi.gateway_peer_verified"))}
+    result = {"verified": bool(scope.get("keep.gateway_peer_verified"))}
     try:
         identity = gateway_identity(Request(scope))
         result["consumer_id"] = identity.consumer_id
@@ -121,7 +121,7 @@ async def _probe(scope, receive, send):
 
 def _serve(directory, pin, mode):
     import uvicorn
-    from appchi.ingestion.gateway import private_protocol
+    from keep.ingestion.gateway import private_protocol
 
     directory = Path(directory)
 
@@ -207,10 +207,10 @@ def tls_gateway(tmp_path_factory):
 def _headers():
     return [
         ("X-Consumer-Id", str(uuid4())), ("X-Credential-Identifier", str(uuid4())),
-        ("X-Appchi-Operator-Id", str(uuid4())), ("X-Appchi-Tenant-Id", str(uuid4())),
-        ("X-Appchi-Policy-Generation", "1"),
-        ("X-Appchi-Routing-Names", base64.b64encode(b'["Operator"]').decode()),
-        ("X-Appchi-Authorized-At", str(time.time())),
+        ("X-Keep-Operator-Id", str(uuid4())), ("X-Keep-Tenant-Id", str(uuid4())),
+        ("X-Keep-Policy-Generation", "1"),
+        ("X-Keep-Routing-Names", base64.b64encode(b'["Operator"]').decode()),
+        ("X-Keep-Authorized-At", str(time.time())),
     ]
 
 
@@ -249,7 +249,7 @@ def test_real_tls_certificate_chain_and_pin_are_both_required(tls_gateway):
 
 
 def test_headers_cannot_replace_transport_identity_or_bypass_stripping(tls_gateway):
-    forged = _headers() + [("appchi.gateway_peer_verified", "true"), ("X-Forwarded-Proto", "https")]
+    forged = _headers() + [("keep.gateway_peer_verified", "true"), ("X-Forwarded-Proto", "https")]
     status, data = _request(tls_gateway, headers=forged, mode="plain")
     assert status == 401 and data["verified"] is False
     status, data = _request(tls_gateway, certificate="not-pinned", headers=forged)

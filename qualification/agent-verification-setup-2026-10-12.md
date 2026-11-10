@@ -32,11 +32,11 @@ needed because the exact known entrypoint changes were applied to both copies.
 
 | Working directory | Command/check | Actual result |
 |---|---|---|
-| `appchi-delivery` | `C:/Python313/python.exe qualification/verify_documents.py` | Exit 0: 169 Markdown documents, 566 source entries, REV-01..REV-38, no errors. Includes canonical/installed entrypoint and Claude import checks. |
-| `appchi-delivery` | `qualification/check_context.py`, invoked by the document check | Passed: 72 sources, 23 routes, 37 evaluation cases, 24 generated documents. These are navigation checks, not agent-compliance tests. |
-| `appchi-design` | `C:/Python313/python.exe scripts/check_docs.py` | Exit 0: document targets, fences and review identifiers passed. |
-| `appchi-delivery` | `.venv/Scripts/python.exe -m pytest tests/unit/test_workspace_instructions.py tests/unit/test_context_integration.py -q --basetemp=.local/pytest-agent-verification-20261012` | Exit 0: 9 passed in 0.66s; one non-failing warning that `.pytest_cache/v/cache` could not be created (Windows access denied). No application fixtures or service tests ran. |
-| `appchi-delivery` | `git diff --check -- AGENTS.md workspace/AGENTS.md docs/agent-workflows.md docs/repository-workspace.md docs/runbooks/development.md` | Exit 0: no whitespace errors in changed tracked guidance. |
+| `keep-delivery` | `C:/Python313/python.exe qualification/verify_documents.py` | Exit 0: 169 Markdown documents, 566 source entries, REV-01..REV-38, no errors. Includes canonical/installed entrypoint and Claude import checks. |
+| `keep-delivery` | `qualification/check_context.py`, invoked by the document check | Passed: 72 sources, 23 routes, 37 evaluation cases, 24 generated documents. These are navigation checks, not agent-compliance tests. |
+| `keep-design` | `C:/Python313/python.exe scripts/check_docs.py` | Exit 0: document targets, fences and review identifiers passed. |
+| `keep-delivery` | `.venv/Scripts/python.exe -m pytest tests/unit/test_workspace_instructions.py tests/unit/test_context_integration.py -q --basetemp=.local/pytest-agent-verification-20261012` | Exit 0: 9 passed in 0.66s; one non-failing warning that `.pytest_cache/v/cache` could not be created (Windows access denied). No application fixtures or service tests ran. |
+| `keep-delivery` | `git diff --check -- AGENTS.md workspace/AGENTS.md docs/agent-workflows.md docs/repository-workspace.md docs/runbooks/development.md` | Exit 0: no whitespace errors in changed tracked guidance. |
 | Workspace root | SHA-256 comparison of root/canonical AGENTS.md and CLAUDE.md | Both pairs match exactly; root and frontend Claude imports resolve to existing AGENTS.md files. |
 
 Commands above were executed locally against the dirty workspace described here,
@@ -58,7 +58,7 @@ not newly executed application evidence.
   build, but does not run Playwright. The default browser suite uses controlled
   routes and cannot establish real sign-in or persistence.
 - BrowserReal's source still imports the absent
-  `appchi.ingestion.service.Admission`, uses the retired receipt flow and old note
+  `keep.ingestion.service.Admission`, uses the retired receipt flow and old note
   selectors. Static inspection establishes fixture drift, not an executed test
   failure. Repair and rerun it before relying on it; synthetic session seeding
   would still not verify Keycloak sign-in.

@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.alerts import routes
+from keep.alerts import routes
 from test_maintenance_repository import maintenance_browser, maintenance_db  # noqa: F401
 from test_maintenance_processing import setup, publish_source
 

@@ -75,23 +75,23 @@ def resident_bytes():
 
 
 def main():
-    from appchi.config import Settings
-    from appchi import pipeline_runtime, kafka_source
-    from appchi.kafka_changed import ChangedConsumer
+    from keep.config import Settings
+    from keep import pipeline_runtime, kafka_source
+    from keep.kafka_changed import ChangedConsumer
 
     role = sys.argv[1]
     if role not in ("source", "indexer", "correlation"):
         raise ValueError("Unknown fixture worker role")
     sys.argv = [sys.argv[0]]
-    namespace = os.environ["APPCHI_SCALE_NAMESPACE"]
+    namespace = os.environ["KEEP_SCALE_NAMESPACE"]
     if not namespace.startswith("scale-") or len(namespace) != 38:
         raise ValueError("An isolated fixture namespace is required")
     settings = Settings(role=role)
     adapted = SimpleNamespace(**{**settings.model_dump(), "environment": namespace})
     pipeline_runtime.Settings = lambda **_: adapted
-    stopped = Path(os.environ["APPCHI_SCALE_STOP_FILE"])
-    measurement = Path(os.environ["APPCHI_SCALE_MEASUREMENT_FILE"])
-    output = Path(os.environ["APPCHI_SCALE_METRICS_FILE"])
+    stopped = Path(os.environ["KEEP_SCALE_STOP_FILE"])
+    measurement = Path(os.environ["KEEP_SCALE_MEASUREMENT_FILE"])
+    output = Path(os.environ["KEEP_SCALE_METRICS_FILE"])
     phases = defaultdict(list)
     errors = Counter()
     turns = Counter()
@@ -349,11 +349,11 @@ def main():
         if role == "source":
             return ObservedTransport(kafka_source.SourceConsumer(db, config, profile))
         if role == "correlation":
-            from appchi.correlation.consumer import correlate_record
+            from keep.correlation.consumer import correlate_record
 
             return ObservedTransport(ChangedConsumer(db, config, profile, role, correlate_record))
-        from appchi.search import consumer as search_consumer
-        from appchi.search import reconciliation
+        from keep.search import consumer as search_consumer
+        from keep.search import reconciliation
 
         # Match the indexer entrypoint once the pinned indexer groups hints.
         groups = getattr(search_consumer, "index_groups", None)
@@ -385,7 +385,7 @@ def main():
 
     class ObservedReconciliation:
         def __init__(self):
-            from appchi.search.reconciliation import ReconciliationRunner
+            from keep.search.reconciliation import ReconciliationRunner
 
             self.runner = ReconciliationRunner()
 
@@ -423,7 +423,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as error:
-        path = Path(os.environ["APPCHI_SCALE_METRICS_FILE"])
+        path = Path(os.environ["KEEP_SCALE_METRICS_FILE"])
         if not path.exists():
             path.write_text(
                 json.dumps(

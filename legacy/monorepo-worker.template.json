@@ -2,7 +2,7 @@
   "apiVersion": "template.openshift.io/v1",
   "kind": "Template",
   "metadata": {
-    "name": "appchi-worker"
+    "name": "keep-worker"
   },
   "parameters": [
     {
@@ -76,20 +76,20 @@
       "apiVersion": "apps/v1",
       "kind": "Deployment",
       "metadata": {
-        "name": "appchi-${WORKER_ROLE}"
+        "name": "keep-${WORKER_ROLE}"
       },
       "spec": {
         "replicas": "${{REPLICAS}}",
         "selector": {
           "matchLabels": {
-            "app": "appchi-${WORKER_ROLE}"
+            "app": "keep-${WORKER_ROLE}"
           }
         },
         "template": {
           "metadata": {
             "labels": {
-              "app": "appchi-${WORKER_ROLE}",
-              "app.kubernetes.io/part-of": "appchi"
+              "app": "keep-${WORKER_ROLE}",
+              "app.kubernetes.io/part-of": "keep"
             }
           },
           "spec": {
@@ -102,25 +102,25 @@
                 "command": [
                   "python",
                   "-m",
-                  "appchi.worker",
+                  "keep.worker",
                   "${WORKER_ROLE}"
                 ],
                 "env": [
                   {
-                    "name": "APPCHI_WORKER_HEALTH_PATH",
+                    "name": "KEEP_WORKER_HEALTH_PATH",
                     "value": "/tmp/worker-health.json"
                   },
                   {
-                    "name": "APPCHI_CLOCK_HEALTH_FILE",
-                    "value": "/run/appchi-clock/health.json"
+                    "name": "KEEP_CLOCK_HEALTH_FILE",
+                    "value": "/run/keep-clock/health.json"
                   },
                   {
-                    "name": "APPCHI_GLOBAL_TENANT_ID",
+                    "name": "KEEP_GLOBAL_TENANT_ID",
                     "value": "${GLOBAL_TENANT_ID}"
                   },
                   {
-                    "name": "APPCHI_DATABASE_CLOCK_HEALTH_FILE",
-                    "value": "/run/appchi-clock/pg-health.json"
+                    "name": "KEEP_DATABASE_CLOCK_HEALTH_FILE",
+                    "value": "/run/keep-clock/pg-health.json"
                   }
                 ],
                 "livenessProbe": {
@@ -128,7 +128,7 @@
                     "command": [
                       "python",
                       "-m",
-                      "appchi.worker_health",
+                      "keep.worker_health",
                       "live",
                       "--max-age",
                       "${HEARTBEAT_MAX_AGE_SECONDS}"
@@ -143,7 +143,7 @@
                     "command": [
                       "python",
                       "-m",
-                      "appchi.worker_health",
+                      "keep.worker_health",
                       "ready",
                       "--max-age",
                       "${HEARTBEAT_MAX_AGE_SECONDS}"
@@ -193,12 +193,12 @@
                   },
                   {
                     "name": "bindings",
-                    "mountPath": "/etc/appchi",
+                    "mountPath": "/etc/keep",
                     "readOnly": true
                   },
                   {
                     "name": "clock-health",
-                    "mountPath": "/run/appchi-clock",
+                    "mountPath": "/run/keep-clock",
                     "readOnly": true
                   }
                 ]

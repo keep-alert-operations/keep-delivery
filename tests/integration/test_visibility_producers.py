@@ -9,13 +9,13 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.alerts.processor import process_one
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
-from appchi.shared.errors import AppError
-from appchi.visibility.inputs import InputLimits, record_input, registry_checkpoint
-from appchi.visibility.limits import RegistryLimits
-from appchi.visibility.runtime import capture_profile, capture_turn
+from keep.alerts.processor import process_one
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
+from keep.shared.errors import AppError
+from keep.visibility.inputs import InputLimits, record_input, registry_checkpoint
+from keep.visibility.limits import RegistryLimits
+from keep.visibility.runtime import capture_profile, capture_turn
 from test_search_pipeline import real_db  # noqa: F401
 from test_product import browser  # noqa: F401
 
@@ -27,7 +27,7 @@ def capture(profile):
     return {
         **profile,
         "visibility": {
-            "version": "appchi-visibility-capture-v1",
+            "version": "keep-visibility-capture-v1",
             "policy_epoch": "synthetic-capture",
             "deployment_epoch": "test",
             "qualification": True,
@@ -47,7 +47,7 @@ def test_receipt_includes_validation_and_retries_keep_original_seed(
 ):
     # The product API no longer serves ingestion, and Kafka admission has no PG
     # capture; the legacy admission still seeds from the receipt start it is given.
-    import appchi.ingestion.service as service
+    import keep.ingestion.service as service
 
     original = service.validate_native
 
@@ -154,7 +154,7 @@ def test_repeat_and_semantic_rejection_have_distinct_proof(real_db, cipher, capt
 def test_source_rollback_cannot_commit_observation_before_product(
     real_db, cipher, capture, v1, monkeypatch
 ):
-    import appchi.alerts.processor as processor
+    import keep.alerts.processor as processor
 
     Admission(real_db, cipher, capture).admit(canonical(v1), "v1")
     tenant = global_id(real_db)
@@ -270,9 +270,9 @@ def test_registry_stays_unavailable_without_explicit_limits(browser, real_db):
 def test_expiry_fanout_commits_projection_link_and_cursor_atomically(
     browser, real_db, cipher, capture, v1, monkeypatch
 ):
-    import appchi.maintenance.processing as processing
-    import appchi.visibility.runtime as visibility
-    from appchi.maintenance.runtime import publish_reconciliation
+    import keep.maintenance.processing as processing
+    import keep.visibility.runtime as visibility
+    from keep.maintenance.runtime import publish_reconciliation
     from test_maintenance_repository import body
 
     client, _ = browser

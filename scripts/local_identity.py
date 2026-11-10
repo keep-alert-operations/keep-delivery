@@ -18,7 +18,7 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".local/keycloak"
-ISSUER = "https://localhost:58443/realms/appchi-local"
+ISSUER = "https://localhost:58443/realms/keep-local"
 ORIGIN = "https://localhost:3443"
 BACKCHANNEL = "https://host.docker.internal:3443/auth/backchannel-logout"
 
@@ -68,7 +68,7 @@ def tls():
         else rsa.generate_private_key(public_exponent=65537, key_size=2048)
     )
     name = x509.Name(
-        [x509.NameAttribute(NameOID.COMMON_NAME, "Appchi localhost development")]
+        [x509.NameAttribute(NameOID.COMMON_NAME, "Keep localhost development")]
     )
     cert = (
         x509.CertificateBuilder()
@@ -114,11 +114,11 @@ def prepare():
     tls()
     groups = {
         name: str(uuid.uuid4())
-        for name in ("Appchi Administrators", "Developers", "Observers")
+        for name in ("Keep Administrators", "Developers", "Observers")
     }
     users = {}
     for username, label, group in (
-        ("local-admin", "Local Administrator", "Appchi Administrators"),
+        ("local-admin", "Local Administrator", "Keep Administrators"),
         ("local-editor", "Local Editor", "Developers"),
         ("local-viewer", "Local Viewer", "Observers"),
     ):
@@ -139,9 +139,9 @@ def prepare():
         "deployment_epoch": str(uuid.uuid4()),
     }
     realm = {
-        "realm": "appchi-local",
+        "realm": "keep-local",
         "enabled": True,
-        "displayName": "Appchi local development",
+        "displayName": "Keep local development",
         "sslRequired": "all",
         "registrationAllowed": False,
         "rememberMe": False,
@@ -156,10 +156,10 @@ def prepare():
         "revokeRefreshToken": True,
         "refreshTokenMaxReuse": 0,
         "attributes": {"CreateDefaultClientScopes": "true"},
-        "browserFlow": "appchi-password",
+        "browserFlow": "keep-password",
         "authenticationFlows": [
             {
-                "alias": "appchi-password",
+                "alias": "keep-password",
                 "providerId": "basic-flow",
                 "topLevel": True,
                 "builtIn": False,
@@ -169,14 +169,14 @@ def prepare():
                         "requirement": "REQUIRED",
                         "priority": 10,
                         "authenticatorFlow": False,
-                        "authenticatorConfig": "appchi-password-evidence",
+                        "authenticatorConfig": "keep-password-evidence",
                     },
                 ],
             }
         ],
         "authenticatorConfig": [
             {
-                "alias": "appchi-password-evidence",
+                "alias": "keep-password-evidence",
                 "config": {
                     "default.reference.value": "pwd",
                     "default.reference.maxAge": "86400",
@@ -186,14 +186,14 @@ def prepare():
         "groups": [{"id": ident, "name": label} for label, ident in groups.items()],
         "clientScopes": [
             {
-                "name": "appchi-directory",
+                "name": "keep-directory",
                 "protocol": "openid-connect",
                 "attributes": {"include.in.token.scope": "true"},
             }
         ],
         "clients": [
             {
-                "clientId": "appchi-web",
+                "clientId": "keep-web",
                 "enabled": True,
                 "protocol": "openid-connect",
                 "publicClient": False,
@@ -205,13 +205,13 @@ def prepare():
                 "redirectUris": [ORIGIN + "/auth/callback"],
                 "webOrigins": [ORIGIN],
                 "attributes": {
-                    "login_theme": "appchi",
+                    "login_theme": "keep",
                     "pkce.code.challenge.method": "S256",
                     "post.logout.redirect.uris": ORIGIN + "/signed-out",
                     "backchannel.logout.url": BACKCHANNEL,
                     "backchannel.logout.session.required": "true",
                 },
-                "defaultClientScopes": ["basic", "profile", "appchi-directory"],
+                "defaultClientScopes": ["basic", "profile", "keep-directory"],
                 "optionalClientScopes": [],
                 "protocolMappers": [
                     mapper("amr", "oidc-amr-mapper"),
@@ -219,7 +219,7 @@ def prepare():
                 ],
             },
             {
-                "clientId": "appchi-directory",
+                "clientId": "keep-directory",
                 "enabled": True,
                 "protocol": "openid-connect",
                 "publicClient": False,
@@ -249,16 +249,16 @@ def prepare():
         ]
         + [
             {
-                "username": "service-account-appchi-directory",
+                "username": "service-account-keep-directory",
                 "enabled": True,
-                "serviceAccountClientId": "appchi-directory",
+                "serviceAccountClientId": "keep-directory",
                 "clientRoles": {
                     "realm-management": ["view-users", "query-users", "query-groups"]
                 },
             }
         ],
     }
-    save(STATE / "import/appchi-local-realm.json", realm)
+    save(STATE / "import/keep-local-realm.json", realm)
     (STATE / "bootstrap.env").write_text(
         "KC_BOOTSTRAP_ADMIN_USERNAME=bootstrap-admin\nKC_BOOTSTRAP_ADMIN_PASSWORD="
         + credentials["console_password"]
@@ -270,10 +270,10 @@ def prepare():
         {
             "issuer": ISSUER,
             "source": "keycloak-local",
-            "client_id": "appchi-directory",
-            "client_secret_env": "APPCHI_LOCAL_DIRECTORY_SECRET",
+            "client_id": "keep-directory",
+            "client_secret_env": "KEEP_LOCAL_DIRECTORY_SECRET",
             "ca_file": str(STATE / "tls/localhost.pem"),
-            "superadmin_group": groups["Appchi Administrators"],
+            "superadmin_group": groups["Keep Administrators"],
             "max_objects": 1000,
             "page_size": 100,
             "max_pages": 1000,
@@ -291,53 +291,57 @@ def environment():
     capacity_profile = ROOT / "qualification/development-capacity.json"
     operator_path = ROOT / ".local/operators/credentials.json"
     operator_values = {}
-    if operator_path.exists():
-        operator_credentials = json.loads(operator_path.read_text(encoding="utf-8"))
+    operator_credentials = (
+        json.loads(operator_path.read_text(encoding="utf-8")) if operator_path.exists() else {}
+    )
+    # A fresh workspace has prepared operator credentials but no Grafana token until
+    # local_v2.py configure runs, which itself needs this environment file first.
+    if "grafana_token" in operator_credentials:
         operator_values = {
-            "APPCHI_OPERATOR_BINDING": str(ROOT / ".local/operators/binding.json"),
-            "APPCHI_OPERATOR_DATABASE_URL": os.environ.get("APPCHI_LOCAL_WORKER_URL",
-                f"postgresql://appchi_local_worker:{creds['worker_password']}@127.0.0.1:55433/appchi_local?connect_timeout=5"),
-            "APPCHI_OPERATOR_GRAFANA_TOKEN": operator_credentials["grafana_token"],
-            "APPCHI_OPERATOR_KONG_TOKEN": operator_credentials["kong_token"],
-            "APPCHI_OPERATOR_PROBE_TOKEN": operator_credentials["probe_token"],
+            "KEEP_OPERATOR_BINDING": str(ROOT / ".local/operators/binding.json"),
+            "KEEP_OPERATOR_DATABASE_URL": os.environ.get("KEEP_LOCAL_WORKER_URL",
+                f"postgresql://keep_local_worker:{creds['worker_password']}@127.0.0.1:55433/keep_local?connect_timeout=5"),
+            "KEEP_OPERATOR_GRAFANA_TOKEN": operator_credentials["grafana_token"],
+            "KEEP_OPERATOR_KONG_TOKEN": operator_credentials["kong_token"],
+            "KEEP_OPERATOR_PROBE_TOKEN": operator_credentials["probe_token"],
         }
     protocol_path=ROOT / ".local/runtime/kafka-protocol.json"
     protocol=json.loads(protocol_path.read_text(encoding="utf-8")) if protocol_path.exists() else {}
     return {
         **operator_values,
-        "APPCHI_KAFKA_ADMISSION_ENABLED": str(protocol.get("enabled",False)).lower(),
-        **({"APPCHI_GLOBAL_TENANT_ID":protocol["global_tenant_id"]} if protocol.get("global_tenant_id") else {}),
-        "APPCHI_ENVIRONMENT": "development",
-        "APPCHI_DATABASE_URL": os.environ.get(
-            "APPCHI_LOCAL_DATABASE_URL",
-            f"postgresql://appchi_local_api:{creds['api_password']}@127.0.0.1:55433/appchi_local?connect_timeout=5",
+        "KEEP_KAFKA_ADMISSION_ENABLED": str(protocol.get("enabled",False)).lower(),
+        **({"KEEP_GLOBAL_TENANT_ID":protocol["global_tenant_id"]} if protocol.get("global_tenant_id") else {}),
+        "KEEP_ENVIRONMENT": "development",
+        "KEEP_DATABASE_URL": os.environ.get(
+            "KEEP_LOCAL_DATABASE_URL",
+            f"postgresql://keep_local_api:{creds['api_password']}@127.0.0.1:55433/keep_local?connect_timeout=5",
         ),
-        "APPCHI_LOCAL_WORKER_DATABASE_URL": os.environ.get(
-            "APPCHI_LOCAL_WORKER_URL",
-            f"postgresql://appchi_local_worker:{creds['worker_password']}@127.0.0.1:55433/appchi_local?connect_timeout=5",
+        "KEEP_LOCAL_WORKER_DATABASE_URL": os.environ.get(
+            "KEEP_LOCAL_WORKER_URL",
+            f"postgresql://keep_local_worker:{creds['worker_password']}@127.0.0.1:55433/keep_local?connect_timeout=5",
         ),
-        "APPCHI_WRAPPING_KEY": creds["wrapping_key"],
-        "APPCHI_DEPLOYMENT_EPOCH": creds["deployment_epoch"],
-        "APPCHI_PUBLIC_ORIGIN": ORIGIN,
-        "APPCHI_OIDC_ISSUER": ISSUER,
-        "APPCHI_OIDC_CLIENT_SECRET": creds["web_secret"],
-        "APPCHI_OIDC_DIRECTORY_SOURCE": "keycloak-local",
-        "APPCHI_OIDC_DIRECTORY_ID_CLAIM": "sub",
-        "APPCHI_OIDC_DIRECTORY_SCOPE": "appchi-directory",
-        "APPCHI_OIDC_REQUIRED_ACR": "1",
-        "APPCHI_OIDC_REQUIRED_AMR": '["pwd"]',
-        "APPCHI_OIDC_CA_FILE": str(STATE / "tls/localhost.pem"),
-        "APPCHI_SUPERADMIN_GROUP": creds["groups"]["Appchi Administrators"],
-        "APPCHI_LOCAL_DIRECTORY_SECRET": creds["directory_secret"],
-        "APPCHI_ELASTICSEARCH_URL": "http://127.0.0.1:59201",
-        "APPCHI_ELASTICSEARCH_INDEX": "appchi-local-alerts",
-        "APPCHI_CAPACITY_PROFILE": str(capacity_profile),
-        "APPCHI_KAFKA_BOOTSTRAP": "127.0.0.1:19093",
-        "APPCHI_REDIS_URL": "redis://127.0.0.1:56380/0",
-        "APPCHI_POOL_SIZE": "2",
-        "APPCHI_BACKEND_URL": "http://127.0.0.1:58000",
-        "APPCHI_TICKET_COUNT_URL": os.environ.get(
-            "APPCHI_LOCAL_TICKET_COUNT_URL", "http://127.0.0.1:58090/count"
+        "KEEP_WRAPPING_KEY": creds["wrapping_key"],
+        "KEEP_DEPLOYMENT_EPOCH": creds["deployment_epoch"],
+        "KEEP_PUBLIC_ORIGIN": ORIGIN,
+        "KEEP_OIDC_ISSUER": ISSUER,
+        "KEEP_OIDC_CLIENT_SECRET": creds["web_secret"],
+        "KEEP_OIDC_DIRECTORY_SOURCE": "keycloak-local",
+        "KEEP_OIDC_DIRECTORY_ID_CLAIM": "sub",
+        "KEEP_OIDC_DIRECTORY_SCOPE": "keep-directory",
+        "KEEP_OIDC_REQUIRED_ACR": "1",
+        "KEEP_OIDC_REQUIRED_AMR": '["pwd"]',
+        "KEEP_OIDC_CA_FILE": str(STATE / "tls/localhost.pem"),
+        "KEEP_SUPERADMIN_GROUP": creds["groups"]["Keep Administrators"],
+        "KEEP_LOCAL_DIRECTORY_SECRET": creds["directory_secret"],
+        "KEEP_ELASTICSEARCH_URL": "http://127.0.0.1:59201",
+        "KEEP_ELASTICSEARCH_INDEX": "keep-local-alerts",
+        "KEEP_CAPACITY_PROFILE": str(capacity_profile),
+        "KEEP_KAFKA_BOOTSTRAP": "127.0.0.1:19093",
+        "KEEP_REDIS_URL": "redis://127.0.0.1:56380/0",
+        "KEEP_POOL_SIZE": "2",
+        "KEEP_BACKEND_URL": "http://127.0.0.1:58000",
+        "KEEP_TICKET_COUNT_URL": os.environ.get(
+            "KEEP_LOCAL_TICKET_COUNT_URL", "http://127.0.0.1:58090/count"
         ),
         "PYTHONPATH": "",
     }
@@ -345,30 +349,30 @@ def environment():
 
 def database():
     import psycopg
-    from appchi.migrate import migrate, migration_directory
+    from keep.migrate import migrate, migration_directory
     from psycopg import sql
     from psycopg.conninfo import make_conninfo
 
     admin = os.environ.get(
-        "APPCHI_LOCAL_DATABASE_ADMIN_URL",
-        "postgresql://appchi_migrator:"
+        "KEEP_LOCAL_DATABASE_ADMIN_URL",
+        "postgresql://keep_migrator:"
         + quote((ROOT / ".local/postgres-password.txt").read_text().strip(), safe="")
         + "@127.0.0.1:55433/postgres?connect_timeout=5",
     )
-    dump = ROOT / ".local/runtime/appchi-local-migration.dump"
-    marker = ROOT / ".local/runtime/appchi-local-migration.restored.json"
+    dump = ROOT / ".local/runtime/keep-local-migration.dump"
+    marker = ROOT / ".local/runtime/keep-local-migration.restored.json"
     restore_existing = dump.exists() and not marker.exists()
     for attempt in range(90):
         try:
             with psycopg.connect(admin, autocommit=True) as conn:
                 exists = conn.execute(
-                    "SELECT 1 FROM pg_database WHERE datname='appchi_local'"
+                    "SELECT 1 FROM pg_database WHERE datname='keep_local'"
                 ).fetchone()
                 if restore_existing and exists:
-                    conn.execute("DROP DATABASE appchi_local WITH (FORCE)")
+                    conn.execute("DROP DATABASE keep_local WITH (FORCE)")
                     exists = None
                 if restore_existing:
-                    for role in ("appchi_api", "appchi_worker"):
+                    for role in ("keep_api", "keep_worker"):
                         if not conn.execute(
                             "SELECT 1 FROM pg_roles WHERE rolname=%s", (role,)
                         ).fetchone():
@@ -378,7 +382,7 @@ def database():
                                 )
                             )
                 if not exists:
-                    conn.execute("CREATE DATABASE appchi_local")
+                    conn.execute("CREATE DATABASE keep_local")
             break
         except psycopg.OperationalError:
             if attempt == 89:
@@ -390,7 +394,7 @@ def database():
                 "docker",
                 "compose",
                 "-p",
-                "appchi-local-stack",
+                "keep-local-stack",
                 "-f",
                 "deploy/local/compose.yaml",
                 "exec",
@@ -398,19 +402,19 @@ def database():
                 "postgres",
                 "sh",
                 "-ec",
-                'PGPASSWORD="$(cat /run/secrets/postgres_password)" pg_restore --no-owner --exit-on-error --dbname=postgresql://appchi_migrator@127.0.0.1:5432/appchi_local',
+                'PGPASSWORD="$(cat /run/secrets/postgres_password)" pg_restore --no-owner --exit-on-error --dbname=postgresql://keep_migrator@127.0.0.1:5432/keep_local',
             ],
             input=dump.read_bytes(),
             check=True,
             stdout=subprocess.DEVNULL,
             cwd=ROOT,
         )
-    migrate(make_conninfo(admin, dbname="appchi_local"), migration_directory())
+    migrate(make_conninfo(admin, dbname="keep_local"), migration_directory())
     creds = json.loads((STATE / "credentials.json").read_text())
     with psycopg.connect(admin) as conn:
         for role, parent, field in (
-            ("appchi_local_api", "appchi_api", "api_password"),
-            ("appchi_local_worker", "appchi_worker", "worker_password"),
+            ("keep_local_api", "keep_api", "api_password"),
+            ("keep_local_worker", "keep_worker", "worker_password"),
         ):
             creds.setdefault(field, secrets.token_urlsafe(32))
             if not conn.execute(
@@ -432,7 +436,7 @@ def database():
                 {
                     "restored_at": datetime.now(UTC).isoformat(),
                     "source": "local-native-postgresql",
-                    "database": "appchi_local",
+                    "database": "keep_local",
                 },
                 indent=2,
             )
@@ -440,10 +444,10 @@ def database():
             encoding="utf-8",
         )
         print(
-            "Existing local Appchi database restored into the Compose PostgreSQL volume."
+            "Existing local Keep database restored into the Compose PostgreSQL volume."
         )
     save(STATE / "credentials.json", creds)
-    print("Dedicated appchi_local database migrated.")
+    print("Dedicated keep_local database migrated.")
 
 
 def wait():
@@ -472,12 +476,12 @@ def wait():
 
 
 def configure_password_login(client, origin):
-    """Upgrade the isolated Appchi realm, including already enrolled users."""
-    realm_url = origin + "/admin/realms/appchi-local"
+    """Upgrade the isolated Keep realm, including already enrolled users."""
+    realm_url = origin + "/admin/realms/keep-local"
     response = client.get(realm_url)
     response.raise_for_status()
     alias = response.json()["browserFlow"]
-    if alias not in {"appchi-password", "appchi-password-otp"}:
+    if alias not in {"keep-password", "keep-password-otp"}:
         raise RuntimeError("Unexpected local browser flow; refusing to alter it")
     executions_url = realm_url + f"/authentication/flows/{alias}/executions"
     response = client.get(executions_url)
@@ -515,7 +519,7 @@ def configure_password_login(client, origin):
         first += len(users)
 
     # Existing installations keep their credentials and historical flow alias.
-    import_path = STATE / "import/appchi-local-realm.json"
+    import_path = STATE / "import/keep-local-realm.json"
     realm = json.loads(import_path.read_text(encoding="utf-8"))
     for flow in realm["authenticationFlows"]:
         for execution in flow["authenticationExecutions"]:
@@ -534,33 +538,33 @@ def configure_password_login(client, origin):
 
 
 def configure_login_theme(client, origin):
-    """Apply Appchi branding only to its client, preserving all other settings."""
-    clients_url = origin + "/admin/realms/appchi-local/clients"
-    response = client.get(clients_url, params={"clientId": "appchi-web"})
+    """Apply Keep branding only to its client, preserving all other settings."""
+    clients_url = origin + "/admin/realms/keep-local/clients"
+    response = client.get(clients_url, params={"clientId": "keep-web"})
     response.raise_for_status()
-    matches = [item for item in response.json() if item["clientId"] == "appchi-web"]
+    matches = [item for item in response.json() if item["clientId"] == "keep-web"]
     if len(matches) != 1:
-        raise RuntimeError("Expected exactly one local appchi-web client")
+        raise RuntimeError("Expected exactly one local keep-web client")
     client_url = clients_url + "/" + matches[0]["id"]
     response = client.get(client_url)
     response.raise_for_status()
     config = response.json()
     attributes = config.get("attributes", {})
-    if attributes.get("login_theme") != "appchi":
-        config["attributes"] = {**attributes, "login_theme": "appchi"}
+    if attributes.get("login_theme") != "keep":
+        config["attributes"] = {**attributes, "login_theme": "keep"}
         response = client.put(client_url, json=config)
         response.raise_for_status()
 
-    import_path = STATE / "import/appchi-local-realm.json"
+    import_path = STATE / "import/keep-local-realm.json"
     realm = json.loads(import_path.read_text(encoding="utf-8"))
     for item in realm["clients"]:
-        if item["clientId"] == "appchi-web":
-            item.setdefault("attributes", {})["login_theme"] = "appchi"
+        if item["clientId"] == "keep-web":
+            item.setdefault("attributes", {})["login_theme"] = "keep"
     save(import_path, realm)
 
 
 def configure():
-    """Configure Appchi password login and separate console administrator MFA."""
+    """Configure Keep password login and separate console administrator MFA."""
     import ssl
 
     import httpx
@@ -568,10 +572,10 @@ def configure():
     marker = STATE / "configured.json"
     previous = json.loads(marker.read_text()) if marker.exists() else {}
     if (
-        previous.get("appchi_login") == "username-password"
-        and previous.get("login_theme") == "appchi"
+        previous.get("keep_login") == "username-password"
+        and previous.get("login_theme") == "keep"
     ):
-        print("Local username/password login and Appchi theme configuration preserved.")
+        print("Local username/password login and Keep theme configuration preserved.")
         return
     creds = json.loads((STATE / "credentials.json").read_text())
     origin = "https://localhost:58443"
@@ -594,22 +598,22 @@ def configure():
         token.raise_for_status()
         client.headers["Authorization"] = "Bearer " + token.json()["access_token"]
         configure_login_theme(client, origin)
-        if previous.get("appchi_login") != "username-password":
+        if previous.get("keep_login") != "username-password":
             configure_password_login(client, origin)
         if previous:
             save(
                 marker,
                 {
                     **previous,
-                    "appchi_login": "username-password",
-                    "login_theme": "appchi",
+                    "keep_login": "username-password",
+                    "login_theme": "keep",
                 },
             )
-            print("Local Appchi password login and theme configured.")
+            print("Local Keep password login and theme configured.")
             return
         for username, user in creds["users"].items():
             response = client.put(
-                origin + "/admin/realms/appchi-local/users/" + user["id"],
+                origin + "/admin/realms/keep-local/users/" + user["id"],
                 json={
                     "firstName": user["label"].split(" ", 1)[0],
                     "lastName": user["label"].split(" ", 1)[1],
@@ -638,8 +642,8 @@ def configure():
         {
             "configured_at": datetime.now(UTC).isoformat(),
             "console_totp_enrollment_required": True,
-            "appchi_login": "username-password",
-            "login_theme": "appchi",
+            "keep_login": "username-password",
+            "login_theme": "keep",
         },
     )
     print(
@@ -657,7 +661,7 @@ def otp_value(secret):
 def otp(username):
     credentials = json.loads((STATE / "credentials.json").read_text())
     if username != credentials["console_username"]:
-        raise ValueError("Appchi users sign in with username and password only")
+        raise ValueError("Keep users sign in with username and password only")
     print(otp_value(credentials["console_otp_secret"]))
 
 

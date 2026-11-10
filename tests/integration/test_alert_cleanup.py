@@ -5,10 +5,10 @@ from pathlib import Path
 from uuid import uuid4, UUID
 import pytest
 
-from appchi.recovery.retirement import retire_alert
-from appchi.recovery.alert_cleanup import cleanup_alert
-from appchi.pipeline import record_receipt
-from appchi.shared.errors import AppError
+from keep.recovery.retirement import retire_alert
+from keep.recovery.alert_cleanup import cleanup_alert
+from keep.pipeline import record_receipt
+from keep.shared.errors import AppError
 from test_product import browser, admit_alert  # noqa: F401
 from test_search_pipeline import real_db as isolated_db
 from test_incident_retirement import Store
@@ -72,7 +72,7 @@ def release_consumers(db, tenant):
                     "INSERT INTO pipeline_receipts(consumer_name,topic,partition,broker_offset,tenant_id,outbox_id) VALUES(%s,%s,0,%s,%s,%s)",
                     (
                         consumer,
-                        "appchi.development.alerts." + event["stream"],
+                        "keep.development.alerts." + event["stream"],
                         index,
                         tenant,
                         event["id"],
@@ -147,7 +147,7 @@ def test_replay_privacy_and_protected_bounded_erasure(retired, real_db):
         assert record_receipt(
             real_db,
             consumer=consumer,
-            topic="appchi.development.alerts." + event["stream"],
+            topic="keep.development.alerts." + event["stream"],
             partition=0,
             offset=1000 + index,
             key=UUID(tenant).bytes,

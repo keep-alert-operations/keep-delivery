@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 from time import monotonic
 
-from appchi.worker_health import WorkerHealth, probe
-from appchi import worker_health
+from keep.worker_health import WorkerHealth, probe
+from keep import worker_health
 
 
 def test_process_liveness_is_independent_of_dependencies_and_draining(tmp_path):

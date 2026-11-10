@@ -15,7 +15,7 @@ not a new specification or qualification of that working-tree combination.
 
 ## Executed checks
 
-From `appchi-delivery`:
+From `keep-delivery`:
 
 - `node docs/developer-guide/build.mjs`: generated thirteen chapters in a single
   self-contained HTML file with embedded styles and JavaScript.
@@ -29,7 +29,7 @@ From `appchi-delivery`:
   or original issue identifiers were changed.
 
 Browser verification used the Codex in-app browser and a temporary loopback-only
-HTTP preview, without starting Appchi:
+HTTP preview, without starting Keep:
 
 - All eleven repository selections display their owner and source links.
 - All six pipeline scenarios advance to their expected final frame; next is
@@ -53,7 +53,7 @@ Evidence: [desktop](developer-guide-2026-10-11/desktop.png),
 
 ## Limits
 
-These checks validate the guide and its learning models, not Appchi runtime
+These checks validate the guide and its learning models, not Keep runtime
 behavior. Displayed installation, migration, service and integration commands were
 not executed. The guide's simulations are explicitly partial and synthetic.
 Browser policy disallowed direct `file:` navigation, so interactions were tested

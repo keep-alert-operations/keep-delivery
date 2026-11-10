@@ -10,7 +10,7 @@ inventory and run ledger are under ignored
 ## Finding
 
 The S3 smoke `send` was admitted (202) but never became searchable. A rolled-back
-replay of `appchi.development.alerts.received:0:4` failed with `UniqueViolation` on
+replay of `keep.development.alerts.received:0:4` failed with `UniqueViolation` on
 `kafka_source_results UNIQUE(topic,partition,input_offset)`.
 
 - The broker used the image default `log.dir=/tmp/kafka-logs` in the container layer.
@@ -58,7 +58,7 @@ it. The current topics had low watermark 0, so nothing was lost from them.
 4. Extracted the archive into `kafka_data` as uid 1000. Cluster id and node id were
    unchanged.
 5. One PostgreSQL transaction as the migration identity, with row-count assertions:
-   relabelled exactly the six stale rows to `appchi.development.alerts.received@lost-2026-10-05`
+   relabelled exactly the six stale rows to `keep.development.alerts.received@lost-2026-10-05`
    and set the three diagnostic positions to the captured broker offsets. Before/after
    comparison of all ten source results: no column other than `topic` changed.
 6. Recreated Kafka on the volume: `log.dirs = /var/lib/kafka/data`, `/tmp/kafka-logs`
@@ -95,7 +95,7 @@ no automated end-to-end test. S1's group-removal/logout case first failed becaus
 group id matched Keycloak). After that single id was corrected to Keycloak's
 `b29f39fa…` (backup `credentials.before-viewer-id-20261026.json`), S1 passed 5/5,
 including removal 404, restoration 200 and signed provider logout 401; the viewer is
-back in Observers in Keycloak and the Appchi directory. Detection inside the processor
+back in Observers in Keycloak and the Keep directory. Detection inside the processor
 (topic identity at cutover, a specific coordinate-conflict fault, exception class in
 logs) remains an open proposal. Retained synthetic fixtures: Local Demo alerts
 `93eca115…`, `b79c308c…`, `a5bf9b5b…`, `3a634caf…`, `5b0c1800…`, `7ba9b355…`; Global

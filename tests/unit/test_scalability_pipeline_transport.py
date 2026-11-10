@@ -3,8 +3,8 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from appchi.kafka_changed import ChangedConsumer, PartitionRetries
-from appchi.kafka_source import SourceConsumer
+from keep.kafka_changed import ChangedConsumer, PartitionRetries
+from keep.kafka_source import SourceConsumer
 
 
 def message(partition, offset):
@@ -34,7 +34,7 @@ def changed(messages, handler, batch_handler=None):
     worker.settings, worker.profile, worker.role = Mock(), None, "indexer"
     worker.handler, worker.batch_handler = handler, batch_handler
     worker.batch_size, worker.pending = 50, deque()
-    # Commit every handled turn; batched commits are covered in appchi-domain.
+    # Commit every handled turn; batched commits are covered in keep-domain.
     worker.commit_every, worker.commit_interval = 1, 0.1
     worker.uncommitted, worker.uncommitted_count, worker.uncommitted_since = {}, 0, None
     worker.client = Mock()
@@ -97,7 +97,7 @@ def test_later_poison_does_not_fence_before_healthy_prefix():
 
 
 def test_retry_resumes_exact_failed_offset_after_backoff(monkeypatch):
-    from appchi import kafka_changed
+    from keep import kafka_changed
 
     clock = [10.0]
     monkeypatch.setattr(kafka_changed, "monotonic", lambda: clock[0])
@@ -114,7 +114,7 @@ def test_retry_resumes_exact_failed_offset_after_backoff(monkeypatch):
 
 
 def test_source_application_failure_retains_offset_without_kafka_transaction(monkeypatch):
-    from appchi import kafka_source, clock_health
+    from keep import kafka_source, clock_health
 
     monkeypatch.setattr(clock_health, "require_clock_health", lambda *args: None)
     worker = SourceConsumer.__new__(SourceConsumer)
@@ -147,7 +147,7 @@ def test_correlation_retention_gap_fences_only_lost_partition():
     worker.closing, worker.role = False, "correlation"
     worker.settings = SimpleNamespace(environment="test")
     worker.control = {"changed_partitions": 2}
-    topic = "appchi.test.alerts.changed"
+    topic = "keep.test.alerts.changed"
     worker.client.list_topics.return_value = SimpleNamespace(
         topics={topic: SimpleNamespace(partitions={0: None, 1: None})}
     )

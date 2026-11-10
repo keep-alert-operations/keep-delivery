@@ -1,12 +1,12 @@
 from dataclasses import asdict
 from uuid import uuid4
 import pytest
-from appchi.ingestion.gateway import GatewayIdentity
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
-from appchi.recovery.retirement import retire_alert
-from appchi.recovery.evidence import DurableAck
-from appchi.shared.errors import AppError
+from keep.ingestion.gateway import GatewayIdentity
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
+from keep.recovery.retirement import retire_alert
+from keep.recovery.evidence import DurableAck
+from keep.shared.errors import AppError
 from test_product import admit_alert
 
 pytestmark = pytest.mark.integration
@@ -156,7 +156,7 @@ def test_v2_authoritative_binding_revocation_and_receipt(real_db, cipher, profil
 def test_retirement_can_retry_cancelled_attempt_with_unchanged_versions(
     real_db, cipher, profile, v1
 ):
-    from appchi.alerts.processor import process_one
+    from keep.alerts.processor import process_one
 
     tenant, alert = eligible(real_db, cipher, profile, v1)
     store = IndependentStore()

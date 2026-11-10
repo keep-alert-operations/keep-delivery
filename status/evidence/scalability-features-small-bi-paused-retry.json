@@ -31,7 +31,7 @@
     "production_qualified": false,
     "qualification_notice": "Synthetic feature-gate input; not production capacity evidence",
     "correlation": {
-      "cost_model": "appchi-cel-cost-v1",
+      "cost_model": "keep-cel-cost-v1",
       "enabled_rules_per_tenant": 1,
       "live_groups_per_rule": 2,
       "live_evidence_per_rule": 30,

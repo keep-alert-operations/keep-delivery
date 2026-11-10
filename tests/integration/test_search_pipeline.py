@@ -10,10 +10,10 @@ from elasticsearch import Elasticsearch
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-from appchi.db import Database
-from appchi.migrate import migrate
-from appchi.search.projection import index_mapping
-from appchi.worker import projection_turn
+from keep.db import Database
+from keep.migrate import migrate
+from keep.search.projection import index_mapping
+from keep.worker import projection_turn
 from test_product import browser, admit_alert  # noqa: F401
 
 pytestmark = pytest.mark.integration
@@ -21,10 +21,10 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def real_db():
-    admin = os.getenv("APPCHI_IDENTITY_TEST_ADMIN_URL")
+    admin = os.getenv("KEEP_IDENTITY_TEST_ADMIN_URL")
     if not admin:
         pytest.skip("Requires isolated PostgreSQL admin DSN and real Elasticsearch URL")
-    name = "appchi_pipeline_test_" + uuid4().hex
+    name = "keep_pipeline_test_" + uuid4().hex
     with psycopg.connect(admin, autocommit=True) as conn:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     params = conninfo_to_dict(admin)
@@ -44,11 +44,11 @@ def real_db():
 
 @pytest.fixture
 def browser_settings():
-    if not os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"):
+    if not os.getenv("KEEP_TEST_ELASTICSEARCH_URL"):
         pytest.skip("Requires real Elasticsearch URL")
     return {
-        "elasticsearch_url": os.environ["APPCHI_TEST_ELASTICSEARCH_URL"],
-        "elasticsearch_index": "appchi-pipeline-test-" + uuid4().hex,
+        "elasticsearch_url": os.environ["KEEP_TEST_ELASTICSEARCH_URL"],
+        "elasticsearch_index": "keep-pipeline-test-" + uuid4().hex,
     }
 
 
@@ -123,14 +123,14 @@ def test_feed_pages_authorize_twice_in_few_units(
     browser, real_db, cipher, profile, v1, monkeypatch
 ):
     """[#16] Each page authorizes before and after Elasticsearch in 3-4 units."""
-    if not os.getenv("APPCHI_TEST_ELASTICSEARCH_URL"):
+    if not os.getenv("KEEP_TEST_ELASTICSEARCH_URL"):
         pytest.skip("Requires real Elasticsearch URL")
-    from appchi import search_routes
+    from keep import search_routes
 
     client, _ = browser
     settings = client.app.state.settings
-    settings.elasticsearch_url = os.environ["APPCHI_TEST_ELASTICSEARCH_URL"]
-    settings.elasticsearch_index = "appchi-feed-units-test-" + uuid4().hex
+    settings.elasticsearch_url = os.environ["KEEP_TEST_ELASTICSEARCH_URL"]
+    settings.elasticsearch_index = "keep-feed-units-test-" + uuid4().hex
     with Elasticsearch(settings.elasticsearch_url, request_timeout=5, max_retries=0) as es:
         es.indices.create(
             index=settings.elasticsearch_index,

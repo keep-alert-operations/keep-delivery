@@ -1,8 +1,8 @@
-# Appchi daily user guide
+# Keep daily user guide
 
-Appchi brings alerts, ownership and incident investigation into one shared workspace. Use it to find problems that need attention, record who is handling them, connect related alerts and keep your team informed through shared views and notes.
+Keep brings alerts, ownership and incident investigation into one shared workspace. Use it to find problems that need attention, record who is handling them, connect related alerts and keep your team informed through shared views and notes.
 
-This guide is for people who use Appchi during their working day, with either **View** or **Edit** access. It covers daily operations, including shared configuration that editors can change. Ask your administrator for account access, integrations and system administration.
+This guide is for people who use Keep during their working day, with either **View** or **Edit** access. It covers daily operations, including shared configuration that editors can change. Ask your administrator for account access, integrations and system administration.
 
 **Start here:** read Getting started, then follow the Feed and Working alerts chapters. Keep Troubleshooting nearby during your first shift. The [illustrated reading edition](index.html) brings all seven chapters together in one searchable, printable page.
 
@@ -39,7 +39,7 @@ This guide is for people who use Appchi during their working day, with either **
 | How do I repeat this search next shift? | Presets |
 | How many alerts match our team views? | Boards, the dashboard area |
 | Why is an alert hidden or excluded from a count? | Include suppressed, then alert suppression details |
-| Why did Appchi group these alerts automatically? | Incident origin and Rules |
+| Why did Keep group these alerts automatically? | Incident origin and Rules |
 
 ## Reading the examples
 

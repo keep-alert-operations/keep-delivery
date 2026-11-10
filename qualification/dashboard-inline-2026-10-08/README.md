@@ -23,10 +23,10 @@ backend rollout, merge or production deployment was needed or performed.
 
 | Repository | Local HEAD | Task changes |
 |---|---|---|
-| appchi-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Uncommitted inline UI, layout, tests and UI notes |
-| appchi-design | `99c5def93c761386e7d5161c44f482ae4cbd7539` | Dashboard supplement, user correction and verification requirements |
-| appchi-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | This evidence and implementation-status entry |
-| appchi-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` | Existing local API; no changes for this task |
+| keep-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` | Uncommitted inline UI, layout, tests and UI notes |
+| keep-design | `99c5def93c761386e7d5161c44f482ae4cbd7539` | Dashboard supplement, user correction and verification requirements |
+| keep-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` | This evidence and implementation-status entry |
+| keep-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` | Existing local API; no changes for this task |
 
 Unrelated existing changes were preserved. The frontend contract dependency remains
 `eb555e8bd307c2dbc3f20a9134351696a4f5eba2`. Tests used installed Chrome and the
@@ -44,7 +44,7 @@ services are outside that fingerprint.
 | `node node_modules/typescript/bin/tsc --noEmit --incremental false` | Passed |
 | Prettier `--check` on all 14 changed dashboard source/test files | Passed |
 | Generated frontend contract types using the installed openapi-typescript CLI, then Prettier and `git diff --exit-code -- src/lib/generated.ts` | Passed; no contract drift |
-| `node node_modules/next/dist/bin/next build` with `APPCHI_NEXT_DIST_DIR=.next-dashboard-build` | Passed; all three static pages generated; before/after frontend fingerprint matched |
+| `node node_modules/next/dist/bin/next build` with `KEEP_NEXT_DIST_DIR=.next-dashboard-build` | Passed; all three static pages generated; before/after frontend fingerprint matched |
 | `git diff --check` in affected repositories | Passed |
 | Design `python scripts/check_docs.py` | Passed; original issue/REV numbering preserved |
 | Delivery `python qualification/verify_documents.py` | Passed; 121 documents, 566 source entries, REV-01 through REV-38 |
@@ -71,6 +71,6 @@ performed alongside interaction/focus/save assertions.
 - [Saved board at 390 pixels](saved-390.png)
 
 The authoritative interaction is in
-[dashboard section 8](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-dashboard-operations.md#8-shared-editing-copying-and-conflicts).
+[dashboard section 8](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-dashboard-operations.md#8-shared-editing-copying-and-conflicts).
 Frontend implementation notes remain in
-[UI design notes](https://github.com/appchi-alert-operations/appchi-frontend/blob/main/docs/ui-design.md).
+[UI design notes](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/ui-design.md).

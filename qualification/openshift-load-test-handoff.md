@@ -20,17 +20,17 @@ them. Existing local API, frontend and delivery work was preserved.
 
 | Repository | Starting revision |
 | --- | --- |
-| appchi-delivery | `2d1fc70b942eae2590855538d7ca7cc6d67128ca` |
-| appchi-api | `0b8a1a351378d0a7952a405b6fac4db1d03c6096` |
-| appchi-ingestion | `0d2ee23a7940c2c0866498aa0646587f101651bc` |
-| appchi-processor | `4f7a3fc81483d193033c3eec9f54f6aaeb6a5392` |
-| appchi-correlation | `ad68f9f4838848f5d318888be4b0e067d5b51e5b` |
-| appchi-indexer | `ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3` |
-| appchi-migrations | `1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236` |
-| appchi-frontend | `468ba80eeac6ca2ad4b95752edb7b8005aa354fb` |
-| appchi-domain (unchanged) | `830d4f65556d93692cca60695fafb522769fe122` |
-| appchi-contracts (unchanged) | `42107e3814a07518878291929740f5fa120fbff1` |
-| appchi-design (unchanged) | `7bf631cf8613cca0e10139cc5cd2b391778f9d8e` |
+| keep-delivery | `2d1fc70b942eae2590855538d7ca7cc6d67128ca` |
+| keep-api | `0b8a1a351378d0a7952a405b6fac4db1d03c6096` |
+| keep-ingestion | `0d2ee23a7940c2c0866498aa0646587f101651bc` |
+| keep-processor | `4f7a3fc81483d193033c3eec9f54f6aaeb6a5392` |
+| keep-correlation | `ad68f9f4838848f5d318888be4b0e067d5b51e5b` |
+| keep-indexer | `ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3` |
+| keep-migrations | `1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236` |
+| keep-frontend | `468ba80eeac6ca2ad4b95752edb7b8005aa354fb` |
+| keep-domain (unchanged) | `830d4f65556d93692cca60695fafb522769fe122` |
+| keep-contracts (unchanged) | `42107e3814a07518878291929740f5fa120fbff1` |
+| keep-design (unchanged) | `7bf631cf8613cca0e10139cc5cd2b391778f9d8e` |
 
 Dependency pins, locks, HTTP/event contracts and migration bytes were not changed
 by this task. Production images continue to resolve the committed immutable
@@ -49,7 +49,7 @@ No release manifest is represented as qualified by these changes.
   not assertion failures. Tests exercise actual native schemas/identity fields,
   bounded lifecycle/key ownership, rate accounting, admission and dashboard
   response contracts, exact raw/compact payload byte bounds and JavaScript syntax.
-  This is not traffic against Appchi.
+  This is not traffic against Keep.
 - Test identity generator tests: 4 passed. OIDC/PKCE, distinct UUIDs, separated
   clients, read-only directory permissions and HTTPS origin validation checked.
 - Combined targeted suite: **29 passed** in 29.16 seconds using the prepared
@@ -80,12 +80,12 @@ No release manifest is represented as qualified by these changes.
   One unsupported top-level `maxDuration` option was corrected to a scenario
   option. The latest-source inspection matrix passed the seed case, then stalled
   during Docker startup and was cancelled. The final source needs an image rebuild
-  and complete runtime exercise on the private runner. No Appchi requests were sent.
+  and complete runtime exercise on the private runner. No Keep requests were sent.
 - The system document checker passed with 111 documents, 566 source entries and
   REV-01 through REV-38 intact. Local link targets in the four new primary
   guide/evidence documents were also checked and exist.
 
-Reproduce the targeted source checks from `appchi-delivery` (Windows paths shown):
+Reproduce the targeted source checks from `keep-delivery` (Windows paths shown):
 
 ```powershell
 .venv/Scripts/python.exe -m pytest tests/unit/test_openshift_load_test_bundle.py tests/unit/test_load_test_harness.py tests/unit/test_load_identity_prepare.py -q --basetemp=.local/pytest-load-handoff

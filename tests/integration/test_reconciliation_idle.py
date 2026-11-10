@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.search import reconciliation
+from keep.search import reconciliation
 from test_scalability_pipeline import configuration, fake_service, seed_scan
 
 pytestmark = pytest.mark.integration

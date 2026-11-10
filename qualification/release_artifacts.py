@@ -9,8 +9,8 @@ from pathlib import Path, PurePosixPath
 
 import tomllib
 
-INVENTORY_VERSION = "appchi-release-inventory-v1"
-MANIFEST_VERSION = "appchi-release-manifest-v1"
+INVENTORY_VERSION = "keep-release-inventory-v1"
+MANIFEST_VERSION = "keep-release-manifest-v1"
 EVIDENCE = (
     "service_manifest",
     "capacity_profile",
@@ -32,10 +32,10 @@ INPUTS = {
         "frontend/package-lock.json",
     ),
     "profiles": (
-        "backend/appchi/cel/compiler.py",
-        "backend/appchi/cel/catalog.py",
-        "backend/appchi/maintenance/timezones.py",
-        "backend/appchi/operators/policy.py",
+        "backend/keep/cel/compiler.py",
+        "backend/keep/cel/catalog.py",
+        "backend/keep/maintenance/timezones.py",
+        "backend/keep/operators/policy.py",
     ),
     "deployment": (
         "deploy/backend.Dockerfile",
@@ -143,14 +143,14 @@ def versions(root):
         bundle_file(root, "backend/uv.lock").read_text(encoding="utf-8")
     )
     packages = {item["name"]: item.get("version") for item in lock["package"]}
-    cel = constants(bundle_file(root, "backend/appchi/cel/compiler.py"))
-    tzdata = constants(bundle_file(root, "backend/appchi/maintenance/timezones.py"))[
+    cel = constants(bundle_file(root, "backend/keep/cel/compiler.py"))
+    tzdata = constants(bundle_file(root, "backend/keep/maintenance/timezones.py"))[
         "PINNED_TZDATA_VERSION"
     ]
     require(packages["tzdata"] == tzdata, "Runtime tzdata profile differs from lock")
     unicode_versions = re.findall(
         r'unidata_version\s*!=\s*"([0-9.]+)"',
-        bundle_file(root, "backend/appchi/operators/policy.py").read_text(),
+        bundle_file(root, "backend/keep/operators/policy.py").read_text(),
     )
     require(len(unicode_versions) == 1, "Expected one explicit Unicode profile")
     events = {

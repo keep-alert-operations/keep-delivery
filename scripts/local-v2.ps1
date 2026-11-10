@@ -36,19 +36,19 @@ try {
         $records = @()
     }
     if ($Action -eq 'Stop') {
-        Checked { docker compose -p appchi-local-stack -f $compose stop kong kong-db grafana }
+        Checked { docker compose -p keep-local-stack -f $compose stop kong kong-db grafana }
         Write-Host 'Local v2 services stopped; all data preserved.'
         return
     }
     if ($Action -eq 'Status') {
-        Checked { docker compose -p appchi-local-stack -f $compose ps kong kong-db grafana }
+        Checked { docker compose -p keep-local-stack -f $compose ps kong kong-db grafana }
         foreach ($record in $records) { Write-Host "$($record.Role): running=$([bool](Owned $record))" }
         return
     }
     Checked { & $python scripts/local_v2.py prepare }
     Checked { & $python scripts/local_identity.py prepare }
-    Checked { docker compose -p appchi-local-operators -f deploy/local/operators.compose.yaml stop }
-    Checked { docker compose -p appchi-local-stack -f $compose up -d }
+    Checked { docker compose -p keep-local-operators -f deploy/local/operators.compose.yaml stop }
+    Checked { docker compose -p keep-local-stack -f $compose up -d }
     Checked { & $python scripts/local_v2.py configure }
     foreach ($role in @('private', 'proof')) {
         if (@($records | Where-Object { $_.Role -eq $role -and (Owned $_) }).Count) { continue }

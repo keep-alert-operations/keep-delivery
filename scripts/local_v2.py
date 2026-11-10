@@ -24,8 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".local/operators"
 PORT_DEFAULTS = {"kong_admin": 58447, "grafana": 58448}
 PORT_ENVIRONMENT = {
-    "kong_admin": "APPCHI_LOCAL_KONG_ADMIN_PORT",
-    "grafana": "APPCHI_LOCAL_GRAFANA_PORT",
+    "kong_admin": "KEEP_LOCAL_KONG_ADMIN_PORT",
+    "grafana": "KEEP_LOCAL_GRAFANA_PORT",
 }
 # Other listeners in the unified local stack keep their existing contracts.
 FIXED_PORTS = {3443, 55433, 56380, 58000, 58001, 58443, 58444, 58445, 58446, 59201, 19093}
@@ -70,31 +70,31 @@ def credentials():
 
 
 def environment():
-    from appchi.config import Settings
+    from keep.config import Settings
     from psycopg.conninfo import conninfo_to_dict
 
     values = read(ROOT / ".local/keycloak/app-environment.json")
-    values["APPCHI_DATABASE_URL"] = values["APPCHI_LOCAL_WORKER_DATABASE_URL"]
-    values["APPCHI_POOL_SIZE"] = "1"
+    values["KEEP_DATABASE_URL"] = values["KEEP_LOCAL_WORKER_DATABASE_URL"]
+    values["KEEP_POOL_SIZE"] = "1"
     os.environ.update({k: str(v) for k, v in values.items()})
     settings = Settings()
     database = conninfo_to_dict(settings.database_url.get_secret_value())
     if (
         settings.environment != "development"
-        or database.get("dbname") != "appchi_local"
+        or database.get("dbname") != "keep_local"
         or database.get("host") not in {"localhost", "127.0.0.1", "::1"}
         or database.get("hostaddr", database.get("host"))
         not in {"localhost", "127.0.0.1", "::1"}
         or database.get("service")
     ):
         raise RuntimeError(
-            "Only the isolated appchi_local development database is supported"
+            "Only the isolated keep_local development database is supported"
         )
     return settings
 
 
 def database():
-    from appchi.db import Database
+    from keep.db import Database
 
     settings = environment()
     return Database(
@@ -148,7 +148,7 @@ def certificates():
     for name in ("ca", "server", "kong"):
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         subject = x509.Name(
-            [x509.NameAttribute(NameOID.COMMON_NAME, "Appchi local " + name)]
+            [x509.NameAttribute(NameOID.COMMON_NAME, "Keep local " + name)]
         )
         now = datetime.now(UTC)
         builder = (
@@ -279,8 +279,8 @@ def plugin(http, route, name, config):
 
 def configure():
     import httpx
-    from appchi.operators.binding import EXTRA_CAPABILITIES
-    from appchi.operators.remote import REQUIRED_CAPABILITIES
+    from keep.operators.binding import EXTRA_CAPABILITIES
+    from keep.operators.remote import REQUIRED_CAPABILITIES
 
     environment()
     creds = credentials()
@@ -308,9 +308,9 @@ def configure():
         )
         service = checked(
             http.put(
-                KONG + "/services/appchi-local-v2",
+                KONG + "/services/keep-local-v2",
                 json={
-                    "name": "appchi-local-v2",
+                    "name": "keep-local-v2",
                     "protocol": "https",
                     "host": "host.docker.internal",
                     "port": 58444,
@@ -325,7 +325,7 @@ def configure():
             ("probe", "/__local/operator-check"),
             ("active-probe", "/__local/operator-auth-check"),
         ):
-            name = "appchi-local-" + route
+            name = "keep-local-" + route
             checked(
                 http.put(
                     KONG + "/routes/" + name,
@@ -358,7 +358,7 @@ ngx.req.clear_header('Authorization')
                 pre += "if kong.request.get_header('authorization') then return kong.response.exit(401, {message='Use X-API-Key'}) end\n"
             if route == "probe":
                 pre += (
-                    "if kong.request.get_header('x-appchi-probe-token') ~= "
+                    "if kong.request.get_header('x-keep-probe-token') ~= "
                     + json.dumps(creds["probe_token"])
                     + " then return kong.response.exit(401, {message='Private proof required'}) end\n"
                 )
@@ -370,7 +370,7 @@ ngx.req.clear_header('Authorization')
             if route != "probe":
                 plugin(http, name, "key-auth", {"key_names": ["X-API-Key"], "hide_credentials": True,
                     "key_in_header": True, "key_in_query": False, "key_in_body": False})
-            plugin(http, name, "appchi-policy", {"member_id": MEMBER, "probe": route == "probe",
+            plugin(http, name, "keep-policy", {"member_id": MEMBER, "probe": route == "probe",
                 "probe_active": route == "active-probe", "probe_token": creds["probe_token"],
                 "unqualified_local_clock": True})
         if "grafana_token" not in creds:
@@ -379,14 +379,14 @@ ngx.req.clear_header('Authorization')
                 http.get(GRAFANA + "/api/serviceaccounts/search", auth=auth)
             )["serviceAccounts"]
             account = next(
-                (a for a in accounts if a["name"] == "appchi-local-provisioner"), None
+                (a for a in accounts if a["name"] == "keep-local-provisioner"), None
             )
             if not account:
                 account = checked(
                     http.post(
                         GRAFANA + "/api/serviceaccounts",
                         auth=auth,
-                        json={"name": "appchi-local-provisioner", "role": "Admin"},
+                        json={"name": "keep-local-provisioner", "role": "Admin"},
                     )
                 )
             token = checked(
@@ -404,7 +404,7 @@ ngx.req.clear_header('Authorization')
         )
         marker = STATE / "wrapper.json"
         if not marker.exists():
-            # This Grafana is dedicated to local Appchi. Preserve its entire initial branch.
+            # This Grafana is dedicated to local Keep. Preserve its entire initial branch.
             intent = STATE / "wrapper-intent.json"
             if not intent.exists():
                 if tree.get("routes"):
@@ -451,7 +451,7 @@ ngx.req.clear_header('Authorization')
             )
         organization = checked(http.get(GRAFANA + "/api/org", headers=headers))["id"]
         binding = {
-            "profile": "grafana-provisioning-v1-kong-appchi-policy-v1",
+            "profile": "grafana-provisioning-v1-kong-keep-policy-v1",
             "grafana_url": GRAFANA,
             "kong_url": KONG,
             "probe_url": "https://localhost:58446/operator-check",
@@ -459,7 +459,7 @@ ngx.req.clear_header('Authorization')
             "grafana_version": grafana["version"],
             "kong_version": kong["version"],
             "organization": organization,
-            "serving_members": [checked(http.get(KONG + "/appchi-policy-node"))["member_id"]],
+            "serving_members": [checked(http.get(KONG + "/keep-policy-node"))["member_id"]],
             "capabilities": sorted(REQUIRED_CAPABILITIES | EXTRA_CAPABILITIES),
             "ca_file": str(STATE / "tls/ca.crt"),
             **{
@@ -545,12 +545,12 @@ def proof_app():
             return JSONResponse({"error": "stale_proof"}, 409)
         with client() as http:
             response = http.post(GATEWAY + "/__local/operator-check",
-                headers={"X-Appchi-Probe-Token": token},
+                headers={"X-Keep-Probe-Token": token},
                 json={"operator_id":str(body.operator_id),"credential_id":str(body.credential_id),"nonce":body.nonce})
             observed = response.json() if response.status_code == 200 else {}
             if body.key:
                 authenticated = http.post(GATEWAY + "/__local/operator-auth-check",
-                    headers={"X-API-Key":body.key,"X-Appchi-Probe-Token":token})
+                    headers={"X-API-Key":body.key,"X-Keep-Probe-Token":token})
                 if body.expected_allowed:
                     actual = authenticated.json() if authenticated.status_code == 200 else {}
                     if any(actual.get(k) != observed.get(k) for k in ("operator_id","credential_id","generation","policy_digest")):
@@ -578,21 +578,21 @@ def serve(role):
 
     environment()
     if role == "private":
-        from appchi.private_ingestion import main
+        from keep.private_ingestion import main
         from cryptography import x509
         from cryptography.hazmat.primitives import serialization
 
         cert = x509.load_pem_x509_certificate((STATE / "tls/kong.crt").read_bytes())
         os.environ.update(
             {
-                "APPCHI_GATEWAY_CERT_FILE": str(STATE / "tls/server.crt"),
-                "APPCHI_GATEWAY_KEY_FILE": str(STATE / "tls/server.key"),
-                "APPCHI_GATEWAY_CA_FILE": str(STATE / "tls/ca.crt"),
-                "APPCHI_GATEWAY_PEER_SHA256": hashlib.sha256(
+                "KEEP_GATEWAY_CERT_FILE": str(STATE / "tls/server.crt"),
+                "KEEP_GATEWAY_KEY_FILE": str(STATE / "tls/server.key"),
+                "KEEP_GATEWAY_CA_FILE": str(STATE / "tls/ca.crt"),
+                "KEEP_GATEWAY_PEER_SHA256": hashlib.sha256(
                     cert.public_bytes(serialization.Encoding.DER)
                 ).hexdigest(),
-                "APPCHI_BIND_HOST": "127.0.0.1",
-                "APPCHI_BIND_PORT": "58444",
+                "KEEP_BIND_HOST": "127.0.0.1",
+                "KEEP_BIND_PORT": "58444",
             }
         )
         main()
@@ -606,16 +606,16 @@ def serve(role):
             ssl_keyfile=str(STATE / "tls/server.key"),
         )
     else:
-        from appchi.worker import main
+        from keep.worker import main
 
         creds = credentials()
         os.environ.update(
             {
-                "APPCHI_OPERATOR_BINDING": str(STATE / "binding.json"),
-                "APPCHI_OPERATOR_GRAFANA_TOKEN": creds["grafana_token"],
-                "APPCHI_OPERATOR_KONG_TOKEN": creds["kong_token"],
-                "APPCHI_OPERATOR_PROBE_TOKEN": creds["probe_token"],
-                "APPCHI_WORKER_HEALTH_PATH": str(STATE / "operators.health.json"),
+                "KEEP_OPERATOR_BINDING": str(STATE / "binding.json"),
+                "KEEP_OPERATOR_GRAFANA_TOKEN": creds["grafana_token"],
+                "KEEP_OPERATOR_KONG_TOKEN": creds["kong_token"],
+                "KEEP_OPERATOR_PROBE_TOKEN": creds["probe_token"],
+                "KEEP_WORKER_HEALTH_PATH": str(STATE / "operators.health.json"),
             }
         )
         sys.argv = [sys.argv[0], "operators"]

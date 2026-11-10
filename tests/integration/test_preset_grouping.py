@@ -1,7 +1,7 @@
 """REV-44 grouping through the Product API: real PG/auth/native CEL, controlled ES responses.
 
 Elasticsearch grouping semantics (exact composite counts, ordering, cursors) are
-proven against a real two-shard index in appchi-domain's compatibility tests.
+proven against a real two-shard index in keep-domain's compatibility tests.
 """
 
 from uuid import uuid4

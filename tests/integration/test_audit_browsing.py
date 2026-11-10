@@ -19,9 +19,9 @@ class RestrictedDatabase:
     @contextmanager
     def transaction(self, *args, **kwargs):
         with self.database.transaction(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
+            conn.execute("SET LOCAL ROLE keep_api")
             yield conn
-            assert conn.execute("SELECT current_user AS role").fetchone()["role"] == "appchi_api"
+            assert conn.execute("SELECT current_user AS role").fetchone()["role"] == "keep_api"
 
 
 @pytest.fixture

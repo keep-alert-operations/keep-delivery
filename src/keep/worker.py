@@ -1,17 +1,17 @@
-from appchi.correlation.consumer import correlate_record
-from appchi.search.consumer import index_record
+from keep.correlation.consumer import correlate_record
+from keep.search.consumer import index_record
 import argparse
 import logging
 import signal
 import threading
 
-from appchi.config import Settings
-from appchi.db import Database
-from appchi.alerts.processor import process_one, record_failure
-from appchi.shared.errors import unavailable
-from appchi.service_clients import elasticsearch_options, kafka_options
+from keep.config import Settings
+from keep.db import Database
+from keep.alerts.processor import process_one, record_failure
+from keep.shared.errors import unavailable
+from keep.service_clients import elasticsearch_options, kafka_options
 
-log = logging.getLogger("appchi.worker")
+log = logging.getLogger("keep.worker")
 
 
 def source_turn(db, profile=None):
@@ -38,7 +38,7 @@ def source_turn(db, profile=None):
 
 def relay_turn(db, settings):
     from confluent_kafka import Producer
-    from appchi.pipeline import relay_once
+    from keep.pipeline import relay_once
 
     if not settings.kafka_bootstrap:
         raise unavailable("kafka_configuration_required")
@@ -68,18 +68,18 @@ def hint_client(settings, role):
     client = Consumer(
         {
             **kafka_options(settings),
-            "group.id": f"appchi.{settings.environment}.{consumer}",
+            "group.id": f"keep.{settings.environment}.{consumer}",
             "enable.auto.commit": False,
             "enable.auto.offset.store": False,
             "auto.offset.reset": "earliest",
         }
     )
-    client.subscribe([f"appchi.{settings.environment}.alerts.{stream}"])
+    client.subscribe([f"keep.{settings.environment}.alerts.{stream}"])
     return consumer, client
 
 
 def maintenance_turn(db, profile):
-    from appchi.maintenance.runtime import worker_turn
+    from keep.maintenance.runtime import worker_turn
 
     with db.transaction() as conn:
         tenants = [row["id"] for row in conn.execute("SELECT id FROM tenants ORDER BY id")]
@@ -88,7 +88,7 @@ def maintenance_turn(db, profile):
 
 
 def correlation_turn(db, profile):
-    from appchi.correlation.runtime import worker_turn
+    from keep.correlation.runtime import worker_turn
 
     with db.transaction() as conn:
         rows = conn.execute("""SELECT c.tenant_id FROM correlation_consumer_state c JOIN tenant_work_state w USING(tenant_id)
@@ -98,17 +98,17 @@ def correlation_turn(db, profile):
 
 
 def projection_turn(db, settings):
-    from appchi.search.control import writer_lease
+    from keep.search.control import writer_lease
 
     with writer_lease(db, settings) as physical_index:
         _project(db, settings, physical_index)
 
 
 def _project(db, settings, physical_index):
-    from appchi.search.control import check_writer
+    from keep.search.control import check_writer
     from elasticsearch import Elasticsearch
-    from appchi.search import Projection
-    from appchi.search.writer import ProjectionWriter
+    from keep.search import Projection
+    from keep.search.writer import ProjectionWriter
 
     with db.transaction() as conn:
         gate = conn.execute(
@@ -170,7 +170,7 @@ def _project(db, settings, physical_index):
                         raise unavailable("projection_fenced")
 
             def covered_by_newer(candidate, document):
-                from appchi.search.projection import build_document
+                from keep.search.projection import build_document
 
                 with db.transaction() as conn:
                     newer = conn.execute(
@@ -263,7 +263,7 @@ def main():
     args = parser.parse_args()
     if args.role == "live":
         parser.error("live hint publishing runs in the Product API; no separate worker")
-    from appchi.release_scope import DEFERRED_WORKERS
+    from keep.release_scope import DEFERRED_WORKERS
 
     # Explicit trusted publication remains available for bootstrap and manual refresh.
     if args.role in DEFERRED_WORKERS and not (args.role == "directory" and args.once):
@@ -276,7 +276,7 @@ def main():
     elif args.tenant:
         parser.error("--tenant is used only for maintenance proof/warmup roles")
     settings = Settings(role=args.role)
-    from appchi.worker_health import WorkerHealth
+    from keep.worker_health import WorkerHealth
 
     health = WorkerHealth(settings.worker_health_path, args.role)
     health.publish()
@@ -290,12 +290,12 @@ def main():
     profile = (
         json.loads(settings.capacity_profile.read_text()) if settings.capacity_profile else None
     )
-    from appchi.visibility.runtime import capture_profile
+    from keep.visibility.runtime import capture_profile
 
     capture_profile(profile, deployment_epoch=settings.deployment_epoch)
     hints = None
     transport = None
-    from appchi.alert_notifications import configure
+    from keep.alert_notifications import configure
 
     configure(settings)
     cleanup_cursor = None
@@ -328,7 +328,7 @@ def main():
             transport_progress = 0
             turn_failed = False
             try:
-                from appchi.clock_health import require_clock_health
+                from keep.clock_health import require_clock_health
 
                 require_clock_health(settings)
                 if args.role == "relay" or args.role.endswith("-hints"):
@@ -338,20 +338,20 @@ def main():
                         ).fetchone()["enabled"]:
                             raise unavailable("legacy_pipeline_fenced")
                 if args.role == "source":
-                    from appchi.kafka_source import SourceConsumer
+                    from keep.kafka_source import SourceConsumer
 
                     if transport is None:
                         transport = SourceConsumer(db, settings, profile)
                     transport_progress = transport.turn()
                 elif args.role == "visibility-capture":
-                    from appchi.visibility.runtime import capture_turn
+                    from keep.visibility.runtime import capture_turn
 
                     capture_turn(db)
                 elif args.role == "relay":
                     relay_turn(db, settings)
                 elif args.role == "indexer":
-                    from appchi.kafka_changed import ChangedConsumer
-                    from appchi.search.reconciliation import reconciliation_turn
+                    from keep.kafka_changed import ChangedConsumer
+                    from keep.search.reconciliation import reconciliation_turn
 
                     reconciliation_turn(db, settings)
                     try:
@@ -366,33 +366,33 @@ def main():
                             transport = None
                         log.warning("search_kafka_degraded_reconciliation_active")
                 elif args.role.endswith("-hints"):
-                    from appchi.pipeline import consume_once
+                    from keep.pipeline import consume_once
 
                     if hints is None:
                         hints = hint_client(settings, args.role)
                     consume_once(db, settings, hints[0], hints[1])
                 elif args.role == "assignment-cleanup":
-                    from appchi.identity.cleanup import cleanup_assignments
+                    from keep.identity.cleanup import cleanup_assignments
 
                     page = cleanup_assignments(db, profile=profile, cursor=cleanup_cursor)
                     cleanup_cursor = page.cursor
                 elif args.role == "configuration-retention":
-                    from appchi.configuration.cleanup import configuration_cleanup_turn
+                    from keep.configuration.cleanup import configuration_cleanup_turn
 
                     page = configuration_cleanup_turn(db, cursor=configuration_cursor)
                     configuration_cursor = page.cursor
                 elif args.role == "correlation-retention":
-                    from appchi.correlation.cleanup import correlation_cleanup_turn
+                    from keep.correlation.cleanup import correlation_cleanup_turn
 
                     page = correlation_cleanup_turn(db, cursor=correlation_retention_cursor)
                     correlation_retention_cursor = page.cursor
                 elif args.role == "maintenance-retention":
-                    from appchi.maintenance.cleanup import cleanup_turn
+                    from keep.maintenance.cleanup import cleanup_turn
 
                     page = cleanup_turn(db, cursor=maintenance_retention_cursor)
                     maintenance_retention_cursor = page.cursor
                 elif args.role == "operator-retention":
-                    from appchi.operators.cleanup import cleanup_turn
+                    from keep.operators.cleanup import cleanup_turn
 
                     page = cleanup_turn(db, cursor=operator_retention_cursor)
                     operator_retention_cursor = page.cursor
@@ -403,18 +403,18 @@ def main():
                     "protected-deletions",
                     "command-retention",
                 ):
-                    from appchi.recovery.runtime import configured_store, retirement_turn
-                    from appchi.identity.cleanup import purge_audit_batch
+                    from keep.recovery.runtime import configured_store, retirement_turn
+                    from keep.identity.cleanup import purge_audit_batch
 
                     if evidence_store is None:
                         evidence_store = configured_store(settings)
                     if args.role == "command-retention":
-                        from appchi.recovery.command_retention import command_retention_turn
+                        from keep.recovery.command_retention import command_retention_turn
 
                         page = command_retention_turn(db, evidence_store, cursor=command_cursor)
                         command_cursor = page.cursor
                     elif args.role == "incident-retention":
-                        from appchi.recovery.runtime import incident_retirement_turn
+                        from keep.recovery.runtime import incident_retirement_turn
 
                         page = incident_retirement_turn(
                             db, evidence_store, cursor=incident_retirement_cursor
@@ -422,7 +422,7 @@ def main():
                         incident_retirement_cursor = page.cursor
                         incident_progress_pending = page.progress_pending
                     elif args.role == "protected-deletions":
-                        from appchi.recovery.deletions import deletion_turn
+                        from keep.recovery.deletions import deletion_turn
 
                         page = deletion_turn(db, evidence_store, cursor=deletion_cursor)
                         deletion_cursor = page.cursor
@@ -433,10 +433,10 @@ def main():
                     else:
                         purge_audit_batch(db, evidence_store)
                 elif args.role == "operators":
-                    from appchi.operators.worker import run_one
+                    from keep.operators.worker import run_one
 
                     if operator_executor is None and settings.operator_binding:
-                        from appchi.operators.executor import (
+                        from keep.operators.executor import (
                             configured_executor,
                             PlatformCredentials,
                         )
@@ -456,7 +456,7 @@ def main():
                         )
                     run_one(db, settings.cipher(), operator_executor)
                 elif args.role == "correlation":
-                    from appchi.kafka_changed import ChangedConsumer
+                    from keep.kafka_changed import ChangedConsumer
 
                     if transport is None:
                         transport = ChangedConsumer(
@@ -465,7 +465,7 @@ def main():
                     transport_progress = transport.turn()
                 elif args.role in ("maintenance-warmup", "maintenance-proof"):
                     from dataclasses import asdict
-                    from appchi.maintenance.warmup import warmup_page, warmup_status
+                    from keep.maintenance.warmup import warmup_page, warmup_status
 
                     if args.role == "maintenance-proof":
                         print(json.dumps(warmup_status(db, args.tenant)))
@@ -476,21 +476,21 @@ def main():
                 elif args.role == "maintenance":
                     maintenance_turn(db, profile)
                 elif args.role == "inactivity":
-                    from appchi.inactivity import sweep
+                    from keep.inactivity import sweep
 
                     sweep(db, profile=profile)
                 else:
                     import os
                     from pathlib import Path
-                    from appchi.identity.directory import PrincipalKey
-                    from appchi.identity.worker import load_directory_config, run_cycle
+                    from keep.identity.directory import PrincipalKey
+                    from keep.identity.worker import load_directory_config, run_cycle
 
-                    config = load_directory_config(Path(os.environ["APPCHI_DIRECTORY_CONFIG"]))
+                    config = load_directory_config(Path(os.environ["KEEP_DIRECTORY_CONFIG"]))
                     _, publication = run_cycle(
                         db,
                         config,
-                        PrincipalKey(config.source, os.environ["APPCHI_SUPERADMIN_OBJECT_ID"]),
-                        bootstrap_qualified=os.getenv("APPCHI_DIRECTORY_BOOTSTRAP_QUALIFIED")
+                        PrincipalKey(config.source, os.environ["KEEP_SUPERADMIN_OBJECT_ID"]),
+                        bootstrap_qualified=os.getenv("KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED")
                         == "true",
                     )
                     if not publication.accepted:

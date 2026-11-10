@@ -4,7 +4,7 @@
   "dependencies": "Existing delivery editable Python environment; frontend installed contract snapshot regenerated from these producers",
   "repositories": [
     {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "head": "0b8a1a351378d0a7952a405b6fac4db1d03c6096",
       "branch": "main",
       "working_source_sha256": "e63ab99e0b9249c051c014c4d0445c3fbd9c888deba30dfcfafcc69b32368a04",
@@ -12,26 +12,26 @@
       "status": [
         " M Dockerfile",
         " M README.md",
-        " M src/appchi/admin_operations.py",
-        " M src/appchi/alerts/routes.py",
-        " M src/appchi/configuration/count_routes.py",
-        " M src/appchi/identity/session.py",
-        " M src/appchi/incidents/routes.py",
-        " M src/appchi/live.py",
-        " M src/appchi/main.py",
-        " M src/appchi/operators/executor.py",
-        " M src/appchi/search_routes.py",
+        " M src/keep/admin_operations.py",
+        " M src/keep/alerts/routes.py",
+        " M src/keep/configuration/count_routes.py",
+        " M src/keep/identity/session.py",
+        " M src/keep/incidents/routes.py",
+        " M src/keep/live.py",
+        " M src/keep/main.py",
+        " M src/keep/operators/executor.py",
+        " M src/keep/search_routes.py",
         " M tests/unit/test_operator_executor.py",
         "?? docs/operator-proof.example.json",
         "?? docs/operator-proof.md",
-        "?? src/appchi/operators/proof.py",
-        "?? src/appchi/search_clients.py",
+        "?? src/keep/operators/proof.py",
+        "?? src/keep/search_clients.py",
         "?? tests/integration/test_operator_proof_postgres.py",
         "?? tests/unit/test_operator_proof.py"
       ]
     },
     {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "head": "42107e3814a07518878291929740f5fa120fbff1",
       "branch": "main",
       "working_source_sha256": "874498c2cf1e4ab5e96ae821eb60c4e0074ad55123d030470a19806f19e46cfe",
@@ -42,18 +42,18 @@
       ]
     },
     {
-      "repository": "appchi-correlation",
+      "repository": "keep-correlation",
       "head": "ad68f9f4838848f5d318888be4b0e067d5b51e5b",
       "branch": "main",
       "working_source_sha256": "f7af2a38cbdac45fad826396942844512713103b267f88a38b841c710f85784c",
       "files_hashed": 15,
       "status": [
         " M Dockerfile",
-        " M src/appchi/correlation/consumer.py"
+        " M src/keep/correlation/consumer.py"
       ]
     },
     {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "head": "2d1fc70b942eae2590855538d7ca7cc6d67128ca",
       "branch": "codex/ci-repair",
       "working_source_sha256": "eebb5c8a1dbb8310e59c0c12ada82f36d552ab3e1ac3920c579536c2ae3b2b36",
@@ -173,7 +173,7 @@
       ]
     },
     {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "head": "7bf631cf8613cca0e10139cc5cd2b391778f9d8e",
       "branch": "codex/ci-repair",
       "working_source_sha256": "34974a9fa6b229f1f313eeccf8e66b1c4dfee9a20d1b32dabfc768e781bf039d",
@@ -189,33 +189,33 @@
       ]
     },
     {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "head": "830d4f65556d93692cca60695fafb522769fe122",
       "branch": "main",
       "working_source_sha256": "4eba6c057a27ebfa0c475d72f5c280213bb734698d4f47a83760f07ac198f087",
       "files_hashed": 136,
       "status": [
-        " M src/appchi/access.py",
-        " M src/appchi/cel/compiler.py",
-        " M src/appchi/correlation/runtime.py",
-        " M src/appchi/db.py",
-        " M src/appchi/http.py",
-        " M src/appchi/identity/authentication.py",
-        " M src/appchi/incidents/state.py",
-        " M src/appchi/kafka_changed.py",
-        " M src/appchi/maintenance/processing.py",
-        " M src/appchi/maintenance/runtime.py",
-        " M src/appchi/maintenance/temporal.py",
-        " M src/appchi/maintenance/warmup.py",
-        " M src/appchi/pipeline_runtime.py",
-        " M src/appchi/recovery/guard.py",
-        " M src/appchi/search/counts.py",
-        " M src/appchi/search/projection.py",
-        " M src/appchi/search/reader.py",
-        " M src/appchi/worker_health.py",
-        "?? src/appchi/maintenance/incremental.py",
-        "?? src/appchi/maintenance/preparation.py",
-        "?? src/appchi/request_budget.py",
+        " M src/keep/access.py",
+        " M src/keep/cel/compiler.py",
+        " M src/keep/correlation/runtime.py",
+        " M src/keep/db.py",
+        " M src/keep/http.py",
+        " M src/keep/identity/authentication.py",
+        " M src/keep/incidents/state.py",
+        " M src/keep/kafka_changed.py",
+        " M src/keep/maintenance/processing.py",
+        " M src/keep/maintenance/runtime.py",
+        " M src/keep/maintenance/temporal.py",
+        " M src/keep/maintenance/warmup.py",
+        " M src/keep/pipeline_runtime.py",
+        " M src/keep/recovery/guard.py",
+        " M src/keep/search/counts.py",
+        " M src/keep/search/projection.py",
+        " M src/keep/search/reader.py",
+        " M src/keep/worker_health.py",
+        "?? src/keep/maintenance/incremental.py",
+        "?? src/keep/maintenance/preparation.py",
+        "?? src/keep/request_budget.py",
         "?? tests/unit/test_cel_compile_logging.py",
         "?? tests/unit/test_cel_compile_singleflight.py",
         "?? tests/unit/test_guard_pipeline.py",
@@ -224,7 +224,7 @@
       ]
     },
     {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "head": "468ba80eeac6ca2ad4b95752edb7b8005aa354fb",
       "branch": "codex/ci-repair",
       "working_source_sha256": "58924cd3b6897be138700e010645eff554489dfda40cf54b1922ed744aff7f9f",
@@ -250,7 +250,7 @@
       ]
     },
     {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "head": "ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3",
       "branch": "main",
       "working_source_sha256": "6c52794fefcb8397dcfe812d5d99e5c80576cf2b87b5e3c1066f5fa91f465aa7",
@@ -259,21 +259,21 @@
         " M Dockerfile",
         " M README.md",
         " M docs/search-implementation.md",
-        " M src/appchi/search/consumer.py",
-        " M src/appchi/search/main.py",
-        " M src/appchi/search/rebuild.py",
-        " M src/appchi/search/reconciliation.py",
-        " M src/appchi/search/writer.py",
+        " M src/keep/search/consumer.py",
+        " M src/keep/search/main.py",
+        " M src/keep/search/rebuild.py",
+        " M src/keep/search/reconciliation.py",
+        " M src/keep/search/writer.py",
         " M tests/compatibility/test_search_elasticsearch.py",
-        "?? src/appchi/search/bootstrap.py",
-        "?? src/appchi/search/bootstrap_probe.py",
+        "?? src/keep/search/bootstrap.py",
+        "?? src/keep/search/bootstrap_probe.py",
         "?? tests/integration/test_search_bootstrap_integration.py",
         "?? tests/unit/test_scalability_pipeline.py",
         "?? tests/unit/test_search_bootstrap.py"
       ]
     },
     {
-      "repository": "appchi-ingestion",
+      "repository": "keep-ingestion",
       "head": "0d2ee23a7940c2c0866498aa0646587f101651bc",
       "branch": "main",
       "working_source_sha256": "768f30ce8ce4a6ed74bd250bfb82f77bc99202ad9d8b8f8be7e22c410a56e778",
@@ -284,7 +284,7 @@
       ]
     },
     {
-      "repository": "appchi-migrations",
+      "repository": "keep-migrations",
       "head": "1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236",
       "branch": "codex/alembic-migrations",
       "working_source_sha256": "2e9d67de1cf33b65dbe8523932ddc460c783573e1e9fe85ff875e18e243c9f6b",
@@ -292,26 +292,26 @@
       "status": [
         " M Dockerfile",
         " M README.md",
-        " M src/appchi/migration_sql/checksums.json",
+        " M src/keep/migration_sql/checksums.json",
         " M tests/integration/test_alembic.py",
         " M tests/unit/test_migration_package.py",
-        "?? src/appchi/migration_alembic/versions/0048_maintenance_continuation.py",
-        "?? src/appchi/migration_alembic/versions/0049_search_reconciliation_leases.py",
-        "?? src/appchi/migration_alembic/versions/0050_alert_notes_projection_lookup.py",
-        "?? src/appchi/migration_sql/0048_maintenance_continuation.sql",
-        "?? src/appchi/migration_sql/0049_search_reconciliation_leases.sql",
-        "?? src/appchi/migration_sql/0050_alert_notes_projection_lookup.sql"
+        "?? src/keep/migration_alembic/versions/0048_maintenance_continuation.py",
+        "?? src/keep/migration_alembic/versions/0049_search_reconciliation_leases.py",
+        "?? src/keep/migration_alembic/versions/0050_alert_notes_projection_lookup.py",
+        "?? src/keep/migration_sql/0048_maintenance_continuation.sql",
+        "?? src/keep/migration_sql/0049_search_reconciliation_leases.sql",
+        "?? src/keep/migration_sql/0050_alert_notes_projection_lookup.sql"
       ]
     },
     {
-      "repository": "appchi-processor",
+      "repository": "keep-processor",
       "head": "4f7a3fc81483d193033c3eec9f54f6aaeb6a5392",
       "branch": "main",
       "working_source_sha256": "da79a87472e8e8ddea56464ea4f73071ff921ba2d1e750a1eace742851f144d9",
       "files_hashed": 16,
       "status": [
         " M Dockerfile",
-        " M src/appchi/kafka_source.py"
+        " M src/keep/kafka_source.py"
       ]
     }
   ]

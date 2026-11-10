@@ -6,8 +6,8 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.maintenance.processing import prepare_catalog, reconcile_alert
-from appchi.shared.transactions import coordinator
+from keep.maintenance.processing import prepare_catalog, reconcile_alert
+from keep.shared.transactions import coordinator
 from test_maintenance_processing import apply, snapshot
 from test_maintenance_repository import (
     body,
@@ -140,8 +140,8 @@ def test_deactivated_future_revisions_are_excluded_for_new_single_and_bulk_targe
     maintenance_db,
     monkeypatch,
 ):
-    from appchi.maintenance import processing
-    from appchi.maintenance.runtime import prepare_for_tenant
+    from keep.maintenance import processing
+    from keep.maintenance.runtime import prepare_for_tenant
 
     client, tenant, _, _ = maintenance_browser
     db, _ = maintenance_db

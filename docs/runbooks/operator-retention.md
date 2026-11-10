@@ -2,7 +2,7 @@
 
 Current scope: automated retention workers are deferred under REV-34. The
 procedures below preserve historical implementation context and do not authorize
-deploying those roles. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md).
+deploying those roles. See [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md).
 
 Apply the finalized migration 0037 before starting `operator-retention`. This
 role requires normal runtime Settings, the current deployment epoch, a worker
@@ -10,7 +10,7 @@ database identity and the qualified recovery capability. Do not enable recovery
 just to run cleanup. Deployment remains subject to private nonproduction checks.
 
 ```powershell
-.venv/Scripts/python.exe -m appchi.worker operator-retention --once
+.venv/Scripts/python.exe -m keep.worker operator-retention --once
 ```
 
 `--once` processes one bounded page, not every eligible operation. Continuous

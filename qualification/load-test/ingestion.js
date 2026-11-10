@@ -14,8 +14,8 @@ export const options = {
   }},
   thresholds: {...basicOptions.thresholds,
     dropped_iterations: ['count==0'],
-    appchi_items_attempted: [`count==${plannedItems}`],
-    appchi_items_accepted: [`count==${plannedItems}`],
+    keep_items_attempted: [`count==${plannedItems}`],
+    keep_items_accepted: [`count==${plannedItems}`],
   },
 };
 

@@ -37,20 +37,20 @@ try {
                 Stop-Process -Id $owned.Id -ErrorAction SilentlyContinue
             }
         }
-        Invoke-Checked { docker compose -p appchi-local-stack -f $compose stop keycloak }
+        Invoke-Checked { docker compose -p keep-local-stack -f $compose stop keycloak }
         Write-Host 'Local identity processes stopped; credentials and container volumes preserved.'
         return
     }
     if ($Action -eq 'Status') {
-        Invoke-Checked { docker compose -p appchi-local-stack -f $compose ps }
+        Invoke-Checked { docker compose -p keep-local-stack -f $compose ps }
         foreach ($record in $records) { Write-Host "$($record.Role): $([bool](Get-OwnedProcess $record))" }
         return
     }
     if ($Action -eq 'Refresh') {
         $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
         foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
-        $env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
-        Invoke-Checked { & $python -m appchi.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once }
+        $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
+        Invoke-Checked { & $python -m keep.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once }
         Write-Host 'Trusted local identity data refreshed once; no directory worker started.'
         return
     }
@@ -76,25 +76,25 @@ try {
     }
     Invoke-Checked { & $python scripts/local_identity.py prepare }
     Invoke-Checked { & $python scripts/local_v2.py prepare }
-    Invoke-Checked { docker compose -p appchi-local-runtime -f $compose stop kafka redis }
-    Invoke-Checked { docker compose -p appchi-local-identity -f deploy/local/keycloak.compose.yaml stop keycloak }
-    Invoke-Checked { docker compose -p appchi-local-operators -f deploy/local/operators.compose.yaml stop }
-    Invoke-Checked { docker compose -p appchi-local-stack -f $compose up -d }
+    Invoke-Checked { docker compose -p keep-local-runtime -f $compose stop kafka redis }
+    Invoke-Checked { docker compose -p keep-local-identity -f deploy/local/keycloak.compose.yaml stop keycloak }
+    Invoke-Checked { docker compose -p keep-local-operators -f deploy/local/operators.compose.yaml stop }
+    Invoke-Checked { docker compose -p keep-local-stack -f $compose up -d }
     Invoke-Checked { & $python scripts/local_identity.py database }
     Invoke-Checked { & $python scripts/local_identity.py environment }
     $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
     foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
     Invoke-Checked { & $python scripts/local_identity.py wait }
     Invoke-Checked { & $python scripts/local_identity.py configure }
-    $apiDatabase = $env:APPCHI_DATABASE_URL
-    $env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
-    Invoke-Checked { & $python -m appchi.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once --bootstrap }
-    $env:APPCHI_DATABASE_URL = $apiDatabase
+    $apiDatabase = $env:KEEP_DATABASE_URL
+    $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
+    Invoke-Checked { & $python -m keep.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once --bootstrap }
+    $env:KEEP_DATABASE_URL = $apiDatabase
     $node = (Get-Command node).Source
     $definitions = @(
-        @{ Role='Api'; File=$python; Directory=$repository; Arguments='-m uvicorn appchi.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
-        @{ Role='Ingestion'; File=$python; Directory=$repository; Arguments='-m uvicorn appchi.ingestion.main:create_app --factory --host 127.0.0.1 --port 58001 --no-access-log' },
-        @{ Role='Frontend'; File=$node; Directory=(Join-Path (Split-Path -Parent $repository) 'appchi-frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
+        @{ Role='Api'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
+        @{ Role='Ingestion'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.ingestion.main:create_app --factory --host 127.0.0.1 --port 58001 --no-access-log' },
+        @{ Role='Frontend'; File=$node; Directory=(Join-Path (Split-Path -Parent $repository) 'keep-frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
     )
     $current = @()
     foreach ($definition in $definitions) {
@@ -125,6 +125,6 @@ with httpx.Client(verify=ssl.create_default_context(cafile=str(certificate)),tru
 '@
     Invoke-Checked { & $python -c $probe }
     foreach ($record in $current) { if (-not (Get-OwnedProcess $record)) { throw "$($record.Role) exited during startup; inspect its local log." } }
-    Write-Host 'Appchi: https://localhost:3443 | Keycloak: https://localhost:58443/admin/'
+    Write-Host 'Keep: https://localhost:3443 | Keycloak: https://localhost:58443/admin/'
     Write-Host 'Local username/password credentials: .local/keycloak/credentials.json'
 } finally { Pop-Location }

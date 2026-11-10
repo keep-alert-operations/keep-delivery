@@ -24,8 +24,8 @@ The design-level decisions and follow-ups that remain are listed under
 
 ## Results by item
 
-Item numbers are the review's. All PRs are in `appchi-alert-operations`, so
-`domain#7` means `appchi-alert-operations/appchi-domain#7`.
+Item numbers are the review's. All PRs are in `keep-alert-operations`, so
+`domain#7` means `keep-alert-operations/keep-domain#7`.
 
 | Item | What changed | Measured effect | PRs |
 |---|---|---|---|
@@ -52,7 +52,7 @@ Item numbers are the review's. All PRs are in `appchi-alert-operations`, so
 The measurements came from private test containers on a loaded workstation, and
 some use in-memory feeds. Treat them as indicative only. Design choices made for
 these items are recorded in the
-[design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md)
+[design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md)
 through the design PRs listed above.
 
 ## Defects found in review
@@ -82,19 +82,19 @@ performance merges are:
 
 | Repository | `main` |
 |---|---|
-| appchi-domain | `d4fb748` |
-| appchi-design | `60debd7` |
-| appchi-migrations | `e34fdea` |
-| appchi-api | `08bf1ec` |
-| appchi-indexer | `7639693` |
-| appchi-ingestion | `c019991` |
-| appchi-processor | `476320f` |
-| appchi-correlation | `5cad5e3` |
-| appchi-frontend | `311ed32` |
-| appchi-delivery | `a3c49b4` |
+| keep-domain | `d4fb748` |
+| keep-design | `60debd7` |
+| keep-migrations | `e34fdea` |
+| keep-api | `08bf1ec` |
+| keep-indexer | `7639693` |
+| keep-ingestion | `c019991` |
+| keep-processor | `476320f` |
+| keep-correlation | `5cad5e3` |
+| keep-frontend | `311ed32` |
+| keep-delivery | `a3c49b4` |
 
-Unrelated work merged afterwards: appchi-contracts#2 (`5420c8f`),
-appchi-frontend#4 (`9ed49b0`), and appchi-delivery#15, which pins the workspace
+Unrelated work merged afterwards: keep-contracts#2 (`5420c8f`),
+keep-frontend#4 (`9ed49b0`), and keep-delivery#15, which pins the workspace
 manifest to both.
 
 **Rollout constraint:** migration 0052 must run in the stopped-writer window. It
@@ -109,11 +109,11 @@ user's request.
   `poetry check --lock` clean and ran `npm ci` for a frontend worktree at
   `311ed32`. Installed service revisions matched `workspace/manifest.json`,
   except contracts: the lock pins `eb555e8`, while the manifest then named
-  `870e075`. That manifest entry was later updated by appchi-delivery#15.
+  `870e075`. That manifest entry was later updated by keep-delivery#15.
 - **Delivery integration suite: 449 passed, 2 failed, 13 skipped (580.7 s).**
   - **Environment:** private PostgreSQL 18.2, Elasticsearch 9.0.0 and Kafka
     4.0.0 containers.
-  - **Database:** a fresh database migrated through `appchi.migrate.main`,
+  - **Database:** a fresh database migrated through `keep.migrate.main`,
     including 0052.
   - **Kafka readiness:** confirmed before tests with an idempotent produce, a
     transactional init/produce/commit and a consumer-group offset commit.
@@ -128,7 +128,7 @@ user's request.
     against pre-merge code.
   - **Skips:** 2 Kong tests (no local Kong) and 11 explicit REV-34
     deferred-component skips.
-- **Frontend (appchi-frontend#4 merge head):**
+- **Frontend (keep-frontend#4 merge head):**
   - generation, formatting, typecheck and production build passed;
   - the controlled Playwright suite on Chrome passed 190 cases, failed 2 and
     skipped 7;
@@ -164,7 +164,7 @@ user's request.
   - partition confirmation costs 4–10%, because its batch window never forms.
     Tuning the window matters more than the per-row flag.
 - **Grafana webhooks** still parse twice. A single parse needs a change to
-  `map_webhook` in appchi-contracts.
+  `map_webhook` in keep-contracts.
 - **`read_committed` follow-up:** the indexer `reconciliation.py` units were left
   out and need a `fence`/`check_writer` review first.
 - **Flaky tests:**

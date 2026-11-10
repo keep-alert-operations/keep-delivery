@@ -71,7 +71,7 @@ condition and task. It shows where the two layers differed on these tasks. It is
 ## Findings to act on
 
 - **Fixed in this change:** the `search` topic pointed at
-  `appchi-indexer/src/appchi/*.py`; the indexer code is under `src/appchi/search/`
+  `keep-indexer/src/keep/*.py`; the indexer code is under `src/keep/search/`
   (T7 topics). Running the T4 request through `plan --task` afterwards showed "LDAP
   group" selecting `correlation` through its generic alias "grouping"; the alias is
   removed and a routing case guards it.
@@ -85,7 +85,7 @@ condition and task. It shows where the two layers differed on these tasks. It is
 - **Documentation drift found by trial agents (not changed here):** the indexer's
   search-rebuild runbook gives a `max_document_bytes` range of 1024–1048576 while
   `rebuild.py` allows 104857600, and `docs/search-implementation.md` still refers to
-  `backend/appchi/search` (T7); delivery's `private-qualification.md` step 4 still
+  `backend/keep/search` (T7); delivery's `private-qualification.md` step 4 still
   says to run the directory worker, contradicting REV-35 (T4); the incident list's
   "Linked alerts" column still reads fields the list endpoint does not return (T6,
   both conditions, as on 2026-10-24).

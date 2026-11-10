@@ -6,7 +6,7 @@ topic (REV-41). Tested working trees, all uncommitted on
 processor `476320f`, migrations `e34fdea` (0054 chained after uncommitted 0053),
 design `ec40ad4`, delivery `0f30cc2`. Python 3.13 in delivery's coordinated `.venv`,
 confluent-kafka 2.15.1, PostgreSQL 18.2 and Kafka 4.0.0 from the local Compose stack.
-The local application database `appchi_local` was not migrated or changed.
+The local application database `keep_local` was not migrated or changed.
 
 ## Finding
 
@@ -16,8 +16,8 @@ sign-extended, even for a `Uuid` constructed from full values:
 
 | Topic | `kafka-topics.sh --describe` | confluent-kafka on this host |
 |---|---|---|
-| `appchi.development.alerts.received` | `YnmTZeuHT_iG2FXpjd3lUQ` | `/////+uHT/j/////jd3lUQ` |
-| `appchi.development.alerts.changed` | `XvLjZHK5QdW5sr9DukPJTg` | `AAAAAHK5QdX/////ukPJTg` |
+| `keep.development.alerts.received` | `YnmTZeuHT_iG2FXpjd3lUQ` | `/////+uHT/j/////jd3lUQ` |
+| `keep.development.alerts.changed` | `XvLjZHK5QdW5sr9DukPJTg` | `AAAAAHK5QdX/////ukPJTg` |
 
 The client's own text uses the standard base64 alphabet; the processor encodes the
 halves itself in Kafka's URL-safe form and compares only the low 32 bits of each half.

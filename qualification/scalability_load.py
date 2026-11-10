@@ -4,7 +4,7 @@ Not a production qualification or an OIDC/gateway/browser benchmark. Reads use
 the real HTTPS Product API, normal authorization, distinct fixture sessions and
 bounded quick counts. Arrivals use production KafkaAdmission with a controlled
 trusted-routing fixture. The existing real-browser suite tests OIDC separately.
-Requires APPCHI_SCALE_ADMIN_URL for an explicitly isolated loopback PostgreSQL
+Requires KEEP_SCALE_ADMIN_URL for an explicitly isolated loopback PostgreSQL
 cluster. All created database/index/topic names are unique and removed afterward.
 
 ``--phase pipeline`` skips the API and users and instead drains fixed workloads
@@ -65,7 +65,7 @@ async def diagnostic_read(client, method, url, **kwargs):
         await response.aread()
     complete_ms = (monotonic() - started) * 1000
     try:
-        asgi_ms = float(response.headers["x-appchi-diagnostic-asgi-ms"])
+        asgi_ms = float(response.headers["x-keep-diagnostic-asgi-ms"])
         if not math.isfinite(asgi_ms) or asgi_ms < 0:
             asgi_ms = None
     except (KeyError, ValueError):
@@ -117,21 +117,21 @@ def main():
     from elastic_transport import ConnectionError as ESConnectionError
     from elastic_transport import ConnectionTimeout as ESConnectionTimeout
 
-    from appchi.config import Settings
-    from appchi.db import Database
-    from appchi.ingestion.gateway import GatewayIdentity
-    from appchi.ingestion.kafka_admission import KafkaAdmission, KafkaPublisher
-    from appchi.ingestion.native import canonical, format_native_time
-    from appchi.kafka_changed import ChangedConsumer
-    from appchi import kafka_source
-    from appchi.cel import compiler as cel_compiler
-    from appchi.kafka_source import SourceConsumer
-    from appchi.migrate import migrate
-    from appchi.search import consumer as search_consumer
-    from appchi.search import reconciliation as search_reconciliation
-    from appchi.search.consumer import index_batch, index_record
-    from appchi.search.projection import index_mapping
-    from appchi.search.reconciliation import ReconciliationRunner
+    from keep.config import Settings
+    from keep.db import Database
+    from keep.ingestion.gateway import GatewayIdentity
+    from keep.ingestion.kafka_admission import KafkaAdmission, KafkaPublisher
+    from keep.ingestion.native import canonical, format_native_time
+    from keep.kafka_changed import ChangedConsumer
+    from keep import kafka_source
+    from keep.cel import compiler as cel_compiler
+    from keep.kafka_source import SourceConsumer
+    from keep.migrate import migrate
+    from keep.search import consumer as search_consumer
+    from keep.search import reconciliation as search_reconciliation
+    from keep.search.consumer import index_batch, index_record
+    from keep.search.projection import index_mapping
+    from keep.search.reconciliation import ReconciliationRunner
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seconds", type=int, default=60)
@@ -205,16 +205,16 @@ def main():
     for endpoint in (args.kafka_bootstrap, args.elasticsearch_url, args.redis_url):
         if endpoint.split("//")[-1].split(":")[0] not in ("127.0.0.1", "localhost"):
             parser.error("Only isolated loopback Kafka, Elasticsearch and Redis are supported")
-    admin = os.environ["APPCHI_SCALE_ADMIN_URL"]
+    admin = os.environ["KEEP_SCALE_ADMIN_URL"]
     parameters = conninfo_to_dict(admin)
     if parameters.get("host") not in ("127.0.0.1", "localhost"):
         parser.error("Only an explicitly isolated loopback PostgreSQL cluster is supported")
     run = "scale-" + uuid4().hex
-    name = "appchi_scale_" + run[6:]
-    index = "appchi-" + run
+    name = "keep_scale_" + run[6:]
+    index = "keep-" + run
     broker = args.kafka_bootstrap
     endpoint = args.elasticsearch_url
-    topics = [f"appchi.{run}.alerts.{kind}" for kind in ("received", "changed")]
+    topics = [f"keep.{run}.alerts.{kind}" for kind in ("received", "changed")]
     db_url = make_conninfo(admin, dbname=name)
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -360,7 +360,7 @@ def main():
 
     def private_environment(config):
         environment = {
-            key: value for key, value in os.environ.items() if not key.startswith("APPCHI_")
+            key: value for key, value in os.environ.items() if not key.startswith("KEEP_")
         }
         for key, value in config.model_dump().items():
             if value is not None:
@@ -368,7 +368,7 @@ def main():
                     value = value.get_secret_value()
                 elif isinstance(value, (tuple, list, dict, bool)):
                     value = json.dumps(value)
-                environment["APPCHI_" + key.upper()] = str(value)
+                environment["KEEP_" + key.upper()] = str(value)
         return environment
 
     def timed_execute(connection, query, *values, **kwargs):
@@ -597,12 +597,12 @@ def main():
                 "SELECT name, checksum FROM schema_migrations ORDER BY name DESC LIMIT 1"
             ).fetchone()
         result["migration_head"] = {"filename": migration_name, "sha256": migration_checksum}
-        from appchi import worker_health
+        from keep import worker_health
 
         result["worker_health_sha256"] = hashlib.sha256(
             Path(worker_health.__file__).read_bytes()
         ).hexdigest()
-        for suffix, parent in (("api", "appchi_api"), ("worker", "appchi_worker")):
+        for suffix, parent in (("api", "keep_api"), ("worker", "keep_worker")):
             role = name + "_" + suffix
             password = secrets.token_urlsafe(32)
             with psycopg.connect(admin, autocommit=True) as conn:
@@ -688,7 +688,7 @@ def main():
         transport_settings.global_tenant_id = global_id
         if args.features:
             from scalability_feature_fixture import install_feature_fixture
-            from appchi.shared.errors import AppError
+            from keep.shared.errors import AppError
 
             fixture_db = Database(db_url, size=1, deployment_epoch=run)
             try:
@@ -744,7 +744,7 @@ def main():
                     try:
                         if consumer is None:
                             if role == "correlation":
-                                from appchi.correlation.consumer import correlate_record
+                                from keep.correlation.consumer import correlate_record
                             consumer = (
                                 TimedSourceConsumer(db, transport_settings, profile)
                                 if role == "source"
@@ -831,10 +831,10 @@ def main():
                     metrics = ROOT / ".local" / f"{run}-worker-{ordinal}.json"
                     environment.update(
                         {
-                            "APPCHI_SCALE_NAMESPACE": run,
-                            "APPCHI_SCALE_STOP_FILE": str(worker_stop),
-                            "APPCHI_SCALE_MEASUREMENT_FILE": str(measurement_file),
-                            "APPCHI_SCALE_METRICS_FILE": str(metrics),
+                            "KEEP_SCALE_NAMESPACE": run,
+                            "KEEP_SCALE_STOP_FILE": str(worker_stop),
+                            "KEEP_SCALE_MEASUREMENT_FILE": str(measurement_file),
+                            "KEEP_SCALE_METRICS_FILE": str(metrics),
                         }
                     )
                     process = subprocess.Popen(
@@ -879,7 +879,7 @@ def main():
                     *(
                         ["qualification.scalability_api:create_app", "--factory"]
                         if args.response_timings
-                        else ["appchi.main:app"]
+                        else ["keep.main:app"]
                     ),
                     "--host",
                     "127.0.0.1",
@@ -1028,7 +1028,7 @@ def main():
                 headers={
                     "Origin": origin,
                     "X-CSRF-Token": csrf,
-                    "Cookie": "__Host-appchi_session=" + handle,
+                    "Cookie": "__Host-keep_session=" + handle,
                 },
             ) as client:
                 response = await client.post(
@@ -1064,7 +1064,7 @@ def main():
                 headers = {
                     "Origin": origin,
                     "X-CSRF-Token": csrf,
-                    "Cookie": "__Host-appchi_session=" + handle,
+                    "Cookie": "__Host-keep_session=" + handle,
                 }
                 stream, reported, connected = None, False, False
                 stream_ready = asyncio.Event()
@@ -1421,7 +1421,7 @@ def main():
                 headers={
                     "Origin": origin,
                     "X-CSRF-Token": csrf,
-                    "Cookie": "__Host-appchi_session=" + handle,
+                    "Cookie": "__Host-keep_session=" + handle,
                 },
             ) as client:
                 for tenant in tenants:

@@ -18,11 +18,11 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
 
-from appchi.maintenance.processing import Catalog, reconcile_alert
-from appchi.maintenance.temporal import MaintenanceProofError
-from appchi.search.projection import Projection, build_document, canonical
-from appchi.search.writer import ProjectionWriter
-from appchi.shared.errors import AppError
+from keep.maintenance.processing import Catalog, reconcile_alert
+from keep.maintenance.temporal import MaintenanceProofError
+from keep.search.projection import Projection, build_document, canonical
+from keep.search.writer import ProjectionWriter
+from keep.shared.errors import AppError
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 
@@ -61,7 +61,7 @@ def maintenance_cap():
 
 
 def projection_cap():
-    fixture = runpy.run_path(str(WORKSPACE / "appchi-indexer/tests/unit/test_search.py"))["snapshot"]
+    fixture = runpy.run_path(str(WORKSPACE / "keep-indexer/tests/unit/test_search.py"))["snapshot"]
     notes = [" ".join(f"n{i:03d}_{j:04d}" for j in range(900)) for i in range(120)]
     item = Projection("tenant", 1, "a", 1, fixture(notes=notes))
     document_bytes = len(canonical(build_document(item)))
@@ -80,7 +80,7 @@ def projection_cap():
 
 
 def evidence_rewrite():
-    path = WORKSPACE / "appchi-domain/src/appchi/correlation/runtime.py"
+    path = WORKSPACE / "keep-domain/src/keep/correlation/runtime.py"
     node = next(n for n in ast.parse(path.read_text(encoding="utf-8")).body
                 if isinstance(n, ast.FunctionDef) and n.name == "_persist")
     repo = SimpleNamespace(ensure_context=Mock(return_value="context"))
@@ -102,7 +102,7 @@ def evidence_rewrite():
 
 
 def migration_checksums():
-    directory = WORKSPACE / "appchi-migrations/src/appchi/migration_sql"
+    directory = WORKSPACE / "keep-migrations/src/keep/migration_sql"
     ledger = json.loads((directory / "checksums.json").read_text())
     files = {path.name: path for path in directory.glob("*.sql")}
     assert set(files) == set(ledger)
@@ -112,7 +112,7 @@ def migration_checksums():
 
 
 def live_lock():
-    path = WORKSPACE / "appchi-api/src/appchi/live.py"
+    path = WORKSPACE / "keep-api/src/keep/live.py"
     node = next(n for n in ast.parse(path.read_text(encoding="utf-8")).body
                 if isinstance(n, ast.ClassDef) and n.name == "LiveRegistry")
     namespace = {"asyncio": asyncio, "RLock": threading.RLock, "time": time}
@@ -138,8 +138,8 @@ def live_lock():
 
 
 def activity_timer():
-    ui = (WORKSPACE / "appchi-frontend/src/components/workspace.tsx").read_text(encoding="utf-8")
-    auth = (WORKSPACE / "appchi-domain/src/appchi/identity/authentication.py").read_text(encoding="utf-8")
+    ui = (WORKSPACE / "keep-frontend/src/components/workspace.tsx").read_text(encoding="utf-8")
+    auth = (WORKSPACE / "keep-domain/src/keep/identity/authentication.py").read_text(encoding="utf-8")
     poll_ms = int(re.search(r"setInterval\(check,\s*(\d+)\)", ui).group(1))
     activity = re.search(r'void request\("/auth/activity"[\s\S]*?\},\s*(\d+)\);'
                          r"\s*return[^\n]*\n\s*\},\s*\[session, onDenied\]\)", ui)

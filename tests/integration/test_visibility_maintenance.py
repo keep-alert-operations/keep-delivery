@@ -9,11 +9,11 @@ import pytest
 from test_maintenance_repository import maintenance_db, maintenance_browser, body, create  # noqa: F401
 from test_permission_revision import RestrictedDatabase
 
-from appchi.cel import compile_expression
-from appchi.maintenance import repository
-from appchi.maintenance.models import Create
-from appchi.shared.transactions import coordinator
-from appchi.visibility import maintenance as producers
+from keep.cel import compile_expression
+from keep.maintenance import repository
+from keep.maintenance.models import Create
+from keep.shared.transactions import coordinator
+from keep.visibility import maintenance as producers
 
 pytestmark = [pytest.mark.integration, pytest.mark.skip(
     reason="REV-34: timer-driven expiry visibility is a deferred component, not a current release SLO")]
@@ -21,7 +21,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.skip(
 
 def visibility_profile():
     return {
-        "version": "appchi-visibility-capture-v1",
+        "version": "keep-visibility-capture-v1",
         "policy_epoch": "synthetic-maintenance",
         "deployment_epoch": "test",
         "qualification": True,
@@ -236,7 +236,7 @@ def test_overdue_expiry_is_not_retroactively_cancelled_by_late_disable(capture, 
         ).fetchone()
         assert original["started_at"] < now
     if claimed:
-        from appchi.maintenance.processing import claim_due
+        from keep.maintenance.processing import claim_due
 
         assert claim_due(db, tenant).job_id == original["id"]
         with db.transaction(tenant) as conn:

@@ -1,6 +1,6 @@
 # Develop from the system workspace
 
-Clone `appchi-delivery` into an empty parent directory, then run from that clone:
+Clone `keep-delivery` into an empty parent directory, then run from that clone:
 
 ```powershell
 python scripts/workspace.py bootstrap
@@ -55,8 +55,8 @@ the delivery canonical copies and installed root files consistent."
 
 ## Context routing and Obsidian
 
-Design owns [task-map.json](../../appchi-design/context/task-map.json) (sources,
-topics and intents), the [context guide](../../appchi-design/context/README.md) and
+Design owns [task-map.json](../../keep-design/context/task-map.json) (sources,
+topics and intents), the [context guide](../../keep-design/context/README.md) and
 representative routing fixtures. Delivery owns the standard-library reader and
 validator and the generated topic index in [workspace/AGENTS.md](../workspace/AGENTS.md).
 From delivery:
@@ -90,7 +90,7 @@ plans and source hashes do not prove that an agent read, understood or complied
 with a requirement. Keep decisions, source revisions, progress and unresolved
 questions in the existing task checkpoint.
 
-`render` generates [map.md](../../appchi-design/context/map.md), linked topic pages
+`render` generates [map.md](../../keep-design/context/map.md), linked topic pages
 and the index block between the markers in the canonical workspace AGENTS.md; run
 `python scripts/workspace.py bootstrap` afterwards to install the root copy. To
 browse the pages in Obsidian, open the **parent workspace** as a vault and use the
@@ -184,7 +184,7 @@ installed the same locked wheel successfully. See the
 
 After changing an HTTP producer, regenerate contracts with
 `qualification/generate_contracts.py`. Commit contracts, advance affected Python
-Git dependency references and locks, then advance frontend's `@appchi/contracts`
+Git dependency references and locks, then advance frontend's `@keep/contracts`
 Git dependency and run `npm run generate`. Update delivery's manifest and lock
 after consumer checks. Generated documents are reviewed compatibility changes.
 
@@ -199,7 +199,7 @@ development resources. Bootstrap does not start services or copy local credentia
 Generate a fresh development environment with the documented local identity setup.
 
 Run `scripts/verify.ps1 -Suite Unit` for all owned Python unit suites. The database
-suite requires `APPCHI_TEST_DATABASE_URL` pointing to an isolated disposable test
+suite requires `KEEP_TEST_DATABASE_URL` pointing to an isolated disposable test
 database. Kafka, Elasticsearch, Kong, real browser and private environment checks
 retain their explicit service bindings; skipped checks are not qualification.
 
@@ -209,25 +209,25 @@ Every application repository and migrations owns its Dockerfile. Build from that
 repository's root. Private Git dependencies use a BuildKit secret:
 
 ```sh
-docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN -t appchi-api:local .
+docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN -t keep-api:local .
 ```
 
 The token needs read access to the selected private repositories; it is not written
 into image layers or dependency URLs. Do not commit it. Frontend builds also require
-the trusted `APPCHI_BACKEND_URL` build argument. Record immutable resulting image
+the trusted `KEEP_BACKEND_URL` build argument. Record immutable resulting image
 digests, SBOM and scan evidence before a release; development base-image tags are
 not a company runtime qualification.
 
 GitHub Actions workflows requiring sibling code use the repository/organization
-secret `APPCHI_REPOSITORIES_TOKEN` with read-only contents access to the Appchi
+secret `APPCHI_REPOSITORIES_TOKEN` with read-only contents access to the Keep
 repositories. Supply this through the organization's approved credentials process.
 Default repository-scoped `GITHUB_TOKEN` cannot read sibling private repositories.
 Bootstrap publishes source and workflows; it does not establish CI credentials or
 claim that remote checks, image builds or production qualification succeeded.
 
-The secret must be available to `appchi-api`, `appchi-ingestion`,
-`appchi-processor`, `appchi-correlation`, `appchi-indexer`, `appchi-domain`,
-`appchi-frontend` and `appchi-delivery`. Delivery bootstraps the pinned workspace,
+The secret must be available to `keep-api`, `keep-ingestion`,
+`keep-processor`, `keep-correlation`, `keep-indexer`, `keep-domain`,
+`keep-frontend` and `keep-delivery`. Delivery bootstraps the pinned workspace,
 so the credential must cover all eleven private workspace repositories. Use a
 dedicated credential with read-only Contents permission. Configure its value
 directly in Actions secrets; do not paste it into chat, commit it, or substitute
@@ -241,7 +241,7 @@ as a **repository secret in each of the eight consumers**. An organization secre
 alone will not unblock these jobs. See
 [GitHub's secret availability rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets#creating-secrets-for-an-organization).
 
-The dedicated `Appchi CI repository reader` credential was configured in all eight
+The dedicated `Keep CI repository reader` credential was configured in all eight
 repositories on 2026-10-01 with read-only Contents/Metadata access to the eleven
 selected workspace repositories. It expires on **2026-12-30**. Rotate it before
 expiry by updating `APPCHI_REPOSITORIES_TOKEN` in all eight repositories and
@@ -251,7 +251,7 @@ Frontend checkout uses `persist-credentials: false`. Otherwise the checkout
 action's repository-scoped GitHub authorization header overrides the credential
 helper when npm fetches the private contracts repository from the checkout.
 
-The retained `appchi` monorepo's `application-checks` workflow was disabled on
+The retained `keep` monorepo's `application-checks` workflow was disabled on
 2026-10-01 at the user's request. Its backend/frontend jobs are retired following
 the repository split. Keep the independent repositories' owned checks active;
 historical failed monorepo runs remain in GitHub. See the

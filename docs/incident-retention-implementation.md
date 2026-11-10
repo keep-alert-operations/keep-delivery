@@ -2,7 +2,7 @@
 
 Current scope: automated retention workers are deferred under REV-34. The
 procedures below preserve historical implementation context and do not authorize
-deploying those roles. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md).
+deploying those roles. See [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md).
 
 `recovery/incidents.py` implements the protected incident retirement sequence.
 `recovery/cleanup.py` removes incident-owned content in bounded batches after

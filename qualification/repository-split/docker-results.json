@@ -1,9 +1,9 @@
 {
-  "appchi-ingestion": {
+  "keep-ingestion": {
     "build_exit_code": 0,
     "import_exit_code": 0
   },
-  "appchi-migrations": {
+  "keep-migrations": {
     "build_exit_code": 0,
     "import_exit_code": 0
   }

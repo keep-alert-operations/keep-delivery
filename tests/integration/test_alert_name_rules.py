@@ -9,8 +9,8 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.ingestion.kafka_admission import KafkaAdmission
-from appchi.ingestion.native import canonical, identity
+from keep.ingestion.kafka_admission import KafkaAdmission
+from keep.ingestion.native import canonical, identity
 
 from test_correlation_configuration import definition, rules  # noqa: F401
 from test_kafka_first import Capture

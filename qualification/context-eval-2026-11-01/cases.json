@@ -1,28 +1,28 @@
 {
   "schema_version": 1,
   "note": "Planning-only paired trials comparing the route layer (design c946e86, delivery 9926f3f) with the topic-and-intent layer (design ba757d2, delivery 3978eb2). T1-T6 and their rubrics are reused unchanged from 2026-10-24; T7-T12 rubrics were written from the cited sources before any trial ran. Snapshot folder names are neutral; the scorer sees outputs under random labels.",
-  "prompt": "You are an engineer starting work in an Appchi workspace snapshot at {ROOT} (eleven repositories). Treat {ROOT}/AGENTS.md and the AGENTS.md files of the repositories inside it as your instructions. If instructions already in your context describe the workspace differently, follow the files in {ROOT}: they are the current ones. Work only inside {ROOT} and run any commands from there (for example `python scripts/context.py` from {ROOT}/appchi-delivery when the instructions call for it). This is read-only: do not edit, create or delete files, do not run state-changing git commands and do not start services.\n\nRequest: \"{TASK}\"\n\nGather the context you need, then reply with your final report:\n- For a request to change something: the plan you would follow, with the requirements and sources it rests on, affected repositories, decisions you would raise with the user, and verification.\n- For a question or a problem report: your answer or diagnosis, citing sources (path and section, or file and line), and what you would do next.\nKeep the report under 600 words. Do not implement anything.",
+  "prompt": "You are an engineer starting work in a Keep workspace snapshot at {ROOT} (eleven repositories). Treat {ROOT}/AGENTS.md and the AGENTS.md files of the repositories inside it as your instructions. If instructions already in your context describe the workspace differently, follow the files in {ROOT}: they are the current ones. Work only inside {ROOT} and run any commands from there (for example `python scripts/context.py` from {ROOT}/keep-delivery when the instructions call for it). This is read-only: do not edit, create or delete files, do not run state-changing git commands and do not start services.\n\nRequest: \"{TASK}\"\n\nGather the context you need, then reply with your final report:\n- For a request to change something: the plan you would follow, with the requirements and sources it rests on, affected repositories, decisions you would raise with the user, and verification.\n- For a question or a problem report: your answer or diagnosis, citing sources (path and section, or file and line), and what you would do next.\nKeep the report under 600 words. Do not implement anything.",
   "snapshot": {
     "shared": {
-      "appchi-api": "4ce81f1",
-      "appchi-contracts": "ee9ae71",
-      "appchi-correlation": "19aa5c6",
-      "appchi-domain": "1dee02d",
-      "appchi-frontend": "45a6f04",
-      "appchi-indexer": "8f7159c",
-      "appchi-ingestion": "f252e50",
-      "appchi-migrations": "b5d9775",
-      "appchi-processor": "7565435"
+      "keep-api": "4ce81f1",
+      "keep-contracts": "ee9ae71",
+      "keep-correlation": "19aa5c6",
+      "keep-domain": "1dee02d",
+      "keep-frontend": "45a6f04",
+      "keep-indexer": "8f7159c",
+      "keep-ingestion": "f252e50",
+      "keep-migrations": "b5d9775",
+      "keep-processor": "7565435"
     },
     "routes": {
-      "appchi-design": "c946e86",
-      "appchi-delivery": "9926f3f"
+      "keep-design": "c946e86",
+      "keep-delivery": "9926f3f"
     },
     "topics": {
-      "appchi-design": "ba757d2",
-      "appchi-delivery": "3978eb2"
+      "keep-design": "ba757d2",
+      "keep-delivery": "3978eb2"
     },
-    "root": "AGENTS.md copied from the condition's appchi-delivery/workspace/AGENTS.md; CLAUDE.md imports it."
+    "root": "AGENTS.md copied from the condition's keep-delivery/workspace/AGENTS.md; CLAUDE.md imports it."
   },
   "cases": [
     {
@@ -33,22 +33,22 @@
         {
           "id": "a",
           "item": "Identifies that worker scope (REV-34, section 2) defers inactivity auto-resolution, so the observed behavior is current scope rather than a defect.",
-          "source": "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
+          "source": "keep-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
         },
         {
           "id": "b",
           "item": "Does not plan to reintroduce an hourly sweep or worker without a user decision; raises reinstatement as the user's choice.",
-          "source": "appchi-delivery/workspace/AGENTS.md (current worker scope constraint)"
+          "source": "keep-delivery/workspace/AGENTS.md (current worker scope constraint)"
         },
         {
           "id": "c",
           "item": "Notes that stored activity and deadline fields are kept for compatibility and that incidents resolve by explicit command.",
-          "source": "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
+          "source": "keep-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
         },
         {
           "id": "d",
           "item": "Points to the verification plan's worker scope correction, which makes inactivity expiry future qualification.",
-          "source": "appchi-design/verification/verification-plan.md#worker-scope-correction"
+          "source": "keep-design/verification/verification-plan.md#worker-scope-correction"
         }
       ]
     },
@@ -60,32 +60,32 @@
         {
           "id": "a",
           "item": "Applies shared command semantics to tag edits: expected revision, retry receipts and incident history.",
-          "source": "appchi-design/specs/spec-system-completion.md#7-shared-commands-authorization-and-receipts"
+          "source": "keep-design/specs/spec-system-completion.md#7-shared-commands-authorization-and-receipts"
         },
         {
           "id": "b",
           "item": "Treats incident filtering as PostgreSQL incident search with its cursor and ordering rules, not the Elasticsearch alert projection.",
-          "source": "appchi-design/specs/spec-incident-operations.md#14-incident-list-and-search-i5"
+          "source": "keep-design/specs/spec-incident-operations.md#14-incident-list-and-search-i5"
         },
         {
           "id": "c",
-          "item": "Plans a new forward migration in appchi-migrations that keeps tenant scoping/RLS (no edits to applied migrations).",
-          "source": "appchi-delivery/workspace/AGENTS.md; appchi-migrations"
+          "item": "Plans a new forward migration in keep-migrations that keeps tenant scoping/RLS (no edits to applied migrations).",
+          "source": "keep-delivery/workspace/AGENTS.md; keep-migrations"
         },
         {
           "id": "d",
-          "item": "Updates the Product API contract with producer tools in appchi-contracts and regenerates the frontend client instead of hand-editing generated files.",
-          "source": "appchi-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"
+          "item": "Updates the Product API contract with producer tools in keep-contracts and regenerates the frontend client instead of hand-editing generated files.",
+          "source": "keep-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"
         },
         {
           "id": "e",
           "item": "Covers live updates: tag edits must publish the existing incident invalidation so open views refresh.",
-          "source": "appchi-design/context/routes/live-updates.md sources (REV-36)"
+          "source": "keep-design/context/routes/live-updates.md sources (REV-36)"
         },
         {
           "id": "f",
           "item": "Raises unresolved product decisions for the user, such as tag limits, allowed characters or who may edit tags.",
-          "source": "appchi-design/context/README.md (example)"
+          "source": "keep-design/context/README.md (example)"
         }
       ]
     },
@@ -97,54 +97,54 @@
         {
           "id": "a",
           "item": "Identifies the user decision in worker scope section 1: a suppressed alert stays suppressed after the window ends until its next source update.",
-          "source": "appchi-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"
+          "source": "keep-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"
         },
         {
           "id": "b",
           "item": "Treats the request as reversing a recorded user decision and asks the user before planning implementation.",
-          "source": "appchi-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"
+          "source": "keep-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"
         },
         {
           "id": "c",
           "item": "Notes that end-time release needs the deferred scheduler/fan-out machinery, and that no timer, read or indexer scan may clear suppression in current scope.",
-          "source": "appchi-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"
+          "source": "keep-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"
         },
         {
           "id": "d",
           "item": "Points to the worker scope correction in the verification plan for source-driven release acceptance.",
-          "source": "appchi-design/verification/verification-plan.md#worker-scope-correction"
+          "source": "keep-design/verification/verification-plan.md#worker-scope-correction"
         }
       ]
     },
     {
       "id": "T4-directory-propagation",
       "kind": "scope trap",
-      "task": "LDAP group removals take far longer than five minutes to reach Appchi. Implement the five-minute membership propagation target from the identity specification.",
+      "task": "LDAP group removals take far longer than five minutes to reach Keep. Implement the five-minute membership propagation target from the identity specification.",
       "rubric": [
         {
           "id": "a",
           "item": "Identifies REV-35: the directory worker is not deployed and the five-minute propagation target is deferred with it.",
-          "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+          "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
         },
         {
           "id": "b",
           "item": "Explains the current mechanism: explicit trusted publication (local Refresh or directory --once) and authorization from the last trusted checkpoint.",
-          "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+          "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
         },
         {
           "id": "c",
           "item": "Does not quietly add a poller or login-time identity replacement, and does not treat token group claims as permissions; asks the user before reinstating polling.",
-          "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+          "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
         },
         {
           "id": "d",
           "item": "Preserves the bootstrap and restore-integrity gates and the existing revocation, logout and session-expiry rules.",
-          "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
+          "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"
         },
         {
           "id": "e",
           "item": "Points to the verification plan's REV-35 scope, which makes propagation timing future qualification.",
-          "source": "appchi-design/verification/verification-plan.md (REV-35 scope paragraph)"
+          "source": "keep-design/verification/verification-plan.md (REV-35 scope paragraph)"
         }
       ]
     },
@@ -156,27 +156,27 @@
         {
           "id": "a",
           "item": "Finds the recorded trailing window: refresh after 500 ms without a further change, and no later than 1 s after the first unrefreshed change.",
-          "source": "appchi-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"
+          "source": "keep-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"
         },
         {
           "id": "b",
           "item": "Keeps the 250 ms window for five seconds after the user's own command so its result is not held back.",
-          "source": "appchi-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"
+          "source": "keep-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"
         },
         {
           "id": "c",
           "item": "Reloads at once on reconnect, return to a visible tab or the user's own refresh, with at most one request in flight per view.",
-          "source": "appchi-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"
+          "source": "keep-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"
         },
         {
           "id": "d",
           "item": "Keeps live publishing in the Product API (REV-36) and does not add a separate live worker.",
-          "source": "appchi-design/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api"
+          "source": "keep-design/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api"
         },
         {
           "id": "e",
           "item": "Checks the batching against the five-second incoming visibility objective.",
-          "source": "appchi-design/specs/spec-reliability-operations.md#1-preserved-requirements-and-ownership"
+          "source": "keep-design/specs/spec-reliability-operations.md#1-preserved-requirements-and-ownership"
         }
       ]
     },
@@ -187,28 +187,28 @@
       "rubric": [
         {
           "id": "a",
-          "item": "Changes the Product API contract in appchi-contracts with producer tools and regenerates the frontend client; no hand-edited generated artifacts.",
-          "source": "appchi-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"
+          "item": "Changes the Product API contract in keep-contracts with producer tools and regenerates the frontend client; no hand-edited generated artifacts.",
+          "source": "keep-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"
         },
         {
           "id": "b",
           "item": "Recognizes this is an HTTP contract change only, not a native/Kafka event contract change.",
-          "source": "appchi-design/context/routes/http-contract.md"
+          "source": "keep-design/context/routes/http-contract.md"
         },
         {
           "id": "c",
           "item": "Uses the incident list's PostgreSQL query rules (tenant scoping, stable ordering and cursors) for the new value.",
-          "source": "appchi-design/specs/spec-system-completion.md#15-incident-persistence-and-search"
+          "source": "keep-design/specs/spec-system-completion.md#15-incident-persistence-and-search"
         },
         {
           "id": "d",
           "item": "Considers whether note additions must refresh open incident lists through existing live invalidation.",
-          "source": "appchi-design/context/routes/live-updates.md sources"
+          "source": "keep-design/context/routes/live-updates.md sources"
         },
         {
           "id": "e",
           "item": "Verifies with contract drift checks, API tests and the affected browser journey.",
-          "source": "appchi-design/context/routes/http-contract.md (verification guidance)"
+          "source": "keep-design/context/routes/http-contract.md (verification guidance)"
         }
       ]
     },
@@ -220,86 +220,86 @@
         {
           "id": "a",
           "item": "States that PostgreSQL is the authority and Elasticsearch a rebuildable projection.",
-          "source": "appchi-design/specs/spec-alerts-management-system.md#architecture-and-authority"
+          "source": "keep-design/specs/spec-alerts-management-system.md#architecture-and-authority"
         },
         {
           "id": "b",
           "item": "Explains continuous reconciliation: tenants are scanned in bounded pages from PostgreSQL authority, independent of Kafka hints and continuing during Kafka outages.",
-          "source": "appchi-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
+          "source": "keep-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
         },
         {
           "id": "c",
           "item": "Names the version guards: PostgreSQL advances the projection sequence/version and Elasticsearch external versions reject older state.",
-          "source": "appchi-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
+          "source": "keep-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
         },
         {
           "id": "d",
           "item": "Notes that searchable progress advances only when a complete pass finishes, and that a lost notification can leave search stale until reconciliation.",
-          "source": "appchi-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
+          "source": "keep-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
         },
         {
           "id": "e",
           "item": "Mentions a full rebuild into a new index with an alias switch as the heavier remedy, without replaying lifecycle or correlation.",
-          "source": "appchi-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
+          "source": "keep-design/specs/spec-kafka-alert-pipeline.md#6-search-reconciliation-progress-and-rebuild"
         }
       ]
     },
     {
       "id": "T8-retention",
       "kind": "question (scope trap)",
-      "task": "How long does Appchi keep resolved alerts and their history, and what deletes them?",
+      "task": "How long does Keep keep resolved alerts and their history, and what deletes them?",
       "rubric": [
         {
           "id": "a",
           "item": "Gives the specified lifetime: alert and incident content retires 90 days after the latest actual resolution, and reopening cancels retirement.",
-          "source": "appchi-design/specs/spec-system-completion.md#19-unified-retention-and-configuration-history"
+          "source": "keep-design/specs/spec-system-completion.md#19-unified-retention-and-configuration-history"
         },
         {
           "id": "b",
           "item": "Identifies REV-34: retention sweeps are not deployed, so nothing removes them automatically now and storage grows.",
-          "source": "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
+          "source": "keep-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
         },
         {
           "id": "c",
           "item": "Notes that read-time access windows still apply: expired unprotected history is hidden although physical removal is deferred.",
-          "source": "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
+          "source": "keep-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"
         },
         {
           "id": "d",
           "item": "Notes the explicit deletion and protected recovery helpers that remain, and that backups, Kafka and Elasticsearch segments are owner-managed.",
-          "source": "appchi-design/specs/spec-system-completion.md#19-unified-retention-and-configuration-history"
+          "source": "keep-design/specs/spec-system-completion.md#19-unified-retention-and-configuration-history"
         }
       ]
     },
     {
       "id": "T9-grafana-tenant",
       "kind": "question",
-      "task": "How does an alert sent from the shared company Grafana end up in the right Appchi tenant?",
+      "task": "How does an alert sent from the shared company Grafana end up in the right Keep tenant?",
       "rubric": [
         {
           "id": "a",
           "item": "States that the operator's API key, authenticated at Kong, determines the immutable operator and owning tenant; labels never decide the tenant.",
-          "source": "appchi-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
+          "source": "keep-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
         },
         {
           "id": "b",
           "item": "Describes the managed contact point (webhook with the operator's key) and the exact-match notification-policy entry per operator.",
-          "source": "appchi-design/specs/spec-operator-operations.md#15-grafana-resource-identity-and-ownership"
+          "source": "keep-design/specs/spec-operator-operations.md#15-grafana-resource-identity-and-ownership"
         },
         {
           "id": "c",
-          "item": "Gives the routing label `Appchi - {operator name}` with value `true` that teams put on their rules.",
-          "source": "appchi-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
+          "item": "Gives the routing label `Keep - {operator name}` with value `true` that teams put on their rules.",
+          "source": "keep-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
         },
         {
           "id": "d",
           "item": "Notes that the webhook adapter rejects members lacking the authenticated operator's expected label, as a misconfiguration check.",
-          "source": "appchi-design/specs/spec-operator-operations.md#18-grafana-to-v2-field-mapping"
+          "source": "keep-design/specs/spec-operator-operations.md#18-grafana-to-v2-field-mapping"
         },
         {
           "id": "e",
           "item": "Notes that the company's existing routing is preserved in a catch-all branch every alert still reaches.",
-          "source": "appchi-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
+          "source": "keep-design/specs/spec-operator-operations.md#16-shared-policy-tree-and-routing-label"
         }
       ]
     },
@@ -311,54 +311,54 @@
         {
           "id": "a",
           "item": "Explains that fencing after a restore is expected until deployment authority, order, clocks and evidence are verified; a successful database restore alone does not make the application ready.",
-          "source": "appchi-design/specs/spec-reliability-operations.md#18-application-restore-fencing-and-deletion-safety"
+          "source": "keep-design/specs/spec-reliability-operations.md#18-application-restore-fencing-and-deletion-safety"
         },
         {
           "id": "b",
           "item": "Names the closed capability gates and revoked sessions, and that the coordinator has no reopen command.",
-          "source": "appchi-delivery/docs/runbooks/restore-fencing.md"
+          "source": "keep-delivery/docs/runbooks/restore-fencing.md"
         },
         {
           "id": "c",
           "item": "Keeps infrastructure ownership and authorization: owners supply backup/restore and recovery authority; no bypass of the fence or protocol switch.",
-          "source": "appchi-delivery/docs/runbooks/restore-fencing.md"
+          "source": "keep-delivery/docs/runbooks/restore-fencing.md"
         },
         {
           "id": "d",
           "item": "Mentions the operator credential rules: invalidate unprovable credentials, keep deleted identities fenced, never revive revoked keys.",
-          "source": "appchi-design/specs/spec-reliability-operations.md#18-application-restore-fencing-and-deletion-safety"
+          "source": "keep-design/specs/spec-reliability-operations.md#18-application-restore-fencing-and-deletion-safety"
         },
         {
           "id": "e",
           "item": "Gives the next steps with the recovery command (status, collect, assess) under a coordinated recovery, and that collected evidence is not proof of correctness.",
-          "source": "appchi-delivery/docs/runbooks/restore-fencing.md"
+          "source": "keep-delivery/docs/runbooks/restore-fencing.md"
         }
       ]
     },
     {
       "id": "T11-operator-kong-cleanup",
       "kind": "investigation (scope trap)",
-      "task": "An operator was deleted in Appchi yesterday, but its Kong consumer still exists. Is cleanup broken, and what should we do?",
+      "task": "An operator was deleted in Keep yesterday, but its Kong consumer still exists. Is cleanup broken, and what should we do?",
       "rubric": [
         {
           "id": "a",
           "item": "Explains that the deleted identity is already denied: deletion revokes its keys and authoritative admission rejects it, so the leftover consumer cannot admit alerts.",
-          "source": "appchi-design/specs/spec-operator-operations.md#21-deletion-and-pending-setup-cancellation"
+          "source": "keep-design/specs/spec-operator-operations.md#21-deletion-and-pending-setup-cancellation"
         },
         {
           "id": "b",
           "item": "Identifies the conflict: operator deletion says Kong cleanup may finish later, but REV-34 removed background workers and retry loops, so nothing completes it autonomously.",
-          "source": "appchi-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
+          "source": "keep-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
         },
         {
           "id": "c",
           "item": "Proposes the explicit retry path of the recorded operation rather than adding a worker or retry sweep.",
-          "source": "appchi-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
+          "source": "keep-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
         },
         {
           "id": "d",
           "item": "Inspects the recorded deletion operation and confirms admission denial before any repair; raises the gap with the user.",
-          "source": "appchi-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
+          "source": "keep-design/specs/spec-worker-scope.md#3-request-owned-operator-provisioning"
         }
       ]
     },
@@ -370,22 +370,22 @@
         {
           "id": "a",
           "item": "Answers no: linking is within the same tenant, and cross-tenant alerts are neither discoverable nor selectable.",
-          "source": "appchi-design/specs/spec-incident-operations.md#7-linked-alert-presentation-i3-i5"
+          "source": "keep-design/specs/spec-incident-operations.md#7-linked-alert-presentation-i3-i5"
         },
         {
           "id": "b",
           "item": "Notes that inaccessible or cross-tenant resources return 404 without revealing which.",
-          "source": "appchi-design/specs/spec-system-completion.md#5-common-http-and-json-contract"
+          "source": "keep-design/specs/spec-system-completion.md#5-common-http-and-json-contract"
         },
         {
           "id": "c",
           "item": "Locates enforcement in tenant-prefixed routes and PostgreSQL tenant scoping/RLS.",
-          "source": "appchi-design/specs/spec-system-completion.md#10-incident-routes-and-aggregate-contracts"
+          "source": "keep-design/specs/spec-system-completion.md#10-incident-routes-and-aggregate-contracts"
         },
         {
           "id": "d",
           "item": "Gives the same-tenant rules: edit permission or higher, active incidents only, no stealing from another active incident, at most 100 alerts, 409 on conflict.",
-          "source": "appchi-design/specs/spec-incident-operations.md#5-linking-and-unlinking-i3"
+          "source": "keep-design/specs/spec-incident-operations.md#5-linking-and-unlinking-i3"
         }
       ]
     }

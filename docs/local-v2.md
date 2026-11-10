@@ -4,12 +4,12 @@
 17 gateway authorization checks, and Kafka admission/search/tenant isolation
 for three synthetic alerts passed. See [startup repair evidence](../qualification/local-startup-2026-10-04.md).
 
-**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
 
 The user authorized local v2 configuration on 2026-09-24. The assistant-selected
 setup runs isolated Kong 3.9.1, its dedicated PostgreSQL 16 database and Grafana
 11.6.0 as services in the unified local Compose project.
-It uses the existing Appchi database, operator APIs, encrypted keys, provisioning
+It uses the existing Keep database, operator APIs, encrypted keys, provisioning
 saga and pinned mTLS listener. It does not connect to company services.
 
 Start the [local runtime](local-runtime.md) with the single Compose stack, then run:
@@ -22,10 +22,10 @@ Start the [local runtime](local-runtime.md) with the single Compose stack, then 
 ```
 
 The unified [`deploy/local/compose.yaml`](../deploy/local/compose.yaml) includes
-these services alongside Appchi PostgreSQL, Elasticsearch, Kafka, Redis and
+these services alongside Keep PostgreSQL, Elasticsearch, Kafka, Redis and
 Keycloak. Start provisions `Local Demo Sender` in `Local Demo` using the normal local-admin
 login and operator API. The normal Product API request provisions and verifies the Kong
-Consumer/key, Grafana contact point, exact `Appchi - Local Demo Sender` policy,
+Consumer/key, Grafana contact point, exact `Keep - Local Demo Sender` policy,
 and authenticated serving-member identity. The initial bootstrap checks transport
 and authentication before opening only the initial local v2 gate; prepared keys
 remain rejected until the normal worker activates them. Restore fences and other
@@ -42,7 +42,7 @@ recovery; setup does not silently adopt or recreate an existing remote fleet.
 |---|---|
 | Native v2 gateway | `https://localhost:58445/api/ingest/v2/alerts` |
 | Grafana webhook gateway | `https://localhost:58445/api/ingest/v2/grafana` |
-| Private Appchi listener (client certificate required) | `https://127.0.0.1:58444` |
+| Private Keep listener (client certificate required) | `https://127.0.0.1:58444` |
 | Worker-only readiness proof | `https://localhost:58446/operator-check` |
 | Kong Admin API | `https://localhost:58447` |
 | Dedicated Grafana | `https://localhost:58448` |
@@ -83,7 +83,7 @@ the next coordinated restart.
 Published container ports are bound to loopback. Kong's community Admin API is
 accessible to local processes; this is an isolated development control plane.
 Grafana has a generated bootstrap password and a dedicated provisioning service
-account. Keep this instance reserved for Appchi's provisioning worker: this
+account. Keep this instance reserved for Keep's provisioning worker: this
 profile expects an empty rule inventory and preserves its initial fallback
 policy. Use the regular company integration qualification for a shared instance.
 
@@ -92,7 +92,7 @@ Native clients send one `X-API-Key` header. Copy the current key from **Local De
 are rejected. Grafana uses one Bearer header on its dedicated route. Kong strips
 client identity headers, authenticates the key, strips the secret and supplies
 policy-bound operator/tenant context over pinned mTLS. Private ingestion validates
-that trusted context and publishes to Kafka without Appchi PostgreSQL access.
+that trusted context and publishes to Kafka without Keep PostgreSQL access.
 The Product API on port 58000 has no ingestion routes; public ingestion on 58001
 accepts native v1 only, routed to Global.
 
@@ -102,7 +102,7 @@ Grafana webhook uses the Compose-internal `https://kong:8443` address and verifi
 the same CA. Only Kong receives the private client certificate; neither container
 receives the CA signing key.
 
-From `appchi-delivery`, send three new synthetic native alerts and one through the
+From `keep-delivery`, send three new synthetic native alerts and one through the
 Grafana webhook, and verify Kafka admission, processing, search, each alert's
 provider and rule URL (REV-55) and cross-tenant concealment:
 

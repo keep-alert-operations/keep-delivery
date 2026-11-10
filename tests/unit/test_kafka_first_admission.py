@@ -6,9 +6,9 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.ingestion.kafka_admission import KafkaAdmission
-from appchi.ingestion.keys import received_key
-from appchi.ingestion.native import canonical, parse_json
+from keep.ingestion.kafka_admission import KafkaAdmission
+from keep.ingestion.keys import received_key
+from keep.ingestion.native import canonical, parse_json
 
 
 class Publisher:
@@ -140,14 +140,14 @@ async def test_v2_defaults_once_from_ingress_without_database():
 
 def test_http_ingress_has_no_postgresql_or_secret_dependency(monkeypatch, v1):
     from fastapi.testclient import TestClient
-    from appchi.config import Settings
-    from appchi.ingestion.main import create_app
+    from keep.config import Settings
+    from keep.ingestion.main import create_app
 
     publisher = Publisher()
     publisher.close = lambda: None
-    monkeypatch.setattr("appchi.ingestion.main.KafkaPublisher", lambda settings: publisher)
+    monkeypatch.setattr("keep.ingestion.main.KafkaPublisher", lambda settings: publisher)
     monkeypatch.setattr(
-        "appchi.main.Database", lambda *args, **kwargs: pytest.fail("Ingress opened PostgreSQL")
+        "keep.main.Database", lambda *args, **kwargs: pytest.fail("Ingress opened PostgreSQL")
     )
     settings = Settings(
         role="ingestion-api",
@@ -167,19 +167,19 @@ def test_http_ingress_has_no_postgresql_or_secret_dependency(monkeypatch, v1):
 @pytest.mark.asyncio
 async def test_expired_gateway_lifetime_cannot_publish(v1):
     import time
-    from appchi.shared.errors import AppError
-    from appchi.ingestion.gateway import gateway_identity
+    from keep.shared.errors import AppError
+    from keep.ingestion.gateway import gateway_identity
     from starlette.requests import Request
     import base64
 
     headers = {
         "x-consumer-id": str(uuid4()),
         "x-credential-identifier": str(uuid4()),
-        "x-appchi-operator-id": str(uuid4()),
-        "x-appchi-tenant-id": str(uuid4()),
-        "x-appchi-policy-generation": "1",
-        "x-appchi-routing-names": base64.b64encode(b'["Operator"]').decode(),
-        "x-appchi-authorized-at": str(time.time() - 11),
+        "x-keep-operator-id": str(uuid4()),
+        "x-keep-tenant-id": str(uuid4()),
+        "x-keep-policy-generation": "1",
+        "x-keep-routing-names": base64.b64encode(b'["Operator"]').decode(),
+        "x-keep-authorized-at": str(time.time() - 11),
     }
     with pytest.raises(AppError, match="invalid_credential"):
         gateway_identity(
@@ -187,7 +187,7 @@ async def test_expired_gateway_lifetime_cannot_publish(v1):
                 {
                     "type": "http",
                     "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
-                    "appchi.gateway_peer_verified": True,
+                    "keep.gateway_peer_verified": True,
                 }
             )
         )

@@ -6,8 +6,8 @@ service. It does not establish that the company already supplies this endpoint,
 its durability/independence, a qualified recovery checkpoint, or restore readiness.
 The existing `append()` and single-page `checkpoint()` contracts remain unchanged.
 
-The normative basis is [alert-history technical §24](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-alert-history-technical.md#24-protected-evidence-and-restore-readiness)
-and [system completion §20](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-system-completion.md#20-cross-resource-deletion-replay-and-restore).
+The normative basis is [alert-history technical §24](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-alert-history-technical.md#24-protected-evidence-and-restore-readiness)
+and [system completion §20](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-system-completion.md#20-cross-resource-deletion-replay-and-restore).
 An unresolved protected intent must fence reconciliation; a final fence prevents
 resurrection. Enumeration alone does not interpret or apply these decisions.
 
@@ -18,7 +18,7 @@ Add both optional fields to the existing mounted `EvidenceBinding` JSON:
 ```json
 {
   "paged_checkpoint_path": "/SUPPLIED-SNAPSHOT-PAGE-PATH",
-  "paged_checkpoint_version": "appchi-evidence-checkpoint-v2"
+  "paged_checkpoint_version": "keep-evidence-checkpoint-v2"
 }
 ```
 
@@ -38,7 +38,7 @@ external qualification records; setting them does not manufacture that evidence.
 
 `HttpEvidenceStore.checkpoint_page(...)` GETs the supplied path using the existing
 Bearer credential and verified HTTPS connection. Redirects are disabled. Initial
-query parameters are `version=appchi-evidence-checkpoint-v2`, the exact supplied
+query parameters are `version=keep-evidence-checkpoint-v2`, the exact supplied
 `namespace`, and `limit` (1–1000). Optional `after` is an opaque exclusive lower
 checkpoint; omit it to enumerate the namespace from its beginning.
 
@@ -55,7 +55,7 @@ The strict response has exactly these fields (values below illustrate shape):
 
 ```json
 {
-  "version": "appchi-evidence-checkpoint-v2",
+  "version": "keep-evidence-checkpoint-v2",
   "namespace": "SUPPLIED-NAMESPACE",
   "after": null,
   "checkpoint": "OPAQUE-FIXED-UPPER-CHECKPOINT",
@@ -110,7 +110,7 @@ invoke it in a worker thread (for example, `asyncio.to_thread`). It must not sta
 a nested event loop in an existing async request handler.
 
 ```python
-from appchi.recovery.evidence import collect_checkpoint
+from keep.recovery.evidence import collect_checkpoint
 
 summary = collect_checkpoint(
     evidence_store,

@@ -39,18 +39,18 @@ SCENARIOS = (
     {"name": "burst_global_v1", "version": "v1", "tenants": "global", "paced": False},
 )
 PACKAGES = (
-    "appchi-domain",
-    "appchi-contracts",
-    "appchi-ingestion",
-    "appchi-processor",
-    "appchi-correlation",
-    "appchi-indexer",
-    "appchi-migrations",
-    "appchi-api",
+    "keep-domain",
+    "keep-contracts",
+    "keep-ingestion",
+    "keep-processor",
+    "keep-correlation",
+    "keep-indexer",
+    "keep-migrations",
+    "keep-api",
 )
 ROLES = ("source", "correlation", "indexer")
 # Harness probes carry this name so activity sampling counts only workers.
-HARNESS = "appchi-scale-harness"
+HARNESS = "keep-scale-harness"
 
 
 def percentiles(values, points=(0.5, 0.95, 0.99)):
@@ -123,10 +123,10 @@ def git_revision(path):
 
 def consumer_settings():
     """Batching facts of the installed consumers, recorded rather than assumed."""
-    from appchi.kafka_changed import ChangedConsumer
-    from appchi.kafka_source import SourceConsumer
-    from appchi.search import consumer as search_consumer
-    from appchi.search import reconciliation
+    from keep.kafka_changed import ChangedConsumer
+    from keep.kafka_source import SourceConsumer
+    from keep.search import consumer as search_consumer
+    from keep.search import reconciliation
 
     changed = {
         name: parameter.default

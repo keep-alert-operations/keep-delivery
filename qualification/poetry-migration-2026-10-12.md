@@ -34,7 +34,7 @@ Existing unrelated staged, unstaged and untracked work was preserved.
   layout specification and installed/canonical agent guidance agree. Historical
   uv qualification records, monorepo snapshots and their provenance remain historical.
   Some upstream optional extra names in generated Poetry locks also contain `uv`;
-  no active Appchi workflow selects them.
+  no active Keep workflow selects them.
 
 ## Verification
 
@@ -93,16 +93,16 @@ this migration and pre-existing local work, so HEAD alone does not reproduce the
 
 | Repository | HEAD |
 |---|---|
-| appchi-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` |
-| appchi-contracts | `eb555e8bd307c2dbc3f20a9134351696a4f5eba2` |
-| appchi-correlation | `7a408f990021c2f4531c1cd90c52641c80e1bc90` |
-| appchi-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` |
-| appchi-domain | `b8461620318c5dff6197094cfc9ea967c7073b01` |
-| appchi-indexer | `a56e94c8f07c6d98342c809e05ebc8b5ac780538` |
-| appchi-ingestion | `3515ac96bd1958483b5583d59afc13d9782e6111` |
-| appchi-migrations | `016d0f554de570a96e4da1cf054c9b1c70b5c768` |
-| appchi-processor | `c4bb2225505453b7fd6bfea20283355da79958cf` |
-| appchi-design | `99c5def93c761386e7d5161c44f482ae4cbd7539` |
+| keep-api | `e2de23d0b70bb52f8180eebb396d927567705eaf` |
+| keep-contracts | `eb555e8bd307c2dbc3f20a9134351696a4f5eba2` |
+| keep-correlation | `7a408f990021c2f4531c1cd90c52641c80e1bc90` |
+| keep-delivery | `ee37546e771e435d1f07c2b88857f548dd05fbb0` |
+| keep-domain | `b8461620318c5dff6197094cfc9ea967c7073b01` |
+| keep-indexer | `a56e94c8f07c6d98342c809e05ebc8b5ac780538` |
+| keep-ingestion | `3515ac96bd1958483b5583d59afc13d9782e6111` |
+| keep-migrations | `016d0f554de570a96e4da1cf054c9b1c70b5c768` |
+| keep-processor | `c4bb2225505453b7fd6bfea20283355da79958cf` |
+| keep-design | `99c5def93c761386e7d5161c44f482ae4cbd7539` |
 
 No dependency revisions or release manifest pins were advanced: runtime package
 requirements and schema bytes did not change, and no new commits were published.

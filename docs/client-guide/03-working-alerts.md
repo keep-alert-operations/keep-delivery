@@ -16,15 +16,15 @@ Use alert detail to understand the problem, take ownership, document your invest
 
 ## Assign responsibility
 
-Assignment is Appchi's acknowledgement mechanism. There is no separate acknowledgement button.
+Assignment is Keep's acknowledgement mechanism. There is no separate acknowledgement button.
 
 1. Select **Assign**.
 2. Choose **Assign to me**, or enter at least two characters in **Assign alert to a user**, select **Search**, and choose an eligible person.
-3. Check the assignee and resulting status. A firing alert becomes **Acknowledged** as soon as assignment succeeds; the chosen person does not have to accept it in Appchi.
+3. Check the assignee and resulting status. A firing alert becomes **Acknowledged** as soon as assignment succeeds; the chosen person does not have to accept it in Keep.
 
 To hand over, choose another person from the same menu and add a note describing the next action. To release ownership, select **Unassign**. An unassigned firing alert displays **Firing** again.
 
-You can assign resolved and suppressed alerts too. A resolved alert continues to display **Resolved** even when assigned. Assignment does not give someone access to a tenant, and Appchi provides no product notification for the handover; use your team's agreed communication process when needed.
+You can assign resolved and suppressed alerts too. A resolved alert continues to display **Resolved** even when assigned. Assignment does not give someone access to a tenant, and Keep provides no product notification for the handover; use your team's agreed communication process when needed.
 
 If a person is unavailable in the picker, do not substitute a different owner merely to make the action succeed. Check the intended person and raise the access issue with your support contact.
 
@@ -52,7 +52,7 @@ There is no alert Delete action, and you cannot edit source-owned fields such as
 
 ## Understand occurrences and history
 
-An occurrence is one firing period of a logical alert. For example, occurrence 1 opens, receives ten repeated updates, and resolves; the next firing opens occurrence 2 on that same alert. Repeats do not each become new occurrences. An alert first seen already resolved can show occurrence 0 because Appchi did not observe a firing period.
+An occurrence is one firing period of a logical alert. For example, occurrence 1 opens, receives ten repeated updates, and resolves; the next firing opens occurrence 2 on that same alert. Repeats do not each become new occurrences. An alert first seen already resolved can show occurrence 0 because Keep did not observe a firing period.
 
 | Detail tab | Use it to answer |
 | --- | --- |
@@ -82,8 +82,8 @@ Bulk changes succeed together. If one selected alert changed since you selected 
 
 An alert can change while you are reading it because another user or the source updated it. A conflict protects those newer changes. Review the latest state and your draft before trying the intended action again.
 
-If Appchi says the outcome is uncertain, the original action might already have succeeded. Use the provided **Retry original command** control when offered; it repeats that command safely. Do not assume an old Feed row proves the action failed: detail can update before search. See [Troubleshooting and glossary](07-troubleshooting-and-glossary.md) for access errors, stale views and information to include in a support report.
+If Keep says the outcome is uncertain, the original action might already have succeeded. Use the provided **Retry original command** control when offered; it repeats that command safely. Do not assume an old Feed row proves the action failed: detail can update before search. See [Troubleshooting and glossary](07-troubleshooting-and-glossary.md) for access errors, stale views and information to include in a support report.
 
 ## Reference
 
-The guide's source documents are [alert operations](../../../appchi-design/specs/spec-alert-operations.md), [alert history](../../../appchi-design/specs/spec-alert-history-technical.md), [current worker scope](../../../appchi-design/specs/spec-worker-scope.md), and [frontend UI design](../../../appchi-frontend/docs/ui-design.md).
+The guide's source documents are [alert operations](../../../keep-design/specs/spec-alert-operations.md), [alert history](../../../keep-design/specs/spec-alert-history-technical.md), [current worker scope](../../../keep-design/specs/spec-worker-scope.md), and [frontend UI design](../../../keep-frontend/docs/ui-design.md).

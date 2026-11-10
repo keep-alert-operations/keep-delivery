@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from uuid import uuid4
 import pytest
-from appchi.live import LiveRegistry, BoundedStream, publish_hints
+from keep.live import LiveRegistry, BoundedStream, publish_hints
 from test_search_pipeline import real_db  # noqa: F401
 
 
@@ -109,7 +109,7 @@ def test_api_role_publishes_cross_tenant_hints_without_domain_rls_bypass(real_db
         @contextmanager
         def transaction(self, *args, **kwargs):
             with real_db.transaction(*args, **kwargs) as conn:
-                conn.execute("SET LOCAL ROLE appchi_api")
+                conn.execute("SET LOCAL ROLE keep_api")
                 yield conn
 
     class Publisher:
@@ -123,9 +123,9 @@ def test_api_role_publishes_cross_tenant_hints_without_domain_rls_bypass(real_db
     assert any(str(tenant) in channel for channel, _ in publisher.calls)
     with real_db.transaction() as conn:
         assert not conn.execute("SELECT 1 FROM live_hint_outbox WHERE tenant_id=%s", (tenant,)).fetchone()
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         assert not conn.execute("SELECT 1 FROM alert_identities WHERE id=%s", (alert,)).fetchone()
-        conn.execute("SELECT set_config('appchi.tenant_id',%s,true)", (str(tenant),))
+        conn.execute("SELECT set_config('keep.tenant_id',%s,true)", (str(tenant),))
         assert conn.execute("SELECT 1 FROM alert_identities WHERE id=%s", (alert,)).fetchone()
         policies = conn.execute("SELECT cmd,qual FROM pg_policies WHERE tablename='alert_identities' AND policyname='tenant_scope'").fetchall()
-        assert policies and "appchi.tenant_id" in policies[0]["qual"]
+        assert policies and "keep.tenant_id" in policies[0]["qual"]

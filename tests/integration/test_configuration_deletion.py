@@ -5,9 +5,9 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.configuration.deletion import resume_delete, router
-from appchi.recovery.evidence import DurableAck
-from appchi.shared.errors import unavailable
+from keep.configuration.deletion import resume_delete, router
+from keep.recovery.evidence import DurableAck
+from keep.shared.errors import unavailable
 from test_product import browser  # noqa: F401
 
 pytestmark = pytest.mark.integration
@@ -120,7 +120,7 @@ def test_delete_is_protected_atomic_retained_and_replayable(configuration, real_
 
 
 def test_background_resumption_protects_final_after_api_disconnect(configuration, real_db):
-    from appchi.recovery.deletions import deletion_turn
+    from keep.recovery.deletions import deletion_turn
 
     client, base, store, *_ = configuration
     preset, _ = create(configuration)
@@ -277,7 +277,7 @@ def test_rls_and_invalid_evidence_fail_closed(configuration, real_db, tenant):
     )
     assert client.get(base + "/presets/" + preset["id"]).status_code == 200
     with real_db.transaction(tenant) as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         assert (
             conn.execute(
                 "SELECT * FROM configuration_delete_jobs WHERE tenant_id=%s", (own,)

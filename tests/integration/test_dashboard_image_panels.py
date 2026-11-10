@@ -192,7 +192,7 @@ def test_never_used_uploads_are_cleaned_up_by_later_uploads(configuration, real_
 
 def test_quota_limits_stored_bytes_per_tenant(configuration, real_db, monkeypatch):
     """Requirements: REV-62 limits."""
-    import appchi.configuration.image_routes as routes
+    import keep.configuration.image_routes as routes
 
     client, base, _, tenant, _ = configuration
     with real_db.transaction() as conn:

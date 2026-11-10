@@ -15,7 +15,7 @@ from uuid import UUID
 
 HERE = Path(__file__).resolve().parent
 TEMPLATES = HERE.parent
-SA = "appchi-load-test"
+SA = "keep-load-test"
 SECURITY = {
     "allowPrivilegeEscalation": False,
     "readOnlyRootFilesystem": True,
@@ -92,7 +92,7 @@ def validate(config, bootstrap_only=False):
 
 
 def metadata(name):
-    return {"name": name, "labels": {"app.kubernetes.io/part-of": "appchi"}}
+    return {"name": name, "labels": {"app.kubernetes.io/part-of": "keep"}}
 
 
 def env(values):
@@ -131,7 +131,7 @@ def tmp_volume(name="tmp", size="256Mi"):
 
 def pod(config, name, containers, volumes):
     return {
-        "metadata": {"labels": {"app": name, "app.kubernetes.io/part-of": "appchi"}},
+        "metadata": {"labels": {"app": name, "app.kubernetes.io/part-of": "keep"}},
         "spec": {
             "serviceAccountName": SA,
             "automountServiceAccountToken": False,
@@ -184,40 +184,40 @@ def foundation(config):
           "automountServiceAccountToken": False,
           "imagePullSecrets": [{"name": config["image_pull_secret"]}]}
     policies = {
-        "appchi-postgres": [rule([peer(name) for name in (
-            "appchi-product-api", "appchi-processor", "appchi-indexer", "appchi-correlation",
-            "appchi-bootstrap", "appchi-migration", "appchi-directory-publication", "appchi-keycloak",
-            "appchi-search-bootstrap", "appchi-operator-proof",
+        "keep-postgres": [rule([peer(name) for name in (
+            "keep-product-api", "keep-processor", "keep-indexer", "keep-correlation",
+            "keep-bootstrap", "keep-migration", "keep-directory-publication", "keep-keycloak",
+            "keep-search-bootstrap", "keep-operator-proof",
         )], 5432)],
-        "appchi-keycloak-db": [rule([peer("appchi-keycloak")], 5432)],
-        "appchi-kong-db": [rule([peer("appchi-kong"), peer("appchi-kong-migration")], 5432)],
-        "appchi-redis": [rule([peer("appchi-product-api")], 6379)],
-        "appchi-keycloak": [rule([router, peer("appchi-product-api"),
-                                   peer("appchi-directory-publication")], 8443)],
-        "appchi-kong": [rule([router, peer("appchi-operator-proof")], 8443),
-                         rule([peer("appchi-product-api"), peer("appchi-bootstrap")], 8444)],
-        "appchi-operator-proof": [rule([peer("appchi-product-api")], 8443)],
-        "appchi-private-ingestion": [rule([peer("appchi-kong")], 8443)],
-        "appchi-ingestion-api": [rule([router], 8000)],
-        "appchi-product-api": [rule([router, peer("appchi-frontend")], 8000)],
-        "appchi-frontend": [rule([router], 3000)],
-        "appchi-processor": [], "appchi-indexer": [], "appchi-correlation": [],
+        "keep-keycloak-db": [rule([peer("keep-keycloak")], 5432)],
+        "keep-kong-db": [rule([peer("keep-kong"), peer("keep-kong-migration")], 5432)],
+        "keep-redis": [rule([peer("keep-product-api")], 6379)],
+        "keep-keycloak": [rule([router, peer("keep-product-api"),
+                                   peer("keep-directory-publication")], 8443)],
+        "keep-kong": [rule([router, peer("keep-operator-proof")], 8443),
+                         rule([peer("keep-product-api"), peer("keep-bootstrap")], 8444)],
+        "keep-operator-proof": [rule([peer("keep-product-api")], 8443)],
+        "keep-private-ingestion": [rule([peer("keep-kong")], 8443)],
+        "keep-ingestion-api": [rule([router], 8000)],
+        "keep-product-api": [rule([router, peer("keep-frontend")], 8000)],
+        "keep-frontend": [rule([router], 3000)],
+        "keep-processor": [], "keep-indexer": [], "keep-correlation": [],
     }
     return [sa] + [ingress_policy(name, rules) for name, rules in policies.items()]
 
 
 def postgres(config, key, image):
-    name = f"appchi-{key}"
-    db = {"postgres": "appchi", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
-    user = {"postgres": "appchi_migrator", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
+    name = f"keep-{key}"
+    db = {"postgres": "keep", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
+    user = {"postgres": "keep_migrator", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
     c = container(config, image, "postgres", resource_key=key)
     c["env"] = env({
-        "PGDATA": "/var/lib/appchi-postgres/data", "POSTGRES_DB": db, "POSTGRES_USER": user,
+        "PGDATA": "/var/lib/keep-postgres/data", "POSTGRES_DB": db, "POSTGRES_USER": user,
         "POSTGRES_PASSWORD_FILE": "/run/postgres-credentials/password",
         "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --auth-local=trust",
     })
     c["ports"] = [{"name": "postgres", "containerPort": 5432}]
-    c["volumeMounts"] = [mount("data", "/var/lib/appchi-postgres"), mount("tmp", "/tmp"),
+    c["volumeMounts"] = [mount("data", "/var/lib/keep-postgres"), mount("tmp", "/tmp"),
                           mount("socket", "/var/run/postgresql"),
                           mount("tls", "/run/postgres-tls", True),
                           mount("credentials", "/run/postgres-credentials", True),
@@ -230,7 +230,7 @@ def postgres(config, key, image):
     template = pod(config, name, [c], [tmp_volume(), tmp_volume("socket", "8Mi"),
         secret_volume("tls", f"{name}-tls"),
         secret_volume("credentials", f"{name}-credentials"),
-        {"name": "config", "configMap": {"name": "appchi-postgres-hba"}}])
+        {"name": "config", "configMap": {"name": "keep-postgres-hba"}}])
     stateful = {
         "apiVersion": "apps/v1", "kind": "StatefulSet", "metadata": metadata(name),
         "spec": {"serviceName": name, "replicas": 1,
@@ -249,22 +249,22 @@ def redis(config):
                           mount("tls", "/run/redis-tls", True), mount("data", "/data")]
     # TCP only checks the listener; verify authenticated Pub/Sub separately before load.
     c["readinessProbe"] = {"tcpSocket": {"port": "tls"}, "periodSeconds": 10}
-    d = deployment(config, "appchi-redis", [c], [tmp_volume("data", "128Mi"),
-        secret_volume("config", "appchi-redis-config"),
-        secret_volume("tls", "appchi-redis-tls")], replicas=1)
-    return [d, service("appchi-redis", {"tls": 6379})]
+    d = deployment(config, "keep-redis", [c], [tmp_volume("data", "128Mi"),
+        secret_volume("config", "keep-redis-config"),
+        secret_volume("tls", "keep-redis-tls")], replicas=1)
+    return [d, service("keep-redis", {"tls": 6379})]
 
 
 def keycloak(config):
     c = container(config, "keycloak")
     c["args"] = ["start", "--optimized", "--import-realm"]
-    c["envFrom"] = [{"secretRef": {"name": "appchi-keycloak-env"}}]
+    c["envFrom"] = [{"secretRef": {"name": "keep-keycloak-env"}}]
     c["env"] = env({
         "KC_HOSTNAME": f"https://{config['hosts']['keycloak']}", "KC_HTTP_ENABLED": "false",
         "KC_HTTPS_CERTIFICATE_FILE": "/run/keycloak-tls/tls.crt",
         "KC_HTTPS_CERTIFICATE_KEY_FILE": "/run/keycloak-tls/tls.key",
         "KC_DB": "postgres",
-        "KC_DB_URL": "jdbc:postgresql://appchi-keycloak-db:5432/keycloak"
+        "KC_DB_URL": "jdbc:postgresql://keep-keycloak-db:5432/keycloak"
                      "?sslmode=verify-full&sslrootcert=/run/keycloak-trust/postgres-ca.crt",
         "KC_DB_USERNAME": "keycloak", "KC_TRUSTSTORE_PATHS": "/run/keycloak-trust",
         "JAVA_OPTS_KC_HEAP": "-Xms256m -Xmx1024m",
@@ -283,29 +283,29 @@ def keycloak(config):
     publisher = container(config, "api", "identity-publisher")
     publisher["command"] = ["python", "-c",
                             "import threading; threading.Event().wait()"]
-    publisher["envFrom"] = [{"secretRef": {"name": "appchi-identity-env"}}]
-    publisher["env"] = env({"APPCHI_ENVIRONMENT": "development"})
+    publisher["envFrom"] = [{"secretRef": {"name": "keep-identity-env"}}]
+    publisher["env"] = env({"KEEP_ENVIRONMENT": "development"})
     publisher["resources"] = {
         "requests": {"cpu": "100m", "memory": "128Mi", "ephemeral-storage": "128Mi"},
         "limits": {"cpu": "500m", "memory": "512Mi", "ephemeral-storage": "256Mi"},
     }
-    publisher["volumeMounts"] = [mount("identity", "/etc/appchi", True), mount("tmp", "/tmp")]
-    d = deployment(config, "appchi-keycloak", [c, publisher], [tmp_volume(), tmp_volume("data"),
-        secret_volume("realm", "appchi-keycloak-realm"),
-        secret_volume("tls", "appchi-keycloak-tls"),
-        secret_volume("trust", "appchi-keycloak-trust"),
-        secret_volume("identity", "appchi-identity-bindings")])
-    return [d, service("appchi-keycloak", {"https": 8443})]
+    publisher["volumeMounts"] = [mount("identity", "/etc/keep", True), mount("tmp", "/tmp")]
+    d = deployment(config, "keep-keycloak", [c, publisher], [tmp_volume(), tmp_volume("data"),
+        secret_volume("realm", "keep-keycloak-realm"),
+        secret_volume("tls", "keep-keycloak-tls"),
+        secret_volume("trust", "keep-keycloak-trust"),
+        secret_volume("identity", "keep-identity-bindings")])
+    return [d, service("keep-keycloak", {"https": 8443})]
 
 
 def kong(config):
     c = container(config, "kong")
-    c["envFrom"] = [{"secretRef": {"name": "appchi-kong-env"}}]
+    c["envFrom"] = [{"secretRef": {"name": "keep-kong-env"}}]
     c["env"] = env({
-        "KONG_DATABASE": "postgres", "KONG_PG_HOST": "appchi-kong-db",
+        "KONG_DATABASE": "postgres", "KONG_PG_HOST": "keep-kong-db",
         "KONG_PG_DATABASE": "kong", "KONG_PG_USER": "kong", "KONG_PG_SSL": "on",
         "KONG_PG_SSL_VERIFY": "on", "KONG_PREFIX": "/tmp/kong",
-        "KONG_PLUGINS": "bundled,appchi-policy", "KONG_NGINX_WORKER_PROCESSES": "1",
+        "KONG_PLUGINS": "bundled,keep-policy", "KONG_NGINX_WORKER_PROCESSES": "1",
         "KONG_PROXY_LISTEN": "0.0.0.0:8443 ssl", "KONG_ADMIN_LISTEN": "0.0.0.0:8444 ssl",
         "KONG_ADMIN_GUI_LISTEN": "off", "KONG_PROXY_ACCESS_LOG": "off",
         "KONG_ADMIN_ACCESS_LOG": "off", "KONG_PROXY_ERROR_LOG": "/dev/stderr",
@@ -320,21 +320,21 @@ def kong(config):
     c["ports"] = [{"name": "proxy", "containerPort": 8443},
                   {"name": "admin", "containerPort": 8444}]
     c["volumeMounts"] = [mount("tmp", "/tmp"), mount("tls", "/run/kong-tls", True),
-                          mount("clock-health", "/run/appchi-clock", True)]
+                          mount("clock-health", "/run/keep-clock", True)]
     probe = {"exec": {"command": ["kong", "health", "-p", "/tmp/kong"]},
              "timeoutSeconds": 5, "periodSeconds": 10}
     c["readinessProbe"] = probe
     c["startupProbe"] = {**copy.deepcopy(probe), "failureThreshold": 60}
-    volumes = [tmp_volume(), secret_volume("tls", "appchi-kong-tls"),
-               {"name": "clock-health", "configMap": {"name": "appchi-clock-health"}}]
+    volumes = [tmp_volume(), secret_volume("tls", "keep-kong-tls"),
+               {"name": "clock-health", "configMap": {"name": "keep-clock-health"}}]
     # An ordinal DNS name addresses exactly one serving member. Do not use a
     # load-balanced proxy Service as a substitute for all-member proof.
-    d = deployment(config, "appchi-kong", [c], volumes)
+    d = deployment(config, "keep-kong", [c], volumes)
     d["kind"] = "StatefulSet"
-    d["spec"]["serviceName"] = "appchi-kong-members"
+    d["spec"]["serviceName"] = "keep-kong-members"
     d["spec"]["updateStrategy"] = {"type": "OnDelete"}
-    members = service("appchi-kong-members", {"proxy": 8443, "admin": 8444})
-    members["spec"]["selector"] = {"app": "appchi-kong"}
+    members = service("keep-kong-members", {"proxy": 8443, "admin": 8444})
+    members["spec"]["selector"] = {"app": "keep-kong"}
     members["spec"]["clusterIP"] = "None"
     migration = copy.deepcopy(c)
     for key in ("ports", "readinessProbe", "startupProbe"):
@@ -343,73 +343,73 @@ def kong(config):
     migration["volumeMounts"] = [m for m in migration["volumeMounts"]
                                  if m["name"] != "clock-health"]
     migration_volumes = [copy.deepcopy(v) for v in volumes if v["name"] != "clock-health"]
-    template = pod(config, "appchi-kong-migration", [migration], migration_volumes)
+    template = pod(config, "keep-kong-migration", [migration], migration_volumes)
     template["spec"]["restartPolicy"] = "Never"
     j = {"apiVersion": "batch/v1", "kind": "Job",
-         "metadata": metadata(f"appchi-kong-bootstrap-{config['release_id']}"),
+         "metadata": metadata(f"keep-kong-bootstrap-{config['release_id']}"),
          "spec": {"backoffLimit": 0, "template": template}}
-    return [d, service("appchi-kong", {"proxy": 8443, "admin": 8444}), members], j
+    return [d, service("keep-kong", {"proxy": 8443, "admin": 8444}), members], j
 
 
 def operator_proof(config):
     c = container(config, "api", "operator-proof", resource_key="operator-proof")
-    c["command"] = ["python", "-m", "appchi.operators.proof"]
-    c["envFrom"] = [{"secretRef": {"name": "appchi-operator-proof-env"}}]
+    c["command"] = ["python", "-m", "keep.operators.proof"]
+    c["envFrom"] = [{"secretRef": {"name": "keep-operator-proof-env"}}]
     c["env"] = env({
-        "APPCHI_PROOF_CONFIG_FILE": "/etc/appchi/configuration.json",
-        "APPCHI_OPERATOR_BINDING": "/etc/appchi/operator-binding.json",
-        "APPCHI_PROOF_TOKEN_FILE": "/etc/appchi/probe-token",
-        "APPCHI_PROOF_GATEWAY_TOKEN_FILE": "/etc/appchi/gateway-probe-token",
-        "APPCHI_PROOF_CERT_FILE": "/run/proof-tls/tls.crt",
-        "APPCHI_PROOF_KEY_FILE": "/run/proof-tls/tls.key",
+        "KEEP_PROOF_CONFIG_FILE": "/etc/keep/configuration.json",
+        "KEEP_OPERATOR_BINDING": "/etc/keep/operator-binding.json",
+        "KEEP_PROOF_TOKEN_FILE": "/etc/keep/probe-token",
+        "KEEP_PROOF_GATEWAY_TOKEN_FILE": "/etc/keep/gateway-probe-token",
+        "KEEP_PROOF_CERT_FILE": "/run/proof-tls/tls.crt",
+        "KEEP_PROOF_KEY_FILE": "/run/proof-tls/tls.key",
     })
     c["ports"] = [{"name": "https", "containerPort": 8443}]
-    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("bindings", "/etc/appchi", True),
+    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("bindings", "/etc/keep", True),
                           mount("tls", "/run/proof-tls", True)]
     c["readinessProbe"] = {"httpGet": {"path": "/readyz", "port": 8443, "scheme": "HTTPS"},
                            "timeoutSeconds": 5, "periodSeconds": 10}
     c["startupProbe"] = {**copy.deepcopy(c["readinessProbe"]), "failureThreshold": 30}
-    volumes = [tmp_volume(), secret_volume("bindings", "appchi-operator-proof-bindings"),
-               secret_volume("tls", "appchi-operator-proof-tls")]
-    return [deployment(config, "appchi-operator-proof", [c], volumes),
-            service("appchi-operator-proof", {"https": 8443})]
+    volumes = [tmp_volume(), secret_volume("bindings", "keep-operator-proof-bindings"),
+               secret_volume("tls", "keep-operator-proof-tls")]
+    return [deployment(config, "keep-operator-proof", [c], volumes),
+            service("keep-operator-proof", {"https": 8443})]
 
 
 def search_bootstrap_job(config):
     search = config["search_bootstrap"]
     c = container(config, "indexer", "search-bootstrap", resource_key="search-bootstrap")
-    c["command"] = ["python", "-m", "appchi.search.bootstrap", "--binding",
-                    "/etc/appchi/search-binding.json", "--physical-index", search["physical_index"],
+    c["command"] = ["python", "-m", "keep.search.bootstrap", "--binding",
+                    "/etc/keep/search-binding.json", "--physical-index", search["physical_index"],
                     "--index-epoch", search["index_epoch"], "--operation-reference",
                     search["operation_reference"], "--ingestion-and-writers-stopped"]
-    c["envFrom"] = [{"secretRef": {"name": "appchi-indexer-env"}}]
-    c["env"] = env({"APPCHI_GLOBAL_TENANT_ID": config["global_tenant_id"],
-                    "APPCHI_ROLE": "indexer",
-                    "APPCHI_CLOCK_HEALTH_FILE": "/run/appchi-clock/health.json",
-                    "APPCHI_DATABASE_CLOCK_HEALTH_FILE": "/run/appchi-clock/pg-health.json"})
-    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("bindings", "/etc/appchi", True),
-                          mount("clock-health", "/run/appchi-clock", True)]
-    template = pod(config, "appchi-search-bootstrap", [c], [tmp_volume(),
-        secret_volume("bindings", "appchi-indexer-bindings"),
-        {"name": "clock-health", "configMap": {"name": "appchi-clock-health"}}])
+    c["envFrom"] = [{"secretRef": {"name": "keep-indexer-env"}}]
+    c["env"] = env({"KEEP_GLOBAL_TENANT_ID": config["global_tenant_id"],
+                    "KEEP_ROLE": "indexer",
+                    "KEEP_CLOCK_HEALTH_FILE": "/run/keep-clock/health.json",
+                    "KEEP_DATABASE_CLOCK_HEALTH_FILE": "/run/keep-clock/pg-health.json"})
+    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("bindings", "/etc/keep", True),
+                          mount("clock-health", "/run/keep-clock", True)]
+    template = pod(config, "keep-search-bootstrap", [c], [tmp_volume(),
+        secret_volume("bindings", "keep-indexer-bindings"),
+        {"name": "clock-health", "configMap": {"name": "keep-clock-health"}}])
     template["spec"]["restartPolicy"] = "Never"
     return {"apiVersion": "batch/v1", "kind": "Job",
-            "metadata": metadata(f"appchi-search-bootstrap-{config['release_id']}"),
+            "metadata": metadata(f"keep-search-bootstrap-{config['release_id']}"),
             "spec": {"backoffLimit": 0, "activeDeadlineSeconds": 600, "template": template}}
 
 
 def kong_routes_job(config):
     c = container(config, "api", "configure-kong", resource_key="migrations")
-    c["command"] = ["python", "/opt/appchi-bootstrap/bootstrap_kong.py", "--config",
-                    "/etc/appchi/configuration.json", "--fresh-dedicated-test-kong"]
-    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("code", "/opt/appchi-bootstrap", True),
-                          mount("bindings", "/etc/appchi", True)]
-    template = pod(config, "appchi-bootstrap", [c], [tmp_volume(),
-        {"name": "code", "configMap": {"name": "appchi-kong-bootstrap-code"}},
-        secret_volume("bindings", "appchi-kong-bootstrap-bindings")])
+    c["command"] = ["python", "/opt/keep-bootstrap/bootstrap_kong.py", "--config",
+                    "/etc/keep/configuration.json", "--fresh-dedicated-test-kong"]
+    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("code", "/opt/keep-bootstrap", True),
+                          mount("bindings", "/etc/keep", True)]
+    template = pod(config, "keep-bootstrap", [c], [tmp_volume(),
+        {"name": "code", "configMap": {"name": "keep-kong-bootstrap-code"}},
+        secret_volume("bindings", "keep-kong-bootstrap-bindings")])
     template["spec"]["restartPolicy"] = "Never"
     return {"apiVersion": "batch/v1", "kind": "Job",
-            "metadata": metadata(f"appchi-kong-routes-{config['release_id']}"),
+            "metadata": metadata(f"keep-kong-routes-{config['release_id']}"),
             "spec": {"backoffLimit": 0, "activeDeadlineSeconds": 600, "template": template}}
 
 
@@ -429,26 +429,26 @@ def route(name, host, target, port, path=None, passthrough=False):
 def routes(config):
     h = config["hosts"]
     return [
-        route("appchi-ui", h["application"], "appchi-frontend", "http", "/"),
-        route("appchi-api", h["application"], "appchi-product-api", "http", "/api"),
-        route("appchi-auth", h["application"], "appchi-product-api", "http", "/auth"),
-        route("appchi-v1", h["v1"], "appchi-ingestion-api", "http", "/"),
-        route("appchi-v2", h["v2"], "appchi-kong", "proxy", passthrough=True),
-        route("appchi-keycloak", h["keycloak"], "appchi-keycloak", "https", passthrough=True),
+        route("keep-ui", h["application"], "keep-frontend", "http", "/"),
+        route("keep-api", h["application"], "keep-product-api", "http", "/api"),
+        route("keep-auth", h["application"], "keep-product-api", "http", "/auth"),
+        route("keep-v1", h["v1"], "keep-ingestion-api", "http", "/"),
+        route("keep-v2", h["v2"], "keep-kong", "proxy", passthrough=True),
+        route("keep-keycloak", h["keycloak"], "keep-keycloak", "https", passthrough=True),
     ]
 
 
 def application_parameters(config, bootstrap_only=False):
     result = {}
     definitions = {
-        "api": ("application.template.yaml", "PRODUCT_API_IMAGE", "api", "appchi-api"),
-        "ingestion": ("ingestion-api.template.json", "INGESTION_IMAGE", "ingestion", "appchi-ingestion"),
-        "private-ingestion": ("private-ingestion.template.json", "INGESTION_IMAGE", "ingestion", "appchi-private-ingestion"),
-        "processor": ("processor.template.json", "PROCESSOR_IMAGE", "processor", "appchi-processor"),
-        "indexer": ("indexer.template.json", "INDEXER_IMAGE", "indexer", "appchi-indexer"),
-        "correlation": ("correlation.template.json", "CORRELATION_IMAGE", "correlation", "appchi-correlation"),
-        "migrations": ("migration.template.json", "MIGRATIONS_IMAGE", "migrations", "appchi-migration"),
-        "frontend": ("frontend.template.yaml", None, "frontend", "appchi-frontend"),
+        "api": ("application.template.yaml", "PRODUCT_API_IMAGE", "api", "keep-api"),
+        "ingestion": ("ingestion-api.template.json", "INGESTION_IMAGE", "ingestion", "keep-ingestion"),
+        "private-ingestion": ("private-ingestion.template.json", "INGESTION_IMAGE", "ingestion", "keep-private-ingestion"),
+        "processor": ("processor.template.json", "PROCESSOR_IMAGE", "processor", "keep-processor"),
+        "indexer": ("indexer.template.json", "INDEXER_IMAGE", "indexer", "keep-indexer"),
+        "correlation": ("correlation.template.json", "CORRELATION_IMAGE", "correlation", "keep-correlation"),
+        "migrations": ("migration.template.json", "MIGRATIONS_IMAGE", "migrations", "keep-migration"),
+        "frontend": ("frontend.template.yaml", None, "frontend", "keep-frontend"),
     }
     for key, (filename, image_param, image_key, secret_prefix) in definitions.items():
         if bootstrap_only and key != "migrations":
@@ -463,7 +463,7 @@ def application_parameters(config, bootstrap_only=False):
         if key != "migrations":
             p["REPLICAS"] = "0"
         if key not in {"migrations", "frontend"}:
-            p["CLOCK_HEALTH_CONFIGMAP"] = "appchi-clock-health"
+            p["CLOCK_HEALTH_CONFIGMAP"] = "keep-clock-health"
             if key != "api":
                 p["GLOBAL_TENANT_ID"] = config["global_tenant_id"]
         if key in {"processor", "indexer", "correlation"}:
@@ -472,12 +472,12 @@ def application_parameters(config, bootstrap_only=False):
             p.update(INGRESS_CONFIG_SECRET=f"{secret_prefix}-env",
                      INGRESS_BINDING_SECRET=f"{secret_prefix}-bindings")
         elif key == "migrations":
-            p.update(MIGRATION_SECRET="appchi-migration-env", RELEASE_ID=config["release_id"],
-                     BINDING_SECRET="appchi-migration-bindings")
+            p.update(MIGRATION_SECRET="keep-migration-env", RELEASE_ID=config["release_id"],
+                     BINDING_SECRET="keep-migration-bindings")
         elif key == "frontend":
             repo, digest = config["images"]["frontend"].split("@")
             p.update(FRONTEND_IMAGE_REPOSITORY=repo, FRONTEND_IMAGE_DIGEST=digest,
-                     API_INTERNAL_URL="http://appchi-product-api:8000", CACHE_SIZE_LIMIT="128Mi")
+                     API_INTERNAL_URL="http://keep-product-api:8000", CACHE_SIZE_LIMIT="128Mi")
         else:
             p.update(CONFIG_SECRET=f"{secret_prefix}-env", BINDING_SECRET=f"{secret_prefix}-bindings")
         result[key] = (filename, p)
@@ -495,16 +495,16 @@ def cutover_job(processor_document, release_id):
     """Reuse the canonical processor pod's identity, bindings and clock mounts."""
     workload = next(item for item in processor_document["items"]
                     if item["kind"] == "Deployment"
-                    and item["metadata"]["name"] == "appchi-processor")
+                    and item["metadata"]["name"] == "keep-processor")
     template = copy.deepcopy(workload["spec"]["template"])
     template["spec"]["restartPolicy"] = "Never"
     for c in template["spec"]["containers"]:
-        c["command"] = ["python", "-m", "appchi.kafka_cutover",
+        c["command"] = ["python", "-m", "keep.kafka_cutover",
                         "--ingress-and-legacy-workers-stopped"]
         for field in ("readinessProbe", "livenessProbe", "startupProbe"):
             c.pop(field, None)
     return {"apiVersion": "batch/v1", "kind": "Job",
-            "metadata": metadata(f"appchi-kafka-cutover-{release_id}"),
+            "metadata": metadata(f"keep-kafka-cutover-{release_id}"),
             "spec": {"backoffLimit": 0, "activeDeadlineSeconds": 600, "template": template}}
 
 
@@ -513,7 +513,7 @@ def render(config, output, bootstrap_only=False):
     output.mkdir(parents=True, exist_ok=True)
     namespace = config["namespace"]
     write_list(output, "00-foundation.json", foundation(config), namespace)
-    hba = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": metadata("appchi-postgres-hba"),
+    hba = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": metadata("keep-postgres-hba"),
            "data": {"pg_hba.conf": "local all all trust\n"
                     "hostssl all all 0.0.0.0/0 scram-sha-256\n"
                     "hostssl all all ::/0 scram-sha-256\n"
@@ -538,13 +538,13 @@ def render(config, output, bootstrap_only=False):
     for key, (template, params) in application_parameters(config, bootstrap_only).items():
         (output / f"{key}.params").write_text(
             "\n".join(f"{k}={v}" for k, v in params.items()) + "\n", encoding="utf-8")
-        target = "20-appchi-migration.json" if key == "migrations" else f"40-{key}.json"
+        target = "20-keep-migration.json" if key == "migrations" else f"40-{key}.json"
         commands.append(f'oc process --local -o json -f {shlex.quote(str(TEMPLATES / template))} '
                         f'--param-file="$OUT/{key}.params" > "$OUT/{target}"')
     # The migration template has no app label. Add one so its dedicated DB policy applies.
     commands.extend([
         f'python3 {shlex.quote(str(HERE / "render.py"))} --label-migration '
-        '"$OUT/20-appchi-migration.json"',
+        '"$OUT/20-keep-migration.json"',
     ])
     if not bootstrap_only:
         commands.append(f'python3 {shlex.quote(str(HERE / "render.py"))} '
@@ -575,7 +575,7 @@ def main():
         for item in document["items"]:
             if item["kind"] == "Job":
                 item["spec"]["template"].setdefault("metadata", {}).setdefault("labels", {})[
-                    "app"] = "appchi-migration"
+                    "app"] = "keep-migration"
         args.label_migration.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     elif args.cutover_from:
         if not args.cutover_output or not args.release_id:

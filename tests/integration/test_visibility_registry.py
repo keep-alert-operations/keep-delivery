@@ -13,9 +13,9 @@ import pytest
 from test_product import browser  # noqa: F401
 from test_permission_revision import RestrictedDatabase
 
-from appchi.visibility.limits import RegistryLimits
-from appchi.visibility.repository import snapshot_at
-from appchi.visibility.routes import router
+from keep.visibility.limits import RegistryLimits
+from keep.visibility.repository import snapshot_at
+from keep.visibility.routes import router
 
 pytestmark = pytest.mark.integration
 
@@ -160,7 +160,7 @@ def test_other_session_cannot_read_or_change_view(registry, real_db):
           activity_at,absolute_at,deployment_epoch FROM auth_sessions WHERE principal_id=%s""",
             (hashlib.sha256(handle.encode()).digest(), actor),
         )
-    client.cookies.set("__Host-appchi_session", handle)
+    client.cookies.set("__Host-keep_session", handle)
     assert client.get(path + "/" + view["id"]).status_code == 404
     assert (
         client.patch(

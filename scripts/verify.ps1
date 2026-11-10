@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repository = Split-Path -Parent $PSScriptRoot
 $backend = $repository
-$frontend = Join-Path (Split-Path -Parent $repository) 'appchi-frontend'
+$frontend = Join-Path (Split-Path -Parent $repository) 'keep-frontend'
 $python = Join-Path $backend '.venv/Scripts/python.exe'
 $npm = if (Get-Command npm.cmd -ErrorAction SilentlyContinue) { 'npm.cmd' } else { 'npm' }
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw 'Install locked dependencies with scripts/dev.ps1 -Action Install first.' }
@@ -35,20 +35,20 @@ function Run-Suite([string]$Name) {
             Frontend-Command @('run', 'build')
         }
         'Database' {
-            if ([string]::IsNullOrWhiteSpace($env:APPCHI_TEST_DATABASE_URL)) { throw 'Supply APPCHI_TEST_DATABASE_URL for an isolated test database; this suite applies migrations and writes synthetic records.' }
+            if ([string]::IsNullOrWhiteSpace($env:KEEP_TEST_DATABASE_URL)) { throw 'Supply KEEP_TEST_DATABASE_URL for an isolated test database; this suite applies migrations and writes synthetic records.' }
             Invoke-Checked { & $python -m pytest tests/integration -q --basetemp=.local/pytest-integration } 'Real PostgreSQL suite'
         }
         'Browser' {
             # Normal browser regression uses synthetic routes, even if a caller
             # previously opted in to the independently isolated real smoke.
-            $originalAdmin = $env:APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL
+            $originalAdmin = $env:KEEP_REAL_BROWSER_DATABASE_ADMIN_URL
             try {
-                [Environment]::SetEnvironmentVariable('APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL', $null, 'Process')
+                [Environment]::SetEnvironmentVariable('KEEP_REAL_BROWSER_DATABASE_ADMIN_URL', $null, 'Process')
                 Frontend-Command @('test')
-            } finally { [Environment]::SetEnvironmentVariable('APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL', $originalAdmin, 'Process') }
+            } finally { [Environment]::SetEnvironmentVariable('KEEP_REAL_BROWSER_DATABASE_ADMIN_URL', $originalAdmin, 'Process') }
         }
         'BrowserReal' {
-            if ([string]::IsNullOrWhiteSpace($env:APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL)) { throw 'Supply APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL for a local isolated cluster with disposable-database create/drop permission.' }
+            if ([string]::IsNullOrWhiteSpace($env:KEEP_REAL_BROWSER_DATABASE_ADMIN_URL)) { throw 'Supply KEEP_REAL_BROWSER_DATABASE_ADMIN_URL for a local isolated cluster with disposable-database create/drop permission.' }
             Frontend-Command @('test', '--', 'tests/integration-real.spec.ts')
         }
     }
@@ -64,8 +64,8 @@ try {
         & (Join-Path $PSScriptRoot 'dev.ps1') -Action Check
         if ($Suite -eq 'All') {
             foreach ($selected in @('Unit', 'Build', 'Browser')) { Run-Suite $selected }
-            if ($env:APPCHI_TEST_DATABASE_URL) { Run-Suite 'Database' } else { Write-Host 'SKIPPED Database: APPCHI_TEST_DATABASE_URL was not supplied.' }
-            if ($env:APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL) { Run-Suite 'BrowserReal' } else { Write-Host 'SKIPPED BrowserReal: APPCHI_REAL_BROWSER_DATABASE_ADMIN_URL was not supplied.' }
+            if ($env:KEEP_TEST_DATABASE_URL) { Run-Suite 'Database' } else { Write-Host 'SKIPPED Database: KEEP_TEST_DATABASE_URL was not supplied.' }
+            if ($env:KEEP_REAL_BROWSER_DATABASE_ADMIN_URL) { Run-Suite 'BrowserReal' } else { Write-Host 'SKIPPED BrowserReal: KEEP_REAL_BROWSER_DATABASE_ADMIN_URL was not supplied.' }
         } else { Run-Suite $Suite }
         Write-Host 'Requested feasible checks passed. Skipped/private-environment checks remain unqualified.'
     } finally { Pop-Location }

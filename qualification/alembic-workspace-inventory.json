@@ -1,57 +1,57 @@
 {
   "schema_version": 1,
   "repositories": {
-    "appchi-contracts": {
+    "keep-contracts": {
       "revision": "42107e3814a07518878291929740f5fa120fbff1",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-domain": {
+    "keep-domain": {
       "revision": "830d4f65556d93692cca60695fafb522769fe122",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-migrations": {
+    "keep-migrations": {
       "revision": "1ebe4cf72fd3878dbc44d4f7c8f5dc8c3d2a5236",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-api": {
+    "keep-api": {
       "revision": "0b8a1a351378d0a7952a405b6fac4db1d03c6096",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-ingestion": {
+    "keep-ingestion": {
       "revision": "0d2ee23a7940c2c0866498aa0646587f101651bc",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-processor": {
+    "keep-processor": {
       "revision": "4f7a3fc81483d193033c3eec9f54f6aaeb6a5392",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-correlation": {
+    "keep-correlation": {
       "revision": "ad68f9f4838848f5d318888be4b0e067d5b51e5b",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-indexer": {
+    "keep-indexer": {
       "revision": "ff88bec0e57e4fbcb3af7917e9bdbe29f5efbec3",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-frontend": {
+    "keep-frontend": {
       "revision": "c686be49fac80ce26741a474993799a6f09fa6b1",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-design": {
+    "keep-design": {
       "revision": "62e348b96b1b6dbe3024a89613db49edab6b914c",
       "dirty": false,
       "matches_manifest": true
     },
-    "appchi-delivery": {
+    "keep-delivery": {
       "revision": "6f00d8028eb6559fd6e194c4f527c7a4e6a946b6",
       "dirty": true,
       "matches_manifest": true

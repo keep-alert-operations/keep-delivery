@@ -65,7 +65,7 @@ and a fixture-only local-time formatting bug. The helper now uses the supported
 seconds precision. One explicitly recorded same-process setup compilation retry is
 permitted; any such failure keeps overall qualification false. The final feature
 run above needed no compilation retry and does not erase earlier cold failures.
-The exact ambiguous database `appchi_scale_8fc710e7b4074595a1a9064b8d2a285c` was
+The exact ambiguous database `keep_scale_8fc710e7b4074595a1a9064b8d2a285c` was
 subsequently checked and confirmed absent.
 
 ## Final requested-profile attempt
@@ -105,7 +105,7 @@ constitutes requested-profile capacity qualification.
 ## Focused correctness checks
 
 ```powershell
-.venv/Scripts/python.exe .local/run_scale_checks.py appchi-delivery tests/integration/test_scalability_pipeline.py tests/integration/test_kafka_first.py -q --disable-warnings --tb=short
+.venv/Scripts/python.exe .local/run_scale_checks.py keep-delivery tests/integration/test_scalability_pipeline.py tests/integration/test_kafka_first.py -q --disable-warnings --tb=short
 ```
 
 Initial result: 17 passed, two failed (81.39s). The failures were a new test's
@@ -186,7 +186,7 @@ After the lead's coordinated 780-test pass (65 skips), the same paced baseline r
 once with `--response-timings` and output
 `status/evidence/scalability-baseline-100-users-clock-offload.json`. All other
 workload arguments above were unchanged. The original three BI containers were
-running; unused Appchi Keycloak/Kong database services had been stopped. Production
+running; unused Keep Keycloak/Kong database services had been stopped. Production
 request, admission and compiler deadlines were unchanged.
 
 Evidence: [scalability-baseline-100-users-clock-offload.json](scalability-baseline-100-users-clock-offload.json).
@@ -240,19 +240,19 @@ editable source, not published package artifacts or a committed release manifest
 
 | Workspace-relative source | SHA256 |
 | --- | --- |
-| appchi-processor/src/appchi/kafka_source.py | 84fa40dff9b0fbc7e7a808b592d10c2cedc18774e623c1cc423982acc33a9b33 |
-| appchi-domain/src/appchi/kafka_changed.py | a72688e0a4edbb4bc864d36421f105f51f931128ce2f8dfee716a89181fef030 |
-| appchi-domain/src/appchi/pipeline_runtime.py | 642db5363ee21c92bfc7d1fe038f82993c54d537c4294168a4ae0a3b241dc3dc |
-| appchi-domain/src/appchi/db.py | fb2e7b93af3df145e145f7929a7f7d783f55a1c50016c9cb5640b6e06c07877e |
-| appchi-domain/src/appchi/recovery/guard.py | ec1abfb981419d5f52c32da7c4f1f54ef0cb61ef6cd59f99771edfebbdf92633 |
-| appchi-domain/src/appchi/search/projection.py | 8204774874e7b6a4f8c9d4a742ec63052e82b24cec917dcb643f3f9b215f85be |
-| appchi-indexer/src/appchi/search/reconciliation.py | 7df1c5ab4e6ac3b605f38e90fa9f1ea75fca19afa65a789e722fdf9a2c03560e |
-| appchi-indexer/src/appchi/search/writer.py | 5f11eca6599c45ff67b6929063c1f4603458ef34c86aa2e273a285b5517c2688 |
-| appchi-indexer/src/appchi/search/consumer.py | 2e61bd369e60934c10f6179098e8d4ab40c77e60688095d534074062a385fda5 |
-| appchi-correlation/src/appchi/correlation/consumer.py | 7f983ca8296ad945cc6854e5699ca3fbee4ea16430d0c65aedc0d2ef76a049fd |
-| appchi-delivery/qualification/scalability_load.py | 234533393fd78df3be137e4bd2e7eaab166f58383be6fb5788b0647b87577471 |
-| appchi-delivery/qualification/scalability_worker.py | 1973a15897540af8ae24d6c4dd5b10710b5ad7b89b4b41a146d564cb811ccb06 |
-| appchi-delivery/qualification/scalability_feature_fixture.py | 1e31e761c9a6e4d62fddf64bfa85fb1dacc97ca742f828059c832ab6d195efb3 |
+| keep-processor/src/keep/kafka_source.py | 84fa40dff9b0fbc7e7a808b592d10c2cedc18774e623c1cc423982acc33a9b33 |
+| keep-domain/src/keep/kafka_changed.py | a72688e0a4edbb4bc864d36421f105f51f931128ce2f8dfee716a89181fef030 |
+| keep-domain/src/keep/pipeline_runtime.py | 642db5363ee21c92bfc7d1fe038f82993c54d537c4294168a4ae0a3b241dc3dc |
+| keep-domain/src/keep/db.py | fb2e7b93af3df145e145f7929a7f7d783f55a1c50016c9cb5640b6e06c07877e |
+| keep-domain/src/keep/recovery/guard.py | ec1abfb981419d5f52c32da7c4f1f54ef0cb61ef6cd59f99771edfebbdf92633 |
+| keep-domain/src/keep/search/projection.py | 8204774874e7b6a4f8c9d4a742ec63052e82b24cec917dcb643f3f9b215f85be |
+| keep-indexer/src/keep/search/reconciliation.py | 7df1c5ab4e6ac3b605f38e90fa9f1ea75fca19afa65a789e722fdf9a2c03560e |
+| keep-indexer/src/keep/search/writer.py | 5f11eca6599c45ff67b6929063c1f4603458ef34c86aa2e273a285b5517c2688 |
+| keep-indexer/src/keep/search/consumer.py | 2e61bd369e60934c10f6179098e8d4ab40c77e60688095d534074062a385fda5 |
+| keep-correlation/src/keep/correlation/consumer.py | 7f983ca8296ad945cc6854e5699ca3fbee4ea16430d0c65aedc0d2ef76a049fd |
+| keep-delivery/qualification/scalability_load.py | 234533393fd78df3be137e4bd2e7eaab166f58383be6fb5788b0647b87577471 |
+| keep-delivery/qualification/scalability_worker.py | 1973a15897540af8ae24d6c4dd5b10710b5ad7b89b4b41a146d564cb811ccb06 |
+| keep-delivery/qualification/scalability_feature_fixture.py | 1e31e761c9a6e4d62fddf64bfa85fb1dacc97ca742f828059c832ab6d195efb3 |
 
 ## Remaining limits
 

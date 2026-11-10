@@ -3,7 +3,7 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
-  name: appchi-frontend
+  name: keep-frontend
 parameters:
   - name: SERVICE_ACCOUNT
     required: true
@@ -15,7 +15,7 @@ parameters:
     description: Verified immutable image digest, sha256 followed by colon and 64 hex digits
   - name: API_INTERNAL_URL
     required: true
-    description: Trusted internal API HTTP(S) origin; must equal image build argument APPCHI_BACKEND_URL
+    description: Trusted internal API HTTP(S) origin; must equal image build argument KEEP_BACKEND_URL
   - name: REPLICAS
     required: true
     description: Qualified frontend replica allocation as a positive integer
@@ -39,19 +39,19 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: appchi-frontend
+      name: keep-frontend
     spec:
       replicas: ${{REPLICAS}}
       selector:
         matchLabels:
-          app: appchi-frontend
+          app: keep-frontend
       template:
         metadata:
           labels:
-            app: appchi-frontend
-            app.kubernetes.io/part-of: appchi
+            app: keep-frontend
+            app.kubernetes.io/part-of: keep
           annotations:
-            appchi.io/api-build-origin: ${API_INTERNAL_URL}
+            keep.io/api-build-origin: ${API_INTERNAL_URL}
         spec:
           serviceAccountName: ${SERVICE_ACCOUNT}
           automountServiceAccountToken: false
@@ -72,7 +72,7 @@ objects:
                   value: 0.0.0.0
                 - name: NEXT_TELEMETRY_DISABLED
                   value: '1'
-                - name: APPCHI_BACKEND_URL
+                - name: KEEP_BACKEND_URL
                   value: ${API_INTERNAL_URL}
               securityContext:
                 allowPrivilegeEscalation: false
@@ -114,10 +114,10 @@ objects:
   - apiVersion: v1
     kind: Service
     metadata:
-      name: appchi-frontend
+      name: keep-frontend
     spec:
       selector:
-        app: appchi-frontend
+        app: keep-frontend
       ports:
         - name: http
           port: 3000

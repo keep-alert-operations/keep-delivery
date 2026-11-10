@@ -207,7 +207,7 @@
   "cleanup_completed": true,
   "environment_notes": {
     "bi_containers": "Three original BI containers running; no pause for this baseline",
-    "services": "Lead verified PostgreSQL init-enabled and restarted Appchi Kafka/Elasticsearch before run",
+    "services": "Lead verified PostgreSQL init-enabled and restarted Keep Kafka/Elasticsearch before run",
     "deadlines": "Application/compiler/admission acceptance unchanged"
   },
   "harness_sha256": "0666c7c27e144259d8d5b91597bca49867421249df66ecc304874a2ef4a8e82a"

@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.recovery.retirement import retire_alert
+from keep.recovery.retirement import retire_alert
 from test_incident_retirement import Store, real_db, incident  # noqa: F401
 from test_product import browser  # noqa: F401
 

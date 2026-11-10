@@ -7,11 +7,11 @@ USER root
 # Reject incompatible bases instead of granting anyuid or installing at startup.
 RUN test -x /usr/local/bin/docker-entrypoint.sh \
     && test -n "$(find /usr -name libnss_wrapper.so -print -quit)" \
-    && mkdir -p /var/lib/appchi-postgres \
-    && chgrp 0 /var/lib/appchi-postgres \
-    && chmod g=u /var/lib/appchi-postgres
-COPY --chmod=0555 entrypoint.sh /usr/local/bin/appchi-postgres
-ENV PGDATA=/var/lib/appchi-postgres/data
+    && mkdir -p /var/lib/keep-postgres \
+    && chgrp 0 /var/lib/keep-postgres \
+    && chmod g=u /var/lib/keep-postgres
+COPY --chmod=0555 entrypoint.sh /usr/local/bin/keep-postgres
+ENV PGDATA=/var/lib/keep-postgres/data
 USER 1001:0
-ENTRYPOINT ["/usr/local/bin/appchi-postgres"]
+ENTRYPOINT ["/usr/local/bin/keep-postgres"]
 CMD ["postgres"]

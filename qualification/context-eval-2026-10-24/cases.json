@@ -8,10 +8,10 @@
       "kind": "scope trap",
       "task": "Users report that incidents never resolve automatically after 30 days without activity, even though the incident specification describes inactivity expiry. Plan the fix.",
       "rubric": [
-        {"id": "a", "item": "Identifies that worker scope (REV-34, section 2) defers inactivity auto-resolution, so the observed behavior is current scope rather than a defect.", "source": "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"},
-        {"id": "b", "item": "Does not plan to reintroduce an hourly sweep or worker without a user decision; raises reinstatement as the user's choice.", "source": "appchi-delivery/workspace/AGENTS.md (current worker scope constraint)"},
-        {"id": "c", "item": "Notes that stored activity and deadline fields are kept for compatibility and that incidents resolve by explicit command.", "source": "appchi-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"},
-        {"id": "d", "item": "Points to the verification plan's worker scope correction, which makes inactivity expiry future qualification.", "source": "appchi-design/verification/verification-plan.md#worker-scope-correction"}
+        {"id": "a", "item": "Identifies that worker scope (REV-34, section 2) defers inactivity auto-resolution, so the observed behavior is current scope rather than a defect.", "source": "keep-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"},
+        {"id": "b", "item": "Does not plan to reintroduce an hourly sweep or worker without a user decision; raises reinstatement as the user's choice.", "source": "keep-delivery/workspace/AGENTS.md (current worker scope constraint)"},
+        {"id": "c", "item": "Notes that stored activity and deadline fields are kept for compatibility and that incidents resolve by explicit command.", "source": "keep-design/specs/spec-worker-scope.md#2-assignment-and-data-lifetime-automation"},
+        {"id": "d", "item": "Points to the verification plan's worker scope correction, which makes inactivity expiry future qualification.", "source": "keep-design/verification/verification-plan.md#worker-scope-correction"}
       ]
     },
     {
@@ -19,12 +19,12 @@
       "kind": "feature",
       "task": "Add editable tags to incidents, and let users filter the incident list by tag.",
       "rubric": [
-        {"id": "a", "item": "Applies shared command semantics to tag edits: expected revision, retry receipts and incident history.", "source": "appchi-design/specs/spec-system-completion.md#7-shared-commands-authorization-and-receipts"},
-        {"id": "b", "item": "Treats incident filtering as PostgreSQL incident search with its cursor and ordering rules, not the Elasticsearch alert projection.", "source": "appchi-design/specs/spec-incident-operations.md#14-incident-list-and-search-i5"},
-        {"id": "c", "item": "Plans a new forward migration in appchi-migrations that keeps tenant scoping/RLS (no edits to applied migrations).", "source": "appchi-delivery/workspace/AGENTS.md; appchi-migrations"},
-        {"id": "d", "item": "Updates the Product API contract with producer tools in appchi-contracts and regenerates the frontend client instead of hand-editing generated files.", "source": "appchi-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"},
-        {"id": "e", "item": "Covers live updates: tag edits must publish the existing incident invalidation so open views refresh.", "source": "appchi-design/context/routes/live-updates.md sources (REV-36)"},
-        {"id": "f", "item": "Raises unresolved product decisions for the user, such as tag limits, allowed characters or who may edit tags.", "source": "appchi-design/context/README.md (example)"}
+        {"id": "a", "item": "Applies shared command semantics to tag edits: expected revision, retry receipts and incident history.", "source": "keep-design/specs/spec-system-completion.md#7-shared-commands-authorization-and-receipts"},
+        {"id": "b", "item": "Treats incident filtering as PostgreSQL incident search with its cursor and ordering rules, not the Elasticsearch alert projection.", "source": "keep-design/specs/spec-incident-operations.md#14-incident-list-and-search-i5"},
+        {"id": "c", "item": "Plans a new forward migration in keep-migrations that keeps tenant scoping/RLS (no edits to applied migrations).", "source": "keep-delivery/workspace/AGENTS.md; keep-migrations"},
+        {"id": "d", "item": "Updates the Product API contract with producer tools in keep-contracts and regenerates the frontend client instead of hand-editing generated files.", "source": "keep-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"},
+        {"id": "e", "item": "Covers live updates: tag edits must publish the existing incident invalidation so open views refresh.", "source": "keep-design/context/routes/live-updates.md sources (REV-36)"},
+        {"id": "f", "item": "Raises unresolved product decisions for the user, such as tag limits, allowed characters or who may edit tags.", "source": "keep-design/context/README.md (example)"}
       ]
     },
     {
@@ -32,22 +32,22 @@
       "kind": "scope trap",
       "task": "When a maintenance window ends, the alerts it suppressed stay suppressed until they receive another update. Make suppression end at the window's end time.",
       "rubric": [
-        {"id": "a", "item": "Identifies the user decision in worker scope section 1: a suppressed alert stays suppressed after the window ends until its next source update.", "source": "appchi-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"},
-        {"id": "b", "item": "Treats the request as reversing a recorded user decision and asks the user before planning implementation.", "source": "appchi-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"},
-        {"id": "c", "item": "Notes that end-time release needs the deferred scheduler/fan-out machinery, and that no timer, read or indexer scan may clear suppression in current scope.", "source": "appchi-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"},
-        {"id": "d", "item": "Points to the worker scope correction in the verification plan for source-driven release acceptance.", "source": "appchi-design/verification/verification-plan.md#worker-scope-correction"}
+        {"id": "a", "item": "Identifies the user decision in worker scope section 1: a suppressed alert stays suppressed after the window ends until its next source update.", "source": "keep-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"},
+        {"id": "b", "item": "Treats the request as reversing a recorded user decision and asks the user before planning implementation.", "source": "keep-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"},
+        {"id": "c", "item": "Notes that end-time release needs the deferred scheduler/fan-out machinery, and that no timer, read or indexer scan may clear suppression in current scope.", "source": "keep-design/specs/spec-worker-scope.md#1-maintenance-without-a-scheduler"},
+        {"id": "d", "item": "Points to the worker scope correction in the verification plan for source-driven release acceptance.", "source": "keep-design/verification/verification-plan.md#worker-scope-correction"}
       ]
     },
     {
       "id": "T4-directory-propagation",
       "kind": "scope trap",
-      "task": "LDAP group removals take far longer than five minutes to reach Appchi. Implement the five-minute membership propagation target from the identity specification.",
+      "task": "LDAP group removals take far longer than five minutes to reach Keep. Implement the five-minute membership propagation target from the identity specification.",
       "rubric": [
-        {"id": "a", "item": "Identifies REV-35: the directory worker is not deployed and the five-minute propagation target is deferred with it.", "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
-        {"id": "b", "item": "Explains the current mechanism: explicit trusted publication (local Refresh or directory --once) and authorization from the last trusted checkpoint.", "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
-        {"id": "c", "item": "Does not quietly add a poller or login-time identity replacement, and does not treat token group claims as permissions; asks the user before reinstating polling.", "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
-        {"id": "d", "item": "Preserves the bootstrap and restore-integrity gates and the existing revocation, logout and session-expiry rules.", "source": "appchi-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
-        {"id": "e", "item": "Points to the verification plan's REV-35 scope, which makes propagation timing future qualification.", "source": "appchi-design/verification/verification-plan.md (REV-35 scope paragraph)"}
+        {"id": "a", "item": "Identifies REV-35: the directory worker is not deployed and the five-minute propagation target is deferred with it.", "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
+        {"id": "b", "item": "Explains the current mechanism: explicit trusted publication (local Refresh or directory --once) and authorization from the last trusted checkpoint.", "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
+        {"id": "c", "item": "Does not quietly add a poller or login-time identity replacement, and does not treat token group claims as permissions; asks the user before reinstating polling.", "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
+        {"id": "d", "item": "Preserves the bootstrap and restore-integrity gates and the existing revocation, logout and session-expiry rules.", "source": "keep-design/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have"},
+        {"id": "e", "item": "Points to the verification plan's REV-35 scope, which makes propagation timing future qualification.", "source": "keep-design/verification/verification-plan.md (REV-35 scope paragraph)"}
       ]
     },
     {
@@ -55,11 +55,11 @@
       "kind": "recorded decision",
       "task": "Under bursty alert load the live alert feed refreshes on nearly every SSE invalidation. Plan how the browser should batch live invalidations.",
       "rubric": [
-        {"id": "a", "item": "Finds the recorded trailing window: refresh after 500 ms without a further change, and no later than 1 s after the first unrefreshed change.", "source": "appchi-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"},
-        {"id": "b", "item": "Keeps the 250 ms window for five seconds after the user's own command so its result is not held back.", "source": "appchi-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"},
-        {"id": "c", "item": "Reloads at once on reconnect, return to a visible tab or the user's own refresh, with at most one request in flight per view.", "source": "appchi-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"},
-        {"id": "d", "item": "Keeps live publishing in the Product API (REV-36) and does not add a separate live worker.", "source": "appchi-design/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api"},
-        {"id": "e", "item": "Checks the batching against the five-second incoming visibility objective.", "source": "appchi-design/specs/spec-reliability-operations.md#1-preserved-requirements-and-ownership"}
+        {"id": "a", "item": "Finds the recorded trailing window: refresh after 500 ms without a further change, and no later than 1 s after the first unrefreshed change.", "source": "keep-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"},
+        {"id": "b", "item": "Keeps the 250 ms window for five seconds after the user's own command so its result is not held back.", "source": "keep-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"},
+        {"id": "c", "item": "Reloads at once on reconnect, return to a visible tab or the user's own refresh, with at most one request in flight per view.", "source": "keep-design/specs/spec-alert-history-technical.md#19-browser-refresh-reconnect-and-relative-time"},
+        {"id": "d", "item": "Keeps live publishing in the Product API (REV-36) and does not add a separate live worker.", "source": "keep-design/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api"},
+        {"id": "e", "item": "Checks the batching against the five-second incoming visibility objective.", "source": "keep-design/specs/spec-reliability-operations.md#1-preserved-requirements-and-ownership"}
       ]
     },
     {
@@ -67,11 +67,11 @@
       "kind": "contract change",
       "task": "Show the number of notes on each incident in the incident list. Add it to the Product API incident list response and to the incident table.",
       "rubric": [
-        {"id": "a", "item": "Changes the Product API contract in appchi-contracts with producer tools and regenerates the frontend client; no hand-edited generated artifacts.", "source": "appchi-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"},
-        {"id": "b", "item": "Recognizes this is an HTTP contract change only, not a native/Kafka event contract change.", "source": "appchi-design/context/routes/http-contract.md"},
-        {"id": "c", "item": "Uses the incident list's PostgreSQL query rules (tenant scoping, stable ordering and cursors) for the new value.", "source": "appchi-design/specs/spec-system-completion.md#15-incident-persistence-and-search"},
-        {"id": "d", "item": "Considers whether note additions must refresh open incident lists through existing live invalidation.", "source": "appchi-design/context/routes/live-updates.md sources"},
-        {"id": "e", "item": "Verifies with contract drift checks, API tests and the affected browser journey.", "source": "appchi-design/context/routes/http-contract.md (verification guidance)"}
+        {"id": "a", "item": "Changes the Product API contract in keep-contracts with producer tools and regenerates the frontend client; no hand-edited generated artifacts.", "source": "keep-design/specs/spec-system-completion.md#2-repository-generated-contracts-and-documentation"},
+        {"id": "b", "item": "Recognizes this is an HTTP contract change only, not a native/Kafka event contract change.", "source": "keep-design/context/routes/http-contract.md"},
+        {"id": "c", "item": "Uses the incident list's PostgreSQL query rules (tenant scoping, stable ordering and cursors) for the new value.", "source": "keep-design/specs/spec-system-completion.md#15-incident-persistence-and-search"},
+        {"id": "d", "item": "Considers whether note additions must refresh open incident lists through existing live invalidation.", "source": "keep-design/context/routes/live-updates.md sources"},
+        {"id": "e", "item": "Verifies with contract drift checks, API tests and the affected browser journey.", "source": "keep-design/context/routes/http-contract.md (verification guidance)"}
       ]
     }
   ]

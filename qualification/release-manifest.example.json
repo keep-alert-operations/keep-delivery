@@ -1,5 +1,5 @@
 {
-  "schema": "appchi-release-manifest-v1",
+  "schema": "keep-release-manifest-v1",
   "release_id": null,
   "source_revision": null,
   "inventory": {

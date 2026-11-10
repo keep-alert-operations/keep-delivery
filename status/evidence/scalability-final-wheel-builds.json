@@ -1,38 +1,38 @@
 [
   {
-    "repository": "appchi-contracts",
+    "repository": "keep-contracts",
     "exit_code": 0
   },
   {
-    "repository": "appchi-domain",
+    "repository": "keep-domain",
     "exit_code": 0
   },
   {
-    "repository": "appchi-migrations",
+    "repository": "keep-migrations",
     "exit_code": 0
   },
   {
-    "repository": "appchi-api",
+    "repository": "keep-api",
     "exit_code": 0
   },
   {
-    "repository": "appchi-ingestion",
+    "repository": "keep-ingestion",
     "exit_code": 0
   },
   {
-    "repository": "appchi-processor",
+    "repository": "keep-processor",
     "exit_code": 0
   },
   {
-    "repository": "appchi-correlation",
+    "repository": "keep-correlation",
     "exit_code": 0
   },
   {
-    "repository": "appchi-indexer",
+    "repository": "keep-indexer",
     "exit_code": 0
   },
   {
-    "repository": "appchi-delivery",
+    "repository": "keep-delivery",
     "exit_code": 0
   }
 ]

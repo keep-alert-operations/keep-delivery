@@ -20,20 +20,20 @@ requireThat(config.pauseSeconds >= 0.25 && config.pauseSeconds <= 60, 'pauseSeco
 requireThat(seconds(config.duration) <= 3600, 'Read chunks limited to one hour: repeat with fresh normal logins');
 requireThat(typeof config.searchCEL === 'string' && config.searchCEL.length > 0, 'Supply an actual searchCEL expression');
 requireThat(Array.isArray(accounts) && accounts.length === config.vus, 'Exactly one signed-in account/session per VU required');
-requireThat(accounts.every((a) => uuid.test(a.principal_id) && /^[A-Za-z0-9_-]{20,128}$/.test(a.cookie)), 'Use principal_id and __Host-appchi_session value from normal OIDC sessions');
+requireThat(accounts.every((a) => uuid.test(a.principal_id) && /^[A-Za-z0-9_-]{20,128}$/.test(a.cookie)), 'Use principal_id and __Host-keep_session value from normal OIDC sessions');
 requireThat(new Set(accounts.map((a) => a.principal_id)).size === config.vus && new Set(accounts.map((a) => a.cookie)).size === config.vus, 'Use distinct test accounts and sessions');
 
-const readOK = new Rate('appchi_read_ok');
-const countMs = new Trend('appchi_dashboard_ms', true);
-const searchMs = new Trend('appchi_search_ms', true);
-const observations = new Rate('appchi_dashboard_observation_valid');
+const readOK = new Rate('keep_read_ok');
+const countMs = new Trend('keep_dashboard_ms', true);
+const searchMs = new Trend('keep_search_ms', true);
+const observations = new Rate('keep_dashboard_observation_valid');
 export const options = {
   scenarios: {readers: {executor: 'constant-vus', vus: config.vus, duration: config.duration, gracefulStop: '15s'}},
   insecureSkipTLSVerify: false, noCookiesReset: true,
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)'],
   systemTags: ['status', 'method', 'name', 'scenario', 'expected_response'],
-  thresholds: {appchi_read_ok: ['rate==1'], appchi_dashboard_observation_valid: ['rate==1'],
-    appchi_dashboard_ms: ['p(99)<2000'], appchi_search_ms: ['p(99)<2000'], checks: ['rate==1']},
+  thresholds: {keep_read_ok: ['rate==1'], keep_dashboard_observation_valid: ['rate==1'],
+    keep_dashboard_ms: ['p(99)<2000'], keep_search_ms: ['p(99)<2000'], checks: ['rate==1']},
 };
 
 let csrf = null, expires = 0, refreshed = 0, loaded = null, revisions = null;
@@ -58,7 +58,7 @@ function session() {
   const now = Date.now();
   if (csrf && now - refreshed < 60000) return;
   const account = accounts[exec.vu.idInTest - 1];
-  http.cookieJar().set(origin, '__Host-appchi_session', account.cookie, {path: '/', secure: true});
+  http.cookieJar().set(origin, '__Host-keep_session', account.cookie, {path: '/', secure: true});
   const data = checkedJSON(request('GET', '/auth/session', null, 'session_refresh'), 'Normal session refresh').data;
   ensureRuntime(data?.principal?.id === account.principal_id && typeof data.csrf_token === 'string' && data.csrf_token.length > 0, 'Session principal/CSRF mismatch');
   csrf = data.csrf_token;

@@ -14,20 +14,20 @@ SOURCE = Path(__file__).resolve().parents[2] / "scripts/deployment_overlay.py"
 spec = importlib.util.spec_from_file_location("deployment_overlay", SOURCE)
 overlay = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(overlay)
-NAME = "appchi-api/Dockerfile"
-NEW = "appchi-delivery/docs/runbooks/private-test-deployment.md"
+NAME = "keep-api/Dockerfile"
+NEW = "keep-delivery/docs/runbooks/private-test-deployment.md"
 
 
 def test_python_build_overlay_transfers_poetry_metadata_and_lock():
     for repo in overlay.BUILD_REPOS:
-        if repo != "appchi-frontend":
+        if repo != "keep-frontend":
             for path in ("pyproject.toml", "poetry.toml", "poetry.lock"):
                 assert f"{repo}/{path}" in overlay.FILES
 
 
 def archive(tmp_path, files=None, extra=None):
     files = files or {NAME: (b"new", b"old"), NEW: (b"guide", None)}
-    manifest = {"format": "appchi-isolated-test-overlay-v1", "classification": "test",
+    manifest = {"format": "keep-isolated-test-overlay-v1", "classification": "test",
                 "repositories": {repo: "a" * 40 for repo in overlay.REPOS},
                 "files": {name: {"sha256": sha256(current).hexdigest(),
                                  "base_sha256": sha256(base).hexdigest() if base else None}
@@ -80,9 +80,9 @@ def test_conflict_preflights_every_file_before_writing_anything(tmp_path, monkey
     assert (root / NEW).read_bytes() == b"someone else's work"
 
 
-@pytest.mark.parametrize("name", ["../escape", "/absolute", "appchi-api/.git/config",
-                                  "appchi-api/.env", "appchi-api/unassigned.py",
-                                  "appchi-api/../appchi-api/Dockerfile"])
+@pytest.mark.parametrize("name", ["../escape", "/absolute", "keep-api/.git/config",
+                                  "keep-api/.env", "keep-api/unassigned.py",
+                                  "keep-api/../keep-api/Dockerfile"])
 def test_unassigned_and_traversal_targets_refused(tmp_path, name):
     with pytest.raises(ValueError):
         overlay.load_archive(archive(tmp_path, extra={name: b"untrusted"}))

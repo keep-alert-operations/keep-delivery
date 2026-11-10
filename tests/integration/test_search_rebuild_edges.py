@@ -6,13 +6,13 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.alerts.processor import process_one
-from appchi.ingestion.gateway import GatewayIdentity
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
-from appchi.search.rebuild import start_rebuild, rebuild_turn, cancel_rebuild
-from appchi.shared.errors import AppError
-from appchi.worker import projection_turn
+from keep.alerts.processor import process_one
+from keep.ingestion.gateway import GatewayIdentity
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
+from keep.search.rebuild import start_rebuild, rebuild_turn, cancel_rebuild
+from keep.shared.errors import AppError
+from keep.worker import projection_turn
 from test_product import admit_alert, browser  # noqa: F401
 from test_search_rebuild import browser_settings, index, real_db, state, until  # noqa: F401
 

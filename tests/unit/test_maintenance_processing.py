@@ -7,8 +7,8 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.cel.catalog import FIELDS, RULE_FIELDS
-from appchi.maintenance.processing import (
+from keep.cel.catalog import FIELDS, RULE_FIELDS
+from keep.maintenance.processing import (
     claim_due,
     prepare_catalog,
     record_input,
@@ -16,9 +16,9 @@ from appchi.maintenance.processing import (
     reconcile_alert,
     step_job,
 )
-from appchi.maintenance.temporal import MaintenanceProofError
-from appchi.shared.errors import AppError
-from appchi.shared.transactions import coordinator
+from keep.maintenance.temporal import MaintenanceProofError
+from keep.shared.errors import AppError
+from keep.shared.transactions import coordinator
 
 from test_maintenance_repository import body, create, maintenance_browser, maintenance_db  # noqa: F401, F811
 
@@ -364,9 +364,9 @@ PROFILE = {
 
 
 def publish_source(db, tenant, before, catalog, *, message="match", key=None):
-    from appchi.alerts.lifecycle import apply_source
-    from appchi.alerts.repository import publish, store_alert
-    from appchi.maintenance.runtime import apply_transition
+    from keep.alerts.lifecycle import apply_source
+    from keep.alerts.repository import publish, store_alert
+    from keep.maintenance.runtime import apply_transition
 
     with db.transaction(tenant) as conn:
         _, now = coordinator(conn, tenant)
@@ -404,8 +404,8 @@ def publish_source(db, tenant, before, catalog, *, message="match", key=None):
 def test_runtime_source_repeat_revisions_effect_queue_and_withdrawal(
     maintenance_browser, maintenance_db
 ):
-    from appchi.maintenance.processing import Effects
-    from appchi.maintenance.runtime import persist_effects, prepare_for_tenant
+    from keep.maintenance.processing import Effects
+    from keep.maintenance.runtime import persist_effects, prepare_for_tenant
 
     db, _, tenant, _, _, _ = setup(maintenance_browser, maintenance_db)
     catalog = prepare_for_tenant(db, tenant, PROFILE)
@@ -446,8 +446,8 @@ def test_runtime_source_repeat_revisions_effect_queue_and_withdrawal(
 
 
 def test_runtime_keeps_suppression_until_source_update(maintenance_browser, maintenance_db):
-    from appchi.maintenance.processing import derive_current
-    from appchi.maintenance.runtime import prepare_for_tenant, worker_turn
+    from keep.maintenance.processing import derive_current
+    from keep.maintenance.runtime import prepare_for_tenant, worker_turn
 
     db, client, tenant, window, _, _ = setup(maintenance_browser, maintenance_db)
     catalog = prepare_for_tenant(db, tenant, PROFILE)
@@ -467,8 +467,8 @@ def test_runtime_keeps_suppression_until_source_update(maintenance_browser, main
 
 def test_runtime_budgets_are_optional_but_must_be_valid(maintenance_browser, maintenance_db):
     """Requirements: REV-39; system completion 23."""
-    from appchi.maintenance.runtime import prepare_for_tenant, worker_turn
-    from appchi.shared.capacity import UNLIMITED
+    from keep.maintenance.runtime import prepare_for_tenant, worker_turn
+    from keep.shared.capacity import UNLIMITED
 
     db, _, tenant, _, _, _ = setup(maintenance_browser, maintenance_db)
     for invalid in (True, 0, "100"):
@@ -483,9 +483,9 @@ def test_runtime_budgets_are_optional_but_must_be_valid(maintenance_browser, mai
 def test_enabled_alert_api_assignment_notes_noop_and_inactivity(
     maintenance_browser, maintenance_db
 ):
-    from appchi.alerts.routes import router as alert_router
-    from appchi.inactivity import expire_alert
-    from appchi.maintenance.runtime import prepare_for_tenant
+    from keep.alerts.routes import router as alert_router
+    from keep.inactivity import expire_alert
+    from keep.maintenance.runtime import prepare_for_tenant
 
     client, tenant, editor, app = maintenance_browser
     db, _ = maintenance_db
@@ -540,9 +540,9 @@ def test_enabled_alert_api_assignment_notes_noop_and_inactivity(
 def test_enabled_source_processor_admission_and_repeat_revision(
     maintenance_browser, maintenance_db
 ):
-    from appchi.alerts.processor import process_one
-    from appchi.ingestion.native import canonical
-    from appchi.ingestion.service import Admission
+    from keep.alerts.processor import process_one
+    from keep.ingestion.native import canonical
+    from keep.ingestion.service import Admission
 
     client, _, principal, app = maintenance_browser
     db, _ = maintenance_db

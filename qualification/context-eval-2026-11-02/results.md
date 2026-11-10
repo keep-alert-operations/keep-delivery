@@ -5,7 +5,7 @@ as it could, asked for candidate improvements to be tested by sub-agents, then f
 live trial of the recommended one before deciding. This record covers both studies
 and the four small fixes the user approved afterwards. Cases and rubrics:
 [cases.json](cases.json). The design choice is recorded in the
-[design register](../../../appchi-design/decisions/design-register.md#context-catalog-fixes--2026-11-02).
+[design register](../../../keep-design/decisions/design-register.md#context-catalog-fixes--2026-11-02).
 
 ## Snapshot
 

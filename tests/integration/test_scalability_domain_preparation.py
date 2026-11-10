@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from appchi.maintenance import preparation, processing
-from appchi.shared.errors import AppError
+from keep.maintenance import preparation, processing
+from keep.shared.errors import AppError
 from test_correlation_configuration import rules
 # Host-clock receipts may lead the database clock; wait it out like the consumer.
 from test_kafka_first import apply_waiting, receipt
@@ -98,7 +98,7 @@ def test_late_source_and_catalog_change_prepare_outside_writer_lock(
 
 
 def test_unrelated_tenant_order_is_rebound_without_replaying(setup, real_db, v1, monkeypatch):
-    from appchi.maintenance import runtime
+    from keep.maintenance import runtime
 
     _, _, tenant, config = setup
     receive(real_db, config, v1, 0)
@@ -132,7 +132,7 @@ def test_unrelated_tenant_order_is_rebound_without_replaying(setup, real_db, v1,
 def test_same_alert_input_head_conflict_retries_without_losing_source(
     setup, real_db, v1, monkeypatch
 ):
-    from appchi.maintenance import runtime
+    from keep.maintenance import runtime
 
     _, _, tenant, config = setup
     receive(real_db, config, v1, 0)

@@ -1,6 +1,6 @@
 # Kafka-first protocol cutover and recovery
 
-This runbook implements [the normative pipeline](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-kafka-alert-pipeline.md).
+This runbook implements [the normative pipeline](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-kafka-alert-pipeline.md).
 Production/shared-service changes require separate authorization and service-owner
 evidence. Do not infer production readiness from local test results.
 
@@ -8,18 +8,18 @@ evidence. Do not infer production readiness from local test results.
 
 1. Preserve backups and independently protected fences using the supplied recovery
    contract. Apply the forward migrations with the migration identity. Keep
-   `APPCHI_KAFKA_ADMISSION_ENABLED=false` on all new ingress processes.
+   `KEEP_KAFKA_ADMISSION_ENABLED=false` on all new ingress processes.
 2. Fence every old ingress endpoint, including the development combined Product
    API and Grafana routes. Drain accepted old work with the compatible old image:
    source items, received/changed outboxes, correlation and maintenance effects,
    and visible projection proof. Stop all old workers after draining. Do not use
    new workers to interpret old received envelopes.
-3. Install the Appchi Kong plugin in the owner-supplied Kong image and run its
-   forward plugin migration. Configure Key Auth before Appchi policy, pinned private
+3. Install the Keep Kong plugin in the owner-supplied Kong image and run its
+   forward plugin migration. Configure Key Auth before Keep policy, pinned private
    mTLS, credential stripping, direct serving-member proof endpoints and host clock
    evidence. Reconcile existing operators using the new binding profile and verify
    the complete serving pool. Existing legacy identity probes are insufficient.
-4. With ingress and workers stopped, run `python -m appchi.kafka_cutover
+4. With ingress and workers stopped, run `python -m keep.kafka_cutover
    --ingress-and-legacy-workers-stopped` in the configured application environment.
    The command verifies PG drain, blocks saved rules whose compiled fields/grouping
    reference `assignee_id`, captures Kafka ends for both topics, initializes the
@@ -27,7 +27,7 @@ evidence. Do not infer production readiness from local test results.
    broker must report topic IDs. A partial failure is retried while ingress remains
    fenced. Never reset these groups on a live system.
 5. Supply the existing immutable Global UUID, Kafka credentials and clock-health
-   binding to ingress. Set `APPCHI_KAFKA_ADMISSION_ENABLED=true` only after cutover.
+   binding to ingress. Set `KEEP_KAFKA_ADMISSION_ENABLED=true` only after cutover.
    Start source, correlation and indexer roles, plus existing non-alert roles. Do
    not start alert relay or `*-hints` roles. Verify readiness, offsets, rejection
    diagnostics, actual v2 denial/allow and completed search passes before opening
@@ -55,7 +55,7 @@ The owner publishes fresh per-workload clock evidence in the mounted
 `offset_seconds`, and ISO8601 UTC `measured_at`. The evidence must attest the host
 running that workload, be updated within 60 seconds, and prove absolute offset at
 most 1 second. Bind scheduling/evidence publication accordingly; a shared stale
-timestamp is insufficient. Product API uses the same clock evidence for mutations. Product/worker mounts also contain `pg-health.json`, supplied by the PostgreSQL owner for the currently authoritative database clock; `APPCHI_DATABASE_CLOCK_HEALTH_FILE` binds it. Ingress has no PG clock dependency.
+timestamp is insufficient. Product API uses the same clock evidence for mutations. Product/worker mounts also contain `pg-health.json`, supplied by the PostgreSQL owner for the currently authoritative database clock; `KEEP_DATABASE_CLOCK_HEALTH_FILE` binds it. Ingress has no PG clock dependency.
 Kong uses its plugin clock-health file; only isolated local setup opts out.
 
 Source needs read access to received, transactional write to changed and its stable
@@ -93,13 +93,13 @@ Owners supply endpoints, topology and ACLs; templates do not prescribe allocatio
   IDs. Another delivery at a coordinate PostgreSQL recorded records
   `source_coordinate_conflict` and fences that partition without a timed retry. The
   local launcher also refuses to start workers in that state. Apply the reviewed
-  reset of [REV-40](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-40--reviewed-reset-after-lost-local-kafka-storage-2026-10-25):
+  reset of [REV-40](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-40--reviewed-reset-after-lost-local-kafka-storage-2026-10-25):
   stop writers and back up PostgreSQL and the broker log; assess lost inputs after
   the last confirmed offset; disable rules whose epoch spans the loss through the
   normal command; in one transaction relabel only the stale rows' `topic` to
   `<topic>@lost-<date>` (never delete them) and set diagnostic positions to broker
   committed offsets; with source, correlation and indexer stopped, run
-  `python -m appchi.kafka_cutover --record-topic-identity`; restart, verify
+  `python -m keep.kafka_cutover --record-topic-identity`; restart, verify
   processing and re-enable those rules. The command records the new topic IDs only
   when each partition still holds PostgreSQL's recorded history, and otherwise
   fails with `kafka_topic_history_mismatch`. The
@@ -107,7 +107,7 @@ Owners supply endpoints, topology and ACLs; templates do not prescribe allocatio
   records one execution, before this check existed.
 - A cutover recorded before migration 0054 has no topic IDs, and the updated source
   refuses with `kafka_topic_identity_unrecorded`. Stop source, correlation and
-  indexer, apply 0054, run `python -m appchi.kafka_cutover --record-topic-identity`,
+  indexer, apply 0054, run `python -m keep.kafka_cutover --record-topic-identity`,
   then start the updated workers.
 - Retained source failures log `source_partition_retry` (or `source_partition_fenced`)
   with partition, offset, reason, exception class and the AppError code or SQLSTATE.

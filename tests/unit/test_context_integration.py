@@ -10,7 +10,7 @@ SPEC.loader.exec_module(DOCUMENTS)
 
 
 def install(workspace):
-    canonical = workspace / 'appchi-delivery' / 'workspace'
+    canonical = workspace / 'keep-delivery' / 'workspace'
     canonical.mkdir(parents=True)
     for name, text in (('AGENTS.md', '# Guidance\n'), ('CLAUDE.md', '@AGENTS.md\n')):
         (canonical / name).write_text(text, encoding='utf-8')

@@ -4,10 +4,10 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.alerts.processor import process_one
-from appchi.ingestion.native import canonical
-from appchi.ingestion.service import Admission
-from appchi.shared.errors import AppError
+from keep.alerts.processor import process_one
+from keep.ingestion.native import canonical
+from keep.ingestion.service import Admission
+from keep.shared.errors import AppError
 
 pytestmark = pytest.mark.integration
 
@@ -100,7 +100,7 @@ def test_identity_conflict_is_terminal(real_db, cipher, profile, v1):
 
 
 def test_old_failure_cannot_block_next_head(real_db, cipher, profile, v1):
-    from appchi.alerts.processor import record_failure
+    from keep.alerts.processor import record_failure
 
     service = Admission(real_db, cipher, profile)
     service.admit(canonical(v1), "v1")

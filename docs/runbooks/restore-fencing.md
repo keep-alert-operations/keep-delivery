@@ -17,7 +17,7 @@ operator workers: the SQL guard cannot cancel an HTTP request already sent to
 Kong or Grafana. This procedure does not authorize a company deployment or remote
 configuration change.
 
-For Kafka-first deployments, disable `APPCHI_KAFKA_ADMISSION_ENABLED` on every
+For Kafka-first deployments, disable `KEEP_KAFKA_ADMISSION_ENABLED` on every
 native v1/v2 and Grafana ingress process and remove incoming traffic before
 `begin`. Stop or drain requests already inside the admission path and wait for
 their bounded Kafka publication attempts to settle; include the ten-second v2
@@ -29,21 +29,21 @@ records. Keep those topic/group boundaries for recovery. Do not change
 and changing it could reopen legacy writer paths.
 
 Use a separately controlled database identity with the migration-created
-`appchi_recovery` role. Runtime API/worker identities cannot change restore control
-or enumerate staged evidence. `APPCHI_RECOVERY_DATABASE_URL` belongs only to the
+`keep_recovery` role. Runtime API/worker identities cannot change restore control
+or enumerate staged evidence. `KEEP_RECOVERY_DATABASE_URL` belongs only to the
 recovery command, never an API or worker deployment. Ordinary runtimes pass their
 configured deployment epoch into the database boundary. Direct `Database` use
 without an epoch is reserved for administrative tools and synthetic test fixtures.
 
 ```sh
-python -m appchi.recovery.restore_cli begin \
+python -m keep.recovery.restore_cli begin \
   --run-id '<new operation UUID>' \
   --previous-epoch '<independently established previous epoch>' \
   --deployment-epoch '<fresh independently established UUID>' \
   --operation-reference '<controlled deployment operation reference>'
-python -m appchi.recovery.restore_cli status '<operation UUID>'
-python -m appchi.recovery.restore_cli collect '<operation UUID>'
-python -m appchi.recovery.restore_cli assess '<operation UUID>' \
+python -m keep.recovery.restore_cli status '<operation UUID>'
+python -m keep.recovery.restore_cli collect '<operation UUID>'
+python -m keep.recovery.restore_cli assess '<operation UUID>' \
   --deployment-epoch '<current recovery deployment UUID>'
 ```
 

@@ -1,15 +1,15 @@
 # Context layer implementation evidence — 2026-10-12
 
 The user requested implementation of task-based reading plans and a linked map
-for the Appchi workspace. This record covers local context tooling, navigation
+for the Keep workspace. This record covers local context tooling, navigation
 and documentation checks. It does not qualify an application release or measure
 live-agent effectiveness.
 
 ## Result and ownership
 
-- Design owns the [catalog](../../appchi-design/context/task-map.json),
-  [guide](../../appchi-design/context/README.md), 37 deterministic routing cases,
-  [map](../../appchi-design/context/map.md) and 23 generated route pages.
+- Design owns the [catalog](../../keep-design/context/task-map.json),
+  [guide](../../keep-design/context/README.md), 37 deterministic routing cases,
+  [map](../../keep-design/context/map.md) and 23 generated route pages.
 - Delivery owns the standard-library [reader](../scripts/context.py),
   [context gate](check_context.py), tests and workspace installation guidance.
 - All eleven repository entrypoints now select sources according to task impact.
@@ -55,11 +55,11 @@ Commands below run from delivery unless stated otherwise.
 |---|---|
 | `python scripts/workspace.py bootstrap` | Passed; preserved existing checkouts/branches and installed matching entrypoints without overwriting prior backups. |
 | `.venv/Scripts/python.exe -m pytest tests/unit/test_context.py tests/unit/test_context_integration.py tests/unit/test_workspace_instructions.py -q -p no:cacheprovider --basetemp .local/context-layer/pytest-final-2` | 45 passed, 1 skipped. |
-| `.venv/Scripts/python.exe -m ruff check scripts/context.py qualification/check_context.py qualification/verify_documents.py tests/unit/test_context.py tests/unit/test_context_integration.py ../appchi-design/scripts/check_docs.py` | Passed. |
+| `.venv/Scripts/python.exe -m ruff check scripts/context.py qualification/check_context.py qualification/verify_documents.py tests/unit/test_context.py tests/unit/test_context_integration.py ../keep-design/scripts/check_docs.py` | Passed. |
 | `python scripts/context.py render` then `python qualification/check_context.py` | Passed: 72 source records, 23 routes, 37 routing cases, 24 generated documents. |
 | `python qualification/verify_documents.py` | Passed document targets, fences, 566 historical source-inventory destinations, REV-01 through REV-38, installed entrypoints and context gate. |
 | `python scripts/check_docs.py` in design | Passed local links, fences and decision identifiers. |
-| `python scripts/context.py plan --path appchi-contracts/schemas/product.openapi.json --format json` | Selects behavior and HTTP contract routes; does not select native/event contracts. |
+| `python scripts/context.py plan --path keep-contracts/schemas/product.openapi.json --format json` | Selects behavior and HTTP contract routes; does not select native/event contracts. |
 | Isolated integration smoke under ignored `.local/context-layer` | Incident mutations select behavior/incidents/shared commands/mutations with 8 source records; repeated render is byte-stable; unmatched request remains unresolved. |
 | Copied standalone design fixture | Passes with 21 explicitly deferred sibling targets; broken design target and missing target in an existing sibling each fail. |
 | `git diff --check` in all eleven repositories | Passed. |
@@ -85,17 +85,17 @@ task evidence. Existing staged, unstaged and untracked work was preserved.
 
 | Repository | HEAD at verification |
 |---|---|
-| appchi-api | `b865b54135bd07b6e8e97c9ff43308600a3aac26` |
-| appchi-contracts | `a8bebad730846362aa23a08ebc17a5e6605a72ba` |
-| appchi-correlation | `7abeacd388d3300ba3d7f3fd14878835ff45ea41` |
-| appchi-delivery | `8f0ae7a16c4fdbec27abb27dbbf54824aadbfd20` |
-| appchi-design | `48f8431ec3a3828e8e4b5fbd3627dbe2f8df8643` |
-| appchi-domain | `da0b94ade43b9bf9a999e6653c8fecce725b6a09` |
-| appchi-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` |
-| appchi-indexer | `fc63b612e086a45603c1080d004cf94a98c3e136` |
-| appchi-ingestion | `269da924f5c33686df60c19a1341753f36a85a0c` |
-| appchi-migrations | `7e6ffd4dba92559ddc3ad2eeebf6ef1106229e0b` |
-| appchi-processor | `f23b3275afd48e2a8371932fbf1951513d05963b` |
+| keep-api | `b865b54135bd07b6e8e97c9ff43308600a3aac26` |
+| keep-contracts | `a8bebad730846362aa23a08ebc17a5e6605a72ba` |
+| keep-correlation | `7abeacd388d3300ba3d7f3fd14878835ff45ea41` |
+| keep-delivery | `8f0ae7a16c4fdbec27abb27dbbf54824aadbfd20` |
+| keep-design | `48f8431ec3a3828e8e4b5fbd3627dbe2f8df8643` |
+| keep-domain | `da0b94ade43b9bf9a999e6653c8fecce725b6a09` |
+| keep-frontend | `5c1bfd052042b0df8538cd73f2395e2fd7f70a82` |
+| keep-indexer | `fc63b612e086a45603c1080d004cf94a98c3e136` |
+| keep-ingestion | `269da924f5c33686df60c19a1341753f36a85a0c` |
+| keep-migrations | `7e6ffd4dba92559ddc3ad2eeebf6ef1106229e0b` |
+| keep-processor | `f23b3275afd48e2a8371932fbf1951513d05963b` |
 
 ## Delivery prerequisites and limits
 
@@ -142,16 +142,16 @@ is identified by its own commit, with `self` retained in the manifest.
 
 | Repository | Pushed prerequisite commit |
 |---|---|
-| appchi-api | `e8ca51dbbe083cdfc358ff3f3200766297d8db66` |
-| appchi-contracts | `870e075432ef9eaba4cfdb89a8e6e4c7b5e3c49a` |
-| appchi-correlation | `50518169792148fc705f9ecb2561cab5480767a5` |
-| appchi-design | `69e86646827eab2047f68dd0c5bc212b3af5e6ac` |
-| appchi-domain | `04c09764a6d73f01dc4685bd6fdf270a019567de` |
-| appchi-frontend | `2ac606e65bb5b29f945820a46a32915817e8c187` |
-| appchi-indexer | `4781b9860f1c8650d23665aeac0789546534eaa2` |
-| appchi-ingestion | `ea168498f65727ba96a44e10da63c66a367f6255` |
-| appchi-migrations | `7ebd18ff25ee10fb894a86fac52910ec27f96b3b` |
-| appchi-processor | `d808b92fa63c87c3ebd8991b769f725782927de3` |
+| keep-api | `e8ca51dbbe083cdfc358ff3f3200766297d8db66` |
+| keep-contracts | `870e075432ef9eaba4cfdb89a8e6e4c7b5e3c49a` |
+| keep-correlation | `50518169792148fc705f9ecb2561cab5480767a5` |
+| keep-design | `69e86646827eab2047f68dd0c5bc212b3af5e6ac` |
+| keep-domain | `04c09764a6d73f01dc4685bd6fdf270a019567de` |
+| keep-frontend | `2ac606e65bb5b29f945820a46a32915817e8c187` |
+| keep-indexer | `4781b9860f1c8650d23665aeac0789546534eaa2` |
+| keep-ingestion | `ea168498f65727ba96a44e10da63c66a367f6255` |
+| keep-migrations | `7ebd18ff25ee10fb894a86fac52910ec27f96b3b` |
+| keep-processor | `d808b92fa63c87c3ebd8991b769f725782927de3` |
 
 Remote CI completion and production qualification are separate from the successful
 local checks and branch pushes; neither is asserted by this record.

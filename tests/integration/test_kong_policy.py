@@ -1,4 +1,4 @@
-"""Actual installed local Kong Key Auth + Appchi policy; no Appchi DB lookup."""
+"""Actual installed local Kong Key Auth + Keep policy; no Keep DB lookup."""
 
 import hashlib
 import json
@@ -16,14 +16,14 @@ pytestmark = pytest.mark.integration
 
 
 def test_actual_kong_prepared_activation_revoke_expiry_and_generation():
-    if os.getenv("APPCHI_TEST_LOCAL_KONG") != "1":
+    if os.getenv("KEEP_TEST_LOCAL_KONG") != "1":
         pytest.skip("Requires configured isolated local Kong")
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
     from local_v2 import client, credentials, KONG, GATEWAY
 
     operator, tenant, credential = str(uuid4()), str(uuid4()), str(uuid4())
     key = "vena_" + secrets.token_urlsafe(32)
-    headers = {"X-Appchi-Probe-Token": credentials()["probe_token"]}
+    headers = {"X-Keep-Probe-Token": credentials()["probe_token"]}
     document = {
         "operator_id": operator,
         "tenant_id": tenant,
@@ -44,7 +44,7 @@ def test_actual_kong_prepared_activation_revoke_expiry_and_generation():
             def policy(generation):
                 encoded = json.dumps(document, sort_keys=True, separators=(",", ":"))
                 response = http.put(
-                    KONG + "/appchi-policies/" + operator,
+                    KONG + "/keep-policies/" + operator,
                     json={"generation": generation, "document": encoded},
                 )
                 assert response.is_success, response.status_code
@@ -67,14 +67,14 @@ def test_actual_kong_prepared_activation_revoke_expiry_and_generation():
             # A stale worker can neither regress generation nor change a generation's meaning.
             assert (
                 http.put(
-                    KONG + "/appchi-policies/" + operator,
+                    KONG + "/keep-policies/" + operator,
                     json={"generation": 1, "document": encoded},
                 ).status_code
                 == 409
             )
             assert (
                 http.put(
-                    KONG + "/appchi-policies/" + operator,
+                    KONG + "/keep-policies/" + operator,
                     json={"generation": 2, "document": encoded + " "},
                 ).status_code
                 == 409
@@ -105,7 +105,7 @@ def test_actual_kong_prepared_activation_revoke_expiry_and_generation():
 
 
 def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
-    if os.getenv("APPCHI_TEST_LOCAL_KONG") != "1":
+    if os.getenv("KEEP_TEST_LOCAL_KONG") != "1":
         pytest.skip("Requires configured isolated local Kong")
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
     from local_v2 import client, credentials, KONG, GATEWAY
@@ -115,10 +115,10 @@ def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
     key = "vena_" + secrets.token_urlsafe(32)
     health_path = (
         Path(__file__).resolve().parents[2]
-        / "deploy/kong/appchi-policy"
+        / "deploy/kong/keep-policy"
         / (".clock-test-" + operator + ".json")
     )
-    container_path = "/usr/local/share/lua/5.1/kong/plugins/appchi-policy/" + health_path.name
+    container_path = "/usr/local/share/lua/5.1/kong/plugins/keep-policy/" + health_path.name
     token = credentials()["probe_token"]
     with client() as http:
         try:
@@ -129,7 +129,7 @@ def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
                 KONG + f"/consumers/{operator}/key-auth/{credential}",
                 json={"id": credential, "key": key},
             ).is_success
-            service = http.get(KONG + "/services/appchi-local-v2").json()["id"]
+            service = http.get(KONG + "/services/keep-local-v2").json()["id"]
             assert http.put(
                 KONG + "/routes/" + name,
                 json={
@@ -153,7 +153,7 @@ def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
             assert http.post(
                 KONG + "/routes/" + name + "/plugins",
                 json={
-                    "name": "appchi-policy",
+                    "name": "keep-policy",
                     "config": {
                         "member_id": "test",
                         "probe_active": True,
@@ -170,7 +170,7 @@ def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
                 "credentials": {credential: {"state": "current"}},
             }
             assert http.put(
-                KONG + "/appchi-policies/" + operator,
+                KONG + "/keep-policies/" + operator,
                 json={"generation": 1, "document": json.dumps(document)},
             ).is_success
 
@@ -179,7 +179,7 @@ def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
                 while True:
                     result = http.post(
                         GATEWAY + "/__local/" + name,
-                        headers={"X-API-Key": key, "X-Appchi-Probe-Token": token},
+                        headers={"X-API-Key": key, "X-Keep-Probe-Token": token},
                     )
                     if result.status_code != 404 or monotonic() >= deadline:
                         return result
@@ -206,7 +206,7 @@ def test_actual_kong_untrusted_clock_fences_allow_but_preserves_denial():
                 assert auth().status_code == 503
             document["credentials"] = {}
             assert http.put(
-                KONG + "/appchi-policies/" + operator,
+                KONG + "/keep-policies/" + operator,
                 json={"generation": 2, "document": json.dumps(document)},
             ).is_success
             assert auth().status_code == 401

@@ -2,7 +2,7 @@
 
 Status: **approved by the user on 2026-10-30**, including both open proposals. Executed evidence is in [implementation status](../status/implementation-status.md).
 Approved mock: [Incident reports mock](https://claude.ai/artifact/NxBWGUChKyvq1CnRJmxoky), option A, Incidents only.
-Recorded in the design register as [REV-53](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md).
+Recorded in the design register as [REV-53](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md).
 
 ## 1. Goal
 
@@ -16,7 +16,7 @@ Noise reports (alert occurrences, flapping, suppression, top sources) are **out 
 
 Base revisions (origin/main, fetched 2026-10-30): api `5bb8de8`, contracts `9f4736f`, migrations `2d0e8c7`,
 domain `d34e038`, frontend `1a3dfc5`, design `c973b4d`, delivery `ccd6e33`. Free numbers: **REV-53** (REV-52 is
-claimed by open PR appchi-design#17) and **migration 0058**.
+claimed by open PR keep-design#17) and **migration 0058**.
 
 ## 2. Decisions
 
@@ -118,7 +118,7 @@ Period `[from, to)`. Only incidents whose identity is not retired count. Times a
   `incident_identities.retired_at` hides retired incidents. `correlation_contexts.rule_id` →
   `correlation_rules(name, deleted_at)`.
 
-### 5.2 Migration 0058 (appchi-migrations)
+### 5.2 Migration 0058 (keep-migrations)
 
 ```sql
 CREATE INDEX incident_cycles_tenant_opened   ON incident_cycles(tenant_id, opened_at);
@@ -132,10 +132,10 @@ transaction rules out `CONCURRENTLY`, so the build blocks incident cycle and act
 belongs in the stopped-writer migration window, like 0050–0052. Add the Alembic wrapper, the SQL, a
 `checksums.json` entry and a README paragraph. The API is correct without the indexes, only slower.
 
-### 5.3 Query (appchi-api, new `reports/incidents.py`)
+### 5.3 Query (keep-api, new `reports/incidents.py`)
 
 One `REPEATABLE READ READ ONLY` transaction runs after `authorize(..., "view")`, which sets
-`appchi.tenant_id` for RLS. Every statement also filters `tenant_id` explicitly.
+`keep.tenant_id` for RLS. Every statement also filters `tenant_id` explicitly.
 
 1. **Clock and bins in Python.** Read `now()` once. Compute `H`, the covered range, the previous range and
    the **bin edges as UTC instants** with `zoneinfo`, using the pinned zone list (`maintenance/timezones.zone`).
@@ -212,8 +212,8 @@ data.unavailable ["first_response", "assignee"] | []
 ```
 
 The response is documented with the existing `documented()` models so the OpenAPI includes the shape.
-Contracts are regenerated with `appchi-delivery/qualification/generate_http_contracts.py` into
-`appchi-contracts/schemas/*.json`. The frontend then re-pins `@appchi/contracts` and runs `npm run generate`;
+Contracts are regenerated with `keep-delivery/qualification/generate_http_contracts.py` into
+`keep-contracts/schemas/*.json`. The frontend then re-pins `@keep/contracts` and runs `npm run generate`;
 generated files are never hand-edited. The endpoint is a read-only GET with no audit or command identity. Errors
 are 404 for no access, 422 for validation, and 503 `query_deadline` or `database_unavailable` with Retry-After.
 
@@ -224,7 +224,7 @@ It does not reload on live incident hints (`scope.version`), because a 90-day ag
 would cost far more than it helps. A refresh keeps the previous figures (`useResource`) and says
 "Refreshing…". "Computed …" uses `meta.computed_at`.
 
-## 8. Frontend (appchi-frontend)
+## 8. Frontend (keep-frontend)
 
 - `workspace.tsx`: add `["reports", "Reports"]` after dashboards. `resources.tsx`: a `reports` case, because the
   default falls to admin. `icons.tsx`: a `reports` bar-chart icon.
@@ -247,18 +247,18 @@ would cost far more than it helps. A refresh keeps the previous figures (`useRes
 Integration owner: this session (`/eng-coordinate`). Work happens in worktrees on `codex/incident-reports`
 branches; the main checkouts stay untouched.
 
-1. **appchi-design**: REV-53 entry; spec-incident-operations new §20 "Incident reports (I5, N3; REV-53)" plus
+1. **keep-design**: REV-53 entry; spec-incident-operations new §20 "Incident reports (I5, N3; REV-53)" plus
    a preamble note; spec-system-completion §3 dated rail note and §10 route; spec map Incidents row;
    verification-plan "### Incident reports (REV-53)"; `scripts/check_docs.py` REV range to 53; context
    `task-map.json` adds §20 to the incidents route, then `context.py render`. **Lands after the REV-52 PR**
    (contiguous REV check), rebased on it.
-2. **appchi-migrations**: 0058, as in §5.2.
-3. **appchi-domain**: no change expected. It reuses `authorize`, `zone`, `principal_names` and the masking helper.
-4. **appchi-api**: `reports/incidents.py`, the router, models, unit tests and real-PostgreSQL integration tests.
+2. **keep-migrations**: 0058, as in §5.2.
+3. **keep-domain**: no change expected. It reuses `authorize`, `zone`, `principal_names` and the masking helper.
+4. **keep-api**: `reports/incidents.py`, the router, models, unit tests and real-PostgreSQL integration tests.
    It depends on contracts/domain pins only for existing helpers.
-5. **appchi-contracts**: regenerated schemas from the API at its new head (producer tool).
-6. **appchi-frontend**: re-pin contracts, `npm run generate`, Reports page, deep links, styles, docs, Playwright specs.
-7. **appchi-delivery**: this plan in `docs/`, implementation-status entry, delivery-readiness rollout paragraph,
+5. **keep-contracts**: regenerated schemas from the API at its new head (producer tool).
+6. **keep-frontend**: re-pin contracts, `npm run generate`, Reports page, deep links, styles, docs, Playwright specs.
+7. **keep-delivery**: this plan in `docs/`, implementation-status entry, delivery-readiness rollout paragraph,
    `verify_documents.py` REV range, `schema-producers.json` hashes if they change, and manifest plus lock
    pins for the changed repositories.
 

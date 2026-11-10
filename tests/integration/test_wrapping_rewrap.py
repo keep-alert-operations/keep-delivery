@@ -8,9 +8,9 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.shared.crypto import EnvelopeCipher
-from appchi.shared.rewrap import FAMILIES, rewrap_page
-from appchi.shared.errors import AppError
+from keep.shared.crypto import EnvelopeCipher
+from keep.shared.rewrap import FAMILIES, rewrap_page
+from keep.shared.errors import AppError
 from test_search_pipeline import real_db  # noqa: F401
 
 pytestmark = pytest.mark.integration
@@ -103,7 +103,7 @@ def test_all_known_families_rewrap_without_changing_identity_or_lifecycle(secret
     @contextmanager
     def restricted(*args, **kwargs):
         with original(*args, **kwargs) as conn:
-            conn.execute("SET LOCAL ROLE appchi_worker")
+            conn.execute("SET LOCAL ROLE keep_worker")
             yield conn
 
     database.transaction = restricted

@@ -1,6 +1,6 @@
-# Appchi workspace guidance
+# Keep workspace guidance
 
-Open the parent directory containing the eleven independent Appchi Git repositories.
+Open the parent directory containing the eleven independent Keep Git repositories.
 This is the shared entrypoint for Codex and Claude Code. Read each affected
 repository's AGENTS.md and scoped instructions explicitly, even if the client did
 not load them automatically. Paths below are relative to this workspace root.
@@ -11,7 +11,7 @@ Questions, changes, investigations, reviews and operations all start here.
 
 1. Name the intent (what the request asks you to do) and pick the topics it concerns
    from the index below by meaning. Combine topics when a request crosses areas.
-2. From `appchi-delivery`, run `python scripts/context.py plan --intent INTENT
+2. From `keep-delivery`, run `python scripts/context.py plan --intent INTENT
    --topic TOPIC --content`. The plan says what to do and when you are finished,
    includes the authoritative sections with their scope corrections, shows where the
    code lives and lists related topics with the condition for reading each.
@@ -27,7 +27,7 @@ Questions, changes, investigations, reviews and operations all start here.
 6. Act when intended behavior, constraints, affected boundaries and verification are
    understood. Reopen reading when new evidence changes scope.
 
-<!-- BEGIN generated context index: edit appchi-design/context/task-map.json, then run context.py render. -->
+<!-- BEGIN generated context index: edit keep-design/context/task-map.json, then run context.py render. -->
 **Intents:** `question` (understand or answer) · `change` (add or modify) · `review` (check a diff) · `investigate` (unexpected behavior) · `operate` (run, release, recover). Unclear requests start as `question`.
 
 | Area | Topic | Covers |
@@ -61,7 +61,7 @@ Questions, changes, investigations, reviews and operations all start here.
 | Engineering | `documentation` | Agent instructions, this context catalog, navigation, document links and prose that do not change requirements. |
 <!-- END generated context index -->
 
-From `appchi-delivery` (Python 3.13; standard library only):
+From `keep-delivery` (Python 3.13; standard library only):
 
 ```powershell
 python scripts/context.py list
@@ -82,19 +82,19 @@ topic pages, extracted text, memories and old test reports do not replace them.
 
 | Repository | Owns |
 |---|---|
-| appchi-frontend | Next.js UI, generated client, browser tests and Keycloak theme. |
-| appchi-api | HTTP product API, human auth, synchronous provisioning and live/SSE. |
-| appchi-ingestion | Stateless v1/v2/Grafana admission, Kafka publication and Kong plugin. |
-| appchi-processor | Source application, immutable replay proof and Kafka offset transactions. |
-| appchi-correlation | Changed-event evaluation and automatic incident creation/attachment. |
-| appchi-indexer | Alert search projection, reconciliation, watermarks and rebuilds. |
-| appchi-domain | Shared transactional business rules; no server or separate database. |
-| appchi-contracts | Native/event definitions, generated HTTP artifacts and compatibility. |
-| appchi-migrations | One ordered PostgreSQL migration chain and dedicated migration image. |
-| appchi-delivery | Workspace tooling, deployment, runbooks and executed qualification evidence. |
-| appchi-design | Authoritative specifications, decisions, architecture and acceptance requirements. |
+| keep-frontend | Next.js UI, generated client, browser tests and Keycloak theme. |
+| keep-api | HTTP product API, human auth, synchronous provisioning and live/SSE. |
+| keep-ingestion | Stateless v1/v2/Grafana admission, Kafka publication and Kong plugin. |
+| keep-processor | Source application, immutable replay proof and Kafka offset transactions. |
+| keep-correlation | Changed-event evaluation and automatic incident creation/attachment. |
+| keep-indexer | Alert search projection, reconciliation, watermarks and rebuilds. |
+| keep-domain | Shared transactional business rules; no server or separate database. |
+| keep-contracts | Native/event definitions, generated HTTP artifacts and compatibility. |
+| keep-migrations | One ordered PostgreSQL migration chain and dedicated migration image. |
+| keep-delivery | Workspace tooling, deployment, runbooks and executed qualification evidence. |
+| keep-design | Authoritative specifications, decisions, architecture and acceptance requirements. |
 
-The detailed policies in `appchi-delivery/docs/agent-workflows.md` remain binding
+The detailed policies in `keep-delivery/docs/agent-workflows.md` remain binding
 where applicable. Read the following sections when their trigger applies:
 
 | Work | Required policy sections |
@@ -115,7 +115,7 @@ where applicable. Read the following sections when their trigger applies:
   projection, Kafka the alert pipeline and Redis a hint transport. Preserve tenant
   scoping/RLS, idempotency, revisions, lock order, atomic history/proof and recovery fences.
 - Preserve native v1/v2, fixed Global, immutable operator tenant routing, Kafka-acked
-  admission and the PostgreSQL-before-Kafka replay protocol. Ingestion has no Appchi
+  admission and the PostgreSQL-before-Kafka replay protocol. Ingestion has no Keep
   PostgreSQL, Elasticsearch or Redis dependency. Never mix fenced consumer generations.
 - Current worker scope (REV-34–36) governs deferred automation. Do not reintroduce
   directory polling, expiry/retention/assignment sweeps, operator or live workers by
@@ -146,16 +146,16 @@ where applicable. Read the following sections when their trigger applies:
 <!-- eng-project-setup -->
 ## Navigation and maintenance
 
-- Architecture: `appchi-design/architecture/README.md`.
-- Source authority: `appchi-design/specs/spec-alerts-management-system.md` (Specification map).
-- Setup and context commands: `appchi-delivery/docs/repository-workspace.md`.
-- Requirements: `appchi-design/verification/verification-plan.md`.
-- Verification procedure: `appchi-delivery/docs/runbooks/development.md`, section
+- Architecture: `keep-design/architecture/README.md`.
+- Source authority: `keep-design/specs/spec-alerts-management-system.md` (Specification map).
+- Setup and context commands: `keep-delivery/docs/repository-workspace.md`.
+- Requirements: `keep-design/verification/verification-plan.md`.
+- Verification procedure: `keep-delivery/docs/runbooks/development.md`, section
   "Repeatable verification workflow". Application changes run the agreed smoke
   baseline plus impact-based checks; backend changes affecting UI also require
   browser journeys. Report blocked/skipped checks and repair/retest failures.
   Documentation-only changes use documentation/discovery checks.
-- Executed evidence: `appchi-delivery/status/implementation-status.md` and `appchi-delivery/status/delivery-readiness.md`.
+- Executed evidence: `keep-delivery/status/implementation-status.md` and `keep-delivery/status/delivery-readiness.md`.
 - Context checks: `python qualification/check_context.py` in delivery.
 - Documentation checks: `python qualification/verify_documents.py` in delivery;
   `python scripts/check_docs.py` in design. These are relevant checks, not startup commands.
@@ -163,7 +163,7 @@ where applicable. Read the following sections when their trigger applies:
   runs `qualification/check_contracts.py`, `qualification/verify_boundaries.py` and
   coordinated `scripts/workspace.py test`; editable installation is an explicit override.
 
-Maintain this file in `appchi-delivery/workspace/AGENTS.md` and the thin CLAUDE.md
+Maintain this file in `keep-delivery/workspace/AGENTS.md` and the thin CLAUDE.md
 import beside it. Reconcile root edits before running delivery's
 `python scripts/workspace.py bootstrap`; preserve any existing backup. Keep installed
 and canonical copies consistent. The context index above is generated from the

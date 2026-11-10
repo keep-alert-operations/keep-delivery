@@ -7,10 +7,10 @@ $repository = Split-Path -Parent $PSScriptRoot
 $state = Join-Path $repository '.local/runtime'
 $python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
-$modules = @{ source='appchi.processor.main'; correlation='appchi.correlation.main'; indexer='appchi.search.main' }
+$modules = @{ source='keep.processor.main'; correlation='keep.correlation.main'; indexer='keep.search.main' }
 $recordFile = Join-Path $state 'workers.json'
 $stackMarker = Join-Path $state 'compose-stack.json'
-$env:APPCHI_LOCAL_KAFKA_PORT = '19093'
+$env:KEEP_LOCAL_KAFKA_PORT = '19093'
 
 function Checked([scriptblock]$Command) {
     & $Command
@@ -51,8 +51,8 @@ try {
             Checked { & scripts/local-v2.ps1 -Action Stop }
         }
         Checked { & scripts/local-identity.ps1 -Action Stop }
-        Checked { docker compose -p appchi-local-stack -f $compose stop }
-        Write-Host 'Appchi processes and all local Compose services stopped; credentials and volumes preserved.'
+        Checked { docker compose -p keep-local-stack -f $compose stop }
+        Write-Host 'Keep processes and all local Compose services stopped; credentials and volumes preserved.'
         return
     }
     if ($Action -eq 'Status') {
@@ -70,12 +70,12 @@ try {
     Checked { & scripts/local-identity.ps1 -Action Start -Restart:$restartManaged }
     $values = Get-Content -LiteralPath '.local/keycloak/app-environment.json' -Raw | ConvertFrom-Json
     foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name,[string]$item.Value,'Process') }
-    $env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
-    $env:APPCHI_POOL_SIZE = '1'
+    $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
+    $env:KEEP_POOL_SIZE = '1'
     Checked { & $python scripts/local_runtime.py require-kafka-cutover }
     Checked { & $python scripts/local_runtime.py migrate-search }
     Checked { & $python scripts/local_runtime.py probe }
-    Checked { & $python -m appchi.search.local_bootstrap --evidence qualification/pytest-local-runtime-es.xml }
+    Checked { & $python -m keep.search.local_bootstrap --evidence qualification/pytest-local-runtime-es.xml }
     $roles = @('source','indexer','correlation')
     $current = @()
     foreach ($role in $roles) {
@@ -85,7 +85,7 @@ try {
             $current += $existing[0]
             continue
         }
-        $env:APPCHI_WORKER_HEALTH_PATH = Join-Path $state "$role.health.json"
+        $env:KEEP_WORKER_HEALTH_PATH = Join-Path $state "$role.health.json"
         $process = Start-Process -FilePath $python -ArgumentList "-m $($modules[$role])" -WorkingDirectory $repository -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$role.out.log") -RedirectStandardError (Join-Path $state "$role.err.log")
         $record = [pscustomobject]@{ Role=$role; Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o'); WorkerId=0 }
         $record.WorkerId = Worker-Id $record
@@ -97,7 +97,7 @@ try {
     if (Test-Path -LiteralPath (Join-Path $repository '.local/operators/verification.json')) {
         Checked { & scripts/local-v2.ps1 -Action Start -Restart:$restartManaged }
     }
-    @{ compose_project='appchi-local-stack'; initialized_at=[datetime]::UtcNow.ToString('o'); postgres_port=55433; elasticsearch_port=59201 } | ConvertTo-Json | Set-Content -LiteralPath $stackMarker
-    Write-Host 'Core local Appchi is running: https://localhost:3443'
+    @{ compose_project='keep-local-stack'; initialized_at=[datetime]::UtcNow.ToString('o'); postgres_port=55433; elasticsearch_port=59201 } | ConvertTo-Json | Set-Content -LiteralPath $stackMarker
+    Write-Host 'Core local Keep is running: https://localhost:3443'
     Write-Host 'Correlation and maintenance are always on; protected recovery remains gated; optional local v2 uses scripts/local-v2.ps1.'
 } finally { Pop-Location }

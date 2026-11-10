@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.search.projection import index_mapping
+from keep.search.projection import index_mapping
 from test_kafka_first import apply, receipt
 from test_search_pipeline import real_db  # noqa: F401
 
@@ -22,17 +22,17 @@ PER_PARTITION = 10
 def test_busy_partitions_share_one_bulk_and_commit_their_own_offsets(real_db, tenant, v1):
     from confluent_kafka import Producer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
-    from appchi.kafka_changed import ChangedConsumer
+    from keep.kafka_changed import ChangedConsumer
 
-    bootstrap = os.getenv("APPCHI_TEST_KAFKA_BOOTSTRAP")
-    elasticsearch = os.getenv("APPCHI_TEST_ELASTICSEARCH_URL")
+    bootstrap = os.getenv("KEEP_TEST_KAFKA_BOOTSTRAP")
+    elasticsearch = os.getenv("KEEP_TEST_ELASTICSEARCH_URL")
     if not bootstrap or not elasticsearch:
         pytest.skip("Requires isolated Kafka and Elasticsearch")
     # Imported here so collection survives an indexer pin from before #11.
-    from appchi.search import consumer, reconciliation
+    from keep.search import consumer, reconciliation
 
     if not hasattr(consumer, "index_groups"):
-        pytest.skip("requires appchi-indexer with index_groups")
+        pytest.skip("requires keep-indexer with index_groups")
     index_batch, index_groups, index_record = (
         consumer.index_batch,
         consumer.index_groups,
@@ -42,12 +42,12 @@ def test_busy_partitions_share_one_bulk_and_commit_their_own_offsets(real_db, te
         environment="development",
         global_tenant_id=tenant,
         elasticsearch_url=elasticsearch,
-        elasticsearch_index="appchi-hints-" + uuid4().hex,
+        elasticsearch_index="keep-hints-" + uuid4().hex,
     )
     kafka = SimpleNamespace(
         environment="hints-" + uuid4().hex, global_tenant_id=tenant, kafka_bootstrap=bootstrap
     )
-    topic = f"appchi.{kafka.environment}.alerts.changed"
+    topic = f"keep.{kafka.environment}.alerts.changed"
     admin = AdminClient({"bootstrap.servers": bootstrap})
     for future in admin.create_topics([NewTopic(topic, PARTITIONS, 1)]).values():
         future.result(15)
@@ -125,7 +125,7 @@ def test_busy_partitions_share_one_bulk_and_commit_their_own_offsets(real_db, te
             index=search.elasticsearch_index, ignore_unavailable=True
         )
         service.close()
-        real_db._appchi_projection_service = None
+        real_db._keep_projection_service = None
     with real_db.transaction() as conn:
         positions = conn.execute(
             "SELECT partition,next_offset FROM kafka_consumer_positions WHERE consumer='indexer' AND topic=%s",

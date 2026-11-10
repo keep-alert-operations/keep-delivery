@@ -54,7 +54,7 @@ export function nativeTime(date) {
 }
 
 export function payload(config, runId, key, sequence, at = new Date()) {
-  const marker = `Appchi load ${runId} ${key} sequence=${sequence} `;
+  const marker = `Keep load ${runId} ${key} sequence=${sequence} `;
   const shared = {
     application: `load-${runId}`,
     node_name: key,
@@ -69,7 +69,7 @@ export function payload(config, runId, key, sequence, at = new Date()) {
   return {
     ...shared, component: 'synthetic-load', severity: 'critical', status: 'firing',
     site: 'load-test', impact: 'Synthetic qualification traffic',
-    runbook_url: 'https://example.invalid/appchi-load-test',
+    runbook_url: 'https://example.invalid/keep-load-test',
   };
 }
 

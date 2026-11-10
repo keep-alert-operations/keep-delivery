@@ -26,12 +26,12 @@ instrumentation for that requirement. No receipt-status endpoint is assumed.
 ## Build and transfer
 
 Use a build machine with access to the approved k6 base image and your private
-registry. From `appchi-delivery`:
+registry. From `keep-delivery`:
 
 ```sh
 docker build --build-arg K6_IMAGE=APPROVED_K6_IMAGE_AT_SHA256_DIGEST \
-  -t PRIVATE_REGISTRY/appchi-load-test:REVIEWED_TAG qualification/load-test
-docker push PRIVATE_REGISTRY/appchi-load-test:REVIEWED_TAG
+  -t PRIVATE_REGISTRY/keep-load-test:REVIEWED_TAG qualification/load-test
+docker push PRIVATE_REGISTRY/keep-load-test:REVIEWED_TAG
 ```
 
 Record the resulting immutable digest in the Job. If the build machine cannot
@@ -47,23 +47,23 @@ Mount the cluster CA bundle as `/trust/ca-bundle.pem`; do not add `--insecure-sk
 
 1. Complete the runbook's migrations, Kafka/search/gateway readiness and trusted
    identity publication. Use an isolated synthetic-data namespace/environment.
-2. For v2 create a real operator through Appchi, complete provisioning and copy
+2. For v2 create a real operator through Keep, complete provisioning and copy
    its current active key through the normal authorized UI/API. Save only its
    value in a protected local file `private/operator-key`. The endpoint must be
    the public Kong route, never private ingestion or forged gateway headers.
    V1 uses the public v1 endpoint and the actual fixed Global tenant UUID.
-3. Sign each dedicated Keycloak test user in through the real Appchi browser
+3. Sign each dedicated Keycloak test user in through the real Keep browser
    `/auth/login` flow after trusted publication and grants. Obtain the
-   `__Host-appchi_session` cookie value using the browser's protected developer
+   `__Host-keep_session` cookie value using the browser's protected developer
    tools and that user's `principal.id` from `/auth/session`. Do not create a
-   database session, accept a raw Keycloak token as an Appchi session, or change
+   database session, accept a raw Keycloak token as a Keep session, or change
    the application to bypass OIDC. Do not share one session between simulated
    users.
 4. Create `private/sessions.json` as an array with one `{ "principal_id": "...",
    "cookie": "..." }` per concurrent read user; see the placeholder-only
    [example](profiles/sessions.example.json). Copy secrets directly to the file;
    do not echo them or commit them. A seed-visibility check uses the first user.
-5. Through Appchi create a 24-panel dashboard with repeated preset references and
+5. Through Keep create a 24-panel dashboard with repeated preset references and
    another with 24 distinct valid queries, including relative-time queries.
    Preserve their UUIDs and the actual tenant UUID. Use synthetic fixtures whose
    expected counts you can independently calculate. Keep definitions unchanged
@@ -73,12 +73,12 @@ Create the namespace-scoped inputs without putting credentials in YAML or comman
 arguments (commands below run on the private-network operator workstation):
 
 ```sh
-oc -n APPCHI_TEST_NAMESPACE create secret generic appchi-load-auth \
+oc -n KEEP_TEST_NAMESPACE create secret generic keep-load-auth \
   --from-file=operator-key=private/operator-key \
   --from-file=sessions.json=private/sessions.json
-oc -n APPCHI_TEST_NAMESPACE create configmap appchi-load-trust \
+oc -n KEEP_TEST_NAMESPACE create configmap keep-load-trust \
   --from-file=ca-bundle.pem=private/ca-bundle.pem
-oc -n APPCHI_TEST_NAMESPACE create configmap appchi-load-profile \
+oc -n KEEP_TEST_NAMESPACE create configmap keep-load-profile \
   --from-file=profile.json=qualification/load-test/profiles/diagnostic-10.json
 ```
 
@@ -102,7 +102,7 @@ Use a separate `REPLACE_STAGE_RESULT_PVC` per Job when read/ingestion Jobs may
 overlap on different nodes. The example uses ReadWriteOnce; do not share that
 volume concurrently across nodes. An owner-supplied ReadWriteMany class is an
 alternative. Preserve/export each PVC separately. The Job uses the runbook's
-`appchi-load-test` service account and its private-registry pull secret.
+`keep-load-test` service account and its private-registry pull secret.
 Run seed and verification before ingestion. `backoffLimit: 0` and
 `restartPolicy: Never` are intentional: a restarted generator cannot safely
 continue its in-memory ordering/FIFO state.
@@ -114,7 +114,7 @@ continue its in-memory ordering/FIFO state.
 | Ingestion | `[run, /work/ingestion.js]` | Unique Job name; set `FIXTURE_READY=1` only after seed visibility and authoritative checks succeed. |
 | Reads | `[run, /work/reads.js]` | Separate reads profile/Job; distinct real sessions; `DASHBOARD_IDS` is comma-separated. |
 
-Start each Job with `oc -n APPCHI_TEST_NAMESPACE apply -f YOUR_FILLED_JOB.yaml`.
+Start each Job with `oc -n KEEP_TEST_NAMESPACE apply -f YOUR_FILLED_JOB.yaml`.
 Inspect status and logs with `oc get jobs,pods` and `oc logs job/JOB_NAME`. Wait
 for Job completion and preserve its termination exit code, not just its logs.
 Each script writes sanitized JSON into the result PVC, keyed by run and stage.
@@ -126,7 +126,7 @@ an OOM, interrupted iteration or nonzero exit means incomplete/failed evidence.
 The example generator allocation (1 CPU/1 GiB request, 2 CPU/2 GiB limit) is a
 diagnostic starting point. Monitor its CPU throttling/memory/network alongside
 the application. The 500/2,000-VU profiles may need substantially more allocation;
-measure and adjust before concluding Appchi has a bottleneck. Keep one generator
+measure and adjust before concluding Keep has a bottleneck. Keep one generator
 process (`parallelism: 1`); distributing a shared `RUN_ID` across Jobs breaks
 key ownership and unique ordinals. Use separate profiles/run identities for a
 deliberately partitioned multi-generator experiment.
@@ -154,8 +154,8 @@ multi-item requests use `{"alerts":[{"payload":{...}}]}`.
 Primary profiles use a 3,500-character ASCII message and pad the serialized native
 object with a small amount of JSON whitespace to exactly 4,096 UTF-8 bytes. Most
 of that size is actual message content that reaches history/search. The
-`appchi_normalized_member_bytes`, `appchi_raw_member_bytes`,
-`appchi_envelope_bytes` and `appchi_request_body_bytes_attempted` metrics report
+`keep_normalized_member_bytes`, `keep_raw_member_bytes`,
+`keep_envelope_bytes` and `keep_request_body_bytes_attempted` metrics report
 compact field JSON, transported members, request bodies and total offered body
 bytes respectively. Compare both member measurements in every report.
 
@@ -274,7 +274,7 @@ Local checks (no traffic or cluster required):
 On Windows use `.venv/Scripts/python.exe`. Node is used to execute the pure
 generator contracts and syntax checks; tests explicitly skip those checks when
 Node is absent. Native generated payloads are validated against the installed
-Appchi contracts package; record its pinned/editable revision with the test run.
+Keep contracts package; record its pinned/editable revision with the test run.
 
 Upstream behavior references: [arrival-rate dropped iterations](https://grafana.com/docs/k6/latest/using-k6/scenarios/concepts/dropped-iterations/),
 [cookie jars](https://grafana.com/docs/k6/latest/javascript-api/k6-http/cookiejar/),

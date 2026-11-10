@@ -71,13 +71,13 @@ In **Notes**, write what you observed, what you tried, the result and the next a
 
 Notes may contain up to 10,000 characters and must include nonblank text. Editors can edit or delete any incident note, including on a resolved incident. **Edit note** and **Save note** add a revision. **Delete note** hides the current text while retaining its history. Readers can inspect note revisions and deletion records.
 
-Use **Activity** to understand who changed status, responsibility or membership and when. Use **Cycles** to distinguish the original investigation from later reopenings. Appchi does not send product notifications; use your team's normal communication channel when another person must act.
+Use **Activity** to understand who changed status, responsibility or membership and when. Use **Cycles** to distinguish the original investigation from later reopenings. Keep does not send product notifications; use your team's normal communication channel when another person must act.
 
 ## Resolve, then reopen only if necessary
 
 When the investigation is complete, add a final note and select **Resolved**. A note is useful but not required. Check the linked alerts separately: they keep their own firing/resolved state. The incident releases its active ownership of those alerts while preserving relationships in history.
 
-To reopen a resolved incident, select **Open** or **Investigating** in its status controls. Reopening starts a new lifecycle cycle and preserves an eligible assignee. It can fail if another active incident now owns a linked alert, or if another active incident occupies the same originating correlation-rule group. Review the blocking incident; Appchi does not silently take ownership away from it.
+To reopen a resolved incident, select **Open** or **Investigating** in its status controls. Reopening starts a new lifecycle cycle and preserves an eligible assignee. It can fail if another active incident now owns a linked alert, or if another active incident occupies the same originating correlation-rule group. Review the blocking incident; Keep does not silently take ownership away from it.
 
 There is no **Delete incident** action. The current release also has **no automatic inactivity resolution or automatic retention sweep**: an incident stays active until someone resolves it or all its linked alerts resolve, and a resolved incident is not removed automatically. Explicitly resolve finished work. An older **Activity** or **Cycles** entry may still record an automatic inactivity resolution; it describes a past event, not a current timer.
 
@@ -89,6 +89,6 @@ Three alerts describe checkout errors, payment timeouts and queue growth. Open o
 
 ## Reference
 
-This chapter follows [incident operations](../../../appchi-design/specs/spec-incident-operations.md), [correlation rules](../../../appchi-design/specs/spec-correlation-rules.md) and the superseding [current worker scope](../../../appchi-design/specs/spec-worker-scope.md).
+This chapter follows [incident operations](../../../keep-design/specs/spec-incident-operations.md), [correlation rules](../../../keep-design/specs/spec-correlation-rules.md) and the superseding [current worker scope](../../../keep-design/specs/spec-worker-scope.md).
 
 [Guide contents](README.md) · [Next: Presets and dashboards](05-presets-and-dashboards.md)

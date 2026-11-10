@@ -16,26 +16,26 @@ from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 import pytest
 
-from appchi.config import Settings
-from appchi.db import Database
-from appchi.maintenance.routes import router
-from appchi.migrate import migrate
-from appchi.recovery.evidence import DurableAck
-from appchi.shared.errors import AppError, unavailable
+from keep.config import Settings
+from keep.db import Database
+from keep.maintenance.routes import router
+from keep.migrate import migrate
+from keep.recovery.evidence import DurableAck
+from keep.shared.errors import AppError, unavailable
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="module")
 def maintenance_db():
-    admin = os.environ.get("APPCHI_MAINTENANCE_TEST_ADMIN_URL") or os.environ.get(
-        "APPCHI_IDENTITY_TEST_ADMIN_URL"
+    admin = os.environ.get("KEEP_MAINTENANCE_TEST_ADMIN_URL") or os.environ.get(
+        "KEEP_IDENTITY_TEST_ADMIN_URL"
     )
     if not admin:
         pytest.skip(
-            "Set APPCHI_MAINTENANCE_TEST_ADMIN_URL to an isolated test cluster with CREATE DATABASE privilege"
+            "Set KEEP_MAINTENANCE_TEST_ADMIN_URL to an isolated test cluster with CREATE DATABASE privilege"
         )
-    name = "appchi_maintenance_test_" + uuid4().hex
+    name = "keep_maintenance_test_" + uuid4().hex
     with psycopg.connect(admin, autocommit=True) as conn:
         conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
     params = conninfo_to_dict(admin)
@@ -118,7 +118,7 @@ def maintenance_browser(maintenance_db):
 
     app.include_router(router)
     with TestClient(app, base_url="https://app.test") as client:
-        client.cookies.set("__Host-appchi_session", handle)
+        client.cookies.set("__Host-keep_session", handle)
         client.headers.update({"Origin": "https://app.test", "X-CSRF-Token": csrf})
         yield client, str(tenant), principal, app
     with db.transaction() as conn:
@@ -434,8 +434,8 @@ def test_delete_rechecks_current_authorization_and_gates_after_external_intent(
 
 
 def test_delete_cancel_ack_is_verified_before_persisting(maintenance_browser, maintenance_db):
-    from appchi.cel import compile_expression
-    from appchi.maintenance.routes import resume_delete
+    from keep.cel import compile_expression
+    from keep.maintenance.routes import resume_delete
 
     client, tenant, principal, app = maintenance_browser
     db, _ = maintenance_db
@@ -529,13 +529,13 @@ def test_nonowner_api_role_and_rls_protect_maintenance_and_delete_resume(
         @contextmanager
         def transaction(self, *args, **kwargs):
             with db.transaction(*args, **kwargs) as conn:
-                conn.execute("SET LOCAL ROLE appchi_api")
+                conn.execute("SET LOCAL ROLE keep_api")
                 yield conn
 
     app.state.db = RuntimeDatabase()
     window = create(client, tenant)
     with db.transaction() as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
+        conn.execute("SET LOCAL ROLE keep_api")
         assert conn.execute("SELECT count(*) AS n FROM maintenance_windows").fetchone()["n"] == 0
     result = client.delete(
         f"/api/tenants/{tenant}/maintenance/{window['id']}",

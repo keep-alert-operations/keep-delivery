@@ -3,8 +3,8 @@ from uuid import uuid4
 
 import pytest
 
-from appchi.maintenance.temporal import reduce_alert
-from appchi.release_scope import DEFERRED_WORKERS
+from keep.maintenance.temporal import reduce_alert
+from keep.release_scope import DEFERRED_WORKERS
 from test_maintenance_temporal import at, segment, snapshot, transition
 
 
@@ -56,7 +56,7 @@ def test_history_before_cutover_keeps_its_original_release():
 
 @pytest.mark.parametrize("role", sorted(DEFERRED_WORKERS))
 def test_deferred_roles_fail_before_settings_or_database(role, monkeypatch, capsys):
-    from appchi.worker import main
+    from keep.worker import main
     monkeypatch.setattr("sys.argv", ["worker", role])
     with pytest.raises(SystemExit) as error:
         main()

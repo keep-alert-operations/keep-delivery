@@ -1,12 +1,12 @@
-# appchi-delivery
+# keep-delivery
 
 Workspace setup, local dependencies, deployments, release inventory and system verification.
 
-See [system design](https://github.com/appchi-alert-operations/appchi-design), [workspace setup](https://github.com/appchi-alert-operations/appchi-delivery) and [source provenance](SOURCE.md).
+See [system design](https://github.com/keep-alert-operations/keep-design), [workspace setup](https://github.com/keep-alert-operations/keep-delivery) and [source provenance](SOURCE.md).
 
 ## Workspace
 
-For daily product use, read the [illustrated Appchi client guide](docs/client-guide/README.md).
+For daily product use, read the [illustrated Keep client guide](docs/client-guide/README.md).
 It covers alerts, incidents, shared views, maintenance and correlation, with
 step-by-step workflows and an offline reading edition.
 
@@ -14,8 +14,8 @@ Start with [workspace setup](docs/repository-workspace.md). Open the parent dire
 containing all eleven Git checkouts. Canonical system instructions are in
 [workspace/AGENTS.md](workspace/AGENTS.md).
 
-For any agent request, use the [context guide](../appchi-design/context/README.md) and
-[context map](../appchi-design/context/map.md) to pick an intent and topics. From
+For any agent request, use the [context guide](../keep-design/context/README.md) and
+[context map](../keep-design/context/map.md) to pick an intent and topics. From
 delivery, `python scripts/context.py plan --intent question --topic incidents --content`
 prints what to do and the authoritative sections; `python scripts/context.py find "words"`
 ranks matching headings when no topic fits.
@@ -43,7 +43,7 @@ poetry run pytest
 poetry build --format wheel
 ```
 
-Shared `appchi` modules use namespace packaging; each module has exactly one owning
+Shared `keep` modules use namespace packaging; each module has exactly one owning
 distribution. Dependencies resolve immutable Git revisions in Python dependency metadata and `poetry.lock`.
 For coordinated local edits use the delivery workspace setup, which installs local
 packages without changing release dependency pins.

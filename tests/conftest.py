@@ -6,11 +6,11 @@ import pytest
 
 @pytest.fixture(scope="session")
 def real_db():
-    dsn = os.environ.get("APPCHI_TEST_DATABASE_URL")
+    dsn = os.environ.get("KEEP_TEST_DATABASE_URL")
     if not dsn:
-        pytest.skip("Set APPCHI_TEST_DATABASE_URL to an isolated real PostgreSQL database")
-    from appchi.migrate import migrate, migration_directory
-    from appchi.db import Database
+        pytest.skip("Set KEEP_TEST_DATABASE_URL to an isolated real PostgreSQL database")
+    from keep.migrate import migrate, migration_directory
+    from keep.db import Database
     migrate(dsn, migration_directory())
     database = Database(dsn)
     yield database
@@ -40,7 +40,7 @@ def browser_settings():
 
 @pytest.fixture
 def cipher():
-    from appchi.shared.crypto import EnvelopeCipher
+    from keep.shared.crypto import EnvelopeCipher
     return EnvelopeCipher({"test": b"k" * 32}, "test")
 
 

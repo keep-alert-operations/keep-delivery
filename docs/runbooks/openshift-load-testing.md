@@ -1,7 +1,7 @@
-# Appchi: private OpenShift deployment and load testing
+# Keep: private OpenShift deployment and load testing
 
 This is the handoff for an **isolated test environment**. You provide Elasticsearch,
-Kafka and Grafana inside the private network. Deploy Appchi, PostgreSQL, Redis,
+Kafka and Grafana inside the private network. Deploy Keep, PostgreSQL, Redis,
 Kong and Keycloak in OpenShift. Use dedicated native Keycloak test users and your
 private image registry. No connection to that cluster, deployment, or capacity
 result is claimed by this document.
@@ -10,7 +10,7 @@ Start with a small diagnostic run. Measure the bottleneck before adding a Redis
 cache: Redis is already required for live hints, but the current architecture
 does not cache completed search/count results. PostgreSQL remains authoritative;
 Elasticsearch holds the rebuildable search projection. Ingestion uses Kafka and
-**has no Appchi PostgreSQL, Elasticsearch or Redis dependency**.
+**has no Keep PostgreSQL, Elasticsearch or Redis dependency**.
 
 **Complete initialization and integration checks before a system load run.**
 The bundle includes an explicit search bootstrap Job and a private operator proof
@@ -46,10 +46,10 @@ used for builds, or immutable built images plus this delivery checkout.
 | [Redis wrapper](../../deploy/images/redis/Dockerfile) | Arbitrary-UID Redis image |
 | [Existing application templates](../../deploy/openshift/) | Canonical service deployment definitions |
 | [Kafka protocol procedure](kafka-first.md) | Offline initialization, clocks and loss/recovery fences |
-| [Current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md) | Which processes exist and which features remain deferred |
+| [Current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md) | Which processes exist and which features remain deferred |
 
 The commands below use **Bash on a build host or private-network administration
-host**, from `appchi-delivery`, unless another directory is stated. Install the
+host**, from `keep-delivery`, unless another directory is stated. Install the
 cluster-compatible `oc`, Python 3.13, a container builder and k6 (or its supplied
 container) on those hosts. The cluster does not need access to GitHub, PyPI or npm
 when you import fully built images.
@@ -79,7 +79,7 @@ Before applying anything, obtain:
 
 1. A dedicated namespace, allowed worker nodes, storage class/PVC expansion policy,
    namespace CPU/memory quota and image pull credentials. Establish that the test
-   cannot interfere with another Appchi installation.
+   cannot interfere with another Keep installation.
 2. Four DNS names: application, Keycloak, native v1, and Kong/native v2. Supply
    trusted certificates, browser trust and service CA bundles. The application
    origin must be the same for the UI, `/api` and `/auth`.
@@ -88,8 +88,8 @@ Before applying anything, obtain:
    read permissions for API. Confirm allocation and retention with its provider.
 4. Kafka bootstrap **and advertised broker addresses reachable from pods**, actual
    version, TLS/SASL credentials, partition count, retention, durability and ACLs.
-   Reserve `appchi.development.alerts.received`,
-   `appchi.development.alerts.changed` and the `appchi.development.*-v2` consumer
+   Reserve `keep.development.alerts.received`,
+   `keep.development.alerts.changed` and the `keep.development.*-v2` consumer
    groups exclusively for this test installation. Namespace isolation does not
    isolate Kafka names. If those names are already used, arrange an isolated
    broker/cluster endpoint before proceeding. Do not alter another installation's
@@ -117,7 +117,7 @@ resulting allocation with every test report.
 
 | Workload | CPU request / limit | Memory request / limit | Storage / notes |
 | --- | --- | --- | --- |
-| Appchi PostgreSQL | 1 / 2 | 2Gi / 4Gi | 20Gi initial PVC, **smoke tests only until sized** |
+| Keep PostgreSQL | 1 / 2 | 2Gi / 4Gi | 20Gi initial PVC, **smoke tests only until sized** |
 | Keycloak PostgreSQL | 250m / 1 | 256Mi / 1Gi | 5Gi PVC |
 | Kong PostgreSQL | 250m / 1 | 256Mi / 1Gi | 5Gi PVC |
 | Redis | 100m / 500m | 128Mi / 512Mi | Ephemeral hints; PostgreSQL reconciliation repairs missed hints |
@@ -165,15 +165,15 @@ resulting images. See [workspace build instructions](../repository-workspace.md#
 
 | Image | Build context | Dockerfile |
 | --- | --- | --- |
-| API | `../appchi-api` | `Dockerfile` |
-| Ingestion, both listeners | `../appchi-ingestion` | `Dockerfile` |
-| Processor | `../appchi-processor` | `Dockerfile` |
-| Correlation | `../appchi-correlation` | `Dockerfile` |
-| Indexer | `../appchi-indexer` | `Dockerfile` |
-| Migrations | `../appchi-migrations` | `Dockerfile` |
-| Frontend | `../appchi-frontend` | `Dockerfile` |
-| Kong + Appchi plugin | `../appchi-ingestion` | `kong/Dockerfile` |
-| Keycloak + Appchi theme | `../appchi-frontend` | `keycloak/Dockerfile` |
+| API | `../keep-api` | `Dockerfile` |
+| Ingestion, both listeners | `../keep-ingestion` | `Dockerfile` |
+| Processor | `../keep-processor` | `Dockerfile` |
+| Correlation | `../keep-correlation` | `Dockerfile` |
+| Indexer | `../keep-indexer` | `Dockerfile` |
+| Migrations | `../keep-migrations` | `Dockerfile` |
+| Frontend | `../keep-frontend` | `Dockerfile` |
+| Kong + Keep plugin | `../keep-ingestion` | `kong/Dockerfile` |
+| Keycloak + Keep theme | `../keep-frontend` | `keycloak/Dockerfile` |
 | PostgreSQL wrapper, each chosen vendor base | `deploy/images/postgres` | `Dockerfile` |
 | Redis wrapper | `deploy/images/redis` | `Dockerfile` |
 | k6 toolkit | `qualification/load-test` | `Dockerfile` |
@@ -185,13 +185,13 @@ base variable below must be real values you selected.
 ```bash
 docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN \
   --build-arg PYTHON_BASE_IMAGE="$PYTHON_BASE_IMAGE" \
-  -t "$BUILD_REGISTRY/appchi-api:$RELEASE" ../appchi-api
+  -t "$BUILD_REGISTRY/keep-api:$RELEASE" ../keep-api
 docker build --build-arg KONG_BASE_IMAGE="$KONG_BASE_IMAGE" \
-  -f ../appchi-ingestion/kong/Dockerfile \
-  -t "$BUILD_REGISTRY/appchi-kong:$RELEASE" ../appchi-ingestion
+  -f ../keep-ingestion/kong/Dockerfile \
+  -t "$BUILD_REGISTRY/keep-kong:$RELEASE" ../keep-ingestion
 docker build --build-arg KEYCLOAK_BASE_IMAGE="$KEYCLOAK_BASE_IMAGE" \
-  -f ../appchi-frontend/keycloak/Dockerfile \
-  -t "$BUILD_REGISTRY/appchi-keycloak:$RELEASE" ../appchi-frontend
+  -f ../keep-frontend/keycloak/Dockerfile \
+  -t "$BUILD_REGISTRY/keep-keycloak:$RELEASE" ../keep-frontend
 ```
 
 Repeat the application build for every application/migration image and use the
@@ -213,13 +213,13 @@ the private network:
 
 ```bash
 # Build host, repeat/include the complete image list:
-docker save -o appchi-images.tar "$BUILD_REGISTRY/appchi-api:$RELEASE"
-sha256sum appchi-images.tar > appchi-images.tar.sha256
+docker save -o keep-images.tar "$BUILD_REGISTRY/keep-api:$RELEASE"
+sha256sum keep-images.tar > keep-images.tar.sha256
 # Private host, after transferring archive and checksum:
-sha256sum --check appchi-images.tar.sha256
-docker load -i appchi-images.tar
-docker tag "$BUILD_REGISTRY/appchi-api:$RELEASE" "$PRIVATE_REGISTRY/appchi-api:$RELEASE"
-docker push "$PRIVATE_REGISTRY/appchi-api:$RELEASE"
+sha256sum --check keep-images.tar.sha256
+docker load -i keep-images.tar
+docker tag "$BUILD_REGISTRY/keep-api:$RELEASE" "$PRIVATE_REGISTRY/keep-api:$RELEASE"
+docker push "$PRIVATE_REGISTRY/keep-api:$RELEASE"
 ```
 
 Take the **destination registry digest** for each image and put its
@@ -238,8 +238,8 @@ Secrets, session cookies or operator keys in reports.
 
 ```bash
 umask 077
-mkdir -p "$HOME/appchi-load-private"
-PRIVATE="$HOME/appchi-load-private"
+mkdir -p "$HOME/keep-load-private"
+PRIVATE="$HOME/keep-load-private"
 cp deploy/openshift/load-test/configuration.example.json "$PRIVATE/config.json"
 python qualification/load-test-identity/prepare.py \
   --app-origin "https://$APP_HOST" --keycloak-origin "https://$KEYCLOAK_HOST" \
@@ -254,11 +254,11 @@ Never generate a replacement UUID or create a second Global tenant.
 The identity generator creates one `load-admin` and 100 separate load users with
 random passwords and immutable UUIDs. Only the admin belongs to the global admin
 group. Global's normal baseline still applies; grant users the appropriate role
-in the specific test tenant through Appchi administration. The confidential web
+in the specific test tenant through Keep administration. The confidential web
 client uses code flow + PKCE, signed OIDC tokens and normal secure sessions. No
 password grant or preinserted session is used.
 
-Import `appchi-local-realm.json` into the dedicated Keycloak database once. Realm
+Import `keep-local-realm.json` into the dedicated Keycloak database once. Realm
 startup import does not replace an existing realm. Preserve these generated
 credentials/UUIDs with the database; generating them again is a new identity set,
 not a password reset. The generator refuses an existing output directory.
@@ -266,7 +266,7 @@ not a password reset. The generator refuses an existing output directory.
 Keycloak runs with its optimized PostgreSQL image and HTTPS. Its server certificate
 must include **both the external Keycloak DNS name and `localhost`**. The
 `identity-publisher` container shares its pod network and reads
-`https://localhost:8443/realms/appchi-local` with CA validation. Only this manual
+`https://localhost:8443/realms/keep-local` with CA validation. Only this manual
 tool uses the existing development-only native directory adapter. The API uses
 the real external issuer, `keycloak-local` source, `sub` as immutable ID and
 the normal authorization guards. This does not generalize native test identities
@@ -284,10 +284,10 @@ Keycloak must also trust the application CA for signed backchannel logout.
 Use one deployment epoch and one wrapping-key version for this isolated database.
 Generate a random 32-byte base64 wrapping key using a secret manager. Retain it
 with the database for the lifetime of the test. Supply exactly one of
-`APPCHI_WRAPPING_KEY` and a mounted `APPCHI_WRAPPING_KEYRING`. Do not give those
+`KEEP_WRAPPING_KEY` and a mounted `KEEP_WRAPPING_KEYRING`. Do not give those
 keys, DB credentials or OIDC secrets to ingestion.
 
-For the first diagnostic run, set `APPCHI_ENVIRONMENT=development` explicitly.
+For the first diagnostic run, set `KEEP_ENVIRONMENT=development` explicitly.
 Use TLS, certificate validation and network isolation throughout. This permits
 the honest unqualified development capacity profile; it does **not** qualify the
 deployment for staging/production. An unqualified profile is rejected by API
@@ -297,14 +297,14 @@ unlimited, and those features no longer need `qualified` to run.
 
 | Workload | Environment and mounted files |
 | --- | --- |
-| All Appchi processes | `APPCHI_ENVIRONMENT`, `APPCHI_DEPLOYMENT_EPOCH`; template role/listener/clock settings; relevant CA files |
-| API | Runtime `APPCHI_DATABASE_URL`, wrapping key/keyring, `APPCHI_POOL_SIZE=2`, `APPCHI_CAPACITY_PROFILE=/etc/appchi/capacity.json`; all generated OIDC values; Kafka, ES and Redis below |
-| Public ingestion | Kafka settings below, `APPCHI_KAFKA_ADMISSION_ENABLED=false` initially; template supplies `APPCHI_GLOBAL_TENANT_ID` and role `ingestion-api` |
-| Private ingestion | Same Kafka settings; role `private-ingestion`; all four `APPCHI_GATEWAY_*` TLS/peer settings from the bundle/readiness instructions |
-| Processor | Worker `APPCHI_DATABASE_URL`, wrapping key/keyring, pool 2, capacity profile, Kafka settings; template supplies Global UUID |
+| All Keep processes | `KEEP_ENVIRONMENT`, `KEEP_DEPLOYMENT_EPOCH`; template role/listener/clock settings; relevant CA files |
+| API | Runtime `KEEP_DATABASE_URL`, wrapping key/keyring, `KEEP_POOL_SIZE=2`, `KEEP_CAPACITY_PROFILE=/etc/keep/capacity.json`; all generated OIDC values; Kafka, ES and Redis below |
+| Public ingestion | Kafka settings below, `KEEP_KAFKA_ADMISSION_ENABLED=false` initially; template supplies `KEEP_GLOBAL_TENANT_ID` and role `ingestion-api` |
+| Private ingestion | Same Kafka settings; role `private-ingestion`; all four `KEEP_GATEWAY_*` TLS/peer settings from the bundle/readiness instructions |
+| Processor | Worker `KEEP_DATABASE_URL`, wrapping key/keyring, pool 2, capacity profile, Kafka settings; template supplies Global UUID |
 | Indexer | Worker DB, wrapping key/keyring, pool 2, capacity profile, Kafka and ES write bindings |
 | Search bootstrap Job | Indexer environment/bindings plus `search-binding.json`, explicit physical index/epoch/reference and current clock evidence; initial development activation only |
-| Operator proof | Dedicated `APPCHI_PROOF_DATABASE_URL`, shared deployment epoch, fixed member config, identical operator binding, distinct API/gateway probe tokens and server TLS; see cluster initialization |
+| Operator proof | Dedicated `KEEP_PROOF_DATABASE_URL`, shared deployment epoch, fixed member config, identical operator binding, distinct API/gateway probe tokens and server TLS; see cluster initialization |
 | Correlation | Worker DB, wrapping key/keyring, pool 2, Kafka; profile supporting correlation with current evidence and existing capability/recovery fences |
 | Migration Job | Dedicated migration DSN only, as required by the migration template; never API or worker login |
 | Identity tool | Dedicated identity login granted normal worker publication privileges, wrapping key/keyring, epoch, development environment, generated publisher secret and directory JSON |
@@ -315,23 +315,23 @@ placeholder. The password must be URI encoded, while the mounted CA path is a
 literal container path. Copy only applicable fields to each other role:
 
 ```dotenv
-APPCHI_ENVIRONMENT=development
-APPCHI_DEPLOYMENT_EPOCH=THE_SHARED_TEST_DEPLOYMENT_EPOCH
-APPCHI_DATABASE_URL=postgresql://appchi_processor_login:ENCODED_PASSWORD@appchi-postgres:5432/appchi?sslmode=verify-full&sslrootcert=/etc/appchi/postgres-ca.crt&connect_timeout=5
-APPCHI_WRAPPING_KEY=BASE64_OF_THE_SHARED_RANDOM_32_BYTE_KEY
-APPCHI_POOL_SIZE=2
-APPCHI_CAPACITY_PROFILE=/etc/appchi/capacity.json
-APPCHI_KAFKA_BOOTSTRAP=SUPPLIED_BROKER_HOSTS_AND_PORTS
-APPCHI_KAFKA_SECURITY_PROTOCOL=SASL_SSL
-APPCHI_KAFKA_CA_FILE=/etc/appchi/kafka-ca.crt
-APPCHI_KAFKA_SASL_MECHANISM=SCRAM-SHA-512
-APPCHI_KAFKA_SASL_USERNAME=SUPPLIED_WORKLOAD_USERNAME
-APPCHI_KAFKA_SASL_PASSWORD=SUPPLIED_WORKLOAD_PASSWORD
+KEEP_ENVIRONMENT=development
+KEEP_DEPLOYMENT_EPOCH=THE_SHARED_TEST_DEPLOYMENT_EPOCH
+KEEP_DATABASE_URL=postgresql://keep_processor_login:ENCODED_PASSWORD@keep-postgres:5432/keep?sslmode=verify-full&sslrootcert=/etc/keep/postgres-ca.crt&connect_timeout=5
+KEEP_WRAPPING_KEY=BASE64_OF_THE_SHARED_RANDOM_32_BYTE_KEY
+KEEP_POOL_SIZE=2
+KEEP_CAPACITY_PROFILE=/etc/keep/capacity.json
+KEEP_KAFKA_BOOTSTRAP=SUPPLIED_BROKER_HOSTS_AND_PORTS
+KEEP_KAFKA_SECURITY_PROTOCOL=SASL_SSL
+KEEP_KAFKA_CA_FILE=/etc/keep/kafka-ca.crt
+KEEP_KAFKA_SASL_MECHANISM=SCRAM-SHA-512
+KEEP_KAFKA_SASL_USERNAME=SUPPLIED_WORKLOAD_USERNAME
+KEEP_KAFKA_SASL_PASSWORD=SUPPLIED_WORKLOAD_PASSWORD
 ```
 
 The SASL mechanism above is an example, not a broker requirement. For mTLS instead,
-use `SSL`, omit all SASL fields and supply `APPCHI_KAFKA_CLIENT_CERT` and
-`APPCHI_KAFKA_CLIENT_KEY`. Mount corresponding CA/client files. API, indexer and
+use `SSL`, omit all SASL fields and supply `KEEP_KAFKA_CLIENT_CERT` and
+`KEEP_KAFKA_CLIENT_KEY`. Mount corresponding CA/client files. API, indexer and
 correlation use their own login/password and permitted Kafka identity. API adds
 the generated identity fragment and its ES/Redis/operator settings. Indexer adds
 ES. Identity publication does not need Kafka, ES or Redis. Its `identity.env`
@@ -339,20 +339,20 @@ contains development environment, shared epoch/wrapping key, its dedicated DB UR
 and the generated publisher secret.
 
 Public ingestion's environment contains only environment, deployment epoch,
-Kafka fields and `APPCHI_KAFKA_ADMISSION_ENABLED=false` initially. Global UUID and
+Kafka fields and `KEEP_KAFKA_ADMISSION_ENABLED=false` initially. Global UUID and
 role come from template parameters. Private ingestion adds the actual paths and
 approved Kong leaf certificate fingerprint:
 
 ```dotenv
-APPCHI_GATEWAY_CERT_FILE=/etc/appchi/gateway-server.crt
-APPCHI_GATEWAY_KEY_FILE=/etc/appchi/gateway-server.key
-APPCHI_GATEWAY_CA_FILE=/etc/appchi/kong-client-ca.crt
-APPCHI_GATEWAY_PEER_SHA256=APPROVED_KONG_CLIENT_CERTIFICATE_SHA256_HEX
+KEEP_GATEWAY_CERT_FILE=/etc/keep/gateway-server.crt
+KEEP_GATEWAY_KEY_FILE=/etc/keep/gateway-server.key
+KEEP_GATEWAY_CA_FILE=/etc/keep/kong-client-ca.crt
+KEEP_GATEWAY_PEER_SHA256=APPROVED_KONG_CLIENT_CERTIFICATE_SHA256_HEX
 ```
 
 Its own server certificate must match the internal name Kong uses. Mount only
 these private-ingestion TLS files and its Kafka trust/auth files. Migration's
-`migration.env` uses `APPCHI_MIGRATION_URL=postgresql://appchi_migrator:ENCODED_PASSWORD@appchi-postgres:5432/appchi?sslmode=verify-full&sslrootcert=/etc/appchi/postgres-ca.crt`.
+`migration.env` uses `KEEP_MIGRATION_URL=postgresql://keep_migrator:ENCODED_PASSWORD@keep-postgres:5432/keep?sslmode=verify-full&sslrootcert=/etc/keep/postgres-ca.crt`.
 The canonical migration template mounts its binding Secret; ordinary application
 images never run migrations on startup.
 
@@ -361,18 +361,18 @@ For the initial unqualified API/processor/indexer profile, copy
 It is a bounded diagnostic allocation, not proof for 250/s or a correlation/
 maintenance profile. Preserve gates and record unavailable features in results.
 
-Kafka environment: `APPCHI_KAFKA_BOOTSTRAP`,
-`APPCHI_KAFKA_SECURITY_PROTOCOL=SSL` or `SASL_SSL`,
-`APPCHI_KAFKA_CA_FILE=/etc/appchi/kafka-ca.crt`, and the supplied client cert/key
+Kafka environment: `KEEP_KAFKA_BOOTSTRAP`,
+`KEEP_KAFKA_SECURITY_PROTOCOL=SSL` or `SASL_SSL`,
+`KEEP_KAFKA_CA_FILE=/etc/keep/kafka-ca.crt`, and the supplied client cert/key
 pair or SASL mechanism/username/password. Do not disable TLS verification.
 Processor ACLs must allow transactional publication and offset commits; changed
 consumers use `read_committed`. The provider must permit the exact transaction
 IDs and groups used by the checked source. Do not casually increase partition
 counts after initialization: partition stability is part of ordering.
 
-ES environment: `APPCHI_ELASTICSEARCH_URL`, a unique
-`APPCHI_ELASTICSEARCH_INDEX`, `APPCHI_ELASTICSEARCH_CA_FILE`, plus
-`APPCHI_ELASTICSEARCH_API_KEY` or the certificate/key pair. Use the same index
+ES environment: `KEEP_ELASTICSEARCH_URL`, a unique
+`KEEP_ELASTICSEARCH_INDEX`, `KEEP_ELASTICSEARCH_CA_FILE`, plus
+`KEEP_ELASTICSEARCH_API_KEY` or the certificate/key pair. Use the same index
 binding in API and indexer. Follow [cluster initialization](cluster-initialization.md)
 to prepare the explicit `RebuildBinding` and run `36-search-bootstrap.json` with
 writers stopped. It performs live capability checks and applies the checked
@@ -383,22 +383,22 @@ not replace this activation procedure or reopen restore gates.
 
 Redis: API and participating publishers use a TLS URL with ACL credentials,
 including the mounted CA option, for example
-`rediss://USER:PERCENT_ENCODED_PASSWORD@appchi-redis:6379/0?ssl_ca_certs=/etc/appchi/redis-ca.crt`.
+`rediss://USER:PERCENT_ENCODED_PASSWORD@keep-redis:6379/0?ssl_ca_certs=/etc/keep/redis-ca.crt`.
 Use the bundle's exact port/service name. Select no persistent business-state
 storage here: Redis is hint transport. Verify restart/reconciliation behavior.
 
 Operator provisioning on API additionally needs
-`APPCHI_OPERATOR_DATABASE_URL`, `APPCHI_OPERATOR_BINDING`,
-`APPCHI_OPERATOR_GRAFANA_TOKEN`, `APPCHI_OPERATOR_KONG_TOKEN` and
-`APPCHI_OPERATOR_PROBE_TOKEN`. The binding must describe the actual management
+`KEEP_OPERATOR_DATABASE_URL`, `KEEP_OPERATOR_BINDING`,
+`KEEP_OPERATOR_GRAFANA_TOKEN`, `KEEP_OPERATOR_KONG_TOKEN` and
+`KEEP_OPERATOR_PROBE_TOKEN`. The binding must describe the actual management
 interfaces, TLS and safe-writer/probe contract, not a workstation file. Read the
 [private integration checklist](private-qualification.md) together with current
 worker scope: the **API performs synchronous provisioning**, not an operator
-worker. One shared Grafana routes on label `Appchi - {operator name}` with literal
+worker. One shared Grafana routes on label `Keep - {operator name}` with literal
 string `true`. Never route by a user-supplied tenant header.
 
 Clock templates mount `health.json` and `pg-health.json` from
-`appchi-clock-health` at `/run/appchi-clock`. Evidence includes actual synchronized
+`keep-clock-health` at `/run/keep-clock`. Evidence includes actual synchronized
 status, measured offset and `measured_at`; the runtime rejects stale evidence
 over 60 seconds and offsets over one second. Arrange a real provider that measures
 every eligible workload node and PostgreSQL. A single node's reading cannot
@@ -417,8 +417,8 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    arbitrary UID, writable mounts, storage class and network rules must admit.
 2. Apply foundation and the three PostgreSQL instances plus Redis. Wait for ready
    state and prove TLS/auth from an allowed pod. Separate PG instances avoid
-   accidentally coupling Appchi and vendor database versions/credentials.
-3. Run the dedicated Appchi migration Job and require successful completion.
+   accidentally coupling Keep and vendor database versions/credentials.
+3. Run the dedicated Keep migration Job and require successful completion.
    Provision the API and worker/publication login roles using the bundle SQL
    procedure. They must not be superusers, table owners, or `BYPASSRLS` identities.
    Do not start application writers before migrations succeed.
@@ -435,9 +435,9 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
 6. Run one explicit trusted identity publication:
 
    ```bash
-   oc -n "$NS" exec deploy/appchi-keycloak -c identity-publisher -- \
-     python -m appchi.identity.local_keycloak_worker \
-     --config /etc/appchi/local-directory.json --once --bootstrap
+   oc -n "$NS" exec deploy/keep-keycloak -c identity-publisher -- \
+     python -m keep.identity.local_keycloak_worker \
+     --config /etc/keep/local-directory.json --once --bootstrap
    ```
 
    Require `complete`, `accepted` and bootstrap readiness in its nonsecret result.
@@ -446,7 +446,7 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    no polling daemon. Check disabled and recreated users do not inherit access.
 7. With **all ingestion and consumers still stopped**, apply the rendered
    `35-kafka-cutover.json` one-off Job. It executes the processor image's
-   `python -m appchi.kafka_cutover --ingress-and-legacy-workers-stopped`
+   `python -m keep.kafka_cutover --ingress-and-legacy-workers-stopped`
    with the processor DB/Kafka/epoch bindings. Record all three
    initialized group boundaries. Retry a partial failure only while still fenced.
    Never reset consumer offsets after admitting test traffic.
@@ -456,7 +456,7 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    processor and indexer for their supported paths.
    Verify normal OIDC login and an authorized UI action. Examine application
    capability diagnostics, not only HTTP liveness.
-9. Enable `APPCHI_KAFKA_ADMISSION_ENABLED=true` in both ingestion Secrets, then
+9. Enable `KEEP_KAFKA_ADMISSION_ENABLED=true` in both ingestion Secrets, then
    start public/private ingestion. Provision a test operator via the normal API/UI
    before using its v2 key. Verify v1 reaches Global and v2 reaches the owning
    test tenant. Validate the Kafka acknowledgement, canonical state and ES row
@@ -478,22 +478,22 @@ For example, after prerequisites and corresponding manifests are applied:
 
 ```bash
 NS=YOUR_TEST_NAMESPACE
-oc -n "$NS" scale deploy/appchi-keycloak --replicas=1
-oc -n "$NS" rollout status deploy/appchi-keycloak --timeout=10m
+oc -n "$NS" scale deploy/keep-keycloak --replicas=1
+oc -n "$NS" rollout status deploy/keep-keycloak --timeout=10m
 # Start the direct member before Kong route initialization.
-oc -n "$NS" scale statefulset/appchi-kong --replicas=1
-oc -n "$NS" rollout status statefulset/appchi-kong --timeout=10m
+oc -n "$NS" scale statefulset/keep-kong --replicas=1
+oc -n "$NS" rollout status statefulset/keep-kong --timeout=10m
 # Publish identities; complete Kong initialization, Kafka cutover and search bootstrap.
 # Apply/configure the proof helper and record the actual member UUID first.
-oc -n "$NS" scale deploy/appchi-operator-proof --replicas=1
-oc -n "$NS" scale deploy/appchi-product-api deploy/appchi-frontend \
-  deploy/appchi-processor deploy/appchi-indexer --replicas=1
-oc -n "$NS" rollout status deploy/appchi-product-api --timeout=5m
-oc -n "$NS" rollout status deploy/appchi-processor --timeout=5m
-oc -n "$NS" rollout status deploy/appchi-indexer --timeout=5m
+oc -n "$NS" scale deploy/keep-operator-proof --replicas=1
+oc -n "$NS" scale deploy/keep-product-api deploy/keep-frontend \
+  deploy/keep-processor deploy/keep-indexer --replicas=1
+oc -n "$NS" rollout status deploy/keep-product-api --timeout=5m
+oc -n "$NS" rollout status deploy/keep-processor --timeout=5m
+oc -n "$NS" rollout status deploy/keep-indexer --timeout=5m
 # After admission configuration and gateway prerequisites:
-oc -n "$NS" scale deploy/appchi-ingestion-api \
-  deploy/appchi-private-ingestion --replicas=1
+oc -n "$NS" scale deploy/keep-ingestion-api \
+  deploy/keep-private-ingestion --replicas=1
 oc -n "$NS" get pods,jobs,pvc
 ```
 
@@ -615,8 +615,8 @@ Track end-to-end stage timestamps and correctness, not just HTTP averages:
 | Backlog recovery | >=500 processed/s while 250 new/s continues, subject to qualified allocation |
 
 These are evaluation criteria from the
-[reliability specification](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-reliability-operations.md)
-and [verification plan](https://github.com/appchi-alert-operations/appchi-design/blob/main/verification/verification-plan.md).
+[reliability specification](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-reliability-operations.md)
+and [verification plan](https://github.com/keep-alert-operations/keep-design/blob/main/verification/verification-plan.md).
 A short run does not establish 99.9% availability over a rolling 30 days. Report
 startup/warmup separately; never erase later degraded periods. Report percentile
 sample counts, all errors and the actual offered/accepted/processed rates.

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="43" time="38.115" timestamp="2026-09-30T15:46:34.197011+03:00" hostname="guy_rozenbaum3"><testcase classname="tests.unit.test_maintenance_repository" name="test_create_replay_duplicate_names_no_backfill_and_history" time="3.493"><failure message="assert 0 == 2">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF4F5A660&gt;, '11bdb4d7-db31-41cb-a8ba-c43a87587369', UUID('44ea67e7-8b67-47ce-a929-ea0c9bc66f34'), &lt;fastapi.applications.FastAPI object at 0x0000024EF4FE96D0&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF4F596A0&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_f725dc7abd094da19c6eff201681ac7a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF4F596A0&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_f725dc7abd094da19c6eff201681ac7a host=127.0.0.1 port=55433')
 
     def test_create_replay_duplicate_names_no_backfill_and_history(maintenance_browser, maintenance_db):
         client, tenant, _, _ = maintenance_browser
@@ -32,7 +32,7 @@ maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF4F596A0&gt;, 'user
 E           assert 0 == 2
 
 backend\tests\unit\test_maintenance_repository.py:173: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_repository" name="test_gate_strict_models_and_revision_concurrency" time="0.411" /><testcase classname="tests.unit.test_maintenance_repository" name="test_same_value_noop_preserves_revision_control_and_activity" time="0.199" /><testcase classname="tests.unit.test_maintenance_repository" name="test_started_lock_timezone_only_and_end_extension_keep_activation" time="0.740" /><testcase classname="tests.unit.test_maintenance_repository" name="test_disable_enable_new_segment_durable_fanout_and_capacity" time="0.619"><failure message="assert 0 == 2">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF50DA9E0&gt;, 'b71f7884-3a5f-4e1e-aa4b-c5ced057fb77', UUID('6006c0eb-0a6c-47ec-9222-3434322b6bd6'), &lt;fastapi.applications.FastAPI object at 0x0000024EF5563250&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF4F596A0&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_f725dc7abd094da19c6eff201681ac7a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF4F596A0&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_f725dc7abd094da19c6eff201681ac7a host=127.0.0.1 port=55433')
 
     def test_disable_enable_new_segment_durable_fanout_and_capacity(
         maintenance_browser, maintenance_db
@@ -74,7 +74,7 @@ maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF4F596A0&gt;, 'user
 E           assert 0 == 2
 
 backend\tests\unit\test_maintenance_repository.py:326: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_repository" name="test_pagination_is_session_query_bound_and_current_access_is_rechecked" time="0.501" /><testcase classname="tests.unit.test_maintenance_repository" name="test_protected_delete_retries_uncertain_final_with_stable_distinct_evidence" time="0.305" /><testcase classname="tests.unit.test_maintenance_repository" name="test_delete_without_independent_store_leaves_window_intact" time="0.190" /><testcase classname="tests.unit.test_maintenance_repository" name="test_delete_rechecks_current_authorization_and_gates_after_external_intent[role]" time="0.209" /><testcase classname="tests.unit.test_maintenance_repository" name="test_delete_rechecks_current_authorization_and_gates_after_external_intent[recovery]" time="0.261" /><testcase classname="tests.unit.test_maintenance_repository" name="test_delete_rechecks_current_authorization_and_gates_after_external_intent[maintenance]" time="0.306" /><testcase classname="tests.unit.test_maintenance_repository" name="test_delete_cancel_ack_is_verified_before_persisting" time="0.280" /><testcase classname="tests.unit.test_maintenance_repository" name="test_viewer_can_validate_and_test_but_not_mutate" time="5.468" /><testcase classname="tests.unit.test_maintenance_repository" name="test_parallel_expected_revision_and_capacity_races_serialize" time="0.234" /><testcase classname="tests.unit.test_maintenance_repository" name="test_nonowner_api_role_and_rls_protect_maintenance_and_delete_resume" time="0.290" /><testcase classname="tests.unit.test_maintenance_processing" name="test_creation_repeat_false_true_and_replay_are_durable" time="1.940" /><testcase classname="tests.unit.test_maintenance_processing" name="test_delayed_source_after_disable_retains_original_interval" time="0.454"><failure message="assert (not True)">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF5594C00&gt;, '0cfd2423-db46-42df-8acd-a9b14fb564fd', UUID('54ca9300-b7e4-4536-91c0-9e8ffb969239'), &lt;fastapi.applications.FastAPI object at 0x0000024EF50F3110&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF5560050&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
 
     def test_delayed_source_after_disable_retains_original_interval(
         maintenance_browser, maintenance_db
@@ -96,7 +96,7 @@ maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user
 E       assert (not True)
 
 backend\tests\unit\test_maintenance_processing.py:130: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_processing" name="test_activation_no_backfill_and_source_overlap" time="0.579"><failure message="assert (not True)">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF5734D10&gt;, '6b40e5e4-a63c-4ca1-95b5-d8e927156822', UUID('ad9a5b6e-4cc1-4b96-a8f6-09bfd5e165e8'), &lt;fastapi.applications.FastAPI object at 0x0000024EF50F0B90&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF5560050&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
 
     def test_activation_no_backfill_and_source_overlap(maintenance_browser, maintenance_db):
         db, _, tenant, _, catalog, base = setup(maintenance_browser, maintenance_db)
@@ -125,7 +125,7 @@ maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user
 E           assert (not True)
 
 backend\tests\unit\test_maintenance_processing.py:162: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_processing" name="test_two_windows_union_closes_only_at_last_end" time="0.381"><failure message="assert 0 == 1&#10; +  where 0 = len(())&#10; +    where () = Effects(suppression_changed=False, history_changed=False, qualifiers=(), withdrawn_qualifiers=(), proof_digest=b'&quot;\x8a...xb2\xd4/\xdd\xd0\xe2\x8f\x0f\x01\x9c\xd6t\xf5\x87\xd31HB\xd0\x1d\xcf\x1c\x14%\x15\xc2F\xfd\xa6', input_suppressed=None).qualifiers">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF5737240&gt;, '5627e34c-0f04-4ea7-b0c1-d95b6bcbd240', UUID('351a3451-65a9-4777-a09b-cb18aba0ea57'), &lt;fastapi.applications.FastAPI object at 0x0000024EF579D310&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF5560050&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
 
     def test_two_windows_union_closes_only_at_last_end(maintenance_browser, maintenance_db):
         db, client, tenant, _, _, _ = setup(maintenance_browser, maintenance_db)
@@ -150,7 +150,7 @@ E            +  where 0 = len(())
 E            +    where () = Effects(suppression_changed=False, history_changed=False, qualifiers=(), withdrawn_qualifiers=(), proof_digest=b'"\x8a...xb2\xd4/\xdd\xd0\xe2\x8f\x0f\x01\x9c\xd6t\xf5\x87\xd31HB\xd0\x1d\xcf\x1c\x14%\x15\xc2F\xfd\xa6', input_suppressed=None).qualifiers
 
 backend\tests\unit\test_maintenance_processing.py:182: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_processing" name="test_missing_baseline_and_conflicting_replay_roll_back" time="0.713" /><testcase classname="tests.unit.test_maintenance_processing" name="test_stale_catalog_and_work_limit_do_not_publish_partial_causes" time="0.630" /><testcase classname="tests.unit.test_maintenance_processing" name="test_journal_baseline_works_while_capability_is_disabled" time="0.211" /><testcase classname="tests.unit.test_maintenance_processing" name="test_job_lease_fencing_atomic_publish_and_cursor" time="0.663"><failure message="assert (None is not None)">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF5736360&gt;, '97742ca4-a7b6-485f-aae1-a372c05961fb', UUID('5d25736e-0723-46ff-8c34-70c37e117736'), &lt;fastapi.applications.FastAPI object at 0x0000024EF50F1BD0&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF5560050&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
 
     def test_job_lease_fencing_atomic_publish_and_cursor(maintenance_browser, maintenance_db):
         db, client, tenant, window, catalog, base = setup(maintenance_browser, maintenance_db)
@@ -167,7 +167,7 @@ maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user
 E       assert (None is not None)
 
 backend\tests\unit\test_maintenance_processing.py:265: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_processing" name="test_scheduled_end_publishes_one_generation_and_obsolete_job_is_fenced" time="0.220"><failure message="assert None is not None">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF57349E0&gt;, '65d13ff7-7bcb-4680-a2f4-c60cd5e5be63', UUID('8a5a54ef-7f13-4898-87db-58b8f31808e3'), &lt;fastapi.applications.FastAPI object at 0x0000024EF50F1A90&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF5560050&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
 
     def test_scheduled_end_publishes_one_generation_and_obsolete_job_is_fenced(
         maintenance_browser, maintenance_db
@@ -190,13 +190,13 @@ maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user
 E       assert None is not None
 
 backend\tests\unit\test_maintenance_processing.py:333: AssertionError</failure></testcase><testcase classname="tests.unit.test_maintenance_processing" name="test_runtime_source_repeat_revisions_effect_queue_and_withdrawal" time="0.496" /><testcase classname="tests.unit.test_maintenance_processing" name="test_runtime_worker_publishes_real_projection_and_read_only_release" time="0.466"><failure message="assert (True, False) == (False, True)&#10;  &#10;  At index 0 diff: True != False&#10;  Use -v to get more diff">maintenance_browser = (&lt;starlette.testclient.TestClient object at 0x0000024EF55F1040&gt;, 'd9d385e5-98c5-45ed-bdaf-22d2de1230fb', UUID('f5468bfa-4d13-46b2-a702-a37ab3b983c3'), &lt;fastapi.applications.FastAPI object at 0x0000024EF563FC50&gt;)
-maintenance_db = (&lt;appchi.db.Database object at 0x0000024EF5560050&gt;, 'user=appchi_migrator password=[REDACTED] dbname=appchi_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
+maintenance_db = (&lt;keep.db.Database object at 0x0000024EF5560050&gt;, 'user=keep_migrator password=[REDACTED] dbname=keep_maintenance_test_05a22258fefb4e7c8dfeba3e3c00db3a host=127.0.0.1 port=55433')
 
     def test_runtime_worker_publishes_real_projection_and_read_only_release(
         maintenance_browser, maintenance_db
     ):
-        from appchi.maintenance.processing import derive_current
-        from appchi.maintenance.runtime import prepare_for_tenant, worker_turn
+        from keep.maintenance.processing import derive_current
+        from keep.maintenance.runtime import prepare_for_tenant, worker_turn
     
         db, client, tenant, window, _, _ = setup(maintenance_browser, maintenance_db)
         catalog = prepare_for_tenant(db, tenant, PROFILE)

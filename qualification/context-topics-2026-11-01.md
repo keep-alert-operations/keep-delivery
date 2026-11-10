@@ -1,7 +1,7 @@
 # Context topics and intents — 2026-11-01
 
 The user asked that any request — a question, a change, an investigation, a review
-or anything else — reach the relevant Appchi context easily and know what to do
+or anything else — reach the relevant Keep context easily and know what to do
 with it. On 2026-10-31 eight natural questions run through the route layer gave
 four unresolved plans and two partial ones. The user approved a redesign plan as
 written: topics instead of change routes, intents that say what to do, a generated
@@ -9,14 +9,14 @@ index in the workspace AGENTS.md, easier matching with a `find` fallback, new
 fixtures, then a paired trial (Phase 2) and derived traceability (Phase 3, separate
 approval). This record covers Phase 1 only. No product behavior, schema, contract
 or deployment changed. The design decision is recorded in the
-[design register](../../appchi-design/decisions/design-register.md#context-topics-and-intents--2026-11-01).
+[design register](../../keep-design/decisions/design-register.md#context-topics-and-intents--2026-11-01).
 
 ## Revisions
 
 | Repository | Branch | Base | State |
 |---|---|---|---|
-| appchi-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (REV-55 head; in `main` through merge `e6e581e`) | design#21 merged as `d0ac727` (same tree as `f72c299`), at the user's request |
-| appchi-delivery | `codex/context-topics`: the commits carrying this record | `6255670` (`main` after REV-55 merged) | delivery#29, merged at the user's request |
+| keep-design | `codex/context-topics`: `ba757d2`, then `f72c299` (trial fixes) | `c946e86` (REV-55 head; in `main` through merge `e6e581e`) | design#21 merged as `d0ac727` (same tree as `f72c299`), at the user's request |
+| keep-delivery | `codex/context-topics`: the commits carrying this record | `6255670` (`main` after REV-55 merged) | delivery#29, merged at the user's request |
 
 **Assistant-selected:** the plan said to branch from `main` after REV-55 merged.
 REV-55 was still open and touches the register, `check_docs.py`,
@@ -72,7 +72,7 @@ plan's table listed four new topics, not five); code locations stay in the exist
 `repositories` and `path_globs` fields rather than a new `code` field; the review
 cue `diff` became `this diff`/`the diff` because "differ" stems to "diff"; and the
 root AGENTS.md was installed for local verification before merge (restore it with
-`git -C appchi-delivery show main:workspace/AGENTS.md`).
+`git -C keep-delivery show main:workspace/AGENTS.md`).
 
 ## Verification
 

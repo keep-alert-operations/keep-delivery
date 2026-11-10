@@ -7,17 +7,17 @@ from uuid import uuid4
 import psycopg
 import pytest
 
-from appchi.correlation import repository as repo
-from appchi.correlation.evidence import GroupKey, group_key
-from appchi.correlation.models import grouping
-from appchi.shared.transactions import coordinator
+from keep.correlation import repository as repo
+from keep.correlation.evidence import GroupKey, group_key
+from keep.correlation.models import grouping
+from keep.shared.transactions import coordinator
 from test_product import browser, admit_alert  # noqa: F401 -- shared real authenticated fixture
 
 pytestmark = pytest.mark.integration
 
 TEST_CAPACITY = {
     "correlation": {
-        "cost_model": "appchi-cel-cost-v1",
+        "cost_model": "keep-cel-cost-v1",
         "enabled_rules_per_tenant": 3,
         "live_groups_per_rule": 10,
         "live_evidence_per_rule": 50,
@@ -250,16 +250,16 @@ def test_typed_full_context_handles_digest_collision_and_rls(rules, real_db, mon
             == 2
         )
     with real_db.transaction() as conn:
-        conn.execute("SET LOCAL ROLE appchi_api")
-        conn.execute("SELECT set_config('appchi.tenant_id',%s,true)", (str(uuid4()),))
+        conn.execute("SET LOCAL ROLE keep_api")
+        conn.execute("SELECT set_config('keep.tenant_id',%s,true)", (str(uuid4()),))
         assert (
             conn.execute("SELECT * FROM correlation_rules WHERE id=%s", (row["id"],)).fetchall()
             == []
         )
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
         with real_db.transaction() as conn:
-            conn.execute("SET LOCAL ROLE appchi_api")
-            conn.execute("SELECT set_config('appchi.tenant_id',%s,true)", (str(uuid4()),))
+            conn.execute("SET LOCAL ROLE keep_api")
+            conn.execute("SELECT set_config('keep.tenant_id',%s,true)", (str(uuid4()),))
             conn.execute(
                 "INSERT INTO correlation_rule_identities(id,tenant_id) VALUES(%s,%s)",
                 (uuid4(), tenant),

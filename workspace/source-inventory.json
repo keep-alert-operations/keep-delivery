@@ -1,2815 +1,2815 @@
 {
-  "source": "https://github.com/appchi-alert-operations/appchi.git",
+  "source": "https://github.com/keep-alert-operations/keep.git",
   "source_head": "13ea15ff53364b0ef1df1b9126fd075b013333ec",
   "checkpoint_commit": "9a5b29b548e222913542222e75f306714ec99238",
   "files": {
     ".dockerignore": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": ".dockerignore",
       "source_sha256": "4dd6be760b093cb3fb51fccf83c604bac83d1653cd7644973d67f916a3553438"
     },
     ".gitattributes": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": ".gitattributes",
       "source_sha256": null
     },
     ".github/workflows/checks.yml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "legacy/monorepo-checks.yml",
       "source_sha256": "63fc1d3022c053864a300c551902a758e29e2b8b32fb5db8fba8a1925f77feb1"
     },
     ".gitignore": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": ".gitignore",
       "source_sha256": "b5cffc75c27f6a467ff422b8070e1e7235deacdbb25bbed2ef23cdc49151ccde"
     },
     ".python-version": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": ".python-version",
       "source_sha256": "d7d7dbce2874cbcac948bc8db4cc29d07959351bd30bc2ed3cbc3bf9de8b6060"
     },
     "AGENTS.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "decisions/monorepo-AGENTS.md",
       "source_sha256": "1156698bf3249f3db3e9e9ce1716087895fbf10c345688877ec5a4eccc759e01"
     },
-    "backend/appchi/access.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/access.py",
+    "backend/keep/access.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/access.py",
       "source_sha256": "42e8c8b7958c7324bd7dc598c186d05d59c17821f7a4a66652a972da03637d5c"
     },
-    "backend/appchi/admin_operations.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/admin_operations.py",
+    "backend/keep/admin_operations.py": {
+      "repository": "keep-api",
+      "path": "src/keep/admin_operations.py",
       "source_sha256": "ebd6b56a8ca6312903230b54cb1b577c2214142983c4a6349ab6482bac48180c"
     },
-    "backend/appchi/alert_notifications.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/alert_notifications.py",
+    "backend/keep/alert_notifications.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/alert_notifications.py",
       "source_sha256": "8c7c5bfa1750ea9755415b45a456f878c52b6dc9105d490cce1b04fb9be86fff"
     },
-    "backend/appchi/alerts/history.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/alerts/history.py",
+    "backend/keep/alerts/history.py": {
+      "repository": "keep-api",
+      "path": "src/keep/alerts/history.py",
       "source_sha256": "9ca769541a787089e41b205d7e3be20ee15e2def0e16e6724164669ebbd09a28"
     },
-    "backend/appchi/alerts/lifecycle.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/alerts/lifecycle.py",
+    "backend/keep/alerts/lifecycle.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/alerts/lifecycle.py",
       "source_sha256": "cbf4212b66822dd9d123b55224786250469dc260c5ed502df6072850516e38f8"
     },
-    "backend/appchi/alerts/presentation.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/alerts/presentation.py",
+    "backend/keep/alerts/presentation.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/alerts/presentation.py",
       "source_sha256": "c3cc6bed7855605e54a1740db77deb1543d267c8877b5e58a4add3b832cf4d22"
     },
-    "backend/appchi/alerts/processor.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/alerts/processor.py",
+    "backend/keep/alerts/processor.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/alerts/processor.py",
       "source_sha256": "b2022ebc40f784a542b1a2b8ca828080b296caad753580eab36b7970392708ff"
     },
-    "backend/appchi/alerts/repository.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/alerts/repository.py",
+    "backend/keep/alerts/repository.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/alerts/repository.py",
       "source_sha256": "d7e9714def3231398a8fb3c7340329c7395b0c005e4ae936f099b265e363c073"
     },
-    "backend/appchi/alerts/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/alerts/routes.py",
+    "backend/keep/alerts/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/alerts/routes.py",
       "source_sha256": "ec52a8e041adbd95d5cee49f520af613f349ddbccd76a520571fb6ca55e7c1a0"
     },
-    "backend/appchi/alerts/state.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/alerts/state.py",
+    "backend/keep/alerts/state.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/alerts/state.py",
       "source_sha256": null
     },
-    "backend/appchi/cel/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/cel/__init__.py",
+    "backend/keep/cel/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/cel/__init__.py",
       "source_sha256": "902b6ce424aeac3791f21768364f862e47c15237aed39212fa926d1e0fa18d7c"
     },
-    "backend/appchi/cel/catalog.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/cel/catalog.py",
+    "backend/keep/cel/catalog.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/cel/catalog.py",
       "source_sha256": "23df9ea3667f0ae92ddb400b1c5931383ab6d3298ae24c12aa1dce70b8930636"
     },
-    "backend/appchi/cel/compiler.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/cel/compiler.py",
+    "backend/keep/cel/compiler.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/cel/compiler.py",
       "source_sha256": "46c6cf7bdc03f806a4a3a8bf1ceca503e6031cc48ae6b26fbc43bca69e3f4e22"
     },
-    "backend/appchi/cel/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/cel/routes.py",
+    "backend/keep/cel/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/cel/routes.py",
       "source_sha256": "4acd67318b5dbf98a653e3a1fb0646d6b3036c01a67bbcabcf0b4b5c7a799263"
     },
-    "backend/appchi/cel/syntax.proto": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/cel/syntax.proto",
+    "backend/keep/cel/syntax.proto": {
+      "repository": "keep-domain",
+      "path": "src/keep/cel/syntax.proto",
       "source_sha256": "4fbc15234fe33017acf973cc1a5a7e7032a783f53ae133a51994067fac1667d0"
     },
-    "backend/appchi/cel/syntax_pb2.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/cel/syntax_pb2.py",
+    "backend/keep/cel/syntax_pb2.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/cel/syntax_pb2.py",
       "source_sha256": "f243e1a6920a94609975de1172cb0e6f4f994c44fa2166017305c41d55b2ceb9"
     },
-    "backend/appchi/clock_health.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/clock_health.py",
+    "backend/keep/clock_health.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/clock_health.py",
       "source_sha256": "31497c5fca4a29a8266d54dcd38af496185b7ef2f59cbcfc0a46c0782338c16a"
     },
-    "backend/appchi/config.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/config.py",
+    "backend/keep/config.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/config.py",
       "source_sha256": "0f564fc2acb0528667be3052aea6d6b17c4746d6aa27d30e49b9245e35f16e9e"
     },
-    "backend/appchi/configuration/cleanup.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/configuration/cleanup.py",
+    "backend/keep/configuration/cleanup.py": {
+      "repository": "keep-api",
+      "path": "src/keep/configuration/cleanup.py",
       "source_sha256": "7f9f98bfa6090da095fdd9bc87ff67a545d113da71eee299283e104ae939544c"
     },
-    "backend/appchi/configuration/count_routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/configuration/count_routes.py",
+    "backend/keep/configuration/count_routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/configuration/count_routes.py",
       "source_sha256": "37415d328781dcd1f43d75dd5b850565153b04ed60f5260127ad57eb1b61bdbc"
     },
-    "backend/appchi/configuration/deletion.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/configuration/deletion.py",
+    "backend/keep/configuration/deletion.py": {
+      "repository": "keep-api",
+      "path": "src/keep/configuration/deletion.py",
       "source_sha256": "1b1dad4d188755f583d4527749346a28442dfa96c090646196c1361c97111ad2"
     },
-    "backend/appchi/configuration/guards.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/configuration/guards.py",
+    "backend/keep/configuration/guards.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/configuration/guards.py",
       "source_sha256": null
     },
-    "backend/appchi/configuration/models.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/configuration/models.py",
+    "backend/keep/configuration/models.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/configuration/models.py",
       "source_sha256": "77d2e000d292175e1660910a6c7c1cad527794d4d9243bd3283579f46f0460be"
     },
-    "backend/appchi/configuration/read_routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/configuration/read_routes.py",
+    "backend/keep/configuration/read_routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/configuration/read_routes.py",
       "source_sha256": "2700bfdbdf33ee50eb22f474eee8022ca37d0ea0e6e02deef15aa3eb364e73c8"
     },
-    "backend/appchi/configuration/retention.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/configuration/retention.py",
+    "backend/keep/configuration/retention.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/configuration/retention.py",
       "source_sha256": "85baa6d7128d01de3515f8f9bf85519a42c834d4821536f6fe0d8f3d87703e4c"
     },
-    "backend/appchi/configuration/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/configuration/routes.py",
+    "backend/keep/configuration/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/configuration/routes.py",
       "source_sha256": "4ab10b5865257869b0342506838b5c2304d35e3ac2eed5295d69fabf43185537"
     },
-    "backend/appchi/correlation/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/__init__.py",
+    "backend/keep/correlation/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/__init__.py",
       "source_sha256": "17ac069d6135359bc975a4ab4aa34ebd463d99d2067e244c93c10f92b0420726"
     },
-    "backend/appchi/correlation/cleanup.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/cleanup.py",
+    "backend/keep/correlation/cleanup.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/cleanup.py",
       "source_sha256": "6afffce28416f6e883e1cd2d4322a8195b7e319f0ffa414be7cc577d06cbf692"
     },
-    "backend/appchi/correlation/consumer.py": {
-      "repository": "appchi-correlation",
-      "path": "src/appchi/correlation/consumer.py",
+    "backend/keep/correlation/consumer.py": {
+      "repository": "keep-correlation",
+      "path": "src/keep/correlation/consumer.py",
       "source_sha256": null
     },
-    "backend/appchi/correlation/deletion.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/correlation/deletion.py",
+    "backend/keep/correlation/deletion.py": {
+      "repository": "keep-api",
+      "path": "src/keep/correlation/deletion.py",
       "source_sha256": "b27312dc75c2fb64214ccaedc88729871fa61e8ca89ab4f5a695e0092d605da2"
     },
-    "backend/appchi/correlation/evidence.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/evidence.py",
+    "backend/keep/correlation/evidence.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/evidence.py",
       "source_sha256": "8656eae54f94cb2526befc1092677148ac0606e5b278b1655c4fb6c589329952"
     },
-    "backend/appchi/correlation/guards.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/guards.py",
+    "backend/keep/correlation/guards.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/guards.py",
       "source_sha256": null
     },
-    "backend/appchi/correlation/main.py": {
-      "repository": "appchi-correlation",
-      "path": "src/appchi/correlation/main.py",
+    "backend/keep/correlation/main.py": {
+      "repository": "keep-correlation",
+      "path": "src/keep/correlation/main.py",
       "source_sha256": null
     },
-    "backend/appchi/correlation/models.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/models.py",
+    "backend/keep/correlation/models.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/models.py",
       "source_sha256": "5fc782643b25f96ec5b0ef1fca715c16d24edf68f3849b37fbfa33b7d89a32d0"
     },
-    "backend/appchi/correlation/repository.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/repository.py",
+    "backend/keep/correlation/repository.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/repository.py",
       "source_sha256": "54be847cf795801721369693cc3845323e273ba0a0279aeeb3f349a4edb529b6"
     },
-    "backend/appchi/correlation/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/correlation/routes.py",
+    "backend/keep/correlation/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/correlation/routes.py",
       "source_sha256": "fb5c9ea461926098485e38211ba2cf0896e8a9cb552d37ce2afb3528a3910653"
     },
-    "backend/appchi/correlation/runtime.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/correlation/runtime.py",
+    "backend/keep/correlation/runtime.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/correlation/runtime.py",
       "source_sha256": "2dea032fb3b2ab20be166214e2472d19a0717beeea6ae7d087813f625f7ac42a"
     },
-    "backend/appchi/db.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/db.py",
+    "backend/keep/db.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/db.py",
       "source_sha256": "8b0618e7b959b8aee1f9511a07b27ba4cebd3c69f816f80fab0d81078dd933b7"
     },
-    "backend/appchi/event_models.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/event_models.py",
+    "backend/keep/event_models.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/event_models.py",
       "source_sha256": "d17eb079937eb6646d0f33666d2c088228fea5271d6c658ef659a51e66239ed4"
     },
-    "backend/appchi/events.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/events.py",
+    "backend/keep/events.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/events.py",
       "source_sha256": "efa89c067bccf2274a317392ad10fab33fe7d16c83f70d9e768f5bbbfd85b608"
     },
-    "backend/appchi/http.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/http.py",
+    "backend/keep/http.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/http.py",
       "source_sha256": null
     },
-    "backend/appchi/identity/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/__init__.py",
+    "backend/keep/identity/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/__init__.py",
       "source_sha256": "af69906d764b96eb7014f85342ed1cab0ec33743eb114a2de23b60161680a52a"
     },
-    "backend/appchi/identity/authentication.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/authentication.py",
+    "backend/keep/identity/authentication.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/authentication.py",
       "source_sha256": null
     },
-    "backend/appchi/identity/cleanup.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/cleanup.py",
+    "backend/keep/identity/cleanup.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/cleanup.py",
       "source_sha256": "755f8aa19781ccf433f2d898d19eaa2f0497b0613fab55f63b5b7a710c1a44e1"
     },
-    "backend/appchi/identity/directory.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/directory.py",
+    "backend/keep/identity/directory.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/directory.py",
       "source_sha256": "978cd315e4936335d465df741916b59e127991c4dbb310ef1c1807f840feb154"
     },
-    "backend/appchi/identity/keycloak_directory.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/keycloak_directory.py",
+    "backend/keep/identity/keycloak_directory.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/keycloak_directory.py",
       "source_sha256": "e3c8639b0d8ebe7108ba3307e5f497613ce32ce8c493f8c44ecbf9b0181558fc"
     },
-    "backend/appchi/identity/ldap.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/ldap.py",
+    "backend/keep/identity/ldap.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/ldap.py",
       "source_sha256": "46303c6b37fbdd6fbc18cefce42c193de3624cbc6e5b4bf989903abee59bcb26"
     },
-    "backend/appchi/identity/local_keycloak_worker.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/local_keycloak_worker.py",
+    "backend/keep/identity/local_keycloak_worker.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/local_keycloak_worker.py",
       "source_sha256": "bf96e7fcdcb62ee398a4ea9ce376576b4fd68dce0c75d775c0ce1ce38bac3f8f"
     },
-    "backend/appchi/identity/oidc.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/oidc.py",
+    "backend/keep/identity/oidc.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/oidc.py",
       "source_sha256": "8c6e9c8d3ed840e3caddfce151a0e22de98977efb593d4f093cec09e95813166"
     },
-    "backend/appchi/identity/publication.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/publication.py",
+    "backend/keep/identity/publication.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/publication.py",
       "source_sha256": "6a1911851c0daa015d05f5aeb8dcbd78afce4550d0e8db7753cb5b223f5a002d"
     },
-    "backend/appchi/identity/selection.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/identity/selection.py",
+    "backend/keep/identity/selection.py": {
+      "repository": "keep-api",
+      "path": "src/keep/identity/selection.py",
       "source_sha256": "bb887290b2354bb38dc7a7262d1bb5b460f46a670d321608b5fd67fa614da158"
     },
-    "backend/appchi/identity/selection_config.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/identity/selection_config.py",
+    "backend/keep/identity/selection_config.py": {
+      "repository": "keep-api",
+      "path": "src/keep/identity/selection_config.py",
       "source_sha256": "805311de5c4a2451fe32147244ad895fb30dd90ce1fa6bb25758e8f61e2cb640"
     },
-    "backend/appchi/identity/session.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/identity/session.py",
+    "backend/keep/identity/session.py": {
+      "repository": "keep-api",
+      "path": "src/keep/identity/session.py",
       "source_sha256": "a146eec733a6928949289313f7e027e646a1d25a86e05d53726d2cd7f2659685"
     },
-    "backend/appchi/identity/worker.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/identity/worker.py",
+    "backend/keep/identity/worker.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/identity/worker.py",
       "source_sha256": "e8cd15239791729e6f9c4ed82a590c73fdbfc397790714ec970e3c42b7f78319"
     },
-    "backend/appchi/inactivity.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/inactivity.py",
+    "backend/keep/inactivity.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/inactivity.py",
       "source_sha256": "33c82aa70177ecbe3624c8f0f72cf22cdb0fa22bd6d6d3613d3983884ba6d4d8"
     },
-    "backend/appchi/incidents/counts.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/incidents/counts.py",
+    "backend/keep/incidents/counts.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/incidents/counts.py",
       "source_sha256": "758f9b87e25c4aecf8429e6e1e17b84341e4ff14b7083214ff05f1f69a5f2fe6"
     },
-    "backend/appchi/incidents/history.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/incidents/history.py",
+    "backend/keep/incidents/history.py": {
+      "repository": "keep-api",
+      "path": "src/keep/incidents/history.py",
       "source_sha256": "70a527518f14fb53d04a8e8c07397163b5d376a9c78c156e4da39d2248c9316d"
     },
-    "backend/appchi/incidents/listing.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/incidents/listing.py",
+    "backend/keep/incidents/listing.py": {
+      "repository": "keep-api",
+      "path": "src/keep/incidents/listing.py",
       "source_sha256": "ea54553f707f4e222ce640015a7aba04ee4716d3282256b4e6001279693d3996"
     },
-    "backend/appchi/incidents/models.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/incidents/models.py",
+    "backend/keep/incidents/models.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/incidents/models.py",
       "source_sha256": "5bb76a24e5bdaa425f2977e5367c0a4930c2021195f4b5a0fc813af3a8058133"
     },
-    "backend/appchi/incidents/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/incidents/routes.py",
+    "backend/keep/incidents/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/incidents/routes.py",
       "source_sha256": "323f2881972c78765f98fc0f6a6543d61c05bc0f46a79050acb3ee623e291ef3"
     },
-    "backend/appchi/incidents/state.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/incidents/state.py",
+    "backend/keep/incidents/state.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/incidents/state.py",
       "source_sha256": null
     },
-    "backend/appchi/ingestion/gateway.py": {
-      "repository": "appchi-ingestion",
-      "path": "src/appchi/ingestion/gateway.py",
+    "backend/keep/ingestion/gateway.py": {
+      "repository": "keep-ingestion",
+      "path": "src/keep/ingestion/gateway.py",
       "source_sha256": "2e26dd9f0f0137e6f465cb90774e79caf8cefdd94b19795b362f45c671d49b75"
     },
-    "backend/appchi/ingestion/kafka_admission.py": {
-      "repository": "appchi-ingestion",
-      "path": "src/appchi/ingestion/kafka_admission.py",
+    "backend/keep/ingestion/kafka_admission.py": {
+      "repository": "keep-ingestion",
+      "path": "src/keep/ingestion/kafka_admission.py",
       "source_sha256": "cea662f3193da03b9272043cc61431d69d077543bcd832384ce71aa82ebb8495"
     },
-    "backend/appchi/ingestion/keys.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/ingestion/keys.py",
+    "backend/keep/ingestion/keys.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/ingestion/keys.py",
       "source_sha256": null
     },
-    "backend/appchi/ingestion/main.py": {
-      "repository": "appchi-ingestion",
-      "path": "src/appchi/ingestion/main.py",
+    "backend/keep/ingestion/main.py": {
+      "repository": "keep-ingestion",
+      "path": "src/keep/ingestion/main.py",
       "source_sha256": null
     },
-    "backend/appchi/ingestion/native.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/ingestion/native.py",
+    "backend/keep/ingestion/native.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/ingestion/native.py",
       "source_sha256": "cc35d92dce49b217f79201b9d75fc80662a304d06146dddf4e29442bd56efe2a"
     },
-    "backend/appchi/ingestion/schemas.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/ingestion/schemas.py",
+    "backend/keep/ingestion/schemas.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/ingestion/schemas.py",
       "source_sha256": "0fe7d2161d3e51b3e2966f5ef14f564d17c07421acb0b4c2a59be49f698d2189"
     },
-    "backend/appchi/ingestion/service.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/ingestion/service.py",
+    "backend/keep/ingestion/service.py": {
+      "repository": "keep-api",
+      "path": "src/keep/ingestion/service.py",
       "source_sha256": "c5b8ddeb87e289847c756381574b6c475e1fa9d59d18f5919a8f2662fb4847a7"
     },
-    "backend/appchi/kafka_changed.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/kafka_changed.py",
+    "backend/keep/kafka_changed.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/kafka_changed.py",
       "source_sha256": "84a916e9cf4b35378aaa133c844ad9b3d9e7491e213731966846bbc2caaa99ca"
     },
-    "backend/appchi/kafka_cutover.py": {
-      "repository": "appchi-processor",
-      "path": "src/appchi/kafka_cutover.py",
+    "backend/keep/kafka_cutover.py": {
+      "repository": "keep-processor",
+      "path": "src/keep/kafka_cutover.py",
       "source_sha256": "0aa5dcdb3463eaa4c929a668e30888f74945358911c9c425039ccfab0d3856f3"
     },
-    "backend/appchi/kafka_source.py": {
-      "repository": "appchi-processor",
-      "path": "src/appchi/kafka_source.py",
+    "backend/keep/kafka_source.py": {
+      "repository": "keep-processor",
+      "path": "src/keep/kafka_source.py",
       "source_sha256": "6621b9e5f4d2600e6d64e8f69d665d71447481ebd22f61694382727a8a2cb4c1"
     },
-    "backend/appchi/live.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/live.py",
+    "backend/keep/live.py": {
+      "repository": "keep-api",
+      "path": "src/keep/live.py",
       "source_sha256": "a5ab99b478f8dfe09beac343ab26c16eeb2e9679d63b80aa235d7450fd178213"
     },
-    "backend/appchi/main.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/main.py",
+    "backend/keep/main.py": {
+      "repository": "keep-api",
+      "path": "src/keep/main.py",
       "source_sha256": "76309abe04d401ded53c02feb5c149511926a8a27d599e54268b5786d56602c6"
     },
-    "backend/appchi/maintenance/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/__init__.py",
+    "backend/keep/maintenance/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/__init__.py",
       "source_sha256": "e046d131e18ca7a2bb2225c683c4314200c7c755a28b28d65ec735ead949a051"
     },
-    "backend/appchi/maintenance/cleanup.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/cleanup.py",
+    "backend/keep/maintenance/cleanup.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/cleanup.py",
       "source_sha256": "0fb4b168bb3d370df54229f54ec850358f6737693aa2a5f7402ceff2d12f7cf5"
     },
-    "backend/appchi/maintenance/models.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/models.py",
+    "backend/keep/maintenance/models.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/models.py",
       "source_sha256": "d112dd4efa5dd92fd6e0cd5940e6735e3aae461bdcdeccde67592bbf099b29d3"
     },
-    "backend/appchi/maintenance/processing.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/processing.py",
+    "backend/keep/maintenance/processing.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/processing.py",
       "source_sha256": "5a21e5c036fd26e7de911a8f84087011817a0322d4e45e4b76073e830947a619"
     },
-    "backend/appchi/maintenance/repository.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/repository.py",
+    "backend/keep/maintenance/repository.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/repository.py",
       "source_sha256": "8ab14986f878f46fed052d40145f7ecdc6477e07ffa779d1979cee212cb1f01d"
     },
-    "backend/appchi/maintenance/retention.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/retention.py",
+    "backend/keep/maintenance/retention.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/retention.py",
       "source_sha256": "97318bd8abdc78949ef8714028fde11b66497def4b9132f9f144397e4d8a7ecd"
     },
-    "backend/appchi/maintenance/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/maintenance/routes.py",
+    "backend/keep/maintenance/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/maintenance/routes.py",
       "source_sha256": "122865c0adea7d820ab9599eef44c8c3a800cb6265037069e525db3f87f1dad3"
     },
-    "backend/appchi/maintenance/runtime.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/runtime.py",
+    "backend/keep/maintenance/runtime.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/runtime.py",
       "source_sha256": "48ce2459d9219c456a155e9c1e632dd977754c5e1d80e447877aa1260455fa55"
     },
-    "backend/appchi/maintenance/temporal.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/temporal.py",
+    "backend/keep/maintenance/temporal.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/temporal.py",
       "source_sha256": "7f23ae04627f048d1d784a9c4cc30594f8873ca46b21ad72d6ce09cbfe13baa4"
     },
-    "backend/appchi/maintenance/timezones.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/timezones.py",
+    "backend/keep/maintenance/timezones.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/timezones.py",
       "source_sha256": "1b7fd487a487fc4e95c2ec4528a2686e5620b6fcc2cc3b6f53afeac35aa29eb5"
     },
-    "backend/appchi/maintenance/warmup.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/maintenance/warmup.py",
+    "backend/keep/maintenance/warmup.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/maintenance/warmup.py",
       "source_sha256": "bf15802d4e0f2a9efe9e643500842339e9d9cf1c1c6622e2f07d8e79293c35ec"
     },
-    "backend/appchi/migrate.py": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migrate.py",
+    "backend/keep/migrate.py": {
+      "repository": "keep-migrations",
+      "path": "src/keep/migrate.py",
       "source_sha256": "0d42c33cd405cad648abf8bf0f3f74170bc93f00fbf76d6cb41c561c982222b4"
     },
-    "backend/appchi/models.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/models.py",
+    "backend/keep/models.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/models.py",
       "source_sha256": "51713685b834d54e00d40d29b01b6150137c0dfb447fb9827972d187bca25b42"
     },
-    "backend/appchi/operators/__init__.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/operators/__init__.py",
+    "backend/keep/operators/__init__.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/operators/__init__.py",
       "source_sha256": "226fb1c292e31f4465c7bbf93786de7313731e9addaa9c67db649dfba6c30284"
     },
-    "backend/appchi/operators/binding.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/binding.py",
+    "backend/keep/operators/binding.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/binding.py",
       "source_sha256": "0ca3aafe6154ecf360b516bfeb48cc42ade8e47fe650bae4cef7f11eeb5b4a67"
     },
-    "backend/appchi/operators/cleanup.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/cleanup.py",
+    "backend/keep/operators/cleanup.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/cleanup.py",
       "source_sha256": "22fe8be5bb57a5ebb47e4403d309a1a286540782235448afe8b32611c7ca67be"
     },
-    "backend/appchi/operators/executor.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/executor.py",
+    "backend/keep/operators/executor.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/executor.py",
       "source_sha256": "02ca14896e133880eea06b7997b2b37f02cd9d2e2718a061be21d79573d2a016"
     },
-    "backend/appchi/operators/executor_ledger.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/executor_ledger.py",
+    "backend/keep/operators/executor_ledger.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/executor_ledger.py",
       "source_sha256": "5a32cd50c5a2b9fdbe0535df4f6d4fb67b3970c4a12b634b2a3d8c0bfc9445b9"
     },
-    "backend/appchi/operators/grafana.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/operators/grafana.py",
+    "backend/keep/operators/grafana.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/operators/grafana.py",
       "source_sha256": "a629f3cc8cce42ae4be37f7ca7c6b156a154a2502c3a91c9efceb2c7c0c1d980"
     },
-    "backend/appchi/operators/kafka_drain.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/kafka_drain.py",
+    "backend/keep/operators/kafka_drain.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/kafka_drain.py",
       "source_sha256": "c7d2c34ee0c58ef89752499739287108d0a62aa17586258fe2d79fbd08aeec2f"
     },
-    "backend/appchi/operators/keys.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/keys.py",
+    "backend/keep/operators/keys.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/keys.py",
       "source_sha256": "675289fdbe307c8d6c5d713a2c8d4192f1a4e67802ed735abf2bb6c51d934cf9"
     },
-    "backend/appchi/operators/models.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/models.py",
+    "backend/keep/operators/models.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/models.py",
       "source_sha256": "16f28914de43cc41bd0dd9f4eae8c5f87c7512065764ff8ea29fc12164c4e789"
     },
-    "backend/appchi/operators/policy.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/policy.py",
+    "backend/keep/operators/policy.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/policy.py",
       "source_sha256": "c1190f2e93857945b04d07fb4d92049e543fb6a3daf5520e81aceb749f6c6473"
     },
-    "backend/appchi/operators/remote.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/remote.py",
+    "backend/keep/operators/remote.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/remote.py",
       "source_sha256": "550496c0fdb3b11dd6b7674191174c37c3d901e9dde9d42d26660ad1f30615a2"
     },
-    "backend/appchi/operators/repository.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/repository.py",
+    "backend/keep/operators/repository.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/repository.py",
       "source_sha256": "8a31e61d739b3293bbbfdef0ecfc9eee33e99075a7f792bc339e67a42bc04ffd"
     },
-    "backend/appchi/operators/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/routes.py",
+    "backend/keep/operators/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/routes.py",
       "source_sha256": "46a8d11713528aa4da3414343d8d71201f9fddf0b502789e007dabff155d3fc4"
     },
-    "backend/appchi/operators/saga.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/saga.py",
+    "backend/keep/operators/saga.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/saga.py",
       "source_sha256": "543344a8df3d68bd9eadc30eee690443b9f760f4198367069ffe4da05ebcc2c5"
     },
-    "backend/appchi/operators/synchronous.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/synchronous.py",
+    "backend/keep/operators/synchronous.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/synchronous.py",
       "source_sha256": "490638cda12881ee461246383c8e0b8733cf1ac872193d5dbb3306e63540e2f3"
     },
-    "backend/appchi/operators/worker.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/operators/worker.py",
+    "backend/keep/operators/worker.py": {
+      "repository": "keep-api",
+      "path": "src/keep/operators/worker.py",
       "source_sha256": "1ca1b5aba94e25270c5e73d23566add28f382caa346c1fb90fd829db639823f9"
     },
-    "backend/appchi/pipeline.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/pipeline.py",
+    "backend/keep/pipeline.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/pipeline.py",
       "source_sha256": "01136955c811ed92ffdc75ba59896f2060730e9a48654fc9e5f8dc650da39c94"
     },
-    "backend/appchi/pipeline_runtime.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/pipeline_runtime.py",
+    "backend/keep/pipeline_runtime.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/pipeline_runtime.py",
       "source_sha256": null
     },
-    "backend/appchi/private_ingestion.py": {
-      "repository": "appchi-ingestion",
-      "path": "src/appchi/private_ingestion.py",
+    "backend/keep/private_ingestion.py": {
+      "repository": "keep-ingestion",
+      "path": "src/keep/private_ingestion.py",
       "source_sha256": "6d8b41d4e38e743e1c27d0e0ff9f23b7e25a291ee2db11c94647ded50d5b504e"
     },
-    "backend/appchi/probes.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/probes.py",
+    "backend/keep/probes.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/probes.py",
       "source_sha256": "5f56adee9d71de95de85243a3ca0cfd41dccdaa5f01e53e3d782f2c27a88f43d"
     },
-    "backend/appchi/processor/main.py": {
-      "repository": "appchi-processor",
-      "path": "src/appchi/processor/main.py",
+    "backend/keep/processor/main.py": {
+      "repository": "keep-processor",
+      "path": "src/keep/processor/main.py",
       "source_sha256": null
     },
-    "backend/appchi/recovery/alert_cleanup.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/alert_cleanup.py",
+    "backend/keep/recovery/alert_cleanup.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/alert_cleanup.py",
       "source_sha256": "14e5e76adb9251375d133510d61b99a763dfab50a0e4a1b2c9f02131f31c1d82"
     },
-    "backend/appchi/recovery/assessment.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/assessment.py",
+    "backend/keep/recovery/assessment.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/assessment.py",
       "source_sha256": "cd6b860a9261fc5830b1ae0ad5626a55210a0fe5e6870b6c940c8fd914f79f63"
     },
-    "backend/appchi/recovery/authority_records.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/authority_records.py",
+    "backend/keep/recovery/authority_records.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/authority_records.py",
       "source_sha256": "2ef6c9743bbbc9e6d21a565b87ea41011f970a47a19980880c1b58b5dd39e384"
     },
-    "backend/appchi/recovery/cleanup.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/cleanup.py",
+    "backend/keep/recovery/cleanup.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/cleanup.py",
       "source_sha256": "4ee19274b03bcfefdd9ef771d37f4f43afebef601537e47065ad7eebc751efa4"
     },
-    "backend/appchi/recovery/command_retention.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/command_retention.py",
+    "backend/keep/recovery/command_retention.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/command_retention.py",
       "source_sha256": "86ced869c9bcafa25e3d230ba6ef8f054fea30ff3734da6478d4fd448d524ec8"
     },
-    "backend/appchi/recovery/deletions.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/recovery/deletions.py",
+    "backend/keep/recovery/deletions.py": {
+      "repository": "keep-api",
+      "path": "src/keep/recovery/deletions.py",
       "source_sha256": "4d4a5d0a0240b208e10abb569b974b12b274c15be6e21961d6fecb9141366602"
     },
-    "backend/appchi/recovery/evidence.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/evidence.py",
+    "backend/keep/recovery/evidence.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/evidence.py",
       "source_sha256": "d64f8e9bad2208fb6dd510834fac0914b90cbabea92d9efbb2a63f9003ed2568"
     },
-    "backend/appchi/recovery/guard.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/guard.py",
+    "backend/keep/recovery/guard.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/guard.py",
       "source_sha256": "948924a8144fbc3e3433f81b61a78e9596c2fedaa77f5ddc0ee10f5bf16b504b"
     },
-    "backend/appchi/recovery/incidents.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/incidents.py",
+    "backend/keep/recovery/incidents.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/incidents.py",
       "source_sha256": "6a053f867075b9b550a13caf6cf586d0a63622f7f24c327c524a1fb51b066e13"
     },
-    "backend/appchi/recovery/restore.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/restore.py",
+    "backend/keep/recovery/restore.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/restore.py",
       "source_sha256": "04827f51fd7d6052ed649f4bf35462ce6b73b9486768e81084892bf9c062122a"
     },
-    "backend/appchi/recovery/restore_cli.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/restore_cli.py",
+    "backend/keep/recovery/restore_cli.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/restore_cli.py",
       "source_sha256": "0348aad98d14b89d71d62b79e65d773eec3c938a217dcaba95ca5a99b3a01633"
     },
-    "backend/appchi/recovery/retirement.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/retirement.py",
+    "backend/keep/recovery/retirement.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/retirement.py",
       "source_sha256": "869ce98eff45ff38f37cedace517fc2cbfe5c117c8c21b40c3247b3cba16d46f"
     },
-    "backend/appchi/recovery/runtime.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/recovery/runtime.py",
+    "backend/keep/recovery/runtime.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/recovery/runtime.py",
       "source_sha256": "6ed43fc5a6b8dda7b9e927b4259f0b6be1633d07cb3b1bea0ef819996d04c77b"
     },
-    "backend/appchi/release_scope.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/release_scope.py",
+    "backend/keep/release_scope.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/release_scope.py",
       "source_sha256": "868c0a593c0bea6af9611c6a0c24cfb3cee896285cb4e6c73229aa4861d41bea"
     },
-    "backend/appchi/search/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/search/__init__.py",
+    "backend/keep/search/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/search/__init__.py",
       "source_sha256": "aac1c8476e1c9e0be4f25777b13a823acc937ef161692ead82b881d2b379b2ce"
     },
-    "backend/appchi/search/consumer.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/consumer.py",
+    "backend/keep/search/consumer.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/consumer.py",
       "source_sha256": null
     },
-    "backend/appchi/search/control.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/search/control.py",
+    "backend/keep/search/control.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/search/control.py",
       "source_sha256": "d4866713a7a51a3dc65582615c2164dbb3edafe021c9429bc75276d486c6716b"
     },
-    "backend/appchi/search/counts.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/search/counts.py",
+    "backend/keep/search/counts.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/search/counts.py",
       "source_sha256": "9cf11767a488b6db112375616aa21369017fa73ba5ed6769613b0d0fd40b024e"
     },
-    "backend/appchi/search/local_bootstrap.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/local_bootstrap.py",
+    "backend/keep/search/local_bootstrap.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/local_bootstrap.py",
       "source_sha256": "0231c2744e1ab1c19914b1df270874b21e4d546d5589ecb19afef9f306c18998"
     },
-    "backend/appchi/search/main.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/main.py",
+    "backend/keep/search/main.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/main.py",
       "source_sha256": null
     },
-    "backend/appchi/search/projection.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/search/projection.py",
+    "backend/keep/search/projection.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/search/projection.py",
       "source_sha256": "fdc0871b0c1be16ee59458bf09d1d94c6dd27ef3cdaeb91bbfc642c42660ea1c"
     },
-    "backend/appchi/search/reader.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/search/reader.py",
+    "backend/keep/search/reader.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/search/reader.py",
       "source_sha256": "b433fa36011f81f145963807a020bb513f1ecaf51c690a0e51da120aaf781476"
     },
-    "backend/appchi/search/rebuild.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/rebuild.py",
+    "backend/keep/search/rebuild.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/rebuild.py",
       "source_sha256": "c84ae7e3f72e39bbdb60ac7aa8064289cbf1cb4313b78ff0fdc24894c61f6df8"
     },
-    "backend/appchi/search/rebuild_cli.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/rebuild_cli.py",
+    "backend/keep/search/rebuild_cli.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/rebuild_cli.py",
       "source_sha256": "810db86abcdc5586d0ca551a51e4fe04aaf8139aff38207f62006d78345aca0f"
     },
-    "backend/appchi/search/reconciliation.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/reconciliation.py",
+    "backend/keep/search/reconciliation.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/reconciliation.py",
       "source_sha256": "69f38216b92093566f568a221627655db2980d4b5d6d5653625f4c25a80637a7"
     },
-    "backend/appchi/search/text.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/search/text.py",
+    "backend/keep/search/text.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/search/text.py",
       "source_sha256": "9569c27b01521669fe047469f1409d2447abed3d0410b32d43669fff4399f552"
     },
-    "backend/appchi/search/writer.py": {
-      "repository": "appchi-indexer",
-      "path": "src/appchi/search/writer.py",
+    "backend/keep/search/writer.py": {
+      "repository": "keep-indexer",
+      "path": "src/keep/search/writer.py",
       "source_sha256": null
     },
-    "backend/appchi/search_routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/search_routes.py",
+    "backend/keep/search_routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/search_routes.py",
       "source_sha256": "77c2f6b629da79615547c08db6442e4af014f30d53b2b8fa310f89cfd7554849"
     },
-    "backend/appchi/serialization.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/serialization.py",
+    "backend/keep/serialization.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/serialization.py",
       "source_sha256": null
     },
-    "backend/appchi/service_clients.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/service_clients.py",
+    "backend/keep/service_clients.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/service_clients.py",
       "source_sha256": "2625ac544cd6f1290d1e3c034493d67a4571143e7efa920b92808611a26cc9f5"
     },
-    "backend/appchi/shared/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/shared/__init__.py",
+    "backend/keep/shared/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/shared/__init__.py",
       "source_sha256": "4258d8a2e7556293751ed90c66e9e7a64a6725ddb5f281242d1f593b7df93245"
     },
-    "backend/appchi/shared/crypto.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/shared/crypto.py",
+    "backend/keep/shared/crypto.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/shared/crypto.py",
       "source_sha256": "555b4af6428bb6ce133c7e7eaafa99195d1b8e4c816fbec4b205abc6e038646a"
     },
-    "backend/appchi/shared/cursors.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/shared/cursors.py",
+    "backend/keep/shared/cursors.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/shared/cursors.py",
       "source_sha256": "67728bb32469f935a7a8d8ec773f47a54a4253f69376855edb581c9fc47c8cda"
     },
-    "backend/appchi/shared/display_names.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/shared/display_names.py",
+    "backend/keep/shared/display_names.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/shared/display_names.py",
       "source_sha256": "d70c46b66196667f13694eb38f831859532d21806583d710f4a808c81b0ee59b"
     },
-    "backend/appchi/shared/errors.py": {
-      "repository": "appchi-contracts",
-      "path": "src/appchi/shared/errors.py",
+    "backend/keep/shared/errors.py": {
+      "repository": "keep-contracts",
+      "path": "src/keep/shared/errors.py",
       "source_sha256": "22431155bc271ff6eb2f51498bf0494e850aff1405c09682a7cc46eac3859adb"
     },
-    "backend/appchi/shared/rewrap.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/shared/rewrap.py",
+    "backend/keep/shared/rewrap.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/shared/rewrap.py",
       "source_sha256": "12bddc232cb472ff86af383d2c89bef55bf696b2e69bb5ff7b751cd4cef244b3"
     },
-    "backend/appchi/shared/transactions.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/shared/transactions.py",
+    "backend/keep/shared/transactions.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/shared/transactions.py",
       "source_sha256": "1b38df3748f5097e1c86b027e7ecd8010950f6d3e5da304bdf23b3cce1fe44a8"
     },
-    "backend/appchi/tenant_routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/tenant_routes.py",
+    "backend/keep/tenant_routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/tenant_routes.py",
       "source_sha256": "1400a9db90997209c4a4cce65dbc7003199ff15fcb1a76b6bdbb4185bbcc34a5"
     },
-    "backend/appchi/visibility/__init__.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/__init__.py",
+    "backend/keep/visibility/__init__.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/__init__.py",
       "source_sha256": "442acf2ed9f9fbcff6e83c7eefb12058714ea48476f4c3a3d2c5488fbf021a04"
     },
-    "backend/appchi/visibility/authority.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/authority.py",
+    "backend/keep/visibility/authority.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/authority.py",
       "source_sha256": "3c14aa89cfffd32df17ea36244faeab87778ab18ff891b3174f2cb73ab4c7bfd"
     },
-    "backend/appchi/visibility/inputs.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/inputs.py",
+    "backend/keep/visibility/inputs.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/inputs.py",
       "source_sha256": "6dd6cc427efb10fca18a9638f44a393ee50dc1267e526099b08205df3b82eef8"
     },
-    "backend/appchi/visibility/limits.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/limits.py",
+    "backend/keep/visibility/limits.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/limits.py",
       "source_sha256": null
     },
-    "backend/appchi/visibility/maintenance.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/maintenance.py",
+    "backend/keep/visibility/maintenance.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/maintenance.py",
       "source_sha256": "9666a8cf347369af2ebdf824d1f200fe89dd6855ff54fbf1b3dbcf08bfe40f92"
     },
-    "backend/appchi/visibility/models.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/models.py",
+    "backend/keep/visibility/models.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/models.py",
       "source_sha256": "410bc626e20708fa8e10857e14e2f0320a42d1578faa8c5207f8569abe81cc20"
     },
-    "backend/appchi/visibility/registry.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/visibility/registry.py",
+    "backend/keep/visibility/registry.py": {
+      "repository": "keep-api",
+      "path": "src/keep/visibility/registry.py",
       "source_sha256": "b38c8c0e4c4db482cfa2b664f9df7abdc8fe21469bbb0cc0c71756da06d0f621"
     },
-    "backend/appchi/visibility/repository.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/repository.py",
+    "backend/keep/visibility/repository.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/repository.py",
       "source_sha256": "1677990b0416d041ee024a94e684e8fe810375d0ca2f73513b2391c0e3be76c2"
     },
-    "backend/appchi/visibility/routes.py": {
-      "repository": "appchi-api",
-      "path": "src/appchi/visibility/routes.py",
+    "backend/keep/visibility/routes.py": {
+      "repository": "keep-api",
+      "path": "src/keep/visibility/routes.py",
       "source_sha256": "ea61936d7c6552a05e3dc7d9684fe5dd6a4ff53b0fa51879ccde6ba0b2223f34"
     },
-    "backend/appchi/visibility/runtime.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/runtime.py",
+    "backend/keep/visibility/runtime.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/runtime.py",
       "source_sha256": "cdcf5ec0dffef72cc37b30ded8e8c3225d5d9002c0c3e635271dbaf7abcefd6c"
     },
-    "backend/appchi/visibility/sampling.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/visibility/sampling.py",
+    "backend/keep/visibility/sampling.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/visibility/sampling.py",
       "source_sha256": "e69033b87fc6ca87611abce902e0f5157d9b5fad7ea1db6fb40189f758c475e2"
     },
-    "backend/appchi/worker.py": {
-      "repository": "appchi-delivery",
-      "path": "src/appchi/worker.py",
+    "backend/keep/worker.py": {
+      "repository": "keep-delivery",
+      "path": "src/keep/worker.py",
       "source_sha256": "2323021f52a60f028ed6cff15fc282bc0935d5ebaac79e980423022bcec0b9b7"
     },
-    "backend/appchi/worker_health.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/worker_health.py",
+    "backend/keep/worker_health.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/worker_health.py",
       "source_sha256": "639b05e0179dd5b9380fcb823bf24cc4f783074dea9165b31be267026476957e"
     },
-    "backend/appchi/workload.py": {
-      "repository": "appchi-domain",
-      "path": "src/appchi/workload.py",
+    "backend/keep/workload.py": {
+      "repository": "keep-domain",
+      "path": "src/keep/workload.py",
       "source_sha256": "741d275859c5622380de0236d8e7f5163dfde749c6ec317b55a0d3e7e10aa4a6"
     },
     "backend/pyproject.toml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "legacy/backend.pyproject.toml",
       "source_sha256": "53f15db42583f98ee76998d7e4743e8c30acfb3dfe5b4b1135df1d9f9bf3fe19"
     },
     "backend/tests/compatibility/test_count_elasticsearch.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/compatibility/test_count_elasticsearch.py",
       "source_sha256": "020fb6f2dfb4b0330628d4b43252d8fee80196a4e0661984250560e709924fe4"
     },
     "backend/tests/compatibility/test_search_elasticsearch.py": {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "path": "tests/compatibility/test_search_elasticsearch.py",
       "source_sha256": "27a13df7f7d607aceb9aa2d541d62cdfc4f70fb3bdb079bb05e0c3a90ccbcc0c"
     },
     "backend/tests/conftest.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/conftest.py",
       "source_sha256": "75985ad7d25b93d26d11cb581eea2554fbedc3a18f6cf848a87a4414ab077240"
     },
     "backend/tests/integration/test_alert_cleanup.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_alert_cleanup.py",
       "source_sha256": "59649077d3083b1c6be2362072ea7c22e23e906eca440117d3a1de86e1bddf5a"
     },
     "backend/tests/integration/test_alert_detail_consistency.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_alert_detail_consistency.py",
       "source_sha256": "c433cfb758a8ff98b34c4f88a4adf3f17957d8df63ef7a7a4973b06f259feab0"
     },
     "backend/tests/integration/test_alert_evidence.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_alert_evidence.py",
       "source_sha256": "d2562d309ec22ec62b7be8d0699fcacac74af922a1a03d14a64b26de5e2e8e67"
     },
     "backend/tests/integration/test_alert_retirement_attempts.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_alert_retirement_attempts.py",
       "source_sha256": "13d24c9052e2af10460de66078c356fed7bff5d87d289ba968064dd206f4905e"
     },
     "backend/tests/integration/test_audit_browsing.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_audit_browsing.py",
       "source_sha256": "a5212273c08f06e01aa9edb89b9e9de61056052330c82010ed0be9a3655a54b7"
     },
     "backend/tests/integration/test_cel_routes.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_cel_routes.py",
       "source_sha256": "adfef75ad00f09ff65b6d5e390e69b3a0828511f555cb193f055c24819f688a8"
     },
     "backend/tests/integration/test_command_retention.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_command_retention.py",
       "source_sha256": "f48f9e3d474640650376729de9e443d3ae39ff3b20f59ec85f29074190f459f2"
     },
     "backend/tests/integration/test_configuration_counts.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_configuration_counts.py",
       "source_sha256": "2ab1023548fad47cba214263bbb161089350678f0766ae4cffe2313744c1860d"
     },
     "backend/tests/integration/test_configuration_deletion.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_configuration_deletion.py",
       "source_sha256": "e641364d51701893cf8fa926c02249072d2b007f9ddbfd488c9520cb79d84ffd"
     },
     "backend/tests/integration/test_configuration_reads.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_configuration_reads.py",
       "source_sha256": "5c8409a02a9b4bbae530f8139ade48723183a72d8af9a73f289d4099fc680534"
     },
     "backend/tests/integration/test_configuration_retention.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_configuration_retention.py",
       "source_sha256": "c3dd4d8cf77a01f5ab0502c5f267f2b684f29dac1228799eb398cbefbcfa34f6"
     },
     "backend/tests/integration/test_correlation_cleanup.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_correlation_cleanup.py",
       "source_sha256": "9163bcc94bed102e525d2d55194c9943914a14ac68d4f959c91451ba6fda3715"
     },
     "backend/tests/integration/test_correlation_configuration.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_correlation_configuration.py",
       "source_sha256": "cf15925c81ef8a7ee601d90f700fa8bdb15743d963633d91a76ff0946ee4a6e8"
     },
     "backend/tests/integration/test_correlation_deletion.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_correlation_deletion.py",
       "source_sha256": "aff5cdfd19d19dc4679d37062648b7d9f22ae6ce9146e118f4f95aeefd18c774"
     },
     "backend/tests/integration/test_correlation_runtime.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_correlation_runtime.py",
       "source_sha256": "d1b598a754bd9be74c4df366ae0418e64849873031eab22fd2149cea2258e867"
     },
     "backend/tests/integration/test_dashboard_listing.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_dashboard_listing.py",
       "source_sha256": "10a0d4f8f67f1d74bac03891fe05026707ec0d216e9fa6c784c6fc921d8a18d1"
     },
     "backend/tests/integration/test_display_names.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_display_names.py",
       "source_sha256": "140a44fe74d278761db75d191ebefc85c70a257b034245d0c91ffd87a1d9c0fb"
     },
     "backend/tests/integration/test_gateway_tls.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_gateway_tls.py",
       "source_sha256": "728a792a891a192997cd7305f59a3f583a2de26e8b0724470f4b20e7bbd91a1c"
     },
     "backend/tests/integration/test_grafana_admission.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_grafana_admission.py",
       "source_sha256": "01651f22ba38abc59218d9c881047df3c72e23d11bee829f601d0d25e8f5fbc8"
     },
     "backend/tests/integration/test_inactivity_pages.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_inactivity_pages.py",
       "source_sha256": "d1b18384d72395ffb3ed3e93f55cac9d977951c1631aa8003be9343f9ba2eb16"
     },
     "backend/tests/integration/test_incident_listing.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_incident_listing.py",
       "source_sha256": "8a89732e5ebcc3ac0d8ca587036346c0022a65a91fcf188ade9b9f8afacec4af"
     },
     "backend/tests/integration/test_incident_note_revision.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_incident_note_revision.py",
       "source_sha256": "bf020aa45773f509083ebe6c284312511cc5f54c40e6817ba1b2dcf77092c54b"
     },
     "backend/tests/integration/test_incident_retirement.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_incident_retirement.py",
       "source_sha256": "967fc9846074ea06a6ff3036b164dd25ede2ca2fb7c0dde52a74de5dac6fbcd8"
     },
     "backend/tests/integration/test_ingestion.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_ingestion.py",
       "source_sha256": "12a27482ebb5261fc313b76cc1341c22742565b8208abf895b90f47501200cee"
     },
     "backend/tests/integration/test_kafka_cutover.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kafka_cutover.py",
       "source_sha256": "32dcc6fb96082ac3a952878f58c524cb150dd941b9d08314764639f0900b1df6"
     },
     "backend/tests/integration/test_kafka_first.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kafka_first.py",
       "source_sha256": "2cd19752a82c64ed5d4e407edc41ea58e3894f74cb1a0880efd4136fee82ba76"
     },
     "backend/tests/integration/test_kafka_maintenance_inline.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kafka_maintenance_inline.py",
       "source_sha256": "a52888086047f70bbe21f1d990a4f10d44e8f1e8cdb3fe849e89a5e76b4a7cc5"
     },
     "backend/tests/integration/test_kafka_pipeline.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kafka_pipeline.py",
       "source_sha256": "cc031f1196f21fc42f89cbeca14eec35e823cf38e09c605b13abaeea2fd4d712"
     },
     "backend/tests/integration/test_kafka_retirement.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kafka_retirement.py",
       "source_sha256": "5591d1592dfcd902f55f79ceccf6538b74ee2f580f210119b6e7f53c08668d28"
     },
     "backend/tests/integration/test_kafka_unavailable.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kafka_unavailable.py",
       "source_sha256": "46ba02a534bf1cf1db57758cbdd40c880c5290a375e16cfd5ce374a02fc5c42d"
     },
     "backend/tests/integration/test_kong_policy.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_kong_policy.py",
       "source_sha256": "a44a5b16148cee56f3466acd3eba9a1213de58e3e40bccafd626cd8820d4e8f9"
     },
     "backend/tests/integration/test_live_delivery.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_live_delivery.py",
       "source_sha256": "c7f1aadc2bdfb4f84c2033e5a9e8e7b14bac347a2cd786475a86024b7786937e"
     },
     "backend/tests/integration/test_local_keycloak_publication.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_local_keycloak_publication.py",
       "source_sha256": "157fd66a3ca9a66bb0794e4fc40cf7688b219336aee6e7471395fc7244d7cbd5"
     },
     "backend/tests/integration/test_local_search_bootstrap_sql.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_local_search_bootstrap_sql.py",
       "source_sha256": "d7e6cb2be28f64a807fd4e534512954a856f73bccd79c2319888900f519a0ceb"
     },
     "backend/tests/integration/test_maintenance_alert_test.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_maintenance_alert_test.py",
       "source_sha256": "f23c5f2458bb066c42b9dddd9cb28486a3478202e753420bc8cc2fc71563931c"
     },
     "backend/tests/integration/test_maintenance_edit_validation.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_maintenance_edit_validation.py",
       "source_sha256": "55a6cd39facc02cf99fb4183d4e8d157c1b16c4d537922faa3cc6c5ef4e4248a"
     },
     "backend/tests/integration/test_maintenance_retention.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_maintenance_retention.py",
       "source_sha256": "9e50e2781c74ed008b31e95242dfa9f9994793f83e4248a460df9a6594dfa827"
     },
     "backend/tests/integration/test_maintenance_saved_test.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_maintenance_saved_test.py",
       "source_sha256": "0a3b3967e3ca9b2991e9fe4a2d366b8aa87fc192f3f4121528f3c666423d0b6c"
     },
     "backend/tests/integration/test_operator_diagnostics_retention.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_operator_diagnostics_retention.py",
       "source_sha256": "0e7d507544d69c0e2e56667e4e53de167436c1eeebd5c1569bd9aa97e03dda56"
     },
     "backend/tests/integration/test_operator_executor_ledger.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_operator_executor_ledger.py",
       "source_sha256": "8a5bdb20367fc1f439dc5b7a7ca95106b7e47cf978546e4c8cf43e4700dc9865"
     },
     "backend/tests/integration/test_operator_kafka_drain.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_operator_kafka_drain.py",
       "source_sha256": "e359a0ea51dd67de14055be504a8ac5a822c7bea3dd485bac18e9d2d4c9f6c51"
     },
     "backend/tests/integration/test_operator_repository.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_operator_repository.py",
       "source_sha256": "c8157a532b1e0bc8bd006f399f34ef8b399b5490bf1473878e677228ab33cd57"
     },
     "backend/tests/integration/test_operator_synchronous.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_operator_synchronous.py",
       "source_sha256": "387ed758d96310be4d05ca87daf813a28a0b9ec7d815e8a5d3fc4800cc101ebd"
     },
     "backend/tests/integration/test_permission_revision.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_permission_revision.py",
       "source_sha256": "9186e017f634d431c38373d3d6a02f951bb0e23383e2b18a9d6995f3bbe0cb6f"
     },
     "backend/tests/integration/test_pipeline.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_pipeline.py",
       "source_sha256": "cdc3e7aa03d1959a7dbd12944cb5c478c637bc640a1bfc3198ef2b93b92e9e03"
     },
     "backend/tests/integration/test_product.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_product.py",
       "source_sha256": "5a4646ff9f542177afdd7a3a72a351341723bb4841402205b720c35e225b29c3"
     },
     "backend/tests/integration/test_recovery_gateway.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_recovery_gateway.py",
       "source_sha256": "75c1a47f4a087b79b50a08d552cc189f40f9a8ae64bd9aa5025202addfdc5df2"
     },
     "backend/tests/integration/test_restore_assessment.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_restore_assessment.py",
       "source_sha256": "7eba21b716d6b55137fac87bef606cf8e49f416af7c6200ffee1348bce56be41"
     },
     "backend/tests/integration/test_restore_fencing.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_restore_fencing.py",
       "source_sha256": "3f17f119ec78a994300761c1b477aefede52330525ec9c8f845942c388705135"
     },
     "backend/tests/integration/test_search_pipeline.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_search_pipeline.py",
       "source_sha256": "9c328bd9ac4ff7932dee18150cea13ff50ac4a954ae53d41fca44e8fb88238e6"
     },
     "backend/tests/integration/test_search_rebuild.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_search_rebuild.py",
       "source_sha256": "77a6f2d99504822babe3350cf5226bafd81ee2fc32f0cf051bfd96f4b8f0fc96"
     },
     "backend/tests/integration/test_search_rebuild_edges.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_search_rebuild_edges.py",
       "source_sha256": "da33cdfd3192f100aab4b3337192078edc2dea5c220b423405b1a23809c2007e"
     },
     "backend/tests/integration/test_security.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_security.py",
       "source_sha256": "ed442d1fd1a0769eda84053e5219b1727199f7efcc72a848a7126ae340f483ed"
     },
     "backend/tests/integration/test_source_driven_maintenance.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_source_driven_maintenance.py",
       "source_sha256": "6cd0ff10709340d787f9a854db8a9ae21d91837031f3344f6332b9c8b3eeaf7d"
     },
     "backend/tests/integration/test_tenant_bootstrap_role.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_tenant_bootstrap_role.py",
       "source_sha256": "159134427a9674cae1761b8fcc4e951c3161fbe51056b10e23a8313e7fa67c9a"
     },
     "backend/tests/integration/test_visibility_authority.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_visibility_authority.py",
       "source_sha256": "0d5a1895e8927147d740f34e5dab64fe770f3b3be6cd83918e7cbf72c9a70a3d"
     },
     "backend/tests/integration/test_visibility_inputs.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_visibility_inputs.py",
       "source_sha256": "c409d27cca912f2d327ef116e60775a315fb42c5a0b4b2bd157184db76656366"
     },
     "backend/tests/integration/test_visibility_maintenance.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_visibility_maintenance.py",
       "source_sha256": "7511034321416d72aa823616342b38ada1eb06227cd39f8e6586e4e10b3b876f"
     },
     "backend/tests/integration/test_visibility_producers.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_visibility_producers.py",
       "source_sha256": "0fced9c43225af78d8e269fa8d69725ee703a0af4747c9bcabc311e1b9fd19f2"
     },
     "backend/tests/integration/test_visibility_registry.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_visibility_registry.py",
       "source_sha256": "edb8bf88f23278f99f47b11d17d8f387744a6328f7f31e4c60fe92268703f386"
     },
     "backend/tests/integration/test_wrapping_rewrap.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/integration/test_wrapping_rewrap.py",
       "source_sha256": "569afdc2abffaed85aa4769b38d187e899c6902be5a27b8bea8455dbfe36f24f"
     },
     "backend/tests/unit/test_admin_operations.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_admin_operations.py",
       "source_sha256": "ae523ce349f052858a7b8ed01ce8cf58b41bfc93207efb6e3eb2d6c6fdabf8af"
     },
     "backend/tests/unit/test_alert_ownership.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_alert_ownership.py",
       "source_sha256": "f331d2926c916bfa011cc4f4bd09217d5b20fa6bfbb231f16e32711e82e18dda"
     },
     "backend/tests/unit/test_api_live_publisher.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_api_live_publisher.py",
       "source_sha256": "56f56b7a7a3a63103833eb5dfe43f5dc491b57d46eceffd6eb0956de3ab96f01"
     },
     "backend/tests/unit/test_authority_records.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_authority_records.py",
       "source_sha256": "5eb6479fd82bdc03afe212697b5633ef9296f10324e87c91e9c6761a2ca714fe"
     },
     "backend/tests/unit/test_cel.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_cel.py",
       "source_sha256": "e90187472795eacd406c3dcccda7f4356dfb98b592f7b29d1fe50aaca7cd4d91"
     },
     "backend/tests/unit/test_cel_editor.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_cel_editor.py",
       "source_sha256": "2bdd65463a7dc521ae264ed1ff3439cf223542a49e06489fd9a34f70e7912747"
     },
     "backend/tests/unit/test_clock_health.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_clock_health.py",
       "source_sha256": "4740a873bf649ca895783e49375508b113dfeec37e71c05db94905ed0a9d88f6"
     },
     "backend/tests/unit/test_correlation_evidence.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_correlation_evidence.py",
       "source_sha256": "61e82f7f4b2c3f8352419165484e7ebea386e5bbc51b67c7dd841346df358e62"
     },
     "backend/tests/unit/test_correlation_models.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_correlation_models.py",
       "source_sha256": "165511e83b200781b10e74370df84da5485f43d38786340bb52eff0d89b34ed8"
     },
     "backend/tests/unit/test_correlation_replay.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_correlation_replay.py",
       "source_sha256": "f99c35b45820a654c62f1a6ad44719d627bf86dc3409b60e854b23535c62ee62"
     },
     "backend/tests/unit/test_count_batches.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_count_batches.py",
       "source_sha256": "24f974ca7b33c28b616cd7d8b7b5aac8b68fb0f1fbb305e5625b4761d7d2693f"
     },
     "backend/tests/unit/test_display_name_enrichment.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_display_name_enrichment.py",
       "source_sha256": "a86e96529bd6a99ac5a93e16f1c428efbdcc53740f647155cac5d9fef17bc883"
     },
     "backend/tests/unit/test_event_contracts.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_event_contracts.py",
       "source_sha256": "a8bcb794265826ae7579a82f5f200eb2be4d62143c35f1405ca5180a5d582bd9"
     },
     "backend/tests/unit/test_identity_cleanup.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_identity_cleanup.py",
       "source_sha256": "f502211f03ec29e34f2172685e55a89a1584f125b53258885473c87fb5e84ba6"
     },
     "backend/tests/unit/test_identity_directory.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_identity_directory.py",
       "source_sha256": "a8f499023faf035d7a9e0513d29cac46914ded9932cb600e35237b10475d39f9"
     },
     "backend/tests/unit/test_identity_ldap.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_identity_ldap.py",
       "source_sha256": "8a1cb74a7baa04f6f49f9ae251d3f9539f717cc5c8a8941eb8599ffa6375e07a"
     },
     "backend/tests/unit/test_identity_oidc.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_identity_oidc.py",
       "source_sha256": "5b5702f3fd42b40ec0b5f1db45d88bdf9cb1867d779707af56abcf0f6f250ee3"
     },
     "backend/tests/unit/test_identity_selection.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_identity_selection.py",
       "source_sha256": "81962de0d50d45826393c98b46a18fc9785656cbb730bfb6229dbd6a607725bc"
     },
     "backend/tests/unit/test_identity_sessions.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_identity_sessions.py",
       "source_sha256": "6dcc6ff01731b102f23678ae79d0a03b27e076bb715de09595961999d738f5b1"
     },
     "backend/tests/unit/test_kafka_changed_shutdown.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_kafka_changed_shutdown.py",
       "source_sha256": "2430ede3de1141a323d8bd7d715a781d961198256a1e596b2769b8621c401593"
     },
     "backend/tests/unit/test_kafka_first_admission.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_kafka_first_admission.py",
       "source_sha256": "ef0a3fea5eaa37a00c7857d6d5ea3c59cc1f72eccfc75b740739f8094db79fd1"
     },
     "backend/tests/unit/test_keyring_settings.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_keyring_settings.py",
       "source_sha256": "0ebd47c21f0129a10b83279dba57ea9b631003dfe4c52c2f7e72036a40fbda25"
     },
     "backend/tests/unit/test_local_identity_setup.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_local_identity_setup.py",
       "source_sha256": "c3cb3bd304fc29b687fdde3adf28019f990868ff85cf532768b8974dfb631f99"
     },
     "backend/tests/unit/test_local_keycloak_directory.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_local_keycloak_directory.py",
       "source_sha256": "e52ed998724a5bb145f5ae9a9e4953a4ecbcefaafd917335642d466e0635e147"
     },
     "backend/tests/unit/test_local_search_bootstrap.py": {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "path": "tests/unit/test_local_search_bootstrap.py",
       "source_sha256": "44ee4dbbdf28629bfd1a3f400ce09e2abeb67000588ba2594a1bc2bd1b77e262"
     },
     "backend/tests/unit/test_local_v2_setup.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_local_v2_setup.py",
       "source_sha256": "ca6b94064d4be871906da04fbe5bb0d1dc65014f2e0a02068526d92f4e07d5ea"
     },
     "backend/tests/unit/test_maintenance_processing.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_maintenance_processing.py",
       "source_sha256": "af59fa7e31996b6d304f46fb1ea2d712b349833104e9ef9dd4d62af147c5434e"
     },
     "backend/tests/unit/test_maintenance_repository.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_maintenance_repository.py",
       "source_sha256": "c934e4455cf2f2d3e871d2cedb5dbaef67fece080fa0e2b059f126890b1e7e6d"
     },
     "backend/tests/unit/test_maintenance_temporal.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_maintenance_temporal.py",
       "source_sha256": "7175529772247bb01a8a84e3c99a849df1f1a3fb1b8e3ee18452e0f42368ed6d"
     },
     "backend/tests/unit/test_maintenance_timezones.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_maintenance_timezones.py",
       "source_sha256": "22898a63937bddaf5f674f02a287f94d51cac951ab5873c7a9f5fe3e0d35c12e"
     },
     "backend/tests/unit/test_maintenance_warmup.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_maintenance_warmup.py",
       "source_sha256": "9e5dfb8bd7ca5c117769c8a352a50a34cfa2fea589d1e5e46ac319b8a3e84092"
     },
     "backend/tests/unit/test_native.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_native.py",
       "source_sha256": "3b35f49bd917fd5c05f398a8c59acb285e488332dc564097c2091a292b355529"
     },
     "backend/tests/unit/test_operator_executor.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_operator_executor.py",
       "source_sha256": "74813d59bc6e1b3a922f7f00c52e3917d8eec6c208b12eb6edcbebb5c806637a"
     },
     "backend/tests/unit/test_operator_grafana.py": {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "path": "tests/unit/test_operator_grafana.py",
       "source_sha256": "d3832f0b3a508668794b3bc152c320066c12c3f60e7cf21e133099ce7282492f"
     },
     "backend/tests/unit/test_operator_keys.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_operator_keys.py",
       "source_sha256": "810298b3397e205eea5bd467b8a14403b27336c5889deb6c4e36da35b418d3bf"
     },
     "backend/tests/unit/test_operator_remote.py": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "tests/unit/test_operator_remote.py",
       "source_sha256": "3759d4acb4cbddab37ca36c3bb49fdbfd6d7126e301919dab79dc35f70d601e8"
     },
     "backend/tests/unit/test_recovery_checkpoint.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_recovery_checkpoint.py",
       "source_sha256": "2609c887e7f99b541d616db41495ea6f0c9d0b69e2828fa0a523bcac947dc355"
     },
     "backend/tests/unit/test_search.py": {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "path": "tests/unit/test_search.py",
       "source_sha256": "8fdea4c46d289494d878ed91a3c65967e88ca021125e3abaf5c7df73150e4078"
     },
     "backend/tests/unit/test_service_clients.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_service_clients.py",
       "source_sha256": "51a9e86d87c7d1bc0bb127e789d7b37bae8940befff342c592ddf255d8595c38"
     },
     "backend/tests/unit/test_transport_cursor.py": {
-      "repository": "appchi-ingestion",
+      "repository": "keep-ingestion",
       "path": "tests/unit/test_transport_cursor.py",
       "source_sha256": "7a386b7b6e541c06374fc4d97c23b94859becbd96352c21600fd5414be82ea8a"
     },
     "backend/tests/unit/test_visibility_models.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_visibility_models.py",
       "source_sha256": "c7087160e9dfbed07581abf8b964bff407e92b97c56b785148cfe4f8352fc55a"
     },
     "backend/tests/unit/test_worker_health.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_worker_health.py",
       "source_sha256": "aaa5080725e8aa16bb7b8f47ecc65ffee9239430a852230a06aecec3d53ed33c"
     },
     "backend/tests/unit/test_worker_scope.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_worker_scope.py",
       "source_sha256": "44d85294eac39956188576ea2839ce22403d96cbd8784963f83373743cc66e5c"
     },
     "backend/tests/unit/test_workload_routes.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "tests/unit/test_workload_routes.py",
       "source_sha256": "bb8da566debea81d340bd54337afae17157b038027db192f330bbc3c54228bd0"
     },
     "backend/tests/unit/test_wrapping_crypto.py": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "tests/unit/test_wrapping_crypto.py",
       "source_sha256": "076e72e9b014118a59cb5c159e844d54040c1059a753bd656df0b1795439df50"
     },
     "backend/uv.lock": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "legacy/backend.uv.lock",
       "source_sha256": "f1494ac4b4219bdb2fba213be7ade06977e3331e4dfb06e75e22b119241317b5"
     },
     "contracts/alerts.changed.v1.schema.json": {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "path": "schemas/alerts.changed.v1.schema.json",
       "source_sha256": "1dc716a6a308cb76781e78dfaa1cfa4995bfaac731be548de4e395cdb6f98130"
     },
     "contracts/alerts.received.v1.schema.json": {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "path": "schemas/alerts.received.v1.schema.json",
       "source_sha256": "8e6873ed8ea328303df3b1022b563456c234847bfd7967843076b6eed5319992"
     },
     "contracts/alerts.received.v2.schema.json": {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "path": "schemas/alerts.received.v2.schema.json",
       "source_sha256": "0f6fbd48f7ab4ffb432a7af2699a60662f027c1222093e688e624e7a97a62ee3"
     },
     "contracts/openapi.json": {
-      "repository": "appchi-contracts",
+      "repository": "keep-contracts",
       "path": "schemas/openapi.json",
       "source_sha256": "6c477017a002e8eb459783a4037f881fef1e1b323507ae454ea25bd9d69875bf"
     },
     "delivery-readiness.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "status/delivery-readiness.md",
       "source_sha256": "988ccc4eb28637efdc9984b5bf018912d6ed5218c2d1e5ba412ad640b1c5cb3d"
     },
     "deploy/backend.Dockerfile": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "legacy/backend.Dockerfile",
       "source_sha256": "c02db55ea60795a8172ce58408d3c0c7e3a0435bf3f8450d01f4a1d459c0ed6c"
     },
-    "deploy/kong/appchi-policy/api.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/api.lua",
+    "deploy/kong/keep-policy/api.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/api.lua",
       "source_sha256": "0f88f1394cfb515cc8d03e94010d0d12ed7b472da0f47bce29ab5da07f0fb2b9"
     },
-    "deploy/kong/appchi-policy/clock.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/clock.lua",
+    "deploy/kong/keep-policy/clock.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/clock.lua",
       "source_sha256": "a8a2ba2843f472145a6a7145d230837c86603a0b0ef2f76d43911941cacc1a8f"
     },
-    "deploy/kong/appchi-policy/daos.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/daos.lua",
+    "deploy/kong/keep-policy/daos.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/daos.lua",
       "source_sha256": "4990c0687791baec2d73ac8a416e86b309a8cd6146580bf5953a50c3ea1c2f03"
     },
-    "deploy/kong/appchi-policy/handler.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/handler.lua",
+    "deploy/kong/keep-policy/handler.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/handler.lua",
       "source_sha256": "615d8bfa629dda5df6ea1ae731a92542d800a45109478882d651d61a8dfa672c"
     },
-    "deploy/kong/appchi-policy/migrations/000_policy.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/migrations/000_policy.lua",
+    "deploy/kong/keep-policy/migrations/000_policy.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/migrations/000_policy.lua",
       "source_sha256": "77da4e4ae6a268aefeae492a9aa1d404d7ef96e9de3168ba785de8c0d0b98cf5"
     },
-    "deploy/kong/appchi-policy/migrations/init.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/migrations/init.lua",
+    "deploy/kong/keep-policy/migrations/init.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/migrations/init.lua",
       "source_sha256": "f73c31bdf4eed4bc9612778db49e0b8fca6d98422f2a06a471ea60a7bc803dd1"
     },
-    "deploy/kong/appchi-policy/policy.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/policy.lua",
+    "deploy/kong/keep-policy/policy.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/policy.lua",
       "source_sha256": "3cfbad1af769b77e8171ada05bb600c0444d9bce5ca709a01ef9995033fd875c"
     },
-    "deploy/kong/appchi-policy/schema.lua": {
-      "repository": "appchi-ingestion",
-      "path": "kong/appchi-policy/schema.lua",
+    "deploy/kong/keep-policy/schema.lua": {
+      "repository": "keep-ingestion",
+      "path": "kong/keep-policy/schema.lua",
       "source_sha256": "f4113dcc6762d20af589ebb154756e0fb4a1341d5177559dffdac4b20a4771d8"
     },
     "deploy/kong/README.md": {
-      "repository": "appchi-ingestion",
+      "repository": "keep-ingestion",
       "path": "kong/README.md",
       "source_sha256": "fb6b5585d89472dee0a0091b5407a56f747534c30fc000d702f3dde2b03a2611"
     },
     "deploy/local/compose.yaml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/local/compose.yaml",
       "source_sha256": "5eba66ff4f27910bd1d6d1a77e9633653e19414a8ea78b90f5775641e36e7469"
     },
-    "deploy/local/keycloak/themes/appchi/login/login.ftl": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/login.ftl",
+    "deploy/local/keycloak/themes/keep/login/login.ftl": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/login.ftl",
       "source_sha256": "3354d441e90ff76c08153defff91bdee1d459190954ba2ef26c0c2b47ac9e033"
     },
-    "deploy/local/keycloak/themes/appchi/login/resources/css/appchi.css": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/resources/css/appchi.css",
+    "deploy/local/keycloak/themes/keep/login/resources/css/keep.css": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/resources/css/keep.css",
       "source_sha256": "daf2041b50bc6224622961edc05ec73a57fd2cfa8ce4d243556616c4aea9c2b1"
     },
-    "deploy/local/keycloak/themes/appchi/login/resources/fonts/geist-latin.woff2": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/resources/fonts/geist-latin.woff2",
+    "deploy/local/keycloak/themes/keep/login/resources/fonts/geist-latin.woff2": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/resources/fonts/geist-latin.woff2",
       "source_sha256": "1b5ebfb3a01a97343ac96873e6d59a8cb285c66012b6a1ac509cb2765e995ba8"
     },
-    "deploy/local/keycloak/themes/appchi/login/resources/fonts/OFL.txt": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/resources/fonts/OFL.txt",
+    "deploy/local/keycloak/themes/keep/login/resources/fonts/OFL.txt": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/resources/fonts/OFL.txt",
       "source_sha256": "c683bfbcc7e087f5d37a54ef628f10387c451a83ddc459b151403a164ac46c90"
     },
-    "deploy/local/keycloak/themes/appchi/login/resources/img/appchi.svg": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/resources/img/appchi.svg",
+    "deploy/local/keycloak/themes/keep/login/resources/img/keep.svg": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/resources/img/keep.svg",
       "source_sha256": "db6d90b0f254803f90764e55ceb487d67ffa9c2f307b7ee0fbd0890a61e76548"
     },
-    "deploy/local/keycloak/themes/appchi/login/resources/js/appchi.js": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/resources/js/appchi.js",
+    "deploy/local/keycloak/themes/keep/login/resources/js/keep.js": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/resources/js/keep.js",
       "source_sha256": "6bebdefd03b6f6adb80d5ae292abcdaade37f8bac1cb9cfa77cec1efdca4e265"
     },
-    "deploy/local/keycloak/themes/appchi/login/resources/js/appearance.js": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/resources/js/appearance.js",
+    "deploy/local/keycloak/themes/keep/login/resources/js/appearance.js": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/resources/js/appearance.js",
       "source_sha256": "5d563eea0a9ebc32761e5ba2db35c5508e8535a2911221d5804293bad9e07cd4"
     },
-    "deploy/local/keycloak/themes/appchi/login/theme.properties": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/login/theme.properties",
+    "deploy/local/keycloak/themes/keep/login/theme.properties": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/login/theme.properties",
       "source_sha256": "332780b672c400d415b108823431a2e95b090dce817714b94217b73f48b09eda"
     },
-    "deploy/local/keycloak/themes/appchi/README.md": {
-      "repository": "appchi-frontend",
-      "path": "keycloak/themes/appchi/README.md",
+    "deploy/local/keycloak/themes/keep/README.md": {
+      "repository": "keep-frontend",
+      "path": "keycloak/themes/keep/README.md",
       "source_sha256": "b71b3598222159486a37b10a37f56e364c2922248ea441aba96f0b954524aedf"
     },
     "deploy/local/keycloak.compose.yaml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/local/keycloak.compose.yaml",
       "source_sha256": "4a5fd5aa4d2df2b5d02fff32aa718a1b785b00f72450e3a2a1da3cd3ae1ef981"
     },
     "deploy/local/operators.compose.yaml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/local/operators.compose.yaml",
       "source_sha256": "0d88c820d38f5d95a4426260d248286d98e7e731d123710f7ea716d9c89eee58"
     },
     "deploy/openshift/application.template.yaml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/openshift/application.template.yaml",
       "source_sha256": "e428b0f63712292cfccb6100b16b1b53e15de289d6042eee1db8c2cb09430579"
     },
     "deploy/openshift/frontend.template.yaml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/openshift/frontend.template.yaml",
       "source_sha256": "0b2bce8e7304272c8e67e531856762f4d30f268015ee1a2894c272bbb44d63a8"
     },
     "deploy/openshift/ingestion-api.template.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/openshift/ingestion-api.template.json",
       "source_sha256": "4e3b653403c9ab9094fd6d071cf5db185213225d130edcdf7d1368e2f3c9257f"
     },
     "deploy/openshift/migration.template.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/openshift/migration.template.json",
       "source_sha256": "3bf7fed441336fe7d867540d5233545822f94f45a5b93ada3cdfe1cdbf29d527"
     },
     "deploy/openshift/network.template.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/openshift/network.template.json",
       "source_sha256": "51749e14dd490bc871775bf906cb4c1d21f77b72078f27a140c82f9834e08d3c"
     },
     "deploy/openshift/private-ingestion.template.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "deploy/openshift/private-ingestion.template.json",
       "source_sha256": "a169213710215b7cc19c867a62ab321f08e091719c862735da6f2e434ee48598"
     },
     "deploy/openshift/worker.template.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "legacy/monorepo-worker.template.json",
       "source_sha256": "26a042c7121df396c1979da00c8ec4008aff7d49ba8a306ad789fc2ca857418e"
     },
     "design-decisions-2026-09-22.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "decisions/design-decisions-2026-09-22.md",
       "source_sha256": "1455c5ff4181710560c4a3dfe32a7e2e238aa0920a2dae30706fb09634a8ba3b"
     },
     "design-register.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "decisions/design-register.md",
       "source_sha256": "7bad776e2d5ca978b47f06f2f5a221e2feae651cacf4f4184a9edd69cf499a72"
     },
     "docs/alert-retention-implementation.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/alert-retention-implementation.md",
       "source_sha256": "f7470bf536aea6491c80556efa4645607f0936300513d0a6fba9bc29f91eaaf4"
     },
-    "docs/appchi-service-flow.png": {
-      "repository": "appchi-design",
-      "path": "architecture/appchi-service-flow.png",
+    "docs/keep-service-flow.png": {
+      "repository": "keep-design",
+      "path": "architecture/keep-service-flow.png",
       "source_sha256": "ad6b7bd4e12f8cfcb46226b6f3df0e927735ea0349f43039a3231fbfd6d673bb"
     },
     "docs/audit-browsing-implementation.md": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "docs/audit-browsing-implementation.md",
       "source_sha256": "c77c99430a741eb62e9c7175f7d2a779c9b545a5cb2247e75f76bb33416a8cbd"
     },
     "docs/cel-implementation.md": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "docs/cel-implementation.md",
       "source_sha256": "5e563a4c700c121337669ec1def6f008fbd1a16bcd54004e821f108d0e71a2d4"
     },
     "docs/correlation-implementation.md": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "docs/correlation-implementation.md",
       "source_sha256": "75ceacc56b6c3122bb43c0b6d5978300fbd366dc0271c84e99274a6dcc849237"
     },
     "docs/frontend.md": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "docs/frontend.md",
       "source_sha256": "1f9779c690e2ad8215f66e3f4f312e7973cc174091b1b6c16ebc992e2276d37d"
     },
     "docs/identity-implementation.md": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "docs/identity-implementation.md",
       "source_sha256": "250d0a0a0a554e2cf52ba864817f258e5a6206de840d1144d05a9645e49578e9"
     },
     "docs/incident-notes-implementation.md": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "docs/incident-notes-implementation.md",
       "source_sha256": "23cf0696b1c706c691b9a279945b0dffb5e2e6f29ce363c45ba719f18c28a3d0"
     },
     "docs/incident-retention-implementation.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/incident-retention-implementation.md",
       "source_sha256": "f26e20e1cc94bff391193d6aa72e5f3fa9827ac23ff4d8f374a4624e91311661"
     },
     "docs/kafka-first-implementation.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/kafka-first-implementation.md",
       "source_sha256": "a2ddbb95e78ac68c791363a266a38e6dcfad01319cef251e00d36981cbe6416b"
     },
     "docs/local-keycloak.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/local-keycloak.md",
       "source_sha256": "4fa23bf3458b4e0b5b2d925ca805314a2fe1a4861a54140d07c9bea91b42dc05"
     },
     "docs/local-runtime.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/local-runtime.md",
       "source_sha256": "b5b26d66f420d90e687d0bf85d58cf0a4206be3c792d618acfb2e94b8d2fae72"
     },
     "docs/local-v2.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/local-v2.md",
       "source_sha256": "04bfe8606862ef8fe24e2ad038d7d1757f5db8e34a92a009f1cc2f0c8fc5fe86"
     },
     "docs/maintenance-implementation.md": {
-      "repository": "appchi-domain",
+      "repository": "keep-domain",
       "path": "docs/maintenance-implementation.md",
       "source_sha256": "4255b2d35106716edfccc4c914d620fe330637fac4e64380e1a910cd85e00525"
     },
     "docs/operators-implementation.md": {
-      "repository": "appchi-api",
+      "repository": "keep-api",
       "path": "docs/operators-implementation.md",
       "source_sha256": "4cb08fa34caf3188f44e0831e576d5aa45b77e922c9b2906ea8f750ba355c148"
     },
     "docs/recovery-authority-implementation-plan.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/recovery-authority-implementation-plan.md",
       "source_sha256": "0d194269fa0f6609d4c3961b92266227de2007f949e89798a65f430129a4252f"
     },
     "docs/runbooks/configuration-retention.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/configuration-retention.md",
       "source_sha256": "5e0c75e96bd95580a56f745f6ce6dfb1aecc1e8d0fe79ea79179a2311334827c"
     },
     "docs/runbooks/development.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/development.md",
       "source_sha256": "e0d53547448f7e812b2ce17412603ec822b34970a8953e0bcd3468edd29bcc2c"
     },
     "docs/runbooks/kafka-first.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/kafka-first.md",
       "source_sha256": "832f72b9447af6d8c82a668da8a1bb9b2f871675eb286d61117dbea63be70a3f"
     },
     "docs/runbooks/local-elasticsearch.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/local-elasticsearch.md",
       "source_sha256": "547d8d9154d2e647df2cdeee59325854018d9a98bc218ec0fd9f88c155ced3bd"
     },
     "docs/runbooks/local-kafka.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/local-kafka.md",
       "source_sha256": "7e0b9a4f9021b9ff32f771cad3f9d43a9acd044733df7e3171a050ce413edfec"
     },
     "docs/runbooks/maintenance-correlation-retention.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/maintenance-correlation-retention.md",
       "source_sha256": "1616019d0456ec2fa2682a2c041eafc4ae7b213f58c53ce928e275ddd80e9a12"
     },
     "docs/runbooks/openshift.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/openshift.md",
       "source_sha256": "9e64d7a0c989a095d9742f792c8f000a0c3880996d914ec7ad82c590d7f1bd30"
     },
     "docs/runbooks/operator-retention.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/operator-retention.md",
       "source_sha256": "191fe39d5aaeb078d79eb2ce5a12546393ddd47116d148e0d3b534e027bf9afd"
     },
     "docs/runbooks/private-qualification.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/private-qualification.md",
       "source_sha256": "fcd64677f45a496a2238354be84b35a15da1990bc4a7826b99c111fff74fa662"
     },
     "docs/runbooks/recovery-checkpoints.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/recovery-checkpoints.md",
       "source_sha256": "174daf82597d9d357858321bacd1b35a31f200d9a90f901be3168ab53722dbe4"
     },
     "docs/runbooks/release-artifacts.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/release-artifacts.md",
       "source_sha256": "7c1376da19bf84995b64f4463fa4709a94ef64dc6c9c5ae9ab85f8a24fc4f76b"
     },
     "docs/runbooks/restore-fencing.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/runbooks/restore-fencing.md",
       "source_sha256": "cf1063488a20228ad728beeb8ec25c0d8e50be61b59cfff06257cfe1ae610698"
     },
     "docs/runbooks/search-rebuild.md": {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "path": "docs/runbooks/search-rebuild.md",
       "source_sha256": "39402ce2c495222bc5f65b13f9e75465e5a6b21e16d060bc596ea48109a5e3e0"
     },
     "docs/search-implementation.md": {
-      "repository": "appchi-indexer",
+      "repository": "keep-indexer",
       "path": "docs/search-implementation.md",
       "source_sha256": "c54cf92c0604fe7b141cf9e51d637e7fdb23280d855e360c2ae7fc7e64ac80de"
     },
     "docs/ui-design.md": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "docs/ui-design.md",
       "source_sha256": "efa6638df1a0a0b720a2be3faf50a111c3408e6de75265a01c42b9066e294ba5"
     },
     "docs/visibility-observations-implementation-plan.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/visibility-observations-implementation-plan.md",
       "source_sha256": "5a0e27256e3c6e3ac30ad340206655760efba2d8763dd2988eaaca3052353de8"
     },
     "docs/worker-scope-implementation.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/worker-scope-implementation.md",
       "source_sha256": "4ac66910632990b5069567b1928cac2d4bf71a48da50cb55e0b492e16a4f97fb"
     },
     "docs/wrapping-key-rotation.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "docs/wrapping-key-rotation.md",
       "source_sha256": "56d0db3b77e62827c0d64998b3e68fb9ece076539e5df96e489c1a33a95c427c"
     },
     "frontend/.gitignore": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": ".gitignore",
       "source_sha256": "26048391fb9af3ed00149b15640861895dea481ae710755563a83f88965e5efa"
     },
     "frontend/AGENTS.md": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "AGENTS.md",
       "source_sha256": "63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb"
     },
     "frontend/CLAUDE.md": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "CLAUDE.md",
       "source_sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
     },
     "frontend/Dockerfile": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "Dockerfile",
       "source_sha256": "27ead17e55dec657c8031397fb835d0fc4803b06d24649dd80ec5a95e7d530f7"
     },
     "frontend/next-env.d.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "next-env.d.ts",
       "source_sha256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc"
     },
     "frontend/next.config.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "next.config.ts",
       "source_sha256": "7ab04a36cb0579f3673b85d927b8fcf7e12c123d3708496e95e65bb3caf7bf3b"
     },
     "frontend/package-lock.json": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "package-lock.json",
       "source_sha256": "939b48719e0e46ddd0f53be0bb7ee5c89632cdd223124bc4c53f9dfe9648b375"
     },
     "frontend/package.json": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "package.json",
       "source_sha256": "54be052d2f973e97052a6e1bb8eca60065768aacb4f08ef18ebcb10bbc8d2f3b"
     },
     "frontend/playwright.config.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "playwright.config.ts",
       "source_sha256": "38ff46a47e77f6e446030cf6da81f8830f16c5aba7e72d4ad1158f09ad58c1ba"
     },
     "frontend/playwright.local-identity.config.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "playwright.local-identity.config.ts",
       "source_sha256": "5cf8ff6352b709949a25de418b7193148647ef68f96e23bd6d882bcb7a038221"
     },
     "frontend/playwright.local-runtime.config.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "playwright.local-runtime.config.ts",
       "source_sha256": "73cd7cdc0ae8ec87fa5c1aedc3c8b8300e6142e53bcd1eca76f4c66505f925f0"
     },
     "frontend/src/app/(workspace)/[[...path]]/page.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/(workspace)/[[...path]]/page.tsx",
       "source_sha256": "a61fcc4396c9ac8c908804371440df09b30b3824de5b4a9a0aa3fcdb93dba630"
     },
     "frontend/src/app/(workspace)/layout.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/(workspace)/layout.tsx",
       "source_sha256": "ec76f48c4ff9b7158daec7c5ef6e8707141be71aa25985b30a6727faae05dfc5"
     },
     "frontend/src/app/design.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/design.css",
       "source_sha256": "8d0a1b8ab61fcb5fd0a9e69f6026683957706705569039c82308a36ebaa2209c"
     },
     "frontend/src/app/globals.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/globals.css",
       "source_sha256": "37644b9cfb6f3beed69b73818b41e6f6358b3805251cf81012362df7124b4e51"
     },
     "frontend/src/app/layout.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/layout.tsx",
       "source_sha256": "1778edce802d273c2b6a5a1343ae589dce66ba69686daae0784ef481757204f1"
     },
     "frontend/src/app/sign-in-expired/page.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/sign-in-expired/page.tsx",
       "source_sha256": "5dc2e5d112b321bb4c9d294676bfcc0517bd5443df365c0f45a191462a4cebf2"
     },
     "frontend/src/app/styles/admin.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/admin.css",
       "source_sha256": "c1dba3bd8a719caff0e6c07822ca3bc50625ebdc517226d23cd42b1f75a14c2f"
     },
     "frontend/src/app/styles/alerts.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/alerts.css",
       "source_sha256": "538021285938150c03827953ae92d960f885b31da3817f98d0fc230b1f9e9bde"
     },
     "frontend/src/app/styles/dashboards.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/dashboards.css",
       "source_sha256": "45fc54c5bd1d7878e851a72b3980b536d96174e10601c35bd9a7fc297238ee97"
     },
     "frontend/src/app/styles/incidents.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/incidents.css",
       "source_sha256": "9203f4b906cab4ae0a6c259983d8d2490865c38ec22d3fcd883c356e390c7a31"
     },
     "frontend/src/app/styles/maintenance.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/maintenance.css",
       "source_sha256": "cd82528c1e9c2ccd58d83c42775866a81a81041752b6510f3f222f8b923c5d28"
     },
     "frontend/src/app/styles/presets.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/presets.css",
       "source_sha256": "fafedde0fa829e7df8234aa97bca24c2160055c8caccf9060ec287978122e517"
     },
     "frontend/src/app/styles/rules.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/styles/rules.css",
       "source_sha256": "b9adb9c89639874dcbf4e90916921ec22f8640983e20f44e9a2e77ea3ac473c1"
     },
     "frontend/src/app/theme.css": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/app/theme.css",
       "source_sha256": "e4dfa8b25c308e730d98ec2b62127413009a1f288742d1e2ecb61c7aa025d0ed"
     },
     "frontend/src/components/admin-pages.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/admin-pages.tsx",
       "source_sha256": "1a91dc584a51af4bccb712d37499c6ce1e5e0c9272204f7c3288bf97db508fd3"
     },
     "frontend/src/components/administration.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/administration.tsx",
       "source_sha256": "ae4ea77a07da91db26ce950c3fd1b916c39cbc33a53b01a0ebe3fb98c9a2c1f7"
     },
     "frontend/src/components/alert-evidence.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/alert-evidence.tsx",
       "source_sha256": "d3116dc2fa460baed842be7976f3460dc890a3572706f4093b84e87585eadbe3"
     },
     "frontend/src/components/alert-table.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/alert-table.tsx",
       "source_sha256": "8a9e73b5eeb25be7415c2c966cde462d4a026590a9f8a903da898f00e29a435e"
     },
     "frontend/src/components/alerts.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/alerts.tsx",
       "source_sha256": "a240a53ca502c5c22083fc9cf53857568f7a63847c94725c97185bb43043f6c4"
     },
     "frontend/src/components/audit-browser.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/audit-browser.tsx",
       "source_sha256": "d1c4e1f6b0d92dc2456995e4bd46e8821eccf3887baa49f6c22b399bfbf7aa2e"
     },
     "frontend/src/components/cel-editor.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/cel-editor.tsx",
       "source_sha256": "521dafe23b689b6bdbd97bf9b2f37720fddc5c5321b1c4a10c1d02db2811529d"
     },
     "frontend/src/components/configuration-history.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/configuration-history.tsx",
       "source_sha256": "0b66048938c8522acb2e82ca4832892c43fd21d36b8679bd971506bffad13009"
     },
     "frontend/src/components/correlation-tester.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/correlation-tester.tsx",
       "source_sha256": "3c45fe2bcd69c126162f2d6773d5930d48a1e091178700beae38883602d1d891"
     },
     "frontend/src/components/dashboard-counts.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/dashboard-counts.tsx",
       "source_sha256": "d1729db6d55921dd8beed4877c65593a897e48c474575b7c26e3bd31264eee6d"
     },
     "frontend/src/components/dashboards-pages.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/dashboards-pages.tsx",
       "source_sha256": "c38a975dd9b0702305b20c8bcfaea97dfce1c4dc86c51bff7c11e71396ad7089"
     },
     "frontend/src/components/definition-editor.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/definition-editor.tsx",
       "source_sha256": "a5c551f3054206549ae6670d73ca946a7f01f964dc911874a020edd6c7bd0efe"
     },
     "frontend/src/components/directory-picker.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/directory-picker.tsx",
       "source_sha256": "5256477bd89dc8a0c84516788c65209b9aee655eba42a344d852350a2a427df5"
     },
     "frontend/src/components/icons.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/icons.tsx",
       "source_sha256": "28961e7f4c1d957a544c79815eb7a3883e79a2f82038f65f7d1020219cf19ff7"
     },
     "frontend/src/components/incident-list.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/incident-list.tsx",
       "source_sha256": "116fc6f7c5d9b1f086dd1fe77cb8bd14d812dea6f62b84aebc93447d00d0d366"
     },
     "frontend/src/components/incident-membership.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/incident-membership.tsx",
       "source_sha256": "91eb88dff3beff997dff11f98bff71c999437c7df7cf2c986bfa63172961ed3b"
     },
     "frontend/src/components/incident-notes.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/incident-notes.tsx",
       "source_sha256": "12acddb720f63a01dda4d777928b70c65ba76d7a73e5593c3a5f19f69424df3d"
     },
     "frontend/src/components/incidents-pages.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/incidents-pages.tsx",
       "source_sha256": "3655824aa326f846ccdb46a9cb36c5aa8ef5875e42e5b2d5957a631db7f66ecc"
     },
     "frontend/src/components/maintenance-editor.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/maintenance-editor.tsx",
       "source_sha256": "afa5d972fb2751f20c4dc751fedd11c97b74087fa060da500550f5d1babcbc86"
     },
     "frontend/src/components/maintenance-pages.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/maintenance-pages.tsx",
       "source_sha256": "cd77026969240cd37c93b340ed3d95dd7683a17335d79ae181fb46da66c156fe"
     },
     "frontend/src/components/operations.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/operations.tsx",
       "source_sha256": "d6d23e67b662db8be29bc219f9297e57d6ebcb4b865211c1604409a5d5989155"
     },
     "frontend/src/components/page.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/page.tsx",
       "source_sha256": "6fe305aaf46f00d3e06ecf647c76b604c811292d7be816a25f61f22777b4b6cd"
     },
     "frontend/src/components/presets-pages.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/presets-pages.tsx",
       "source_sha256": "4799e649f952770a4333b6147d971bbfd818e459f452511c5c7f6e8f9ba05a81"
     },
     "frontend/src/components/resources.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/resources.tsx",
       "source_sha256": "c16c86ba9c8da89bb440786942f40153f08db6dec2b79652aa85f661320af464"
     },
     "frontend/src/components/rules-pages.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/rules-pages.tsx",
       "source_sha256": "aa04eca451cc385b4c51e20a1332dca4c726ba33d1159ebd76209c32619b11d8"
     },
     "frontend/src/components/temporal-history.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/temporal-history.tsx",
       "source_sha256": "33c66721c68172117ee8ab372e4cbdd613fa4f5ba4aded16bbc0c3915f0600b0"
     },
     "frontend/src/components/ui.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/ui.tsx",
       "source_sha256": "2db0e2b3fa02eb3fe94c9480580ff38be917c1e9e8dcddf4c53d9a6df2f0183f"
     },
     "frontend/src/components/workspace.tsx": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/components/workspace.tsx",
       "source_sha256": "40cb8acacfa28ad69bed28a6333c1e81efe5d65c73d48b84a7fcb938a878de3b"
     },
     "frontend/src/lib/alert-operator.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/alert-operator.ts",
       "source_sha256": "bf06771c010efc514294cfbfc91b39d2ee89acc91644eab1fd08757b73f3d704"
     },
     "frontend/src/lib/alert-status.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/alert-status.ts",
       "source_sha256": "e0600a46d22afa1715fe355c4988abe6557a40735336220363a67bdf48bc9b11"
     },
     "frontend/src/lib/api.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/api.ts",
       "source_sha256": "29b86917a2cb13c0ae3752dff0cd56bd27fc5ebf29ac03069aaefda7c4f2e137"
     },
     "frontend/src/lib/generated.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/generated.ts",
       "source_sha256": "cdd84a49aa677a406adea8e8a6be8cef660e67452900769b1c2a42a78a1e43bf"
     },
     "frontend/src/lib/hooks.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/hooks.ts",
       "source_sha256": "f9670e59726b96bcbb645270098609409aae617f2c294aaf4656389d56b056d1"
     },
     "frontend/src/lib/live-stream.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/live-stream.ts",
       "source_sha256": "a5aa2de0780803900be8ea22805f405c7bfbd456b4c95830a5c0489925c83996"
     },
     "frontend/src/lib/preset-choices.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "src/lib/preset-choices.ts",
       "source_sha256": "e7bc5f18e4ca3d8420e71ca6d5ed173f6a0257db7ef92da91c8db4bab69fcc4c"
     },
     "frontend/test-results-fix/.last-run.json": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "test-results-fix/.last-run.json",
       "source_sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
     },
     "frontend/tests/alert-evidence.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/alert-evidence.spec.ts",
       "source_sha256": "7e095d05b55b714e5ebfa8907d46b3f203fecbef0bb4ff5714cc847cbff2c351"
     },
     "frontend/tests/audit-browser.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/audit-browser.spec.ts",
       "source_sha256": "f2b15d71d28a58cde5739cf49bf148fa7e537cd10ac53dd8d0e4d13268f9bdfc"
     },
     "frontend/tests/cel-editor.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/cel-editor.spec.ts",
       "source_sha256": "9e58121141080e5b4ae54d9d8bb5d43ede203c07c3eaf06110d1a6eedb06c237"
     },
     "frontend/tests/configuration-history.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/configuration-history.spec.ts",
       "source_sha256": "91653844a714367b6fd27c6f9433ec6b936b5b1c7b09b189a80b24bca7af6618"
     },
     "frontend/tests/correlation-tester.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/correlation-tester.spec.ts",
       "source_sha256": "2ea7345d2a6a0d73b9ca2bc930c74d6998d8e0b4d659b23397285ad5295b6e33"
     },
     "frontend/tests/dashboard-counts.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/dashboard-counts.spec.ts",
       "source_sha256": "e58542a07e85734dcdecff69eba0fa13adda1fa54b23323d4a0143cf4cf9f169"
     },
     "frontend/tests/incident-filters.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/incident-filters.spec.ts",
       "source_sha256": "9946f826cf4ae59f34af089dfe90e135c3ba5e14ad267708a0c22d1e885eb44a"
     },
     "frontend/tests/incident-notes.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/incident-notes.spec.ts",
       "source_sha256": "4094daf0ecf4244f24cdb85ce6afb280e7a4d9af5d500e0de749d60c017f9660"
     },
     "frontend/tests/integration-real.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/integration-real.spec.ts",
       "source_sha256": "06c0354633e9b058c1fef84e59f6c7981340f1d45bf3fd050da254549f6b73b4"
     },
     "frontend/tests/live-stream.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/live-stream.spec.ts",
       "source_sha256": "02ef7d7ab9297794a1822cf137c25a0847d8742a5feb4d3c5ae309ea6b7c0846"
     },
     "frontend/tests/live-workspace-recovery.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/live-workspace-recovery.spec.ts",
       "source_sha256": "97ef1ea7786a8ccf900720ad499a2933cef7427b2f86d9c31936d2b077a06f92"
     },
     "frontend/tests/loading-states.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/loading-states.spec.ts",
       "source_sha256": "2e298ee581603d850e1e3102fcefb33f262542bd30b4572125a1ddea7ccb7816"
     },
     "frontend/tests/local-identity.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/local-identity.spec.ts",
       "source_sha256": "8a2b83cea56fa62ea4805ef8a6816fe2e14c2c71d7147a7995f769b1774ae56d"
     },
     "frontend/tests/local-runtime.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/local-runtime.spec.ts",
       "source_sha256": "8b3cd052731e8c735193321fd84557c29d1506d3fe297865acf0402b5c1d0756"
     },
     "frontend/tests/maintenance-editor.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/maintenance-editor.spec.ts",
       "source_sha256": "6ebe14ab06895da4c3ea3249d7fcef0948c37d90951deb20836b4e0420e73ed8"
     },
     "frontend/tests/navigation-session.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/navigation-session.spec.ts",
       "source_sha256": "8c398643a53751859dfebdcdab0a9dfc7fe410b6a564ceb9f5953129b966c85e"
     },
     "frontend/tests/preset-choices.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/preset-choices.spec.ts",
       "source_sha256": "7ff43c006e5dbf2ad9428543418eeafae33929a0f6b158bcf48186bb808f7ebb"
     },
     "frontend/tests/preset-columns.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/preset-columns.spec.ts",
       "source_sha256": "e9e3f57c365bb0bc94e785241a9dde7754761b26aafe3ae5a7b9bb2e2f89b243"
     },
     "frontend/tests/redesign.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/redesign.spec.ts",
       "source_sha256": "ebdc58dd9d7a65f79eaaf81b58871e59a1686b4b6f14d26e69c1ddb34a637372"
     },
     "frontend/tests/temporal-history.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/temporal-history.spec.ts",
       "source_sha256": "b0ca1fc5fc4b5afa17d67f6474686fc8c4f9f8a5681dbd9a15cc9b0a96448305"
     },
     "frontend/tests/theme.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/theme.spec.ts",
       "source_sha256": "85a1262f90bd0095d157934b8570d180b8dc0a2794d4a5db9df71e2e4e449e86"
     },
     "frontend/tests/worker-scope.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/worker-scope.spec.ts",
       "source_sha256": "ae9d859e6d925ea0ee77ec8ed4044273f76d857707aa1c0dfb332463587431dd"
     },
     "frontend/tests/workspace.spec.ts": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tests/workspace.spec.ts",
       "source_sha256": "f670448f9fae8f39e3a789bf2731576b611de195f3e9ad095ce02bcb54b331b4"
     },
     "frontend/tsconfig.json": {
-      "repository": "appchi-frontend",
+      "repository": "keep-frontend",
       "path": "tsconfig.json",
       "source_sha256": "2070c41079f36f984754ebb53e95203c37a09dd74e945b8546e525db89e89c02"
     },
     "implementation-status.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "status/implementation-status.md",
       "source_sha256": "dad4bb1cd863f6e98724a38da36cfb4cc9e79ff218c70afa5f40a0e258927c51"
     },
     "migrations/0001_foundation.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0001_foundation.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0001_foundation.sql",
       "source_sha256": "f441edcf9b0d9c99e7b7491d9f08b9f8b93f5e86b10ec932f4c97097de4938c7"
     },
     "migrations/0002_session_refresh.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0002_session_refresh.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0002_session_refresh.sql",
       "source_sha256": "cc83d6307cc36184a883069f4e1e6aebc4731cdc62884e0925e5e9f9bee9dfbb"
     },
     "migrations/0003_refresh_uncertainty.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0003_refresh_uncertainty.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0003_refresh_uncertainty.sql",
       "source_sha256": "a022a56f04e5330dfaa9bb9ee95e10dfffd7b21fbc2664a9fc093785014e68ac"
     },
     "migrations/0004_directory_proof.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0004_directory_proof.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0004_directory_proof.sql",
       "source_sha256": "19b110222699a4ca15ecd176f08754e9d058af771ecbafbbb1c5e87e247d5590"
     },
     "migrations/0005_configuration_incidents.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0005_configuration_incidents.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0005_configuration_incidents.sql",
       "source_sha256": "55648a0979e7d13fff4fcd04d259552e92cb0e9d60fa3b6382c5c940c145a777"
     },
     "migrations/0006_directory_requests.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0006_directory_requests.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0006_directory_requests.sql",
       "source_sha256": "b0685787f2652f9053efa5a4528956e70ece4383a683f5c2415e82eff8849a8a"
     },
     "migrations/0007_partition_privileges.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0007_partition_privileges.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0007_partition_privileges.sql",
       "source_sha256": "0a705b0ec9281dc14b1f1fcbbde9e7a0278fb1d80d41a4d5e4ad07f100d71fd9"
     },
     "migrations/0008_recovery_jobs.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0008_recovery_jobs.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0008_recovery_jobs.sql",
       "source_sha256": "7ec3a9b2e413f1e9fd4ac64145391a587c07cde31fc1673473de5d5fec3ce4ea"
     },
     "migrations/0009_maintenance.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0009_maintenance.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0009_maintenance.sql",
       "source_sha256": "e229e08bbb295c4855674f03ec41d5de35437a3437b0e886451e78236078c84f"
     },
     "migrations/0011_maintenance_processing.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0011_maintenance_processing.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0011_maintenance_processing.sql",
       "source_sha256": "639f540295e0effcc32941ec48d5637e74a6fb7ef87ac719f35212b687b435d0"
     },
     "migrations/0012_recovery_attempt_fences.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0012_recovery_attempt_fences.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0012_recovery_attempt_fences.sql",
       "source_sha256": "d766894f0186b7ad851ae21809121369e7524d01d5013f053ac4d93212f3c78f"
     },
     "migrations/0013_correlation.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0013_correlation.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0013_correlation.sql",
       "source_sha256": "f408717f174e9d818509803fa71cfd02f9473da4ffbc21749d9bc1ff4999fd20"
     },
     "migrations/0014_maintenance_effect_outbox.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0014_maintenance_effect_outbox.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0014_maintenance_effect_outbox.sql",
       "source_sha256": "a09497e4598a349b72b846c92558fd59d7d9ff48b3ffec25924314cf4ad8733b"
     },
     "migrations/0015_grafana_provenance.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0015_grafana_provenance.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0015_grafana_provenance.sql",
       "source_sha256": "c2412d1e48b05903fea23897c2787c45dffa3232c5c733ea600465d16688ca2f"
     },
     "migrations/0016_operator_jobs.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0016_operator_jobs.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0016_operator_jobs.sql",
       "source_sha256": "4f858c95ae2b255826c42685eca48cb73c48af58fd4a645a212e31ea31c40b1c"
     },
     "migrations/0017_pipeline_leases.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0017_pipeline_leases.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0017_pipeline_leases.sql",
       "source_sha256": "b1c929b2bd3adcb8d902841cd6582b80d99d411002d63409130704298db42ae6"
     },
     "migrations/0018_correlation_runtime.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0018_correlation_runtime.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0018_correlation_runtime.sql",
       "source_sha256": "c71808a2cf21d6d871580d93609f93c5f96d4f203dff81055e8cccca3c5977a6"
     },
     "migrations/0019_identity_cleanup.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0019_identity_cleanup.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0019_identity_cleanup.sql",
       "source_sha256": "e4884f5fb32b8e0b55431f48269daf687aeff1777a17572a18c9a990dc8ea8e2"
     },
     "migrations/0020_live_hints.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0020_live_hints.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0020_live_hints.sql",
       "source_sha256": "97bfc1d9410886c197619f63a651138a4ed42aa64407abbce183d3affb1dbf8c"
     },
     "migrations/0021_maintenance_input_heads.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0021_maintenance_input_heads.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0021_maintenance_input_heads.sql",
       "source_sha256": "dbd351232744d6d0934e95cd17a0f3e40faa7b66f11b324717130aa62c2c7954"
     },
     "migrations/0022_configuration_delete.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0022_configuration_delete.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0022_configuration_delete.sql",
       "source_sha256": "7f492a90b74a9d96ae7c531bfc7605792b5eafe0400508acdf51f74c172ea0b8"
     },
     "migrations/0023_correlation_delete.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0023_correlation_delete.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0023_correlation_delete.sql",
       "source_sha256": "b073d1242077aa9ba944b1646fd1b88abaad3229ce111f32865589af65adb1dc"
     },
     "migrations/0024_incident_retirement.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0024_incident_retirement.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0024_incident_retirement.sql",
       "source_sha256": "d85680b98c5da60fce8a32c524787200f495194f6d65fe94bd9d161f12f8f280"
     },
     "migrations/0025_search_rebuild.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0025_search_rebuild.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0025_search_rebuild.sql",
       "source_sha256": "8acc82d3caebbf30443cacfd47cc75475b05de12e90fac7378e5b83112e3ab98"
     },
     "migrations/0026_alert_retirement.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0026_alert_retirement.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0026_alert_retirement.sql",
       "source_sha256": "317cecabfdc00bf5b91d47f107ce4dff8c74d52e089ea5c24f561f54c9d991e3"
     },
     "migrations/0027_restore_fencing.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0027_restore_fencing.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0027_restore_fencing.sql",
       "source_sha256": "1261cd412286a56b6a926f0ece2219adf713173d76f90024dd76f7ca05f102b9"
     },
     "migrations/0028_incident_note_history.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0028_incident_note_history.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0028_incident_note_history.sql",
       "source_sha256": "78fb42e16f652b9cf3c8b52ae72eba0f815ffaa2a09db90c6f39ac41fcd71052"
     },
     "migrations/0029_command_retention.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0029_command_retention.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0029_command_retention.sql",
       "source_sha256": "4ea2edc17ee030e363f0a0f179126d2d18e57af9ef8ff907a318ff13ef7f7566"
     },
     "migrations/0030_configuration_retention.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0030_configuration_retention.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0030_configuration_retention.sql",
       "source_sha256": "62a8458926fb0bb9f1dddbadb7a88a770ab5ee313a5119e15e87f52c98c98f9b"
     },
     "migrations/0031_visibility_registry.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0031_visibility_registry.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0031_visibility_registry.sql",
       "source_sha256": "2de4da98afc05f7ee9ea2b847bf94b83db7a11016a338ca2c73fc15b801aa3f8"
     },
     "migrations/0032_correlation_retention.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0032_correlation_retention.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0032_correlation_retention.sql",
       "source_sha256": "670b74445e117724c58666e31dd201a0ba737c2f7298132fc055f1d76c887e1c"
     },
     "migrations/0033_maintenance_retention.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0033_maintenance_retention.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0033_maintenance_retention.sql",
       "source_sha256": "2f019190a66c99bb42565c86070000ceb4856adacc8514765f15019249d29b0d"
     },
     "migrations/0034_configuration_history_parents.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0034_configuration_history_parents.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0034_configuration_history_parents.sql",
       "source_sha256": "0cce15bc6d361f8490d043aa2f8a4ddfe5660c81a3cea62b2f2ba8736418f319"
     },
     "migrations/0035_incident_list_indexes.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0035_incident_list_indexes.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0035_incident_list_indexes.sql",
       "source_sha256": "31f1026861d2a94199a99a92b5ab807e769cbfeccf3a8171ebbaac7c4a982c44"
     },
     "migrations/0036_visibility_inputs.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0036_visibility_inputs.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0036_visibility_inputs.sql",
       "source_sha256": "e594a5cff8317decd87e5a8ff47a1ef9851ff972a4ddc4adffe6bc146c0674a3"
     },
     "migrations/0037_operator_diagnostics_retention.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0037_operator_diagnostics_retention.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0037_operator_diagnostics_retention.sql",
       "source_sha256": "83cf4e7833e199673f7e785b5de00b88e8d74b0c8a01201a9471dca03cd867fd"
     },
     "migrations/0038_visibility_authority_fences.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0038_visibility_authority_fences.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0038_visibility_authority_fences.sql",
       "source_sha256": "42767916717e98194791cd95f1ab03b0d750f6a9fc39a03890f953bc085a266b"
     },
     "migrations/0039_alert_actor_snapshots.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0039_alert_actor_snapshots.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0039_alert_actor_snapshots.sql",
       "source_sha256": "03748abd8c22a34c187d1e3f19cb9214a0b4bdf0b0ee018b69c17d4d08e42bf5"
     },
     "migrations/0040_kafka_first.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0040_kafka_first.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0040_kafka_first.sql",
       "source_sha256": "2c6b567f548660af3317112615c29f9b5b8205981d49eea75c2d6bedae05c63d"
     },
     "migrations/0041_kafka_first_cutover.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0041_kafka_first_cutover.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0041_kafka_first_cutover.sql",
       "source_sha256": "67c4c6e9f79d35a02c26e657f824e59252ff9bb797935dabda60560042767fca"
     },
     "migrations/0044_kafka_diagnostics.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0044_kafka_diagnostics.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0044_kafka_diagnostics.sql",
       "source_sha256": "430a298fe8249b80ad295897427a66718ba119700604656fbdd2088e95d28a0a"
     },
     "migrations/0045_legacy_alert_writers_fence.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0045_legacy_alert_writers_fence.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0045_legacy_alert_writers_fence.sql",
       "source_sha256": "2d06a21da9214f6283d0c8518eaabe9e08b37aa2fcee6df114a8b1c4039112b1"
     },
     "migrations/0046_worker_scope.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0046_worker_scope.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0046_worker_scope.sql",
       "source_sha256": "cb4565a26c8914418e09e20e33b7b7d1732265723792934690543b48eea19584"
     },
     "migrations/0047_api_live_hints.sql": {
-      "repository": "appchi-migrations",
-      "path": "src/appchi/migration_sql/0047_api_live_hints.sql",
+      "repository": "keep-migrations",
+      "path": "src/keep/migration_sql/0047_api_live_hints.sql",
       "source_sha256": "3457eff1836ea72091fbae0222b1d56e8d5ae3854fadef24c4f5295996531b78"
     },
     "qualification/alert-ownership-2026-09-27/README.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/alert-ownership-2026-09-27/README.md",
       "source_sha256": "647c3ea8242668485b14e1da0a138805a68432a12a01bf5346ce74a82383df69"
     },
     "qualification/api-live-doc-check.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/api-live-doc-check.json",
       "source_sha256": "a823b36ae5bd71b9a53da8ff7277f7196afe98f0eef8719aa1c5f02b6e4174ac"
     },
     "qualification/api-live-integration.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/api-live-integration.xml",
       "source_sha256": "fcf6375d428c8378906fe88ba6e7e4509ad5af1ee32705e3295429df5d57ed67"
     },
     "qualification/api-live-unit.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/api-live-unit.xml",
       "source_sha256": "6f2c834f24347e3edc4533859f3c3cb96162a043739f9a608c9d3b40383f8aab"
     },
     "qualification/appearance-switch-2026-09-27/account-menu.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/appearance-switch-2026-09-27/account-menu.png",
       "source_sha256": "a3ed3dad22265aad51951c125940b3e2a5a8e8a1be90fc72808b29fd0c70b73e"
     },
     "qualification/check_contracts.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/check_contracts.py",
       "source_sha256": "7ea5ab6d41e0fe66a09617810882dedf6c4cb8481f4b070b94556c270b2e95bb"
     },
     "qualification/check_environment_manifest.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/check_environment_manifest.py",
       "source_sha256": "f3fb095d324261524f89ea8ce16fb6010289f2f84e3131462eeb3ec4151b472f"
     },
     "qualification/development-capacity.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/development-capacity.json",
       "source_sha256": "b7cc9bc327f1485d2f50272397d92d86a89bee6a76ad8860b1a30bfdfae50356"
     },
     "qualification/directory-scope-doc-check.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/directory-scope-doc-check.json",
       "source_sha256": "2616a1f52d39a0aaaf1f8ced3281ba757c3dac90e91c590ea08d72ddea18d47d"
     },
     "qualification/directory-scope-unit.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/directory-scope-unit.xml",
       "source_sha256": "a3f2656742b347c306ee27cdea87a8b97a95ac4112684314641215918b5ead14"
     },
     "qualification/environment-manifest.example.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/environment-manifest.example.json",
       "source_sha256": "215e4867acbe7168403eaf2c80f5328bda7b302cfb455b882a28a442d9f78b47"
     },
     "qualification/generate_contracts.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/generate_contracts.py",
       "source_sha256": "bff88367a8926a5e56bca7ef3580f3ab65fc4cfbad7a9c6112e94a07922d7b1b"
     },
     "qualification/kafka-first-browser.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-browser.xml",
       "source_sha256": "498a2bd9295a31bf7e7a8f9ac8fbb0c8c3632ca4142e052732ce0be740db2532"
     },
     "qualification/kafka-first-cutover.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-cutover.xml",
       "source_sha256": "9eac956230f13ab08ad6d3857abc7ceede5331fce1c8e1d36822232af20b334e"
     },
     "qualification/kafka-first-doc-check.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-doc-check.json",
       "source_sha256": "4498ddb1735501e99468cc78708ff60993e00974c28577f5edd8843d71c2dd94"
     },
     "qualification/kafka-first-http-clock.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-http-clock.xml",
       "source_sha256": "afa0ea0fa52ec1ce63852e93feee8b8287e95b95b57acf77cf7885062e8812f8"
     },
     "qualification/kafka-first-inline-api.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-inline-api.xml",
       "source_sha256": "f9a96ff23d1d24beab90d3b982b0f5609f12feb019d0b6bbdd941c782f1c2ca4"
     },
     "qualification/kafka-first-maintenance-retry.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-maintenance-retry.xml",
       "source_sha256": "3eeb5a22075feb2bd9cbbf51a7ccd10360180fde97fa7ebafa0009aee84de1ec"
     },
     "qualification/kafka-first-maintenance.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-maintenance.xml",
       "source_sha256": "dde6245887c03ae8a8977914370da52381d5d9abd6bb961954d19cb758928d19"
     },
     "qualification/kafka-first-operators.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-operators.xml",
       "source_sha256": "12b6fc5da5838c5042a3f88969155917c9125a0023f61d5ec09d1dafa91a1a0b"
     },
     "qualification/kafka-first-provenance-fences.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-provenance-fences.xml",
       "source_sha256": "70bae73b9ed97782b33f9b6ea8e69ef13e7b3146ffac4541bf02134b3ea3655c"
     },
     "qualification/kafka-first-provenance-reverse.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-provenance-reverse.xml",
       "source_sha256": "cf9940a1514608189ee9ea93cc834f046f97da3dc823f903a839707a9080bcaa"
     },
     "qualification/kafka-first-recovery.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-recovery.xml",
       "source_sha256": "70d1b7b2c62f503058f92bab254054b5afcb5c53241911ae2898c36660bdefe4"
     },
     "qualification/kafka-first-runtime.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-runtime.xml",
       "source_sha256": "e8e7bd77033b4427e1d33f115babfb742c2e367be68d0bc010f2e30afc5a6217"
     },
     "qualification/kafka-first-search.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-search.xml",
       "source_sha256": "f50aedac7098668c1b1793db60ec9008f2ce4a23dc22e88fe6df71455bf07515"
     },
     "qualification/kafka-first-unavailable.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-unavailable.xml",
       "source_sha256": "5cbbb42bb22e14ac667b607336aeeda59d5d09c5390880801bd7623a1f61eb51"
     },
     "qualification/kafka-first-unit.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-unit.xml",
       "source_sha256": "a08cbf173bc365245b19c382c15efed6d80cd96a945b2d4fd9aee2021de67a13"
     },
     "qualification/kafka-first-worker-health.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/kafka-first-worker-health.xml",
       "source_sha256": "c322e64a835e099daa68188e6193c20a685ba1746b965676249043dc5664566e"
     },
     "qualification/login-theme-2026-09-27/login.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/login-theme-2026-09-27/login.png",
       "source_sha256": "7c3c12ee80c63d95d0dd1dfcbe1ae97a3e768d0a23cb6bc205e6f45f01bfd4c8"
     },
     "qualification/login-theme-2026-09-27/README.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/login-theme-2026-09-27/README.md",
       "source_sha256": "c852554217700e6fa909bca6ed0bd62827878ce3195b9ca8ec65c65e1d98d8bd"
     },
     "qualification/pytest-cel-rerun.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-cel-rerun.xml",
       "source_sha256": "559a5a04323a1cd6f1a65c09c8922ee73cf249d14b6ca16e68b7ef47eed16d89"
     },
     "qualification/pytest-local-keycloak.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-local-keycloak.xml",
       "source_sha256": "258939d16f418709fb229d347abaab878eeaca561521f513b9cb8df5c6919d8e"
     },
     "qualification/pytest-local-runtime-es.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-local-runtime-es.xml",
       "source_sha256": "4659472e5bb5b8ca0ddbb166f1506ffe58780a91d1479abb077211b1bc204cf2"
     },
     "qualification/pytest-local-runtime.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-local-runtime.xml",
       "source_sha256": "56b9dbcae900b6505192a0eef8d39bdb323a077ae19f6d91b7545ac01b1ebcba"
     },
     "qualification/pytest-local-v2.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-local-v2.xml",
       "source_sha256": "43731ca42b41bd8f46c818c3ffd0196aa8c637111a0eac062c93694c7b99fd9e"
     },
     "qualification/pytest-login-recovery.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-login-recovery.xml",
       "source_sha256": "62b988fc276905498d8a188d3f70d5caf2657915aed2e0597332eac4fff54240"
     },
     "qualification/pytest-password-login.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-password-login.xml",
       "source_sha256": "a594cbe257062384b505ec390888f14a97572cff927e0f4a067c29a275a78564"
     },
     "qualification/pytest-password-setup.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-password-setup.xml",
       "source_sha256": "e7b6d42a156cb3a0837c212c1b34df7c5ef02109a73bfa7eeba0c5253287fc32"
     },
     "qualification/pytest-results.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/pytest-results.xml",
       "source_sha256": "a7b082a37993151177c036bb2e790561f37aaa3a6d013f2f7833414b9c6cc8e4"
     },
     "qualification/release-manifest.example.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/release-manifest.example.json",
       "source_sha256": "cd2d1fc117fd8a2f34a818cc90f1a9899923b28ad14cd12e3fae6b05aba39ef3"
     },
     "qualification/release_artifacts.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/release_artifacts.py",
       "source_sha256": "fcbe319f51d5856149e17bbbccc612ee0f022f6f71f6a8ffb1bae1a8ba323052"
     },
     "qualification/tests/test_release_artifacts.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/tests/test_release_artifacts.py",
       "source_sha256": "0a3bd2bae7cd4f3efef5b78633b1864037c99b860703defc1012f75bd288d075"
     },
     "qualification/ui-redesign-2026-09-24/alerts.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/alerts.png",
       "source_sha256": "c7a7ae9e940d058f94b9e5fb8206267ca20856192af26dbc44fd7d8d44e7d50d"
     },
     "qualification/ui-redesign-2026-09-24/browser-tests.txt": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/browser-tests.txt",
       "source_sha256": "c1faea20138f97839a14df1a6cd64ff6dc12f6c7f2c6e65171459facafbb7305"
     },
     "qualification/ui-redesign-2026-09-24/dashboard.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/dashboard.png",
       "source_sha256": "dcf34d828b2ccd12906b64b46c18365be45c8d78d737d86f2293bd6a4cf381e4"
     },
     "qualification/ui-redesign-2026-09-24/preset-custom-columns-resume.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/preset-custom-columns-resume.png",
       "source_sha256": "b3a860e1df7884b62e2ed44bb2be21ae06466b684d4c8c927376dfba1d772554"
     },
     "qualification/ui-redesign-2026-09-24/preset-editor-resume.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/preset-editor-resume.png",
       "source_sha256": "62689141aeba79f896b2b237bbee0c57e737895834ff8659c5d6a33c5f005e9a"
     },
     "qualification/ui-redesign-2026-09-24/preset-resume.png": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/preset-resume.png",
       "source_sha256": "8603a03bd95313392fc936d56a7cd81aea28a92c93511adaddf7d73b8f614fb7"
     },
     "qualification/ui-redesign-2026-09-24/production-build.txt": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/production-build.txt",
       "source_sha256": "fd92ea8ebeb3ab1340b3da3c3b31ee295cd23506b4e69cfc616e586a733f4773"
     },
     "qualification/ui-redesign-2026-09-24/README.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/ui-redesign-2026-09-24/README.md",
       "source_sha256": "39d5be9a1778a7ac81e11125f00ceab2cc52cfc98b064674584b20cf9e37f1e8"
     },
     "qualification/worker-scope-browser-initial.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-browser-initial.xml",
       "source_sha256": "86f4129b2577a7736683d4978a97586c5e6e4e3c87364b00fdac0be746c9fdad"
     },
     "qualification/worker-scope-browser.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-browser.xml",
       "source_sha256": "38c81caba5795e4b98811e1f9d8e4372d8e131d865e2109e11f05fb151c728d9"
     },
     "qualification/worker-scope-doc-check.json": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-doc-check.json",
       "source_sha256": "9137b320b15c4397f609237d4a25c220cbff17885cf7fef97f85f224c5b5e338"
     },
     "qualification/worker-scope-focused.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-focused.xml",
       "source_sha256": "3e4f62f6670b904b519cf47b860a31734f091d9884046445c997e6d9a59b7658"
     },
     "qualification/worker-scope-integration.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-integration.xml",
       "source_sha256": "8c5f97cf3a67b537886d3a0799c2e0399638a3475040496f80501562525c3ae9"
     },
     "qualification/worker-scope-maintenance.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-maintenance.xml",
       "source_sha256": "aec17d9b1c3a178261929b3c9a91aaaeebe8040e854459dc8119514c374d4bf3"
     },
     "qualification/worker-scope-operators.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-operators.xml",
       "source_sha256": "db81ba6b519be25e0ab761c28a6890e55de428c2a97777ca35dc11b8eb38a5a0"
     },
     "qualification/worker-scope-regression.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-regression.xml",
       "source_sha256": "b536418e32c83aa312feedc51efc302fd08d98c908ef5487cad5b469aba9a762"
     },
     "qualification/worker-scope-unit.xml": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "qualification/worker-scope-unit.xml",
       "source_sha256": "2d7f6362330e37ac94bb661c669d779a5d5c0b0f5764f7ca0aae20147f3f3419"
     },
     "README.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "legacy/monorepo-README.md",
       "source_sha256": "1359aac4b986ea0b86feeb70a9ebb8a77f8a8396a2e7e2cfffcf973a0522608a"
     },
     "scripts/dev.ps1": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/dev.ps1",
       "source_sha256": "4eaa812cdbfa00fc543793151f18181582fa6a5e2cce65bb601a3b8709dbbd6e"
     },
     "scripts/local-identity.ps1": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local-identity.ps1",
       "source_sha256": "1f34929df9a799e9655d004ed53dddad6fd24476c348bb5a7f5203718a12667f"
     },
     "scripts/local-runtime.ps1": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local-runtime.ps1",
       "source_sha256": "11382fee44aeee36a6fc3c2e55977f99030d31dd6a07c101b23696f586fdc227"
     },
     "scripts/local-v2.ps1": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local-v2.ps1",
       "source_sha256": "382307d6734358bd6ba37f546de80c156bc0c54217f9d839578c10d26d42468a"
     },
     "scripts/local_identity.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local_identity.py",
       "source_sha256": "7512297679d73d37f0f65cd7aca85598e9d7968cf658feba50f104de82835c8b"
     },
     "scripts/local_runtime.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local_runtime.py",
       "source_sha256": "a4f16cebc7fd736c832c5339188aedf7bfbae064d2dfbc845ef26126d2f416c9"
     },
     "scripts/local_v2.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local_v2.py",
       "source_sha256": "8922889cda54539a426838ba0978837073100491c59c5030d2ba5ad9f6084ede"
     },
     "scripts/local_v2_verify.py": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/local_v2_verify.py",
       "source_sha256": "a4449273b1c1fca492b3cbfd23e8804252b4d70600b897be0b61dc4c6c04f1e8"
     },
     "scripts/verify.ps1": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "scripts/verify.ps1",
       "source_sha256": "23c1807dcb8895d10368239d091ef38bcf8164f097a6d55a76f077246d23d0db"
     },
     "spec-alert-history-technical.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-alert-history-technical.md",
       "source_sha256": "f924f7935ffbc7edf9531acceabc477bdb9aa722e35f4c7466915a25ff1e4345"
     },
     "spec-alert-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-alert-operations.md",
       "source_sha256": "a44647fc5da26ef73f31998d553c48c98b0be89c3b39ca5a05f3408ff6b5455c"
     },
     "spec-alerts-management-system.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-alerts-management-system.md",
       "source_sha256": "aefc8276fed8794dcdd918da21fa1c41a96a02bb38fc5278d77ce2b4fbe1b10e"
     },
     "spec-correlation-rules.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-correlation-rules.md",
       "source_sha256": "82d6be7b6502cf8c25890c63c73502dfd925b18a9c6e89303cb5e997272c13fc"
     },
     "spec-dashboard-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-dashboard-operations.md",
       "source_sha256": "73a151d0db37edd47bbb7840018c992dbb4ff5db1c00a08054ce3f1c678f457b"
     },
     "spec-identity-configuration.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-identity-configuration.md",
       "source_sha256": "efd1e51278cf58c7559a4f2522eb3de431133cd8feb0e1440ab0ad533c68771b"
     },
     "spec-incident-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-incident-operations.md",
       "source_sha256": "5ad615407be01516d41ef445ed7a25aa93d1e401cd71bf2656a96f407d113d70"
     },
     "spec-kafka-alert-pipeline.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-kafka-alert-pipeline.md",
       "source_sha256": "bd6f7384500bfea2296ebd112102f5654b4b9b23bb81332f43323012fd635d4b"
     },
     "spec-maintenance-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-maintenance-operations.md",
       "source_sha256": "8f602d02969a9af0edcb8514fd06b7de5cdfde35c015bfd0beb9baadc926335b"
     },
     "spec-operator-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-operator-operations.md",
       "source_sha256": "4bb83eb8c390209e7ce77d99f8a08b0601225e52f69cf17948a4935a061d1c17"
     },
     "spec-preset-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-preset-operations.md",
       "source_sha256": "199020879da0767c1f075dc10274c848d7f7342e330033460bd2998eb3d8a058"
     },
     "spec-reliability-operations.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-reliability-operations.md",
       "source_sha256": "17867de3b5942bd72c928f2818cf6ecf9c6cba16947cdbf28775d8785e22faa1"
     },
     "spec-system-completion.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-system-completion.md",
       "source_sha256": "5eaee71eec0c1470d72cacfbf70d16d766e9dc8052635ab2e74d8d3a5c7c9844"
     },
     "spec-tenant-access.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-tenant-access.md",
       "source_sha256": "e3a2696b48a8bb07d499763ff157fd458362885d45fef78b3e613ca3ec714f7c"
     },
     "spec-worker-scope.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "specs/spec-worker-scope.md",
       "source_sha256": "6044a9002ab2ca8694af87e5d9df2154af3f05e5a97ffc150c518739090dd6ec"
     },
     "verification-plan.md": {
-      "repository": "appchi-design",
+      "repository": "keep-design",
       "path": "verification/verification-plan.md",
       "source_sha256": "9499d6ce5b46a820b2c74dcda90546842ca9d97c2396b0960e95f685e961069a"
     },
     "workspace/AGENTS.md": {
-      "repository": "appchi-delivery",
+      "repository": "keep-delivery",
       "path": "workspace/AGENTS.md",
       "source_sha256": "02da5a645a1a8091a293b08e9a38d3d33f12ba07877a3d2b534bbee54366880c"
     }

@@ -10,8 +10,8 @@ param(
     [string]$TenantId,
     [ValidateRange(1024, 65535)][int]$ApiPort = 8000,
     [ValidateRange(1024, 65535)][int]$FrontendPort = 3443,
-    [string]$TlsCertificate = $env:APPCHI_DEV_TLS_CERTIFICATE,
-    [string]$TlsKey = $env:APPCHI_DEV_TLS_KEY,
+    [string]$TlsCertificate = $env:KEEP_DEV_TLS_CERTIFICATE,
+    [string]$TlsKey = $env:KEEP_DEV_TLS_KEY,
     [switch]$CheckConfiguration,
     [switch]$RequireIdentityConfiguration,
     [switch]$Once
@@ -21,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repository = Split-Path -Parent $PSScriptRoot
 $backend = $repository
-$frontend = Join-Path (Split-Path -Parent $repository) 'appchi-frontend'
+$frontend = Join-Path (Split-Path -Parent $repository) 'keep-frontend'
 $python = Join-Path $backend '.venv/Scripts/python.exe'
 $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
 $bundledNpm = if ($nodeCommand) { Join-Path (Split-Path -Parent $nodeCommand.Source) 'npm.cmd' } else { $null }
@@ -42,14 +42,14 @@ function Require-Python {
 }
 
 function Validate-Configuration {
-    Require-Environment @('APPCHI_DATABASE_URL', 'APPCHI_DEPLOYMENT_EPOCH', 'APPCHI_PUBLIC_ORIGIN')
-    if (-not $env:APPCHI_WRAPPING_KEY -and -not $env:APPCHI_WRAPPING_KEYRING) { throw 'Supply APPCHI_WRAPPING_KEYRING or APPCHI_WRAPPING_KEY.' }
+    Require-Environment @('KEEP_DATABASE_URL', 'KEEP_DEPLOYMENT_EPOCH', 'KEEP_PUBLIC_ORIGIN')
+    if (-not $env:KEEP_WRAPPING_KEY -and -not $env:KEEP_WRAPPING_KEYRING) { throw 'Supply KEEP_WRAPPING_KEYRING or KEEP_WRAPPING_KEY.' }
     if ($RequireIdentityConfiguration) {
-        Require-Environment @('APPCHI_OIDC_ISSUER', 'APPCHI_OIDC_CLIENT_SECRET', 'APPCHI_OIDC_DIRECTORY_SOURCE', 'APPCHI_OIDC_DIRECTORY_ID_CLAIM', 'APPCHI_OIDC_DIRECTORY_SCOPE', 'APPCHI_OIDC_REQUIRED_ACR', 'APPCHI_OIDC_REQUIRED_AMR', 'APPCHI_SUPERADMIN_GROUP')
+        Require-Environment @('KEEP_OIDC_ISSUER', 'KEEP_OIDC_CLIENT_SECRET', 'KEEP_OIDC_DIRECTORY_SOURCE', 'KEEP_OIDC_DIRECTORY_ID_CLAIM', 'KEEP_OIDC_DIRECTORY_SCOPE', 'KEEP_OIDC_REQUIRED_ACR', 'KEEP_OIDC_REQUIRED_AMR', 'KEEP_SUPERADMIN_GROUP')
     }
     $validation = @'
 import sys
-from appchi.config import Settings
+from keep.config import Settings
 from psycopg.conninfo import conninfo_to_dict
 try:
     settings=Settings()
@@ -76,16 +76,16 @@ try {
             }
             'Check' {
                 Require-Python
-                Invoke-Checked { & $python -c 'import sys; assert sys.version_info[:2] == (3,13), "Python 3.13 required"; import appchi.main, appchi.worker; print("Backend imports and Python version passed")' } 'Backend import check'
+                Invoke-Checked { & $python -c 'import sys; assert sys.version_info[:2] == (3,13), "Python 3.13 required"; import keep.main, keep.worker; print("Backend imports and Python version passed")' } 'Backend import check'
                 Invoke-Checked { & node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if(major<22||(major===22&&minor<17))process.exit(1);require(process.argv[1]+"/node_modules/next/package.json");console.log("Frontend dependency and Node version passed")' $frontend } 'Frontend dependency check'
                 if ($CheckConfiguration -or $RequireIdentityConfiguration) { Validate-Configuration }
             }
             'Migrate' {
                 Require-Python
-                Require-Environment @('APPCHI_MIGRATION_URL')
+                Require-Environment @('KEEP_MIGRATION_URL')
                 $migration = @'
 import sys
-from appchi.migrate import main
+from keep.migrate import main
 try:
     main()
 except Exception as error:
@@ -97,12 +97,12 @@ print('Ordered checksum-verified migrations applied.')
             }
             'Start' {
                 if ($Role -eq 'Frontend') {
-                    Require-Environment @('APPCHI_BACKEND_URL', 'APPCHI_PUBLIC_ORIGIN')
-                    $binding = [Uri]$env:APPCHI_BACKEND_URL
-                    if (-not $binding.IsAbsoluteUri -or $binding.Scheme -notin @('http', 'https') -or $binding.UserInfo -or $binding.AbsolutePath -ne '/' -or $binding.Query -or $binding.Fragment) { throw 'APPCHI_BACKEND_URL must be a trusted absolute HTTP(S) origin without credentials, path, query or fragment.' }
-                    $public = [Uri]$env:APPCHI_PUBLIC_ORIGIN
-                    if (-not $public.IsAbsoluteUri -or $public.Scheme -ne 'https' -or $public.Port -ne $FrontendPort -or $public.Host -notin @('localhost', '127.0.0.1') -or $public.UserInfo -or $env:APPCHI_PUBLIC_ORIGIN -cne $public.GetLeftPart([UriPartial]::Authority)) { throw 'Local frontend requires an exact HTTPS localhost/127.0.0.1 APPCHI_PUBLIC_ORIGIN matching FrontendPort, without a path, trailing slash, query or credentials.' }
-                    if (-not $TlsCertificate -or -not $TlsKey -or -not (Test-Path -LiteralPath $TlsCertificate -PathType Leaf) -or -not (Test-Path -LiteralPath $TlsKey -PathType Leaf)) { throw 'Supply a trusted local TLS certificate and private key using parameters or APPCHI_DEV_TLS_CERTIFICATE / APPCHI_DEV_TLS_KEY.' }
+                    Require-Environment @('KEEP_BACKEND_URL', 'KEEP_PUBLIC_ORIGIN')
+                    $binding = [Uri]$env:KEEP_BACKEND_URL
+                    if (-not $binding.IsAbsoluteUri -or $binding.Scheme -notin @('http', 'https') -or $binding.UserInfo -or $binding.AbsolutePath -ne '/' -or $binding.Query -or $binding.Fragment) { throw 'KEEP_BACKEND_URL must be a trusted absolute HTTP(S) origin without credentials, path, query or fragment.' }
+                    $public = [Uri]$env:KEEP_PUBLIC_ORIGIN
+                    if (-not $public.IsAbsoluteUri -or $public.Scheme -ne 'https' -or $public.Port -ne $FrontendPort -or $public.Host -notin @('localhost', '127.0.0.1') -or $public.UserInfo -or $env:KEEP_PUBLIC_ORIGIN -cne $public.GetLeftPart([UriPartial]::Authority)) { throw 'Local frontend requires an exact HTTPS localhost/127.0.0.1 KEEP_PUBLIC_ORIGIN matching FrontendPort, without a path, trailing slash, query or credentials.' }
+                    if (-not $TlsCertificate -or -not $TlsKey -or -not (Test-Path -LiteralPath $TlsCertificate -PathType Leaf) -or -not (Test-Path -LiteralPath $TlsKey -PathType Leaf)) { throw 'Supply a trusted local TLS certificate and private key using parameters or KEEP_DEV_TLS_CERTIFICATE / KEEP_DEV_TLS_KEY.' }
                     $certificatePath = (Resolve-Path -LiteralPath $TlsCertificate).Path
                     $keyPath = (Resolve-Path -LiteralPath $TlsKey).Path
                     Push-Location -LiteralPath $frontend
@@ -115,12 +115,12 @@ print('Ordered checksum-verified migrations applied.')
                     Validate-Configuration
                     if ($Role -eq 'Api') {
                         Write-Host 'Starting the loopback Product API in this terminal. Ctrl+C stops it.'
-                        Invoke-Checked { & $python -m uvicorn appchi.main:create_app --factory --host 127.0.0.1 --port $ApiPort --no-access-log } 'Product API'
+                        Invoke-Checked { & $python -m uvicorn keep.main:create_app --factory --host 127.0.0.1 --port $ApiPort --no-access-log } 'Product API'
                     } else {
-                        if ($WorkerRole -eq 'relay') { Require-Environment @('APPCHI_KAFKA_BOOTSTRAP') }
-                        if ($WorkerRole -eq 'indexer') { Require-Environment @('APPCHI_ELASTICSEARCH_URL') }
-                        $modules = @{ source='appchi.processor.main'; correlation='appchi.correlation.main'; indexer='appchi.search.main' }
-                        $workerArguments = if ($modules.ContainsKey($WorkerRole)) { @('-m', $modules[$WorkerRole]) } else { @('-m', 'appchi.worker', $WorkerRole) }
+                        if ($WorkerRole -eq 'relay') { Require-Environment @('KEEP_KAFKA_BOOTSTRAP') }
+                        if ($WorkerRole -eq 'indexer') { Require-Environment @('KEEP_ELASTICSEARCH_URL') }
+                        $modules = @{ source='keep.processor.main'; correlation='keep.correlation.main'; indexer='keep.search.main' }
+                        $workerArguments = if ($modules.ContainsKey($WorkerRole)) { @('-m', $modules[$WorkerRole]) } else { @('-m', 'keep.worker', $WorkerRole) }
                         if ($TenantId -and $modules.ContainsKey($WorkerRole)) { throw 'Kafka pipeline workers consume their assigned partitions; --tenant applies only to explicit helpers.' }
                         if ($TenantId) { $workerArguments += @('--tenant', $TenantId) }
                         if ($Once) { $workerArguments += '--once' }

@@ -41,7 +41,7 @@ Use **Edit** and **Save maintenance change** for an existing definition. Once it
 
 Use **Disable** to stop new coverage without deleting the definition. **Delete** also stops new coverage and requires confirmation; neither action immediately releases existing causes. Recurring schedules are not available.
 
-## Correlation: why Appchi opened an incident
+## Correlation: why Keep opened an incident
 
 A **correlation rule** looks for fresh evidence that named conditions have been met within a shared time window, optionally grouped by fields such as an application. All conditions need evidence before the rule creates an incident. One alert can satisfy multiple conditions. Once the incident is active, another eligible alert matching any condition can be added.
 
@@ -69,6 +69,6 @@ Changing condition logic or the time window resets current evidence. Changing gr
 
 ## Reference
 
-This chapter follows [maintenance operations](../../../appchi-design/specs/spec-maintenance-operations.md), [correlation rules](../../../appchi-design/specs/spec-correlation-rules.md), [the Kafka alert pipeline](../../../appchi-design/specs/spec-kafka-alert-pipeline.md) and the superseding [current worker scope](../../../appchi-design/specs/spec-worker-scope.md).
+This chapter follows [maintenance operations](../../../keep-design/specs/spec-maintenance-operations.md), [correlation rules](../../../keep-design/specs/spec-correlation-rules.md), [the Kafka alert pipeline](../../../keep-design/specs/spec-kafka-alert-pipeline.md) and the superseding [current worker scope](../../../keep-design/specs/spec-worker-scope.md).
 
 [Guide contents](README.md) · [Next: Troubleshooting and glossary](07-troubleshooting-and-glossary.md)

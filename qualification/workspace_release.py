@@ -9,8 +9,8 @@ DELIVERY = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("workspace", DELIVERY / "scripts/workspace.py")
 workspace = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(workspace)
-IMAGES = {"appchi-frontend", "appchi-api", "appchi-ingestion", "appchi-processor",
-          "appchi-correlation", "appchi-indexer", "appchi-migrations"}
+IMAGES = {"keep-frontend", "keep-api", "keep-ingestion", "keep-processor",
+          "keep-correlation", "keep-indexer", "keep-migrations"}
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
     images = json.loads(args.images.read_text(encoding="utf-8"))
     if set(images) != IMAGES or any(not isinstance(v, str) or not re.fullmatch(r"[^\s@]+@sha256:[0-9a-f]{64}", v) for v in images.values()):
         raise SystemExit("Supply exactly seven immutable image references, one per deployable repository")
-    inventory.update({"images": images, "qualification": "unperformed", "format": "appchi-workspace-release-v1"})
+    inventory.update({"images": images, "qualification": "unperformed", "format": "keep-workspace-release-v1"})
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(inventory, indent=2)+"\n", encoding="utf-8")
     print("Source/image inventory recorded; attach scans, SBOMs and qualification evidence separately.")

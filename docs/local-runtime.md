@@ -1,9 +1,9 @@
-# Running the local Appchi workspace
+# Running the local Keep workspace
 
 **2026-10-26 Kafka topic identity (REV-41):** the source processor refuses a received
 topic that is not the incarnation recorded at cutover, and refuses while none is
 recorded. This stack's cutover predates migration 0054: with source, correlation and
-indexer stopped, apply 0054 and run `python -m appchi.kafka_cutover
+indexer stopped, apply 0054 and run `python -m keep.kafka_cutover
 --record-topic-identity` before starting the updated processor; see the
 [runbook](runbooks/kafka-first.md#failure-and-recovery).
 
@@ -16,7 +16,7 @@ in [local Kafka reset evidence](../qualification/local-kafka-reset-2026-10-25.md
 maintenance windows are always on; there is no capability gate or local preview.
 Older notes below that call them gated or preview-only are history. Follow the
 [one-time upgrade steps](#always-on-correlation-and-maintenance-rev-39) once on this
-stack. See the [design register](https://github.com/appchi-alert-operations/appchi-design/blob/main/decisions/design-register.md#rev-39--always-on-correlation-and-maintenance-2026-10-24).
+stack. See the [design register](https://github.com/keep-alert-operations/keep-design/blob/main/decisions/design-register.md#rev-39--always-on-correlation-and-maintenance-2026-10-24).
 
 **2026-10-04 startup repaired:** the core development system and local v2 gateway
 are running from the independent repositories. Original local credentials and
@@ -29,11 +29,11 @@ Maintenance, protected recovery and refreshed automatic correlation preview
 remain unqualified. The preserved historical correlation gate is not evidence
 for running a new correlation worker.
 
-**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api).
+**2026-09-30 live updates (REV-36):** the Product API owns live hint publishing and SSE. No separate live worker is started. Apply migration 0047 before the updated API, and stop old live workers. See [worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#6-live-updates-inside-the-product-api).
 
-**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
 
-**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
+**2026-09-30 worker-scope update:** see [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md). Maintenance release, assignment cleanup, inactivity/retention sweeps and operator background orchestration are deferred. Operator management runs synchronously in the Product API; older worker commands below describe the deferred implementation.
 
 **2026-09-30 Kafka cutover required:** the historical local checks below describe the earlier pipeline. The updated launcher requires the [offline Kafka cutover](runbooks/kafka-first.md), a reconciled Kong binding, and refreshed local correlation preview evidence before the new workers run. This redesign was tested in disposable databases; the existing application database has not been cut over automatically.
 
@@ -53,18 +53,18 @@ The alert relay was corrected to ignore unrelated resource outbox streams.
 
 Open **https://localhost:3443**. The core local services were started and verified
 on 2026-09-23. Sign in as `local-admin`; its generated password is under
-`users.local-admin.password` in `.local/keycloak/credentials.json`. Appchi now
+`users.local-admin.password` in `.local/keycloak/credentials.json`. Keep now
 uses only username and password, with no one-time code.
 
 The [identity guide](local-keycloak.md) covers the editor/viewer accounts, custom
 users/groups and separate Keycloak console authentication. The launcher
 does not change Windows trust automatically. On this workstation, the user
 explicitly approved trusting the generated certificate on 2026-09-23; both
-Appchi and Keycloak now load with normal browser certificate validation. If an
+Keep and Keycloak now load with normal browser certificate validation. If an
 old tab still displays the certificate error, reopen the URL in a new tab.
 Fresh workstations need their own explicit local certificate trust setup.
 
-Select **Global → Alerts** to find the synthetic `Appchi local demo` alert. The
+Select **Global → Alerts** to find the synthetic `Keep local demo` alert. The
 live browser check received this alert through native v1, waited for processing
 and Elasticsearch search, then acknowledged it and added a note through the UI.
 `Local Demo` is a separate tenant with admin/editor/viewer group grants. Native
@@ -73,7 +73,7 @@ ingestion into Local Demo through its managed `Local Demo Sender` operator.
 
 ## Start, inspect and stop
 
-From `appchi-delivery` in PowerShell:
+From `keep-delivery` in PowerShell:
 
 ```powershell
 .\scripts\local-runtime.ps1 -Action Start
@@ -83,8 +83,8 @@ From `appchi-delivery` in PowerShell:
 ```
 
 Start prepares local-only credentials, starts all dependency technologies from
-one Docker Compose project, applies the Appchi database migrations, then starts
-the Product API, public Ingestion API, UI and workers on Windows. `-Restart` reloads the managed Appchi
+one Docker Compose project, applies the Keep database migrations, then starts
+the Product API, public Ingestion API, UI and workers on Windows. `-Restart` reloads the managed Keep
 processes. Stop halts those processes and Compose containers without removing
 their volumes. Nothing is installed as a Windows service.
 
@@ -100,7 +100,7 @@ exec or healthcheck processes are reaped by the init process instead of the
 database postmaster. Recreating these containers to apply configuration changes
 preserves their named data volumes; do not remove the volumes.
 
-On this workspace, the first startup imports the existing Appchi PostgreSQL
+On this workspace, the first startup imports the existing Keep PostgreSQL
 database from a local logical backup and copies its serving Elasticsearch
 projection. The previous native stores and their files are retained as rollback
 sources. Fresh workspaces start with new Compose volumes. Keep `.local` and the
@@ -115,12 +115,12 @@ password file does not change the password already stored in a PostgreSQL volume
 
 | Service | Local address |
 |---|---|
-| Appchi HTTPS UI | https://localhost:3443 |
+| Keep HTTPS UI | https://localhost:3443 |
 | Product API | http://127.0.0.1:58000 |
 | Public Ingestion API / native v1 | http://127.0.0.1:58001/api/ingest/v1/alerts |
 | Private Ingestion API (mTLS) | https://127.0.0.1:58444 |
 | Keycloak / console | https://localhost:58443/admin/ |
-| Appchi PostgreSQL 18.2 (Compose) | 127.0.0.1:55433 |
+| Keep PostgreSQL 18.2 (Compose) | 127.0.0.1:55433 |
 | Elasticsearch 9.0.0 (Compose) | http://127.0.0.1:59201 |
 | Kafka 4.0.0 (Compose) | 127.0.0.1:19093 |
 | Redis 7.4.2 (Compose) | 127.0.0.1:56380 |
@@ -129,8 +129,8 @@ password file does not change the password already stored in a PostgreSQL volume
 | Grafana 11.6.0 (Compose) | https://localhost:58448 |
 
 The previous native PostgreSQL and Elasticsearch remain on ports 55432 and
-59200 as rollback sources; Appchi uses the Compose-managed ports above. All
-published dependency ports bind to loopback. Docker volumes persist Appchi data,
+59200 as rollback sources; Keep uses the Compose-managed ports above. All
+published dependency ports bind to loopback. Docker volumes persist Keep data,
 Keycloak identities, Kong configuration, Kafka state and Grafana configuration.
 Kafka keeps its log in `kafka_data` through `KAFKA_LOG_DIRS`; before 2026-10-25 it
 used the container layer, and recreating the container lost both topics. After the
@@ -178,22 +178,22 @@ Start's search bootstrap requires the serving index's mapping to match the code
 exactly. A change that adds a field to every document, as REV-54's `name` does, needs
 a rebuild: the indexer refuses an existing document whose content differs at the same
 version. The bootstrap accepts a serving index that the rebuild CLI completed under
-the local binding, so rebuild with that CLI. From `appchi-delivery` in PowerShell 7:
+the local binding, so rebuild with that CLI. From `keep-delivery` in PowerShell 7:
 
 ```powershell
 ./scripts/local-runtime.ps1 -Action Start -Restart   # migrates, then stops at search_mapping_mismatch
 $values = Get-Content .local/keycloak/app-environment.json -Raw | ConvertFrom-Json
 foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
-$env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
-.venv/Scripts/python.exe -c "from appchi.search.local_bootstrap import binding; print(binding().model_dump_json())" | Set-Content .local/runtime/search-binding.json -Encoding utf8NoBOM
-.venv/Scripts/python.exe -m appchi.search.rebuild_cli --binding .local/runtime/search-binding.json start
-.venv/Scripts/python.exe -m appchi.search.rebuild_cli --binding .local/runtime/search-binding.json resume <job-id>
+$env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
+.venv/Scripts/python.exe -c "from keep.search.local_bootstrap import binding; print(binding().model_dump_json())" | Set-Content .local/runtime/search-binding.json -Encoding utf8NoBOM
+.venv/Scripts/python.exe -m keep.search.rebuild_cli --binding .local/runtime/search-binding.json start
+.venv/Scripts/python.exe -m keep.search.rebuild_cli --binding .local/runtime/search-binding.json resume <job-id>
 ./scripts/local-runtime.ps1 -Action Start
 ./scripts/local-v2.ps1 -Action Start -Restart       # when local v2 runs; plain Start does not restart it
 ```
 
 The workers are stopped while the rebuild copies, so nothing else writes the index.
-The previous physical index stays for cleanup, as in the [indexer runbook](https://github.com/appchi-alert-operations/appchi-indexer/blob/main/docs/runbooks/search-rebuild.md).
+The previous physical index stays for cleanup, as in the [indexer runbook](https://github.com/keep-alert-operations/keep-indexer/blob/main/docs/runbooks/search-rebuild.md).
 The CLI reports any failure as `search_rebuild_unavailable`; `status <job-id>` shows
 the job's state, and `resume` continues the same job.
 
@@ -205,7 +205,7 @@ Then fill alerts stored before providers existed, in the same shell with the wor
 environment loaded and the workers running:
 
 ```powershell
-.venv/Scripts/python.exe -m appchi.provider_backfill
+.venv/Scripts/python.exe -m keep.provider_backfill
 ```
 
 It prints one JSON line per tenant with the number of alerts filled; a rerun fills
@@ -217,7 +217,7 @@ provider once the indexer applies it.
 
 Correlation rules and maintenance windows have no capability gate. Per-rule and
 per-window Enable/Disable still apply. `scripts/local_identity.py` always points
-`APPCHI_CAPACITY_PROFILE` at `qualification/development-capacity.json`, which sets
+`KEEP_CAPACITY_PROFILE` at `qualification/development-capacity.json`, which sets
 no correlation or maintenance budgets, so both run without limits here. The
 launcher always starts the `correlation` worker with `source` and `indexer`.
 Window deletion still requires the `recovery` and `human_auth` gates and the
@@ -225,22 +225,22 @@ recovery evidence store, so it remains unavailable until protected recovery exis
 The REV-30 preview, `scripts/local_correlation.py` and its
 `.local/runtime/correlation-preview-profile*.json` files are no longer used.
 
-One-time upgrade of this stack, from `appchi-delivery` in PowerShell:
+One-time upgrade of this stack, from `keep-delivery` in PowerShell:
 
 1. Stop every writer: `.\scripts\local-runtime.ps1 -Action Stop`. Pre-0053 code
    reads the gate rows that migration 0053 deletes.
-2. Back up the Appchi database (`appchi_local`) with only PostgreSQL running:
+2. Back up the Keep database (`keep_local`) with only PostgreSQL running:
 
    ```powershell
-   $compose = @('-p','appchi-local-stack','-f','deploy/local/compose.yaml')
+   $compose = @('-p','keep-local-stack','-f','deploy/local/compose.yaml')
    docker compose @compose start postgres
-   docker compose @compose exec -T postgres sh -ec 'PGPASSWORD="$(cat /run/secrets/postgres_password)" pg_dump -Fc -f /tmp/pre-0053.dump postgresql://appchi_migrator@127.0.0.1:5432/appchi_local'
+   docker compose @compose exec -T postgres sh -ec 'PGPASSWORD="$(cat /run/secrets/postgres_password)" pg_dump -Fc -f /tmp/pre-0053.dump postgresql://keep_migrator@127.0.0.1:5432/keep_local'
    docker compose @compose cp postgres:/tmp/pre-0053.dump .local/runtime/pre-0053-always-on.dump
    ```
 
    Copy the file out rather than redirecting `pg_dump` output, which would
    corrupt a binary dump in PowerShell. Never name a backup
-   `appchi-local-migration.dump`: Start can restore that file over the database.
+   `keep-local-migration.dump`: Start can restore that file over the database.
 3. Start: `.\scripts\local-runtime.ps1 -Action Start`. Its migration step applies
    0053, which removes the `correlation` and `maintenance` gate rows and restarts
    rules saved as blocked with `consumer_not_integrated` at a new evaluation epoch,
@@ -252,9 +252,9 @@ One-time upgrade of this stack, from `appchi-delivery` in PowerShell:
    ```powershell
    (Get-Content .local/keycloak/app-environment.json -Raw | ConvertFrom-Json).PSObject.Properties |
      ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, [string]$_.Value, 'Process') }
-   $env:APPCHI_DATABASE_URL = $env:APPCHI_LOCAL_WORKER_DATABASE_URL
-   .\.venv\Scripts\python.exe -m appchi.worker maintenance-warmup --tenant <tenant UUID>
-   .\.venv\Scripts\python.exe -m appchi.worker maintenance-proof --tenant <tenant UUID>
+   $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
+   .\.venv\Scripts\python.exe -m keep.worker maintenance-warmup --tenant <tenant UUID>
+   .\.venv\Scripts\python.exe -m keep.worker maintenance-proof --tenant <tenant UUID>
    ```
 
    Do not rely on `--once`: it runs one page (at most 100 alerts, and a page also
@@ -271,10 +271,10 @@ cursor-paged warmup completed Global 22/22 and Local Demo 12/12 with no missing
 baseline. The optional v2 private listener did not start because the delivery
 `.venv` lacks `httptools`; this predates REV-39.
 
-The opt-in real browser check runs from `appchi-frontend` and leaves a synthetic alert:
+The opt-in real browser check runs from `keep-frontend` and leaves a synthetic alert:
 
 ```powershell
-$env:APPCHI_LOCAL_RUNTIME_TEST='1'
+$env:KEEP_LOCAL_RUNTIME_TEST='1'
 node node_modules/@playwright/test/cli.js test --config playwright.local-runtime.config.ts
 ```
 
@@ -283,8 +283,8 @@ It uses real login and APIs without request mocks or injected sessions.
 
 ## ServiceNow ticket panels (REV-65)
 
-The local API reads `APPCHI_TICKET_COUNT_URL` from the generated environment, which
-points at `http://127.0.0.1:58090/count` unless `APPCHI_LOCAL_TICKET_COUNT_URL`
+The local API reads `KEEP_TICKET_COUNT_URL` from the generated environment, which
+points at `http://127.0.0.1:58090/count` unless `KEEP_LOCAL_TICKET_COUNT_URL`
 overrides it. Plain `http` is accepted only for loopback addresses. Start the fake
 counting service next to the API:
 
@@ -297,3 +297,26 @@ It answers stable synthetic counts per team. Teams starting with `unknown`, `noc
 panel state can be checked. `POST /__set` with `{"team": "NOC", "count": 25}` pins a
 count. Without the fake service running, ServiceNow panels show that the count is
 unavailable; with the variable empty, the type is disabled.
+
+## Fresh start after the Keep rename (REV-67)
+
+The rename to Keep changed every stored format tag, so a stack from before it cannot
+be read and starts empty. The Compose volumes now have `keep-` names; the old
+`appchi-local-*` volumes stay untouched as a rollback copy until you remove them
+yourself. Move the old `.local/keycloak`, `.local/runtime` and `.local/operators`
+aside (keep `.local/keycloak/tls` so the certificate stays the same), then:
+
+1. `.\scripts\local-runtime.ps1 -Action Start` migrates `keep_local` to the head and
+   starts the API and UI. On an empty broker it stops before the workers because no
+   Kafka cutover is recorded yet.
+2. With `.local/keycloak/app-environment.json` loaded and `KEEP_DATABASE_URL` set to
+   the worker URL, run `.venv/Scripts/python.exe scripts/local_runtime.py probe`
+   (creates the two `keep.development.alerts.*` topics), then
+   `.venv/Scripts/python.exe -m keep.kafka_cutover --ingress-and-legacy-workers-stopped --local-config .local/runtime/kafka-protocol.json`.
+   A first attempt can report `cutover_group_state_unverified` while the new broker's
+   group coordinator is still loading; run it again.
+3. `.\scripts\local-runtime.ps1 -Action Start -Restart` starts ingestion and the workers.
+4. For local v2: `.\scripts\local-v2.ps1 -Action Start` creates the Grafana token and
+   then stops at operator provisioning (HTTP 503), because the API started without it.
+   Run `.\scripts\local-identity.ps1 -Action Start -Restart` and then
+   `.\scripts\local-v2.ps1 -Action Start` again.

@@ -51,7 +51,7 @@ Previewing reads current data; it does not save, change alerts, trigger a rule o
 
 Changing the saved query changes every referencing dashboard's future counts. Changing only columns, sorting or grouping does not change which alerts those panels count. To change a preset's saved grouping, edit the preset; the **Group by** menu on its results changes only your current view. A rename keeps existing links because the preset's identity stays the same.
 
-Use **Discard** to abandon a preset definition draft. If someone else saves first, Appchi retains your draft and reports a conflict. Review the newer definition before deciding what to keep. **Save as new…** creates another shared view; it is not a personal copy or an overwrite shortcut.
+Use **Discard** to abandon a preset definition draft. If someone else saves first, Keep retains your draft and reports a conflict. Review the newer definition before deciding what to keep. **Save as new…** creates another shared view; it is not a personal copy or an overwrite shortcut.
 
 **History** shows retained changes. Where **Use this revision** is available, it loads an old definition into a draft; an explicit save creates a new revision after current validation. It does not erase intervening history. Deleted presets have retained history but no undelete action.
 
@@ -103,7 +103,7 @@ An image panel shows an uploaded PNG, JPEG, GIF or WebP file of up to 5 MB and 8
 
 ## ServiceNow tickets panels
 
-A ServiceNow tickets panel shows how many ServiceNow incidents (INCs) a team has right now, so you can see each team's ticket load without opening ServiceNow. The number comes from the company's ticket counting service, not from Appchi alerts or incidents, and the panel never changes tickets. Under the title, the panel shows what it counts, for example **NOC · Open · Hamal**. **Ticket state** counts **Open** tickets, tickets **In progress**, or **Both**. **Detection method** counts incidents the monitoring center raised (**Hamal**), incidents reported straight to the team (**Direct**), or **All**. The top bar takes the color of the highest threshold the count reaches.
+A ServiceNow tickets panel shows how many ServiceNow incidents (INCs) a team has right now, so you can see each team's ticket load without opening ServiceNow. The number comes from the company's ticket counting service, not from Keep alerts or incidents, and the panel never changes tickets. Under the title, the panel shows what it counts, for example **NOC · Open · Hamal**. **Ticket state** counts **Open** tickets, tickets **In progress**, or **Both**. **Detection method** counts incidents the monitoring center raised (**Hamal**), incidents reported straight to the team (**Direct**), or **All**. The top bar takes the color of the highest threshold the count reaches.
 
 Counts refresh about every minute, when you select **Refresh counts** and when you return to the browser tab; a count can be up to about a minute and a half old. When the team name is not known to ServiceNow, the panel says **Team not found**; check the spelling in **Edit panel**. When the counting service does not answer, the panel keeps its last count in grey, with no color and the time it was counted, and retries. When the service is not set up, the type cannot be chosen and existing panels say **ServiceNow isn't connected**. The service is set up in deployment configuration; super admins can check it on **Admin › Integrations**.
 
@@ -121,12 +121,12 @@ A red panel is not necessarily a critical alert. Threshold colors are presentati
 
 ## Share, reuse and review
 
-You can share a normal Appchi link with a colleague who already has access to the tenant; the link does not grant permission or expose a public dashboard. Dashboard options provide **History**, **Save as new…** and eligible deletion. Copies keep references to the same saved presets, so later query changes affect both dashboards.
+You can share a normal Keep link with a colleague who already has access to the tenant; the link does not grant permission or expose a public dashboard. Dashboard options provide **History**, **Save as new…** and eligible deletion. Copies keep references to the same saved presets, so later query changes affect both dashboards.
 
 Deleting a dashboard removes that shared view and its current panel references, not the presets or alerts. Deleted history is read-only; there is no undelete. Retained configuration history has access limits, so it is not a permanent archive.
 
 ## Reference
 
-[Presets](../../../appchi-design/specs/spec-preset-operations.md) · [Dashboards](../../../appchi-design/specs/spec-dashboard-operations.md) · [Current UI corrections](../../../appchi-frontend/docs/ui-design.md)
+[Presets](../../../keep-design/specs/spec-preset-operations.md) · [Dashboards](../../../keep-design/specs/spec-dashboard-operations.md) · [Current UI corrections](../../../keep-frontend/docs/ui-design.md)
 
 Next: [Maintenance and correlation →](06-maintenance-and-correlation.md)

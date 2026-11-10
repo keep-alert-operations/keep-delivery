@@ -2,7 +2,7 @@
 
 This procedure matches the 2026-10-07 environment clarification: committed Git
 repositories have been transferred; builds can reach only internal mirrors;
-Kafka, Elasticsearch and Grafana 12 are supplied externally. Deploy Appchi,
+Kafka, Elasticsearch and Grafana 12 are supplied externally. Deploy Keep,
 PostgreSQL, Redis, Kong and Keycloak in a dedicated OpenShift test namespace.
 Use synthetic data and dedicated native Keycloak test identities. No deployment,
 image build or Grafana 12 compatibility result is claimed by this procedure.
@@ -16,7 +16,7 @@ All `REQUIRED_*` values must be replaced locally; credentials stay in private fi
 ## 1. Apply the missing deployment overlay
 
 The transferred committed repositories do not contain several local deployment
-assets. Transfer `appchi-isolated-test-overlay.tar.gz`, its SHA-256 sidecar and
+assets. Transfer `keep-isolated-test-overlay.tar.gz`, its SHA-256 sidecar and
 the standalone `deployment_overlay.py` installer supplied with the archive.
 The archive adds the deployment renderer, images, test-identity/load tools,
 search bootstrap, operator proof helper and mirror-aware Dockerfiles. It does not
@@ -28,11 +28,11 @@ Dockerfiles and their dependency metadata stay compatible.
 On the private administration host, from the sibling workspace root:
 
 ```bash
-(cd /TRANSFER && sha256sum --check appchi-isolated-test-overlay.tar.gz.sha256)
+(cd /TRANSFER && sha256sum --check keep-isolated-test-overlay.tar.gz.sha256)
 python3 /TRANSFER/deployment_overlay.py check \
-  --root "$PWD" --archive /TRANSFER/appchi-isolated-test-overlay.tar.gz
+  --root "$PWD" --archive /TRANSFER/keep-isolated-test-overlay.tar.gz
 python3 /TRANSFER/deployment_overlay.py apply \
-  --root "$PWD" --archive /TRANSFER/appchi-isolated-test-overlay.tar.gz
+  --root "$PWD" --archive /TRANSFER/keep-isolated-test-overlay.tar.gz
 ```
 
 The installer requires the exact recorded Git base for each affected repository,
@@ -62,14 +62,14 @@ Python's standard library and does not need a dependency installation.
 | Certificates and credentials | Registry pull secret, runtime TLS/CA files, per-workload credentials |
 
 Mirror the pinned commits of the private Git dependencies with their history.
-The mirror prefix must expose each repository as `PREFIX/appchi-NAME.git`.
+The mirror prefix must expose each repository as `PREFIX/keep-NAME.git`.
 Recreating repositories with new root commits will not satisfy the existing pins.
 Python wheels/sdists must be the original bytes, including the Linux Python 3.13
 native CEL wheel; do not replace a package under the same version with a rebuild.
 Mirror build requirements such as Poetry/hatchling as well as runtime packages.
 
 Mirror these base-image lineages by immutable digest: Python 3.13 slim Bookworm,
-Node 22 Bookworm slim, a theme-compatible Keycloak, Appchi-plugin-compatible Kong,
+Node 22 Bookworm slim, a theme-compatible Keycloak, Keep-plugin-compatible Kong,
 and the chosen compatible PostgreSQL/Redis bases. The PostgreSQL wrapper requires
 the official Debian entrypoint and NSS wrapper. Existing local test selections
 are evidence about those local versions, not proof for different vendor images.
@@ -78,11 +78,11 @@ directive otherwise needs Docker Hub even when FROM images are internal.
 
 ## 3. Prepare build secrets
 
-Commands below use Bash, from `appchi-delivery`, with private files outside Git:
+Commands below use Bash, from `keep-delivery`, with private files outside Git:
 
 ```bash
 umask 077
-PRIVATE="$HOME/appchi-test-private"
+PRIVATE="$HOME/keep-test-private"
 mkdir -p "$PRIVATE"
 ```
 
@@ -91,8 +91,8 @@ shell input by the build; populate it yourself, never from an untrusted download
 
 ```dotenv
 PIP_INDEX_URL='https://REQUIRED_ARTIFACTORY/artifactory/api/pypi/REQUIRED_PYPI/simple'
-APPCHI_GIT_BASE_URL='https://REQUIRED_GIT_HOST/REQUIRED_ORGANIZATION/'
-APPCHI_GIT_USERNAME='REQUIRED_GIT_USERNAME'
+KEEP_GIT_BASE_URL='https://REQUIRED_GIT_HOST/REQUIRED_ORGANIZATION/'
+KEEP_GIT_USERNAME='REQUIRED_GIT_USERNAME'
 NPM_CONFIG_REGISTRY='https://REQUIRED_ARTIFACTORY/artifactory/api/npm/REQUIRED_NPM/'
 POETRY_HTTP_BASIC_INTERNAL_USERNAME='REQUIRED_PYPI_USERNAME_IF_NEEDED'
 POETRY_HTTP_BASIC_INTERNAL_PASSWORD='REQUIRED_PYPI_TOKEN_IF_NEEDED'
@@ -159,22 +159,22 @@ Provide host credentials privately, then run:
 set -a
 . "$PRIVATE/build.env"
 set +a
-export APPCHI_GIT_TOKEN_FILE="$PRIVATE/git-token"
+export KEEP_GIT_TOKEN_FILE="$PRIVATE/git-token"
 export SSL_CERT_FILE="$PRIVATE/build-ca.pem"
 export GIT_SSL_CAINFO="$PRIVATE/build-ca.pem"
 PYPI_INDEX='https://REQUIRED_ARTIFACTORY/artifactory/api/pypi/REQUIRED_PYPI/simple'
 
 for name in api ingestion processor correlation indexer migrations; do
-  context="$PRIVATE/build/appchi-$name"
+  context="$PRIVATE/build/keep-$name"
   python3 scripts/prepare_internal_build.py stage \
-    --repository "appchi-$name" --output "$context"
+    --repository "keep-$name" --output "$context"
   chmod 700 "$context/scripts/git-askpass.sh"
   .venv/bin/python scripts/prepare_internal_build.py relock \
     --context "$context" --index "$PYPI_INDEX" \
-    --git-base-url "$APPCHI_GIT_BASE_URL"
+    --git-base-url "$KEEP_GIT_BASE_URL"
 done
 python3 scripts/prepare_internal_build.py stage \
-  --repository appchi-frontend --output "$PRIVATE/build/appchi-frontend"
+  --repository keep-frontend --output "$PRIVATE/build/keep-frontend"
 ```
 
 Use a credential-free index URL in `--index` even if your private pip URL has
@@ -206,26 +206,26 @@ for name in api ingestion processor correlation indexer migrations; do
     --secret "id=build_ca,src=$PRIVATE/build-ca.pem" \
     --secret "id=build_environment,src=$PRIVATE/build.env" \
     --secret "id=github_token,src=$PRIVATE/git-token" \
-    -t "$REGISTRY/appchi-$name:$TAG" "$PRIVATE/build/appchi-$name"
-  docker push "$REGISTRY/appchi-$name:$TAG"
+    -t "$REGISTRY/keep-$name:$TAG" "$PRIVATE/build/keep-$name"
+  docker push "$REGISTRY/keep-$name:$TAG"
 done
 
 docker build \
   --build-arg "BUILDKIT_SYNTAX=$SYNTAX" \
   --build-arg "NODE_BASE_IMAGE=$NODE_BASE" \
-  --build-arg APPCHI_BACKEND_URL=http://appchi-product-api:8000 \
+  --build-arg KEEP_BACKEND_URL=http://keep-product-api:8000 \
   --secret "id=apt_sources,src=$PRIVATE/debian.sources" \
   --secret "id=build_ca,src=$PRIVATE/build-ca.pem" \
   --secret "id=build_environment,src=$PRIVATE/build.env" \
   --secret "id=github_token,src=$PRIVATE/git-token" \
   --secret "id=npmrc,src=$PRIVATE/npmrc" \
-  -t "$REGISTRY/appchi-frontend:$TAG" "$PRIVATE/build/appchi-frontend"
-docker push "$REGISTRY/appchi-frontend:$TAG"
+  -t "$REGISTRY/keep-frontend:$TAG" "$PRIVATE/build/keep-frontend"
+docker push "$REGISTRY/keep-frontend:$TAG"
 ```
 
 Authenticate the builder to Artifactory through its normal credential store.
 Use no password CLI flags. Record the destination digest of each push.
-Preserve `.appchi-internal-build.json` receipts and staged lock hashes with the
+Preserve `.keep-internal-build.json` receipts and staged lock hashes with the
 test inventory. These are explicit local build overrides, not new release pins.
 
 Build the remaining wrappers with mirrored digests, also supplying
@@ -233,9 +233,9 @@ Build the remaining wrappers with mirrored digests, also supplying
 
 | Result image | Dockerfile / context | Required base argument |
 | --- | --- | --- |
-| Appchi Kong | `../appchi-ingestion/kong/Dockerfile` / `../appchi-ingestion` | `KONG_BASE_IMAGE` |
-| Appchi Keycloak theme | `../appchi-frontend/keycloak/Dockerfile` / `../appchi-frontend` | `KEYCLOAK_BASE_IMAGE` |
-| Appchi PostgreSQL | `deploy/images/postgres/Dockerfile` / `deploy/images/postgres` | `POSTGRES_BASE` |
+| Keep Kong | `../keep-ingestion/kong/Dockerfile` / `../keep-ingestion` | `KONG_BASE_IMAGE` |
+| Keep Keycloak theme | `../keep-frontend/keycloak/Dockerfile` / `../keep-frontend` | `KEYCLOAK_BASE_IMAGE` |
+| Keep PostgreSQL | `deploy/images/postgres/Dockerfile` / `deploy/images/postgres` | `POSTGRES_BASE` |
 | Keycloak PostgreSQL | Same wrapper, compatible chosen base | `POSTGRES_BASE` |
 | Kong PostgreSQL | Same wrapper, compatible chosen base | `POSTGRES_BASE` |
 | Redis | `deploy/images/redis/Dockerfile` / `deploy/images/redis` | `REDIS_BASE` |
@@ -248,14 +248,14 @@ libraries resolved into images, not additional Deployments.
 
 ## 5. Clock measurement prerequisite
 
-NTP/chrony synchronizes node clocks. Appchi also needs recent evidence of their
+NTP/chrony synchronizes node clocks. Keep also needs recent evidence of their
 actual synchronization and measured UTC offset, plus the PostgreSQL clock.
 For example, the platform can provide chrony/NTP monitoring for eligible nodes
 and a measured PostgreSQL `clock_timestamp()` comparison against trusted UTC,
 accounting for measurement uncertainty and network delay. Do not assume the
 database shares the application's host clock because both run in OpenShift.
 
-The mounted ConfigMap `appchi-clock-health` contains two files:
+The mounted ConfigMap `keep-clock-health` contains two files:
 
 | Key | Meaning |
 | --- | --- |
@@ -305,7 +305,7 @@ bash "$PRIVATE/rendered/render-apps.sh"
 
 Process/dry-run and apply each stage using `oc -n REQUIRED_NAMESPACE`.
 Never apply the entire rendered directory at once. Start foundation and the
-three PostgreSQL instances/Redis, complete the Appchi migration Job and runtime
+three PostgreSQL instances/Redis, complete the Keep migration Job and runtime
 logins, then read the database-created Global UUID. Update configuration and
 rerender without `--bootstrap-only`. Complete Kong migrations, Keycloak startup,
 fresh-only Kong routing and explicit identity publication. Initialize Kafka while
@@ -327,7 +327,7 @@ exact installed version from `/api/health` and organization ID from `/api/org`;
 the binding checks exact values, not just major version 12. The deployed adapter
 uses `/api/v1/provisioning/*` and its legacy controlled-writer profile. Verify
 actual installed contact-point, policy and complete alert-rule inventory/read/write
-behavior before activating operator provisioning. Appchi's local Grafana 11.6
+behavior before activating operator provisioning. Keep's local Grafana 11.6
 tests do not establish compatibility with this installation.
 
 Reserve the test policy/rule namespace, preserve the existing routing tree and
@@ -336,7 +336,7 @@ Kong v2 HTTPS route and trust its CA. The API must reach Grafana management and
 trust its CA. Prepare direct serving-member Kong proof, the deployed proof helper,
 and an actual validated `OperatorBinding`; do not fill capability fields with
 invented evidence. Verify create, rotate, revoke and delivery to the owning tenant
-through normal APIs. Exact routing label: `Appchi - {operator name}` with literal
+through normal APIs. Exact routing label: `Keep - {operator name}` with literal
 string value `true`. See [Grafana provisioning API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/api-legacy/alerting_provisioning/).
 
 V1 admission/source/search can be tested before operator provisioning passes.

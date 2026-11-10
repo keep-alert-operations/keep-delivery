@@ -14,14 +14,14 @@ copy or maintain a second application manifest authority.
 
 ```bash
 umask 077
-mkdir -p "$HOME/appchi-load-test-private"
+mkdir -p "$HOME/keep-load-test-private"
 cp deploy/openshift/load-test/configuration.example.json \
-  "$HOME/appchi-load-test-private/configuration.json"
+  "$HOME/keep-load-test-private/configuration.json"
 # Fill every REQUIRED value; initially leave global_tenant_id as null.
 python3 deploy/openshift/load-test/render.py \
-  --config "$HOME/appchi-load-test-private/configuration.json" \
-  --output "$HOME/appchi-load-test-private/rendered" --bootstrap-only
-bash "$HOME/appchi-load-test-private/rendered/render-apps.sh"
+  --config "$HOME/keep-load-test-private/configuration.json" \
+  --output "$HOME/keep-load-test-private/rendered" --bootstrap-only
+bash "$HOME/keep-load-test-private/rendered/render-apps.sh"
 ```
 
 The renderer never connects to the cluster and never writes real secrets. Supply
@@ -38,7 +38,7 @@ commands without `--bootstrap-only`. Do not invent the Global UUID.
 |---|---|
 | `00-foundation.json` | Service account and per-service ingress NetworkPolicies. Apply after creating namespace, platform authorization and private pull secret. |
 | `10-data-services.json` | Three distinct PostgreSQL StatefulSets/PVCs and ephemeral Redis. Required Secrets must already exist. |
-| `20-appchi-migration.json` | Canonical dedicated migration Job; run and wait for success before any Appchi writer. |
+| `20-keep-migration.json` | Canonical dedicated migration Job; run and wait for success before any Keep writer. |
 | `21-kong-bootstrap.json` | Fresh Kong database/plugin bootstrap only. Do not run against an existing Kong database; use its documented upgrade procedure. |
 | `30-keycloak-kong.json` | Keycloak plus explicit identity-tooling sidecar, and Kong. Both render at zero replicas. Scale after prerequisites. |
 | `31-kong-routes.json` | Explicit one-off fresh-Kong route/plugin initialization. Run only after Kong is healthy and actual clock publication works; does not establish operator qualification. |
@@ -56,18 +56,18 @@ All `oc apply`, `get`, `wait`, `logs`, `exec` and `scale` commands need the test
 namespace. Re-rendering and reapplying applications resets replicas to zero;
 only do that during a coordinated stopped deployment.
 
-The Kafka cutover Job runs `python -m appchi.kafka_cutover
+The Kafka cutover Job runs `python -m keep.kafka_cutover
 --ingress-and-legacy-workers-stopped`, a declaration you must actually satisfy.
 The Job does not stop anything itself. Follow the main runbook's offset/topic
 checks, then `oc -n "$NAMESPACE" apply -f "$PRIVATE/rendered/35-kafka-cutover.json"`
-and wait for `job/appchi-kafka-cutover-RELEASE_ID` to complete. Preserve logs and
+and wait for `job/keep-kafka-cutover-RELEASE_ID` to complete. Preserve logs and
 results. Backoff is zero and the Job has a ten-minute deadline; investigate a
 failure before an explicit retry with a new reviewed Job name.
 
 ## Fresh Kong route configuration and the remaining v2 prerequisite
 
 The Kong database migration installs the schema. It does not create services,
-Routes, plugins, consumers or a qualified Appchi operator. Initialize the dedicated
+Routes, plugins, consumers or a qualified Keep operator. Initialize the dedicated
 test gateway after it is healthy, before sending v2 traffic:
 
 ```bash
@@ -75,9 +75,9 @@ cp deploy/openshift/load-test/kong-bootstrap.example.json \
   "$PRIVATE/kong-bootstrap.json"
 # Review the actual Service DNS, CA filenames and upstream endpoint in that file.
 # Privately generate $PRIVATE/kong-probe-token (32+ URL-safe random characters).
-oc -n "$NAMESPACE" create configmap appchi-kong-bootstrap-code \
+oc -n "$NAMESPACE" create configmap keep-kong-bootstrap-code \
   --from-file=bootstrap_kong.py=deploy/openshift/load-test/bootstrap_kong.py
-oc -n "$NAMESPACE" create secret generic appchi-kong-bootstrap-bindings \
+oc -n "$NAMESPACE" create secret generic keep-kong-bootstrap-bindings \
   --from-file="configuration.json=$PRIVATE/kong-bootstrap.json" \
   --from-file="kong-admin-ca.crt=$PRIVATE/kong-tls/ca-bundle.crt" \
   --from-file="private-ingestion-ca.crt=$PRIVATE/private-ingestion/server-ca.crt" \
@@ -85,14 +85,14 @@ oc -n "$NAMESPACE" create secret generic appchi-kong-bootstrap-bindings \
 oc -n "$NAMESPACE" apply --dry-run=server -f "$PRIVATE/rendered/31-kong-routes.json"
 oc -n "$NAMESPACE" apply -f "$PRIVATE/rendered/31-kong-routes.json"
 oc -n "$NAMESPACE" wait --for=condition=complete --timeout=600s \
-  "job/appchi-kong-routes-$RELEASE_ID"
-oc -n "$NAMESPACE" logs "job/appchi-kong-routes-$RELEASE_ID"
+  "job/keep-kong-routes-$RELEASE_ID"
+oc -n "$NAMESPACE" logs "job/keep-kong-routes-$RELEASE_ID"
 ```
 
 The actual private-ingestion **server** CA must be supplied above (it may differ
 from the CA that issued Kong's **client** certificate). `KONG_CLIENT_SSL` supplies
 that client certificate. The Job has access to internal Kong Admin under the
-`appchi-bootstrap` label; its configured admin hostname must match the certificate.
+`keep-bootstrap` label; its configured admin hostname must match the certificate.
 If your selected Kong distribution requires an Admin token, add it as a private
 file and set `admin_token_file` to its mounted path; the script never prints it.
 Do not expose Kong Admin through a Route for this operation.
@@ -103,18 +103,18 @@ The initializer verifies Kong is fresh and then installs:
 |---|---|
 | `/api/ingest/v2/` | Native `X-API-Key` only; query/body keys disabled and trusted identity headers scrubbed. |
 | `/api/ingest/v2/grafana` | Exact single Bearer credential normalized for Key Auth; rejects simultaneous X-API-Key. |
-| `/__appchi/operator-check` | Token-protected raw policy proof, without alert admission. |
-| `/__appchi/operator-auth-check` | Token-protected real Key Auth admission/denial proof, without alert admission. |
+| `/__keep/operator-check` | Token-protected raw policy proof, without alert admission. |
+| `/__keep/operator-auth-check` | Token-protected real Key Auth admission/denial proof, without alert admission. |
 
-All routes use the installed Appchi policy plugin. Its clock path is the real
-`/run/appchi-clock/health.json` ConfigMap mount and `unqualified_local_clock` is
+All routes use the installed Keep policy plugin. Its clock path is the real
+`/run/keep-clock/health.json` ConfigMap mount and `unqualified_local_clock` is
 **false**. The plugin cannot admit active credentials with missing/stale clock
 evidence. The bootstrap script refuses any preexisting gateway configuration;
 on partial failure inspect exact resources and repair deliberately. It does not
 automatically delete resources, retry uncertain writes, create policies/keys,
 change Grafana's shared routing tree, fabricate capabilities, or open SQL gates.
 
-The API-image `appchi.operators.proof` helper supplies the private
+The API-image `keep.operators.proof` helper supplies the private
 `OperatorBinding.probe_url` endpoint. It checks current operation/policy fences
 before and after direct per-member checks and returns complete nonce-bound proof
 without admitting an alert. Deploy `32-operator-proof.json` using
@@ -122,8 +122,8 @@ without admitting an alert. Deploy `32-operator-proof.json` using
 Do not point `probe_url` at a raw Kong endpoint or copy workstation evidence IDs.
 
 Kong now renders as a singleton StatefulSet with a headless member Service. Use
-`statefulset/appchi-kong` for scale/rollout and direct
-`appchi-kong-0.appchi-kong-members` DNS for member probes; include that name in
+`statefulset/keep-kong` for scale/rollout and direct
+`keep-kong-0.keep-kong-members` DNS for member probes; include that name in
 its TLS certificate. Node replacement requires re-observing its UUID and updating
 the qualified bindings. Keep replicas at one until the whole pool is requalified.
 This changes the earlier draft bundle's Kong workload kind: on an already-applied
@@ -131,12 +131,12 @@ draft, stop and remove only the old Kong Deployment before applying this
 StatefulSet. Preserve the separate Kong database and do not rerun fresh bootstrap.
 
 Before provisioning, prepare an actual
-`grafana-provisioning-v1-kong-appchi-policy-v1` binding with the supplied Grafana
+`grafana-provisioning-v1-kong-keep-policy-v1` binding with the supplied Grafana
 organization/version, actual Kong version/member inventory, HTTPS management,
 probe and webhook URLs, CA file, controlled-writer agreement, reserved namespace,
 complete rule inventory and wrapper/serving-pool verification evidence. The schema
 and full required capability set are authoritative in
-`appchi-api/src/appchi/operators/binding.py` and `remote.py`; the installed image can
+`keep-api/src/keep/operators/binding.py` and `remote.py`; the installed image can
 validate your private JSON with `OperatorBinding.model_validate_json(...)`.
 Mount it in Product API bindings and supply the separate management/probe tokens.
 Use normal operator APIs to provision credentials only after those prerequisites;
@@ -147,32 +147,32 @@ bootstrap does not assume it is empty or permit replacing its routing tree.
 The generated script records absolute source paths for the private-network host;
 regenerate it after transferring/moving the checkout. Application templates inherit
 the pull secret from the generated ServiceAccount. The migration Job receives
-`app=appchi-migration` during rendering so the PostgreSQL ingress policy admits it.
+`app=keep-migration` during rendering so the PostgreSQL ingress policy admits it.
 
-After successful Appchi migration, initialize the separate runtime logins once:
+After successful Keep migration, initialize the separate runtime logins once:
 
 ```bash
-oc -n "$NAMESPACE" exec -i appchi-postgres-0 -- \
-  psql -X -v ON_ERROR_STOP=1 -h /var/run/postgresql -U appchi_migrator -d appchi \
+oc -n "$NAMESPACE" exec -i keep-postgres-0 -- \
+  psql -X -v ON_ERROR_STOP=1 -h /var/run/postgresql -U keep_migrator -d keep \
   < deploy/openshift/load-test/runtime-logins.sql
-for role in appchi_api_login appchi_processor_login appchi_indexer_login \
-            appchi_correlation_login appchi_identity_login appchi_operator_login \
-            appchi_proof_login appchi_recovery_login; do
-  oc -n "$NAMESPACE" exec -it appchi-postgres-0 -- \
-    psql -X -h /var/run/postgresql -U appchi_migrator -d appchi -c "\\password $role"
+for role in keep_api_login keep_processor_login keep_indexer_login \
+            keep_correlation_login keep_identity_login keep_operator_login \
+            keep_proof_login keep_recovery_login; do
+  oc -n "$NAMESPACE" exec -it keep-postgres-0 -- \
+    psql -X -h /var/run/postgresql -U keep_migrator -d keep -c "\\password $role"
 done
-oc -n "$NAMESPACE" exec appchi-postgres-0 -- \
-  psql -X -At -h /var/run/postgresql -U appchi_migrator -d appchi \
+oc -n "$NAMESPACE" exec keep-postgres-0 -- \
+  psql -X -At -h /var/run/postgresql -U keep_migrator -d keep \
   -c "SELECT id FROM tenants WHERE kind='global'"
 ```
 
 The SQL deliberately fails if a login already exists; inspect an interrupted
 bootstrap instead of dropping/recreating roles. Password prompts do not echo.
 Use distinct generated passwords stored privately. Roles inherit the published
-`appchi_api`, `appchi_worker` or `appchi_recovery` group; they never get superuser,
+`keep_api`, `keep_worker` or `keep_recovery` group; they never get superuser,
 DDL ownership, role creation or BYPASSRLS. The current worker group remains broad
 cross-tenant authority by design. The API uses its API login for normal SQL and
-`appchi_operator_login` only through `APPCHI_OPERATOR_DATABASE_URL`. Mount the
+`keep_operator_login` only through `KEEP_OPERATOR_DATABASE_URL`. Mount the
 identity login only in the identity-tooling sidecar. Keep recovery credentials
 out of ordinary application pods. There is no ingestion database login.
 
@@ -190,45 +190,45 @@ not placeholder certificates or examples. `PRIVATE` should be outside Git. Use
 Secret intentionally; initial `create` commands fail safely on existing names.
 
 ```bash
-PRIVATE="$HOME/appchi-load-test-private"
+PRIVATE="$HOME/keep-load-test-private"
 for db in postgres keycloak-db kong-db; do
-  oc -n "$NAMESPACE" create secret generic "appchi-$db-credentials" \
+  oc -n "$NAMESPACE" create secret generic "keep-$db-credentials" \
     --from-file="password=$PRIVATE/$db/password"
-  oc -n "$NAMESPACE" create secret generic "appchi-$db-tls" \
+  oc -n "$NAMESPACE" create secret generic "keep-$db-tls" \
     --from-file="tls.crt=$PRIVATE/$db/tls.crt" \
     --from-file="tls.key=$PRIVATE/$db/tls.key"
 done
-oc -n "$NAMESPACE" create secret generic appchi-redis-config \
+oc -n "$NAMESPACE" create secret generic keep-redis-config \
   --from-file=redis.conf=deploy/openshift/load-test/redis.conf \
   --from-file="users.acl=$PRIVATE/redis/users.acl"
-oc -n "$NAMESPACE" create secret generic appchi-redis-tls \
+oc -n "$NAMESPACE" create secret generic keep-redis-tls \
   --from-file="tls.crt=$PRIVATE/redis/tls.crt" \
   --from-file="tls.key=$PRIVATE/redis/tls.key" \
   --from-file="ca.crt=$PRIVATE/redis/ca.crt"
-oc -n "$NAMESPACE" create secret generic appchi-keycloak-env \
+oc -n "$NAMESPACE" create secret generic keep-keycloak-env \
   --from-env-file="$PRIVATE/keycloak.env"
-oc -n "$NAMESPACE" create secret generic appchi-keycloak-realm \
-  --from-file="appchi-local-realm.json=$PRIVATE/identity/appchi-local-realm.json"
-oc -n "$NAMESPACE" create secret generic appchi-keycloak-tls \
+oc -n "$NAMESPACE" create secret generic keep-keycloak-realm \
+  --from-file="keep-local-realm.json=$PRIVATE/identity/keep-local-realm.json"
+oc -n "$NAMESPACE" create secret generic keep-keycloak-tls \
   --from-file="tls.crt=$PRIVATE/keycloak/tls.crt" \
   --from-file="tls.key=$PRIVATE/keycloak/tls.key"
-oc -n "$NAMESPACE" create secret generic appchi-keycloak-trust \
+oc -n "$NAMESPACE" create secret generic keep-keycloak-trust \
   --from-file="postgres-ca.crt=$PRIVATE/keycloak-db/ca.crt" \
   --from-file="application-ca.crt=$PRIVATE/application/ca.crt"
-oc -n "$NAMESPACE" create secret generic appchi-identity-env \
+oc -n "$NAMESPACE" create secret generic keep-identity-env \
   --from-env-file="$PRIVATE/identity.env"
-oc -n "$NAMESPACE" create secret generic appchi-identity-bindings \
+oc -n "$NAMESPACE" create secret generic keep-identity-bindings \
   --from-file="local-directory.json=$PRIVATE/identity/local-directory.json" \
   --from-file="keycloak-ca.crt=$PRIVATE/keycloak/ca.crt" \
   --from-file="postgres-ca.crt=$PRIVATE/postgres/ca.crt"
-oc -n "$NAMESPACE" create secret generic appchi-kong-env \
+oc -n "$NAMESPACE" create secret generic keep-kong-env \
   --from-env-file="$PRIVATE/kong.env"
-oc -n "$NAMESPACE" create secret generic appchi-kong-tls \
+oc -n "$NAMESPACE" create secret generic keep-kong-tls \
   --from-file="$PRIVATE/kong-tls/"
 for role in api ingestion private-ingestion processor indexer correlation migration; do
-  oc -n "$NAMESPACE" create secret generic "appchi-$role-env" \
+  oc -n "$NAMESPACE" create secret generic "keep-$role-env" \
     --from-env-file="$PRIVATE/$role.env"
-  oc -n "$NAMESPACE" create secret generic "appchi-$role-bindings" \
+  oc -n "$NAMESPACE" create secret generic "keep-$role-bindings" \
     --from-file="$PRIVATE/$role-bindings/"
 done
 # Correlation is always on (REV-39); its capacity profile is optional.
@@ -241,45 +241,45 @@ the cluster's approved credential procedure; never use a password CLI flag.
 
 | Secret | Required keys/content |
 |---|---|
-| `appchi-postgres-credentials` | `password` for the dedicated `appchi_migrator` bootstrap/migration login. |
-| `appchi-keycloak-db-credentials` | `password` for the isolated `keycloak` DB login. |
-| `appchi-kong-db-credentials` | `password` for the isolated `kong` DB login. |
-| `appchi-postgres-tls`, `appchi-keycloak-db-tls`, `appchi-kong-db-tls` | Each has `tls.crt`, `tls.key`; server SANs must include its Service DNS names used by clients. |
-| `appchi-redis-config` | `redis.conf` from this directory and private `users.acl`; example below. |
-| `appchi-redis-tls` | `tls.crt`, `tls.key`, `ca.crt`; server SAN includes `appchi-redis` and full service DNS when used. |
-| `appchi-keycloak-env` | `KC_DB_PASSWORD` matching Keycloak DB; `KC_BOOTSTRAP_ADMIN_USERNAME`, `KC_BOOTSTRAP_ADMIN_PASSWORD` for initial setup. Remove bootstrap credentials after setup and roll the pod. |
-| `appchi-keycloak-realm` | `appchi-local-realm.json` from the dedicated test-identity preparation in the runbook. |
-| `appchi-keycloak-tls` | `tls.crt`, `tls.key`; SANs include **localhost and public Keycloak route hostname**. |
-| `appchi-keycloak-trust` | `postgres-ca.crt` for its JDBC connection and `application-ca.crt` trusting the application Route for signed backchannel logout; trusted CA certificates only. |
-| `appchi-identity-env` | Dedicated identity publisher `APPCHI_DATABASE_URL`, wrapping/epoch settings and `APPCHI_LOCAL_DIRECTORY_SECRET`; see main runbook. |
-| `appchi-identity-bindings` | `local-directory.json` pointing at `https://localhost:8443/realms/appchi-local`, Keycloak CA and PostgreSQL CA at referenced `/etc/appchi/` paths. |
-| `appchi-kong-env` | `KONG_PG_PASSWORD` matching its isolated DB. Additional approved Kong settings as needed. |
-| `appchi-kong-tls` | `server.crt`, `server.key` for proxy/admin HTTPS, with SANs for the public v2 host, `appchi-kong` and direct `appchi-kong-0.appchi-kong-members`; `kong.crt`, `kong.key` for private-ingestion client mTLS; `ca-bundle.crt` trusts the Kong DB and private-ingestion server. |
-| `appchi-api-env`, `appchi-api-bindings` | Product API settings and referenced files; include CA files, development capacity profile, operator/recovery bindings when qualified. |
-| `appchi-ingestion-env`, `appchi-ingestion-bindings` | Public ingestion settings and Kafka CA/client files only; never an Appchi database credential. |
-| `appchi-private-ingestion-env`, `appchi-private-ingestion-bindings` | Private ingestion settings, Kafka files, gateway server/client CA and probe credentials; never an Appchi database credential. |
-| `appchi-processor-env`, `appchi-processor-bindings` | Source worker settings and referenced TLS/profile files. |
-| `appchi-indexer-env`, `appchi-indexer-bindings` | Projection worker settings and referenced TLS/profile files. |
-| `appchi-operator-proof-env` | `APPCHI_PROOF_DATABASE_URL` using its dedicated read-only-default login and actual `APPCHI_DEPLOYMENT_EPOCH`. |
-| `appchi-operator-proof-bindings` | `configuration.json`, identical `operator-binding.json`, `probe-token`, `gateway-probe-token`, PostgreSQL and Kong CA files; see cluster initialization. |
-| `appchi-operator-proof-tls` | `tls.crt`, `tls.key`; SAN includes `appchi-operator-proof` and any full Service DNS name used. |
-| `appchi-correlation-env`, `appchi-correlation-bindings` | Correlation worker settings and referenced TLS files. A capacity profile is optional: correlation and maintenance are always on (REV-39) and an unset budget is unlimited. |
-| `appchi-migration-env`, `appchi-migration-bindings` | `APPCHI_MIGRATION_URL` for dedicated login and its CA. No application starts its own schema migration. |
+| `keep-postgres-credentials` | `password` for the dedicated `keep_migrator` bootstrap/migration login. |
+| `keep-keycloak-db-credentials` | `password` for the isolated `keycloak` DB login. |
+| `keep-kong-db-credentials` | `password` for the isolated `kong` DB login. |
+| `keep-postgres-tls`, `keep-keycloak-db-tls`, `keep-kong-db-tls` | Each has `tls.crt`, `tls.key`; server SANs must include its Service DNS names used by clients. |
+| `keep-redis-config` | `redis.conf` from this directory and private `users.acl`; example below. |
+| `keep-redis-tls` | `tls.crt`, `tls.key`, `ca.crt`; server SAN includes `keep-redis` and full service DNS when used. |
+| `keep-keycloak-env` | `KC_DB_PASSWORD` matching Keycloak DB; `KC_BOOTSTRAP_ADMIN_USERNAME`, `KC_BOOTSTRAP_ADMIN_PASSWORD` for initial setup. Remove bootstrap credentials after setup and roll the pod. |
+| `keep-keycloak-realm` | `keep-local-realm.json` from the dedicated test-identity preparation in the runbook. |
+| `keep-keycloak-tls` | `tls.crt`, `tls.key`; SANs include **localhost and public Keycloak route hostname**. |
+| `keep-keycloak-trust` | `postgres-ca.crt` for its JDBC connection and `application-ca.crt` trusting the application Route for signed backchannel logout; trusted CA certificates only. |
+| `keep-identity-env` | Dedicated identity publisher `KEEP_DATABASE_URL`, wrapping/epoch settings and `KEEP_LOCAL_DIRECTORY_SECRET`; see main runbook. |
+| `keep-identity-bindings` | `local-directory.json` pointing at `https://localhost:8443/realms/keep-local`, Keycloak CA and PostgreSQL CA at referenced `/etc/keep/` paths. |
+| `keep-kong-env` | `KONG_PG_PASSWORD` matching its isolated DB. Additional approved Kong settings as needed. |
+| `keep-kong-tls` | `server.crt`, `server.key` for proxy/admin HTTPS, with SANs for the public v2 host, `keep-kong` and direct `keep-kong-0.keep-kong-members`; `kong.crt`, `kong.key` for private-ingestion client mTLS; `ca-bundle.crt` trusts the Kong DB and private-ingestion server. |
+| `keep-api-env`, `keep-api-bindings` | Product API settings and referenced files; include CA files, development capacity profile, operator/recovery bindings when qualified. |
+| `keep-ingestion-env`, `keep-ingestion-bindings` | Public ingestion settings and Kafka CA/client files only; never a Keep database credential. |
+| `keep-private-ingestion-env`, `keep-private-ingestion-bindings` | Private ingestion settings, Kafka files, gateway server/client CA and probe credentials; never a Keep database credential. |
+| `keep-processor-env`, `keep-processor-bindings` | Source worker settings and referenced TLS/profile files. |
+| `keep-indexer-env`, `keep-indexer-bindings` | Projection worker settings and referenced TLS/profile files. |
+| `keep-operator-proof-env` | `KEEP_PROOF_DATABASE_URL` using its dedicated read-only-default login and actual `KEEP_DEPLOYMENT_EPOCH`. |
+| `keep-operator-proof-bindings` | `configuration.json`, identical `operator-binding.json`, `probe-token`, `gateway-probe-token`, PostgreSQL and Kong CA files; see cluster initialization. |
+| `keep-operator-proof-tls` | `tls.crt`, `tls.key`; SAN includes `keep-operator-proof` and any full Service DNS name used. |
+| `keep-correlation-env`, `keep-correlation-bindings` | Correlation worker settings and referenced TLS files. A capacity profile is optional: correlation and maintenance are always on (REV-39) and an unset budget is unlimited. |
+| `keep-migration-env`, `keep-migration-bindings` | `KEEP_MIGRATION_URL` for dedicated login and its CA. No application starts its own schema migration. |
 
 For Redis, generate a strong distinct password privately, hash its raw bytes using
 SHA-256 without a trailing newline, and put the hex digest after `#` in users.acl:
 
 ```text
 user default off
-user appchi on #REPLACE_WITH_PASSWORD_SHA256 &appchi.development.tenant.* +ping +publish +subscribe +psubscribe +unsubscribe +punsubscribe +client|setinfo
+user keep on #REPLACE_WITH_PASSWORD_SHA256 &keep.development.tenant.* +ping +publish +subscribe +psubscribe +unsubscribe +punsubscribe +client|setinfo
 ```
 
 Mount `redis-ca.crt` in API bindings. Use a URL-encoded password in
-`APPCHI_REDIS_URL=rediss://appchi:PASSWORD@appchi-redis:6379/0?ssl_cert_reqs=required&ssl_check_hostname=true&ssl_ca_certs=/etc/appchi/redis-ca.crt`.
+`KEEP_REDIS_URL=rediss://keep:PASSWORD@keep-redis:6379/0?ssl_cert_reqs=required&ssl_check_hostname=true&ssl_ca_certs=/etc/keep/redis-ca.crt`.
 The listener probe is only TCP; separately verify authenticated, TLS-verified
 publish/subscribe and PostgreSQL reconciliation before attributing live latency.
 
-`appchi-clock-health` is a **ConfigMap with actual continually refreshed**
+`keep-clock-health` is a **ConfigMap with actual continually refreshed**
 `health.json` and `pg-health.json` measurements from the platform's clock evidence
 publisher. This bundle does not generate healthy reports or a polling replacement.
 All workloads using a common report must actually share the verified clock bound;
@@ -296,7 +296,7 @@ entrypoint, a PVC child directory, read-only TLS input copied into a UID-owned
 0600 private-key file, TLS-only network authentication and an `emptyDir` mounted at
 the official image's `/var/run/postgresql` socket directory. It never
 requests root, fixed runtime UID, privileged SCC or `anyuid`. The three PostgreSQL
-instances can select different approved majors for Appchi, Keycloak and Kong.
+instances can select different approved majors for Keep, Keycloak and Kong.
 Choose versions supported by their actual clients and verify on the target cluster.
 Do not change the PostgreSQL major against an existing data PVC without its upgrade
 procedure. These standalone test databases are not an HA or backup design.
@@ -321,7 +321,7 @@ requires rechecking DB pool totals, Kafka partition ownership, serving-pool proo
 and actual clock/profile applicability. The identity sidecar adds 100m/128Mi
 requested and 500m/512Mi limit to the Keycloak pod; it sleeps until explicit exec.
 
-20Gi Appchi PostgreSQL and 5Gi supporting PVCs are **smoke-test starting values**.
+20Gi Keep PostgreSQL and 5Gi supporting PVCs are **smoke-test starting values**.
 The formal 250 deliveries/s for 24 hours produces 21.6 million accepted deliveries
 and immutable proof/history growth; measure bytes per delivery and index/topic
 growth in a shorter run, then have the platform owners allocate capacity and

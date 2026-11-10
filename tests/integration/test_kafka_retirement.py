@@ -7,9 +7,9 @@ from uuid import UUID
 
 import pytest
 
-from appchi.recovery.alert_cleanup import cleanup_alert, dependencies_released
-from appchi.recovery.retirement import retire_alert
-from appchi.shared.errors import AppError
+from keep.recovery.alert_cleanup import cleanup_alert, dependencies_released
+from keep.recovery.retirement import retire_alert
+from keep.shared.errors import AppError
 from test_kafka_first import apply, receipt, settings
 from test_recovery_gateway import IndependentStore
 

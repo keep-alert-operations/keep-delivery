@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
 
-from appchi.event_models import EVENT_MODELS
+from keep.event_models import EVENT_MODELS
 from generate_http_contracts import documents
 
-root = Path(__file__).resolve().parents[2] / "appchi-contracts/schemas"
+root = Path(__file__).resolve().parents[2] / "keep-contracts/schemas"
 for name, document in documents().items():
     (root / name).write_text(json.dumps(document, indent=2)+"\n", encoding="utf-8")
 for model in EVENT_MODELS.values():

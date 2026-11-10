@@ -1,6 +1,6 @@
 # Local Keycloak identities
 
-**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
+**2026-09-30 directory scope (REV-35):** the directory worker is nice-to-have and is not started by current launchers. Explicit trusted publication remains required for bootstrap and identity changes; automatic five-minute LDAP propagation is deferred. See [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have). Historical runtime evidence below does not describe a rollout of this later change.
 
 The local development environment uses a real Keycloak realm with custom users
 and nested groups, so sign-in does not need access to company LDAP. It preserves
@@ -22,14 +22,14 @@ From the repository root in PowerShell:
 ```
 
 The application origin is `https://localhost:3443`; the isolated Keycloak issuer
-is `https://localhost:58443/realms/appchi-local`. Start launches the unified
+is `https://localhost:58443/realms/keep-local`. Start launches the unified
 Compose stack and manages the Product API on loopback port 58000, the HTTPS UI
 and performs one trusted identity publication before API/UI startup. It does not
-start a directory polling worker. It uses the dedicated `appchi_local` database
+start a directory polling worker. It uses the dedicated `keep_local` database
 on the Compose PostgreSQL instance at port 55433. Local generated credentials are
 stored in `.local/keycloak/credentials.json`, outside version control. Read that
 file locally for the credentials instead of copying passwords into issue reports
-or terminal logs. Appchi sign-in needs only a username and password; no one-time
+or terminal logs. Keep sign-in needs only a username and password; no one-time
 code or authenticator enrollment is required, including for `local-admin`.
 
 Use the normal application sign-in page. The application receives a real signed
@@ -42,7 +42,7 @@ an expired sign-in attempt, choose **Sign in again** to start a new one. For an 
 raw callback error page, open `https://localhost:3443/auth/login` directly instead
 of refreshing the callback URL.
 
-The generated certificate is trusted explicitly by Appchi and Keycloak. The
+The generated certificate is trusted explicitly by Keep and Keycloak. The
 launcher does not change Windows trust automatically, so a fresh workstation
 may show a certificate warning. Browser acceptance tests use a test-only TLS
 exception. They do not disable certificate validation in the application.
@@ -50,7 +50,7 @@ exception. They do not disable certificate validation in the application.
 On 2026-09-23 the user explicitly approved trusting this workstation's generated
 certificate in `CurrentUser\Root`. Its thumbprint is
 `3FFC616039134C802F5AAECEC737B91CEBF27D80`. Normal Windows HTTPS checks returned
-200 for both services, and the Codex browser displayed Appchi and the Keycloak
+200 for both services, and the Codex browser displayed Keep and the Keycloak
 sign-in page without a certificate exception. Reopen a previously failed tab
 after installing trust. To remove this specific trust entry when retiring the
 local environment, run:
@@ -66,7 +66,7 @@ managed processes. Status is available with `-Action Status`. Keep the local
 credential files and Keycloak volume together when retaining this environment.
 
 To upgrade an existing password/TOTP installation, run Start with `-Restart`.
-The configuration step disables the Appchi realm's OTP execution and enrollment
+The configuration step disables the Keep realm's OTP execution and enrollment
 action, clears pending OTP enrollment from existing users, and preserves users,
 passwords, groups and enrolled credentials. It records the completed upgrade and
 updates the saved import; the restarted API requires only protected `pwd`
@@ -79,12 +79,12 @@ Stop the locally managed processes with:
 .\scripts\local-identity.ps1 -Action Stop
 ```
 
-## Appchi login theme
+## Keep login theme
 
 The approved form is in
-[`deploy/local/keycloak/themes/appchi`](https://github.com/appchi-alert-operations/appchi-frontend).
+[`deploy/local/keycloak/themes/keep`](https://github.com/keep-alert-operations/keep-frontend).
 Compose mounts that directory read-only into Keycloak. Fresh realm imports select
-it through the `appchi-web` client's `login_theme` attribute; the normal Start
+it through the `keep-web` client's `login_theme` attribute; the normal Start
 configuration step upgrades existing local clients and their saved imports while
 preserving credentials, groups, client settings and console administration.
 
@@ -92,7 +92,7 @@ To apply the theme to an already-running local installation without restarting
 the application processes:
 
 ```powershell
-docker compose -p appchi-local-stack -f deploy/local/compose.yaml up -d --no-deps keycloak
+docker compose -p keep-local-stack -f deploy/local/compose.yaml up -d --no-deps keycloak
 .venv/Scripts/python.exe scripts/local_identity.py wait
 .venv/Scripts/python.exe scripts/local_identity.py configure
 ```
@@ -100,12 +100,12 @@ docker compose -p appchi-local-stack -f deploy/local/compose.yaml up -d --no-dep
 Open `https://localhost:3443/` while signed out, or `/auth/login` to start an
 explicit sign-in. The username/password form is hosted by Keycloak and posts to
 its generated action URL. OIDC code flow, PKCE, the one-use callback and the
-server-side Appchi session remain in use. Other Keycloak authentication pages
+server-side Keep session remain in use. Other Keycloak authentication pages
 inherit the installed parent theme. The separate console uses its existing UI.
 
 The form includes password visibility, actual provider errors and expandable
 company-support guidance. Light is the default; the appearance choice persists
-under `appchi-theme` on the Keycloak origin, separately from the application's
+under `keep-theme` on the Keycloak origin, separately from the application's
 origin. Form fields are never copied to browser storage. Geist is served locally
 with its bundled SIL Open Font License; no external font or script host is needed.
 
@@ -120,7 +120,7 @@ Theme inheritance and installation follow the
 Manage custom users and groups in the local Keycloak administration console at
 `https://localhost:58443/admin/`. Use the separate local Keycloak administrator
 credentials from the generated file. A Keycloak console administrator is not
-automatically an Appchi global administrator.
+automatically a Keep global administrator.
 
 The console account is `bootstrap-admin`; it requires TOTP. In this workspace
 the console factor has been enrolled and its local development seed is in the
@@ -135,22 +135,22 @@ Each code is single-use: wait for the next 30-second code before another login.
 
 The initial development accounts are `local-admin` (Local Administrator),
 `local-editor` (Local Editor), and `local-viewer` (Local Viewer). Their groups
-are `Appchi Administrators`, `Developers` and `Observers`. Credentials contain
+are `Keep Administrators`, `Developers` and `Observers`. Credentials contain
 generated passwords. Older credential files may retain unused application TOTP
 seeds; the OTP helper is only for the separate Keycloak console administrator.
 Usernames do not assign application roles by themselves: Global retains its
 normal edit baseline for every eligible human, and specific-tenant view/edit
-roles come from Appchi grants to those users or groups.
+roles come from Keep grants to those users or groups.
 
 The live acceptance run created `Local Demo`, with admin/edit/view grants to
 the three corresponding groups. This tenant is created by the acceptance test,
 not automatically by Start on a fresh database.
 
-Create users in realm `appchi-local`, set their credentials, and add them to
+Create users in realm `keep-local`, set their credentials, and add them to
 groups as needed. Parent-group grants include eligible people in nested groups.
 The deployment configuration names the global-super-admin group's immutable
-UUID. Membership there grants Appchi global administration; normal tenant roles
-remain Appchi grants selected in its administration screens.
+UUID. Membership there grants Keep global administration; normal tenant roles
+remain Keep grants selected in its administration screens.
 
 Automatic directory polling is nice-to-have under REV-35. Explicit refresh reads complete bounded
 pages of users, groups, subgroups and members, then publishes through the same
@@ -173,9 +173,9 @@ login; correct the realm membership or configuration instead.
 
 ## Explicit directory publication configuration
 
-The development-only publication helper uses a separate `appchi-directory` confidential
+The development-only publication helper uses a separate `keep-directory` confidential
 client with a service account. Its realm-management permissions are read-only:
-`view-users`, `query-users` and `query-groups`. The browser client `appchi-web`
+`view-users`, `query-users` and `query-groups`. The browser client `keep-web`
 does not use service-account credentials.
 
 Its JSON document has these fields; the allocation values below are illustrative
@@ -183,10 +183,10 @@ local limits and must fit the local realm size:
 
 ```json
 {
-  "issuer": "https://localhost:58443/realms/appchi-local",
+  "issuer": "https://localhost:58443/realms/keep-local",
   "source": "keycloak-local",
-  "client_id": "appchi-directory",
-  "client_secret_env": "APPCHI_LOCAL_DIRECTORY_SECRET",
+  "client_id": "keep-directory",
+  "client_secret_env": "KEEP_LOCAL_DIRECTORY_SECRET",
   "ca_file": "PATH_TO_LOCAL_CA_PEM",
   "superadmin_group": "ACTUAL_NATIVE_GROUP_UUID",
   "max_objects": 1000,
@@ -196,15 +196,15 @@ local limits and must fit the local realm size:
 }
 ```
 
-The publication helper requires explicit `APPCHI_ENVIRONMENT=development`, the named secret
-environment variable, and the normal Appchi database/wrapping-key/deployment
+The publication helper requires explicit `KEEP_ENVIRONMENT=development`, the named secret
+environment variable, and the normal Keep database/wrapping-key/deployment
 settings. It rejects non-loopback issuers and verifies TLS using the configured
 CA. It does not follow redirects or use a proxy from ambient environment values.
 
 For a one-off cycle after the launcher has supplied those environment bindings:
 
 ```powershell
-.venv/Scripts/python.exe -m appchi.identity.local_keycloak_worker --config PATH --once
+.venv/Scripts/python.exe -m keep.identity.local_keycloak_worker --config PATH --once
 ```
 
 Initial setup may also pass `--bootstrap`. This invokes the existing guarded
@@ -227,7 +227,7 @@ group-based tenant roles, live group removal/restoration, and signed
 provider-initiated logout. Run it after Start from `frontend`:
 
 ```powershell
-$env:APPCHI_LOCAL_IDENTITY_TEST='1'
+$env:KEEP_LOCAL_IDENTITY_TEST='1'
 node node_modules/@playwright/test/cli.js test --config playwright.local-identity.config.ts
 ```
 
@@ -250,7 +250,7 @@ still revoked the session. Backend password-policy and fresh-setup checks:
 and [local setup](../qualification/pytest-password-setup.xml). TypeScript,
 changed-file Prettier and Python Ruff checks passed.
 
-This local identity setup does not complete unfinished Appchi recovery,
+This local identity setup does not complete unfinished Keep recovery,
 visibility measurement, ingestion or external-service qualification work. See
 [implementation status](../status/implementation-status.md) for the broader release
 status and [development instructions](runbooks/development.md) for other

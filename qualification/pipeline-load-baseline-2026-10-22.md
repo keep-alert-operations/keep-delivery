@@ -43,7 +43,7 @@ Rerun and compare as described in the
     processes.
   - `--features`: one correlation rule per tenant, maintenance windows for 20
     tenants.
-- **Services:** private `appchi-load-*` containers from
+- **Services:** private `keep-load-*` containers from
   `scalability_services.py`: PostgreSQL 18.2, Elasticsearch 9.0.0, Redis 7.4.2 and
   Kafka 4.0.0, configured like `deploy/local`. Kafka readiness was proven by an
   idempotent produce and a transactional init/produce/commit. The containers
@@ -56,7 +56,7 @@ Rerun and compare as described in the
 
 ```powershell
 python qualification/scalability_services.py up
-$env:APPCHI_SCALE_ADMIN_URL = Get-Content .local/appchi-load-admin-url
+$env:KEEP_SCALE_ADMIN_URL = Get-Content .local/keep-load-admin-url
 python qualification/scalability_load.py --phase pipeline --features `
   --kafka-bootstrap 127.0.0.1:19293 --elasticsearch-url http://127.0.0.1:59401 `
   --redis-url redis://127.0.0.1:56580/0 --drain-seconds 1800 --output <run>.json

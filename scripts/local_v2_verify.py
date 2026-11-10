@@ -59,7 +59,7 @@ def demo_key(http, *, allow_prepared=False):
 
 
 def check_initial_gate(conn):
-    from appchi.recovery.guard import RESTORE_LOCK
+    from keep.recovery.guard import RESTORE_LOCK
 
     conn.execute("SELECT pg_advisory_xact_lock_shared(%s)", (RESTORE_LOCK,))
     restore = conn.execute("SELECT * FROM restore_control WHERE singleton").fetchone()
@@ -126,7 +126,7 @@ def verify():
                 ],
             )
             # This Kong build rejects duplicate Authorization during HTTP parsing,
-            # before plugins or Appchi's payload validator can run.
+            # before plugins or Keep's payload validator can run.
             expect(duplicate, 400, "duplicate_grafana_bearer_rejected")
             if "message" not in duplicate.json() or "error" in duplicate.json():
                 raise RuntimeError("Duplicate Bearer headers reached the application")
@@ -270,7 +270,7 @@ def send():
         run = str(uuid4())
         payloads = [
             {
-                "application": "Appchi local demo v2",
+                "application": "Keep local demo v2",
                 "component": component,
                 "message": message,
                 "severity": severity,
@@ -325,9 +325,9 @@ def send():
             "status": "firing",
             "startsAt": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "labels": {
-                "Appchi - " + operator["name"]: "true",
+                "Keep - " + operator["name"]: "true",
                 "alertname": "Grafana disk pressure",
-                "application": "Appchi local demo v2",
+                "application": "Keep local demo v2",
                 "component": "disk",
                 "severity": "high",
                 "site": "local-development",

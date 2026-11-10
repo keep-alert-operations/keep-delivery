@@ -52,7 +52,7 @@
 
 Include the tenant, page or record link, what you expected, what happened, and the approximate time with timezone. Include the exact visible error or request identifier if provided, the relevant filter, and whether the problem affects one record or many. For a save problem, say whether the page reported failure, conflict or an uncertain outcome.
 
-Use your organization's approved channel. Keep passwords, API keys and session information out of the report. Review screenshots and alert contents before sharing beyond the people authorized to read them. Your tenant administrator handles access and shared configuration questions; the Appchi support team handles persistent application failures.
+Use your organization's approved channel. Keep passwords, API keys and session information out of the report. Review screenshots and alert contents before sharing beyond the people authorized to read them. Your tenant administrator handles access and shared configuration questions; the Keep support team handles persistent application failures.
 
 ## Glossary
 
@@ -63,7 +63,7 @@ Use your organization's approved channel. Keep passwords, API keys and session i
 | Acknowledged | A firing alert with an assignee. There is no separate acknowledgement button. |
 | Application | The source application value used to identify and filter an alert. |
 | Assignee | A person recorded as responsible. Alert and incident assignees are independent. |
-| CEL | Common Expression Language, the expression syntax used to select alerts. Use supported fields and functions from Appchi's editor. |
+| CEL | Common Expression Language, the expression syntax used to select alerts. Use supported fields and functions from Keep's editor. |
 | Correlation | Automatic creation or linking of incidents from qualifying alert evidence. |
 | Draft | Changes held in your browser tab that have not been saved to shared configuration. |
 | Feed | The page for exploring and acting on alert records. |
@@ -90,10 +90,10 @@ Use your organization's approved channel. Keep passwords, API keys and session i
 
 ## Quick reference for handoff
 
-Before leaving an investigation, check the correct tenant, the current alert and incident owners, a note stating findings and next action, unresolved linked alerts, and any suppression that could hide continuing work. Confirm a shared definition was saved if you meant others to use it. Tell the next person through your normal team channel; Appchi does not notify them automatically.
+Before leaving an investigation, check the correct tenant, the current alert and incident owners, a note stating findings and next action, unresolved linked alerts, and any suppression that could hide continuing work. Confirm a shared definition was saved if you meant others to use it. Tell the next person through your normal team channel; Keep does not notify them automatically.
 
 ## Reference
 
-[Current scope](../../../appchi-design/specs/spec-worker-scope.md) · [Shared behavior and errors](../../../appchi-design/specs/spec-system-completion.md) · [Access](../../../appchi-design/specs/spec-tenant-access.md) · [Search and live updates](../../../appchi-design/specs/spec-alert-history-technical.md)
+[Current scope](../../../keep-design/specs/spec-worker-scope.md) · [Shared behavior and errors](../../../keep-design/specs/spec-system-completion.md) · [Access](../../../keep-design/specs/spec-tenant-access.md) · [Search and live updates](../../../keep-design/specs/spec-alert-history-technical.md)
 
 [Return to guide contents](README.md)

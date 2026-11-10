@@ -2,7 +2,7 @@
 
 Current scope: automated retention workers are deferred under REV-34. The
 procedures below preserve historical implementation context and do not authorize
-deploying those roles. See [current worker scope](https://github.com/appchi-alert-operations/appchi-design/blob/main/specs/spec-worker-scope.md).
+deploying those roles. See [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md).
 
 Run migrations through 0034 before these workers. Normal runtime Settings, a
 current deployment epoch and the worker database role are required. The recovery
@@ -10,10 +10,10 @@ capability remains closed until the supplied independent evidence contract is
 qualified. Do not open it just to run cleanup.
 
 ```powershell
-.venv/Scripts/python.exe -m appchi.worker command-retention --once
-.venv/Scripts/python.exe -m appchi.worker configuration-retention --once
-.venv/Scripts/python.exe -m appchi.worker correlation-retention --once
-.venv/Scripts/python.exe -m appchi.worker maintenance-retention --once
+.venv/Scripts/python.exe -m keep.worker command-retention --once
+.venv/Scripts/python.exe -m keep.worker configuration-retention --once
+.venv/Scripts/python.exe -m keep.worker correlation-retention --once
+.venv/Scripts/python.exe -m keep.worker maintenance-retention --once
 ```
 
 Without `--once`, each worker scans bounded pages and waits one hour after a full
