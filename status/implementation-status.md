@@ -32,8 +32,9 @@ with main merged in, so it keeps frontend #37's tab icon).
   passed on the changed files (the Windows checkout's CRLF fails `format:check`
   repo-wide, as on main). Playwright on the dashboard, history, threshold and Grafana
   specs: 110 passed, including the 4 new incident count cases; 2 Grafana cases failed
-  because they expect Keep's own origin to be `http://127.0.0.1:3447` while the
-  Playwright server runs on 3100 (a port assumption in REV-68's spec, not this change).
+  because they expected Keep's own origin to be `http://127.0.0.1:3447` while the
+  Playwright server runs on 3100. The frontend branch now reads the origin from the
+  page instead; `dashboard-grafana-panels` then passed 13/13.
 - Local journey, before stacking on Grafana: a copy of the local database
   (`keep_icp`, migration 0067 of that build applied, since dropped) with the branch API
   on 58010 and UI on 3444, signed in as an editor. The dialog listed Incident count
