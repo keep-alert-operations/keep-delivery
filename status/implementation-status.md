@@ -1,5 +1,49 @@
 # Implementation status
 
+## 2026-11-10 The system is named Keep (REV-67)
+
+The user asked to rename the system from Appchi to Keep everywhere (repositories, local
+folders, UI and documents), chose the full rename including internal identifiers and
+stored format tags, and accepted that local data starts empty. All eleven repositories
+were renamed on GitHub to `keep-*` (the organization rename to `keep-alert-operations`
+is done by the user in GitHub's settings). Each repository has branch
+`codex/rename-keep`: a rerunnable case-preserving rename of content and paths, then
+migration `0066` (roles `keep_api`/`keep_worker`/`keep_recovery`, every policy on
+`keep.tenant_id`, the visibility sampling check), the K brand mark, REV-67 in the
+design register and the repository-layout rule, and a fresh-start fix in
+`local_identity.py`. Migration SQL `0001`–`0065` and its checksums, `SOURCE.md`, git
+history, dated screenshots and the historical architecture image are unchanged; the CI
+secret keeps the name `APPCHI_REPOSITORIES_TOKEN` until it is re-added.
+
+Checks on the branch code (editable sibling installs, before lock files were
+regenerated against the renamed organization):
+
+- Ruff and unit suites: contracts 58, domain 764, ingestion 103, processor 49,
+  correlation 2, indexer 93, API 292, delivery 297 passed (65 skipped).
+- Migrations on a disposable PostgreSQL 18.2: 49 passed, including the new REV-67 test
+  that migrates two databases in one cluster. Separately, the grants and policies after
+  `0066` equal those of `0065` with the names swapped (5,767 entries), on both the
+  rename path and the path where another database already renamed the roles.
+- `generate_contracts.py` reproduced the renamed schemas exactly; `check_contracts.py`,
+  `verify_boundaries.py` and design `check_docs.py` passed; frontend `generate`
+  (ignoring line endings), format check and typecheck passed. `verify_documents.py` and
+  `check_context.py` need the renamed folders and were not run to completion.
+- Local stack reset to empty `keep-` volumes (old `appchi-local-*` volumes and `.local`
+  state kept as a rollback copy): migrated to `0066`, Kafka cutover on
+  `keep.development.alerts.*`, three workers healthy. S1 passed 4, skipped the provider
+  logout case (no enrolled console factor); S2 passed; S4 passed by hand (incident
+  `e20ec357…` in Global: created High/unassigned, linked the S2 alert, note, resolve left
+  the alert Acknowledged, reopen started cycle 2 with link and history kept). The browser
+  showed Keep and the K mark on the app, sign-in and Keycloak pages (realm `keep-local`,
+  client `keep-web`).
+- S3 was blocked: on a freshly bootstrapped operator the Kong policy holds the key as
+  `prepared`, so `keep-policy` answers 401 "Credential inactive" where
+  `local_v2_verify.py verify` expects the readiness gate's 503. The eight rejection
+  checks before it passed. The plugin logic is unchanged apart from names, so this looks
+  like an existing gap in first-time local v2 bootstrap rather than the rename.
+- Local Redis ran on 56300 through a temporary, uncommitted port override because Windows
+  reserves 56375–56474 on this host.
+
 ## 2026-11-09 Panel links (REV-66)
 
 The user asked for an optional link on every panel type that shows a button opening
