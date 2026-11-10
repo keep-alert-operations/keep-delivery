@@ -1,5 +1,20 @@
 # Implementation status
 
+## 2026-11-10 Keep browser tab icon
+
+The user reported that the app's browser tab showed the wrong icon. The frontend had no
+app icon, so `/favicon.ico` fell through to the app page and browsers showed a generic
+icon. Frontend #37 adds `src/app/icon.svg`, a byte-identical copy of the REV-67 Keep
+icon the Keycloak sign-in theme already uses, so Next.js links it on every page. No
+specification covers the tab icon, so no design change was needed. Merged with a merge
+commit after CI `verify` passed: frontend #37 (`d77055a`, on top of REV-68's
+`c28122a`); this change pins that head in the manifest.
+
+- Executed on 2026-11-10 on the local dev server (https://localhost:3443): pages emit
+  `<link rel="icon" href="/icon.svg?…" type="image/svg+xml">` and the icon rendered
+  correctly at 160, 32 and 16 px in the browser. The smoke baseline and browser suites
+  were not run for this static asset.
+
 ## 2026-11-10 Grafana panels (REV-68)
 
 The user asked for a panel type like KeepHQ's Grafana panel widget, approved the canvas
