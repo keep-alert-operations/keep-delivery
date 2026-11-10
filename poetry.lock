@@ -64,184 +64,6 @@ typing_extensions = {version = ">=4.16.0", markers = "python_version < \"3.15\""
 trio = ["trio (>=0.32.0)"]
 
 [[package]]
-name = "appchi-api"
-version = "0.1.0"
-description = "Product HTTP API, OIDC sessions, scoped commands, operator provisioning and live/SSE updates."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "71a79f56606cf0e2df7909125beeb701a34639fd", extras = ["runtime"]}
-httptools = ">=0.8,<1"
-uvicorn = ">=0.34,<1"
-uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation == \"CPython\""}
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-api.git"
-reference = "8260817f43d0c29d5198d57bb5fed66c1c2a266b"
-resolved_reference = "8260817f43d0c29d5198d57bb5fed66c1c2a266b"
-
-[[package]]
-name = "appchi-contracts"
-version = "0.1.0"
-description = "Native alert and Kafka contracts, HTTP schema artifacts and shared serialization."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-pydantic = ">=2.8,<3"
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-contracts.git"
-reference = "e67c19b8e1a682248098064fa24d1a4361635906"
-resolved_reference = "e67c19b8e1a682248098064fa24d1a4361635906"
-
-[[package]]
-name = "appchi-correlation"
-version = "0.1.0"
-description = "Tenant-ordered Kafka correlation processing and automatic incident orchestration."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "71a79f56606cf0e2df7909125beeb701a34639fd", extras = ["runtime"]}
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-correlation.git"
-reference = "48471ae47428fc2ab80693f2f03bed1979f1cfb9"
-resolved_reference = "48471ae47428fc2ab80693f2f03bed1979f1cfb9"
-
-[[package]]
-name = "appchi-domain"
-version = "0.1.0"
-description = "Shared transactional business rules, CEL semantics, authorization primitives and recovery fences."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-appchi-contracts = {git = "https://github.com/appchi-alert-operations/appchi-contracts.git", rev = "e67c19b8e1a682248098064fa24d1a4361635906"}
-authlib = {version = ">=1.5,<2", optional = true}
-cel-expr-python = {version = "0.1.3", optional = true}
-confluent-kafka = {version = ">=2.8,<3", optional = true}
-cryptography = ">=44,<47"
-elasticsearch = {version = ">=9,<10", optional = true}
-fastapi = ">=0.115,<1"
-httpx = ">=0.28,<1"
-ldap3 = {version = ">=2.9,<3", optional = true}
-nh3 = ">=0.3,<0.4"
-protobuf = {version = "6.33.5", optional = true}
-psycopg = {version = ">=3.2,<4", extras = ["binary", "pool"], optional = true}
-pydantic-settings = ">=2.8,<3"
-redis = {version = ">=6,<7", optional = true}
-tzdata = {version = "2025.2", optional = true}
-
-[package.extras]
-runtime = ["authlib (>=1.5,<2)", "cel-expr-python (==0.1.3)", "confluent-kafka (>=2.8,<3)", "elasticsearch (>=9,<10)", "ldap3 (>=2.9,<3)", "protobuf (==6.33.5)", "psycopg[binary,pool] (>=3.2,<4)", "redis (>=6,<7)", "tzdata (==2025.2)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-domain.git"
-reference = "71a79f56606cf0e2df7909125beeb701a34639fd"
-resolved_reference = "71a79f56606cf0e2df7909125beeb701a34639fd"
-
-[[package]]
-name = "appchi-indexer"
-version = "0.1.0"
-description = "Current-alert Elasticsearch projection, PostgreSQL reconciliation and index rebuild operations."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "71a79f56606cf0e2df7909125beeb701a34639fd", extras = ["runtime"]}
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-indexer.git"
-reference = "3097571522be528bdf17c497a5dd60a659eefbcd"
-resolved_reference = "3097571522be528bdf17c497a5dd60a659eefbcd"
-
-[[package]]
-name = "appchi-ingestion"
-version = "0.1.0"
-description = "Stateless native v1/v2 and Grafana admission to Kafka, with the Appchi Kong policy plugin."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "71a79f56606cf0e2df7909125beeb701a34639fd"}
-confluent-kafka = ">=2.8,<3"
-httptools = ">=0.8,<1"
-uvicorn = ">=0.34,<1"
-uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation == \"CPython\""}
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-ingestion.git"
-reference = "8ee904f6182b9dd2b1c78bc260077531355b0faf"
-resolved_reference = "8ee904f6182b9dd2b1c78bc260077531355b0faf"
-
-[[package]]
-name = "appchi-migrations"
-version = "0.1.0"
-description = "One ordered, checksummed PostgreSQL migration chain and a dedicated migration runner."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-alembic = ">=1.20,<2"
-psycopg = {version = ">=3.2,<4", extras = ["binary"]}
-sqlalchemy = ">=2.1,<3"
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-migrations.git"
-reference = "25eb46cae9ffe34bfaab0eaa7391f6fa6e1c3fac"
-resolved_reference = "25eb46cae9ffe34bfaab0eaa7391f6fa6e1c3fac"
-
-[[package]]
-name = "appchi-processor"
-version = "0.1.0"
-description = "Kafka source processing, immutable PostgreSQL replay proof and transactional changed-event publication."
-optional = false
-python-versions = ">=3.13,<3.14"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-appchi-domain = {git = "https://github.com/appchi-alert-operations/appchi-domain.git", rev = "71a79f56606cf0e2df7909125beeb701a34639fd", extras = ["runtime"]}
-
-[package.source]
-type = "git"
-url = "https://github.com/appchi-alert-operations/appchi-processor.git"
-reference = "897f20e27e21f06240ef6fd9809b3465a0013ac7"
-resolved_reference = "897f20e27e21f06240ef6fd9809b3465a0013ac7"
-
-[[package]]
 name = "authlib"
 version = "1.8.0"
 description = "The ultimate Python library in building OAuth and OpenID Connect servers and clients."
@@ -1473,6 +1295,184 @@ cryptography = ">=45.0.1"
 
 [package.extras]
 drafts = ["pycryptodome"]
+
+[[package]]
+name = "keep-api"
+version = "0.1.0"
+description = "Product HTTP API, OIDC sessions, scoped commands, operator provisioning and live/SSE updates."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+httptools = ">=0.8,<1"
+keep-domain = {git = "https://github.com/keep-alert-operations/keep-domain.git", rev = "f24a015c57ec44dc27d13fcb6781eaa20fa878db", extras = ["runtime"]}
+uvicorn = ">=0.34,<1"
+uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation == \"CPython\""}
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-api.git"
+reference = "418f08ca10a51a6c2aa0972e0f066ce2730cc039"
+resolved_reference = "418f08ca10a51a6c2aa0972e0f066ce2730cc039"
+
+[[package]]
+name = "keep-contracts"
+version = "0.1.0"
+description = "Native alert and Kafka contracts, HTTP schema artifacts and shared serialization."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+pydantic = ">=2.8,<3"
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-contracts.git"
+reference = "4ba0682dce4da0c4bd2860d99b28a8528a007816"
+resolved_reference = "4ba0682dce4da0c4bd2860d99b28a8528a007816"
+
+[[package]]
+name = "keep-correlation"
+version = "0.1.0"
+description = "Tenant-ordered Kafka correlation processing and automatic incident orchestration."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+keep-domain = {git = "https://github.com/keep-alert-operations/keep-domain.git", rev = "f24a015c57ec44dc27d13fcb6781eaa20fa878db", extras = ["runtime"]}
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-correlation.git"
+reference = "7ecf6fabad302211d881d36027d76092942e053c"
+resolved_reference = "7ecf6fabad302211d881d36027d76092942e053c"
+
+[[package]]
+name = "keep-domain"
+version = "0.1.0"
+description = "Shared transactional business rules, CEL semantics, authorization primitives and recovery fences."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+authlib = {version = ">=1.5,<2", optional = true}
+cel-expr-python = {version = "0.1.3", optional = true}
+confluent-kafka = {version = ">=2.8,<3", optional = true}
+cryptography = ">=44,<47"
+elasticsearch = {version = ">=9,<10", optional = true}
+fastapi = ">=0.115,<1"
+httpx = ">=0.28,<1"
+keep-contracts = {git = "https://github.com/keep-alert-operations/keep-contracts.git", rev = "4ba0682dce4da0c4bd2860d99b28a8528a007816"}
+ldap3 = {version = ">=2.9,<3", optional = true}
+nh3 = ">=0.3,<0.4"
+protobuf = {version = "6.33.5", optional = true}
+psycopg = {version = ">=3.2,<4", extras = ["binary", "pool"], optional = true}
+pydantic-settings = ">=2.8,<3"
+redis = {version = ">=6,<7", optional = true}
+tzdata = {version = "2025.2", optional = true}
+
+[package.extras]
+runtime = ["authlib (>=1.5,<2)", "cel-expr-python (==0.1.3)", "confluent-kafka (>=2.8,<3)", "elasticsearch (>=9,<10)", "ldap3 (>=2.9,<3)", "protobuf (==6.33.5)", "psycopg[binary,pool] (>=3.2,<4)", "redis (>=6,<7)", "tzdata (==2025.2)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-domain.git"
+reference = "f24a015c57ec44dc27d13fcb6781eaa20fa878db"
+resolved_reference = "f24a015c57ec44dc27d13fcb6781eaa20fa878db"
+
+[[package]]
+name = "keep-indexer"
+version = "0.1.0"
+description = "Current-alert Elasticsearch projection, PostgreSQL reconciliation and index rebuild operations."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+keep-domain = {git = "https://github.com/keep-alert-operations/keep-domain.git", rev = "f24a015c57ec44dc27d13fcb6781eaa20fa878db", extras = ["runtime"]}
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-indexer.git"
+reference = "942e816735f82091c15c6732da4f8fa2c9b1ac2b"
+resolved_reference = "942e816735f82091c15c6732da4f8fa2c9b1ac2b"
+
+[[package]]
+name = "keep-ingestion"
+version = "0.1.0"
+description = "Stateless native v1/v2 and Grafana admission to Kafka, with the Keep Kong policy plugin."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+confluent-kafka = ">=2.8,<3"
+httptools = ">=0.8,<1"
+keep-domain = {git = "https://github.com/keep-alert-operations/keep-domain.git", rev = "f24a015c57ec44dc27d13fcb6781eaa20fa878db"}
+uvicorn = ">=0.34,<1"
+uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation == \"CPython\""}
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-ingestion.git"
+reference = "621df6c82ac00d3edc388a08113e4b8b6a2f6827"
+resolved_reference = "621df6c82ac00d3edc388a08113e4b8b6a2f6827"
+
+[[package]]
+name = "keep-migrations"
+version = "0.1.0"
+description = "One ordered, checksummed PostgreSQL migration chain and a dedicated migration runner."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+alembic = ">=1.20,<2"
+psycopg = {version = ">=3.2,<4", extras = ["binary"]}
+sqlalchemy = ">=2.1,<3"
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-migrations.git"
+reference = "4884d36cd636a6a8873dfa505899cc472a36690d"
+resolved_reference = "4884d36cd636a6a8873dfa505899cc472a36690d"
+
+[[package]]
+name = "keep-processor"
+version = "0.1.0"
+description = "Kafka source processing, immutable PostgreSQL replay proof and transactional changed-event publication."
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+keep-domain = {git = "https://github.com/keep-alert-operations/keep-domain.git", rev = "f24a015c57ec44dc27d13fcb6781eaa20fa878db", extras = ["runtime"]}
+
+[package.source]
+type = "git"
+url = "https://github.com/keep-alert-operations/keep-processor.git"
+reference = "3b28f3cd06d4336e92f7c2883b55c0fbe77408fe"
+resolved_reference = "3b28f3cd06d4336e92f7c2883b55c0fbe77408fe"
 
 [[package]]
 name = "keyring"
@@ -3028,4 +3028,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "03b6249f5541ea1e06f47fed1f16289536b31e610c92d9989e32ba198a1041a2"
+content-hash = "25638606bd3a06dd959cd887a2522ddd3f77ad11a4396d840fac8173eca18e61"
