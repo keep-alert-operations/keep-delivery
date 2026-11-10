@@ -1,5 +1,39 @@
 # Implementation status
 
+## 2026-11-10 Client guide screenshots retaken after the Keep rename
+
+The three PNG screenshots in the [daily user guide](../docs/client-guide/README.md)
+still showed the Appchi name, the A brand mark and the pre-Ocean palette; the rename
+script skips binary files. They were retaken from the running local stack at
+keep-frontend `17172034c3537b4b96959e5df008b77299434c2c`, keep-api
+`e5cf0719b85d2f5aa1d1929d85ccc0423cb7c6bb` and keep-domain
+`e719bcfa9ce29599bcc17e93dd4b20e901dbe9fc` (all main, clean), in headless Chrome:
+
+- `sign-in.png`: the Keycloak form from `/auth/login?fresh=true` at 1421x701, the size
+  of the previous image (which was a JPEG under a `.png` name; it is now a real PNG).
+- `feed-desktop.png` and `dashboard.png`: 1440x900, signed in as the synthetic
+  `local-editor` user in Global. The data was created for the capture: eight native v1
+  alerts (operator `guide-demo`), one of them assigned to `local-editor` through the UI,
+  presets Critical, Firing and Acknowledged, and dashboard `Shift overview` with one count
+  panel per preset. The Feed query leaves out an earlier smoke-test alert; the dashboard
+  name was edited without saving to show **Unsaved changes**.
+
+The Feed and Presets and dashboards captions, the guide contents note about the former
+**Alerts** label and the [sources and maintenance](../docs/client-guide/sources-and-maintenance.md)
+provenance table now describe the new images. `index.html` was rebuilt with
+`build-guide.mjs` and marked 11.2.0; apart from those captions its text is unchanged, and
+all seven embedded images decode at their full sizes. `build-guide.mjs` needed no change.
+
+Starting the stack hit two leftovers of the workspace folder rename, now described in
+[local runtime](../docs/local-runtime.md#fresh-start-after-the-keep-rename-rev-67): the
+`postgres` and `kong-db` containers still mounted their secret files from
+`appchi-workspace` (recreated with their volumes kept), and the `ca_file` paths in the
+ignored `.local/keycloak/directory.json` and `.local/operators/binding.json` pointed
+there too (corrected; the originals are kept beside them with a `.pre-path-fix-20261110`
+suffix). After that, Start passed and all three workers reported healthy. Only the
+documentation check `python qualification/verify_documents.py` was run, and it passed;
+no application suite was needed for this change.
+
 ## 2026-11-10 CI secret renamed to `KEEP_REPOSITORIES_TOKEN`
 
 The user added the CI repository-reader credential as `KEEP_REPOSITORIES_TOKEN` in the

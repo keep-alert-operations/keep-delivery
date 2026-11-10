@@ -43,7 +43,7 @@ This guide is for people who use Keep during their working day, with either **Vi
 
 ## Reading the examples
 
-Screenshots use synthetic demonstration data. Names and counts are examples, not your tenant's data. Concept diagrams explain behavior rather than reproduce screens. Some older screenshots use the former sidebar label **Alerts**; the current label is **Feed**. The text uses current controls as of 11 October 2026.
+Screenshots use synthetic demonstration data. Names and counts are examples, not your tenant's data. Concept diagrams explain behavior rather than reproduce screens. The text uses current controls as of 11 October 2026.
 
 A feature may be unavailable in your environment or to your role. An error or stale indicator is not an empty result. Follow the recovery guidance rather than treating a failed query as proof that there are no alerts.
 

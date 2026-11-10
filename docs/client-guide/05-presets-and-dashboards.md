@@ -66,7 +66,7 @@ Deletion affects everyone. A preset that a current dashboard uses cannot be dele
 
 ![Shared dashboard with three count panels and controls for discard, refresh, fullscreen, create panel and save](assets/dashboard.png)
 
-*Example of an editor's dashboard with unsaved changes. The three counts are synthetic. This screenshot predates the Alerts-to-Feed sidebar rename, the current colours and the removal of the subtitle line with the revision number; the **Unsaved changes** chip now sits beside the dashboard name. The dashboard controls shown remain current.*
+*Example of an editor's dashboard with unsaved changes: the name was edited, so the **Unsaved changes** chip sits beside it and **Discard changes** and **Save** are available. The three counts are synthetic.*
 
 Each panel counts logical alert records matching its preset's **current saved query**. It does not count incoming messages, occurrences, incident links or notes. Dashboard counts exclude suppressed alerts and include resolved alerts unless the query excludes them. Dashboards have no Include suppressed switch; use the Feed or preset results to inspect those alerts.
 
