@@ -53,7 +53,7 @@ system-wide `AGENTS.md` copied from delivery.
 
 The contracts GitHub Actions run passed. Service workflows requiring sibling
 private repositories stop at their explicit credential check until an organization
-administrator supplies `APPCHI_REPOSITORIES_TOKEN` with read-only contents access
+administrator supplies `KEEP_REPOSITORIES_TOKEN` with read-only contents access
 to those repositories. No existing personal credential was saved into Actions.
 
 Historical qualification evidence is preserved with its original scope. This

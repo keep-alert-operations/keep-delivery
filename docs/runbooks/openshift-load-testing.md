@@ -178,12 +178,12 @@ resulting images. See [workspace build instructions](../repository-workspace.md#
 | Redis wrapper | `deploy/images/redis` | `Dockerfile` |
 | k6 toolkit | `qualification/load-test` | `Dockerfile` |
 
-Example application build; obtain `APPCHI_REPOSITORIES_TOKEN` through your normal
+Example application build; obtain `KEEP_REPOSITORIES_TOKEN` through your normal
 credential manager without printing it. `$BUILD_REGISTRY`, `$RELEASE` and every
 base variable below must be real values you selected.
 
 ```bash
-docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN \
+docker build --secret id=github_token,env=KEEP_REPOSITORIES_TOKEN \
   --build-arg PYTHON_BASE_IMAGE="$PYTHON_BASE_IMAGE" \
   -t "$BUILD_REGISTRY/keep-api:$RELEASE" ../keep-api
 docker build --build-arg KONG_BASE_IMAGE="$KONG_BASE_IMAGE" \

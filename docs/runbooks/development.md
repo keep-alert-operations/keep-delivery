@@ -505,7 +505,7 @@ environment variable does not rewrite an already-built image's API routing.
 
 ```powershell
 # From keep-frontend; supply private dependency access as described in workspace setup.
-docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN --build-arg KEEP_BACKEND_URL='<supplied trusted internal API origin>' --tag '<local image name>' .
+docker build --secret id=github_token,env=KEEP_REPOSITORIES_TOKEN --build-arg KEEP_BACKEND_URL='<supplied trusted internal API origin>' --tag '<local image name>' .
 ```
 
 This is a local build command, not a publish or deployment instruction. The Node

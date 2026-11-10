@@ -1,5 +1,15 @@
 # Implementation status
 
+## 2026-11-10 CI secret renamed to `KEEP_REPOSITORIES_TOKEN`
+
+The user added the CI repository-reader credential as `KEEP_REPOSITORIES_TOKEN` in the
+eight private-dependency consumers (api, ingestion, processor, correlation, indexer,
+domain, frontend, delivery), completing the last open REV-67 item. Their workflows and
+the build/CI documents now read the new name; `APPCHI_REPOSITORIES_TOKEN` remains only
+in dated records. Contracts set the token without using it (no private dependencies),
+so that unused line was removed. Evidence: the hosted Checks runs on each repository's
+`codex/keep-ci-secret` pull request.
+
 ## 2026-11-10 The system is named Keep (REV-67)
 
 The user asked to rename the system from Appchi to Keep everywhere (repositories, local

@@ -209,7 +209,7 @@ Every application repository and migrations owns its Dockerfile. Build from that
 repository's root. Private Git dependencies use a BuildKit secret:
 
 ```sh
-docker build --secret id=github_token,env=APPCHI_REPOSITORIES_TOKEN -t keep-api:local .
+docker build --secret id=github_token,env=KEEP_REPOSITORIES_TOKEN -t keep-api:local .
 ```
 
 The token needs read access to the selected private repositories; it is not written
@@ -219,7 +219,7 @@ digests, SBOM and scan evidence before a release; development base-image tags ar
 not a company runtime qualification.
 
 GitHub Actions workflows requiring sibling code use the repository/organization
-secret `APPCHI_REPOSITORIES_TOKEN` with read-only contents access to the Keep
+secret `KEEP_REPOSITORIES_TOKEN` with read-only contents access to the Keep
 repositories. Supply this through the organization's approved credentials process.
 Default repository-scoped `GITHUB_TOKEN` cannot read sibling private repositories.
 Bootstrap publishes source and workflows; it does not establish CI credentials or
@@ -243,9 +243,11 @@ alone will not unblock these jobs. See
 
 The dedicated `Keep CI repository reader` credential was configured in all eight
 repositories on 2026-10-01 with read-only Contents/Metadata access to the eleven
-selected workspace repositories. It expires on **2026-12-30**. Rotate it before
-expiry by updating `APPCHI_REPOSITORIES_TOKEN` in all eight repositories and
-verifying their workflows; secret values must remain outside source control.
+selected workspace repositories, and was re-added as `KEEP_REPOSITORIES_TOKEN` on
+2026-11-10 after the Keep rename (REV-67). Its expiry date is on the token's GitHub
+settings page (2026-12-30 when first configured). Rotate it before expiry by
+updating `KEEP_REPOSITORIES_TOKEN` in all eight repositories and verifying their
+workflows; secret values must remain outside source control.
 
 Frontend checkout uses `persist-credentials: false`. Otherwise the checkout
 action's repository-scoped GitHub authorization header overrides the credential
