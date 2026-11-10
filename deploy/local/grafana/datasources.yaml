@@ -1,0 +1,8 @@
+# Synthetic data for the local Grafana panels dashboard (REV-68); no external source.
+apiVersion: 1
+datasources:
+  - name: Keep local test data
+    uid: keep-local-testdata
+    type: grafana-testdata-datasource
+    access: proxy
+    editable: false

@@ -127,6 +127,7 @@ password file does not change the password already stored in a PostgreSQL volume
 | Kong 3.9.1 (Compose) | https://localhost:58445 |
 | Kong Admin API (Compose) | https://localhost:58447 |
 | Grafana 11.6.0 (Compose) | https://localhost:58448 |
+| Grafana for Grafana panels (Compose proxy) | https://localhost:58449 |
 
 The previous native PostgreSQL and Elasticsearch remain on ports 55432 and
 59200 as rollback sources; Keep uses the Compose-managed ports above. All
@@ -301,9 +302,27 @@ unavailable; with the variable empty, the type is disabled.
 ## Grafana panels (REV-68)
 
 The local API reads `KEEP_GRAFANA_PANEL_ORIGINS` from the generated environment, which
-allows `http://127.0.0.1:58091` unless `KEEP_LOCAL_GRAFANA_PANEL_ORIGINS` overrides
-it. Plain `http` is accepted only for loopback addresses in development. Start the fake
-Grafana next to the API:
+allows the local Grafana at `https://localhost:58449` and the fake Grafana at
+`http://127.0.0.1:58091` unless `KEEP_LOCAL_GRAFANA_PANEL_ORIGINS` overrides it
+(`KEEP_LOCAL_GRAFANA_PANEL_PORT` moves the first). Plain `http` is accepted only for
+loopback addresses in development.
+
+The Compose Grafana is set up for panels: embedding is allowed, anonymous visitors
+are Viewers, and a read-only **Keep local / Keep local panels** dashboard
+(`deploy/local/grafana/`) shows synthetic latency, error-rate and orders panels from
+the built-in TestData source. Browsers do not trust the operators CA that signs
+Grafana's certificate on 58448, so the `grafana-panels` Compose service serves Grafana
+on 58449 with Keep's trusted localhost certificate, verifies Grafana with the operators
+CA, and lets only `https://localhost:*` pages frame it. Keep's API keeps using 58448
+for operator routing. Use an address such as
+`https://localhost:58449/d-solo/keep-local-panels/keep-local-panels?orgId=1&panelId=1`,
+or open the dashboard on 58449 and copy a panel's **Share › Embed** code. After
+pulling this change, run
+`docker compose -p keep-local-stack -f deploy/local/compose.yaml up -d grafana grafana-panels`
+and regenerate the environment (`scripts/local_identity.py environment`) before
+restarting the API.
+
+Start the fake Grafana next to the API:
 
 ```powershell
 .venv/Scripts/python.exe scripts/local_grafana.py --port 58091

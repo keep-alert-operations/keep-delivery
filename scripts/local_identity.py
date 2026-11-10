@@ -343,8 +343,12 @@ def environment():
         "KEEP_TICKET_COUNT_URL": os.environ.get(
             "KEEP_LOCAL_TICKET_COUNT_URL", "http://127.0.0.1:58090/count"
         ),
+        # The local Grafana through its panels proxy, and the fake Grafana (REV-68).
         "KEEP_GRAFANA_PANEL_ORIGINS": os.environ.get(
-            "KEEP_LOCAL_GRAFANA_PANEL_ORIGINS", "http://127.0.0.1:58091"
+            "KEEP_LOCAL_GRAFANA_PANEL_ORIGINS",
+            "https://localhost:"
+            + os.environ.get("KEEP_LOCAL_GRAFANA_PANEL_PORT", "58449")
+            + ",http://127.0.0.1:58091",
         ),
         "PYTHONPATH": "",
     }
