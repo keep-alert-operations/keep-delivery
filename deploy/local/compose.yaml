@@ -170,7 +170,11 @@ services:
       GF_SERVER_PROTOCOL: https
       GF_SERVER_CERT_FILE: /tls/server.crt
       GF_SERVER_CERT_KEY: /tls/server.key
-      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Grafana panels (REV-68): local viewers see dashboards without signing in, and
+      # panels may be framed (the grafana-panels proxy limits framing to localhost).
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
@@ -183,11 +187,26 @@ services:
       - ../../.local/operators/tls/ca.crt:/tls/ca.crt:ro
       - ../../.local/operators/tls/server.crt:/tls/server.crt:ro
       - ../../.local/operators/tls/server.key:/tls/server.key:ro
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/keep-local.yaml:ro
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/keep-local.yaml:ro
+      - ./grafana/dashboards:/var/lib/keep-dashboards:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -kfsS https://localhost:3000/api/health >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 30
+    restart: unless-stopped
+
+  # Grafana under Keep's trusted localhost certificate, for Grafana panels (REV-68).
+  grafana-panels:
+    image: nginx:1.27.5-alpine
+    depends_on: [grafana]
+    ports: ["127.0.0.1:${KEEP_LOCAL_GRAFANA_PANEL_PORT:-58449}:8443"]
+    volumes:
+      - ./grafana/panels-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ../../.local/keycloak/tls/localhost.pem:/tls/localhost.pem:ro
+      - ../../.local/keycloak/tls/localhost-key.pem:/tls/localhost-key.pem:ro
+      - ../../.local/operators/tls/ca.crt:/tls/operators-ca.crt:ro
     restart: unless-stopped
 
 secrets:

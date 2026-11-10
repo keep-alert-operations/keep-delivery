@@ -1,0 +1,81 @@
+{
+  "uid": "keep-local-panels",
+  "title": "Keep local panels",
+  "description": "Synthetic panels for trying Keep's Grafana panels locally (REV-68).",
+  "tags": ["keep-local"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "refresh": "1m",
+  "time": {"from": "now-6h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "prod,staging",
+        "current": {"text": "prod", "value": "prod"},
+        "options": [
+          {"text": "prod", "value": "prod", "selected": true},
+          {"text": "staging", "value": "staging", "selected": false}
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Checkout p95 latency",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 600}]},
+          "custom": {"thresholdsStyle": {"mode": "dashed"}}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"refId": "A", "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"}, "scenarioId": "random_walk", "alias": "checkout-api", "seriesCount": 1, "startValue": 380, "min": 150, "max": 800, "spread": 25},
+        {"refId": "B", "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"}, "scenarioId": "random_walk", "alias": "checkout-web", "seriesCount": 1, "startValue": 220, "min": 100, "max": 600, "spread": 18}
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Checkout 5xx rate",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "color": {"mode": "fixed", "fixedColor": "orange"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 2}]},
+          "custom": {"thresholdsStyle": {"mode": "dashed"}}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {"refId": "A", "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"}, "scenarioId": "random_walk", "alias": "5xx / all requests", "seriesCount": 1, "startValue": 0.8, "min": 0, "max": 4, "spread": 0.15}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Orders per minute",
+      "gridPos": {"x": 0, "y": 8, "w": 8, "h": 6},
+      "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "graphMode": "area", "colorMode": "value"},
+      "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}, "overrides": []},
+      "targets": [
+        {"refId": "A", "datasource": {"type": "grafana-testdata-datasource", "uid": "keep-local-testdata"}, "scenarioId": "random_walk", "alias": "orders", "seriesCount": 1, "startValue": 900, "min": 400, "max": 1400, "spread": 40}
+      ]
+    }
+  ]
+}
