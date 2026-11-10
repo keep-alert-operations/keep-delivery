@@ -1,5 +1,48 @@
 # Implementation status
 
+## 2026-11-10 Incident count panels (REV-69)
+
+The user asked for a dashboard panel that shows how many incidents the alerts of a
+preset are in, shaped the mock through canvas comments (Firing, Investigating or both,
+as two plain checkboxes) and asked to build it. An `incident_count` panel references a
+preset and counts the distinct incidents that actively own at least one alert the
+preset counts and whose status is chosen (`open`, shown as Firing, `investigating`, or
+both); resolved incidents never count. The count batch adds an exact `terms`
+aggregation on `active_incident_id` (at most 10,000 incidents; more is a per-panel
+`incident_count_too_large` error), and a PostgreSQL read keeps incidents with a
+matching status and an unretired identity. Results carry `count`, `alerts` and
+`linked_alerts`; `POST /alerts/counts` takes `incident_status` for the dialog preview.
+Migration 0068 widens the panel checks. Built on `codex/incident-count-panel` in
+design, migrations, domain, contracts, api, frontend and this repository after
+REV-68 (Grafana panels, migration 0067), which was built in parallel and merged first;
+the worker repositories carry only the domain pin and this repository pins every head.
+
+- Executed on 2026-11-10 on the stacked branch code: migrations unit 5 passed and the
+  alembic integration cases for incident count, Grafana, ServiceNow and table panels,
+  fresh install and the two-process lock passed against a throwaway PostgreSQL 18;
+  the full migration suite passed 50/50 before stacking. Domain unit 820 passed. API
+  unit 313 passed with one alert-ownership case that passed 11/11 on rerun (native CEL
+  compile timing). Contracts 58 passed. Delivery integration tests for incident count
+  panels, counts, panel types, tables, Grafana panels and configuration deletion
+  passed 52/52 across two runs (one cold-start CEL timeout passed on rerun).
+  `generate_http_contracts.py` added only `IncidentCountPanel` and the quick-count
+  `incident_status`; `check_contracts.py`, `verify_boundaries.py`, `check_context.py`
+  and `verify_documents.py` passed. Frontend typecheck and `next build` passed; Prettier
+  passed on the changed files (the Windows checkout's CRLF fails `format:check`
+  repo-wide, as on main). Playwright on the dashboard, history, threshold and Grafana
+  specs: 110 passed, including the 4 new incident count cases; 2 Grafana cases failed
+  because they expect Keep's own origin to be `http://127.0.0.1:3447` while the
+  Playwright server runs on 3100 (a port assumption in REV-68's spec, not this change).
+- Local journey, before stacking on Grafana: a copy of the local database
+  (`keep_icp`, migration 0067 of that build applied, since dropped) with the branch API
+  on 58010 and UI on 3444, signed in as an editor. The dialog listed Incident count
+  second; the live preview against the real Elasticsearch index showed 2 alerts in
+  the Acknowledged preset, 1 of them in an incident, and 1 incident; unticking Firing
+  showed 0. After moving that incident to Investigating, a saved Firing-only panel
+  showed 0 and a Firing and investigating panel 1 after reload, with the threshold bar.
+  Not covered: more than one incident owner in real data, and the 10,000 bound against
+  a real index.
+
 ## 2026-11-10 Grafana panels (REV-68)
 
 The user asked for a panel type like KeepHQ's Grafana panel widget, approved the canvas
