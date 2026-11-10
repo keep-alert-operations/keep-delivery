@@ -15,8 +15,8 @@ links the new ticket back in the dialog's second step. Built on `codex/incident-
 in design, migrations, domain, contracts, api, frontend and this repository, first as
 REV-68/0067 and renumbered to REV-70/0069 after Grafana panels (REV-68, 0067) and
 incident count panels (REV-69, 0068) merged; all seven branches were rebased on main.
-Pins are not yet bumped: the worker repositories need the domain pin and this
-repository every head once the branches are pushed.
+The api and worker repositories pin domain `9e6f241`, the frontend pins contracts
+`6db4c7c`, and this repository pins every `codex/incident-ticket` head.
 
 - Executed on 2026-11-10 on the rebased code: migrations unit 5 passed, and the alembic
   integration cases for the ticket columns, Grafana and incident count panels, fresh
