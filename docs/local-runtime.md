@@ -320,3 +320,12 @@ aside (keep `.local/keycloak/tls` so the certificate stays the same), then:
    then stops at operator provisioning (HTTP 503), because the API started without it.
    Run `.\scripts\local-identity.ps1 -Action Start -Restart` and then
    `.\scripts\local-v2.ps1 -Action Start` again.
+
+If the workspace folder itself was renamed (`appchi-workspace` to `keep-workspace`),
+two kinds of state can still point at the old path. Compose does not recreate the
+`postgres` and `kong-db` containers for a moved secret file, so Start fails with
+"bind source path does not exist"; recreate just those two with
+`docker compose -p keep-local-stack -f deploy/local/compose.yaml up -d --no-deps --force-recreate postgres kong-db`
+(their named volumes are kept). The `ca_file` entries in `.local/keycloak/directory.json`
+and `.local/operators/binding.json` also keep the old path, which stops directory
+publication with `FileNotFoundError`; point them at the same files under the new folder.

@@ -6,7 +6,7 @@ Use **Feed** to answer a question now: what needs attention, what happened to an
 
 ![Keep Feed showing the query bar, quick views, alert rows and pagination.](assets/feed-desktop.png)
 
-*Feed with synthetic example data. The illustration explains the controls; it does not show your tenant's alerts. This screenshot predates the current quick views and colours: it still shows the removed **Active** view, and it does not show **Assigned to me** or **Group by**.*
+*Feed with synthetic example data. The illustration explains the controls; it does not show your tenant's alerts. The query bar holds an example filter that leaves out one application, and the quick views show how many of the matching alerts each one would keep.*
 
 ## Understand what one row means
 

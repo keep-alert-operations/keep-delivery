@@ -26,6 +26,8 @@ Prepared on 11 October 2026 using these checked-out revisions **plus their exist
 
 **Revised 27 October 2026:** the Feed and search, Presets and dashboards, and Troubleshooting and glossary chapters, the first-shift steps in the guide contents and the [shared-views diagram](assets/shared-views.svg) were updated for three UI changes in the [design register](../../../keep-design/decisions/design-register.md). REV-43 removed the Active quick view, moved row actions into a ⋯ menu, showed row times relative to now, removed revision numbers from the preset and dashboard subtitles, and quietened the live-status notices. REV-44 added Group by on Feed and saved-preset results, and an optional saved preset grouping whose results-toolbar change is view-only. REV-45 added Assigned to me, made pressing the selected quick view return to All, and renamed the toolbar's Reset to saved to Reset. Sources were keep-design `9d189981ee42ef2af32b7a86d9ac1c112e3d50ad` (REV-43–45 and [preset section 4](../../../keep-design/specs/spec-preset-operations.md#4-columns-and-sorting)) and keep-frontend `7d72ad94fbaad052cf616d5766a520947cfa43ce` (`alert-table.tsx`, `alert-groups.tsx`, `alerts.tsx`, `presets-pages.tsx`, `definition-editor.tsx` and `page.tsx`), both on the unmerged `codex/alert-grouping` branches; the frontend's only uncommitted change, in `administration.tsx`, does not affect these screens. Getting started, Working with alerts, Incidents and Maintenance and correlation were not fully re-inspected. The Feed and dashboard screenshots were not recaptured; their captions now say what they no longer show.
 
+**Revised 10 November 2026:** after the rename to Keep (REV-67), the three PNG screenshots were retaken from the running local stack at keep-frontend `17172034c3537b4b96959e5df008b77299434c2c` (main, clean). They now show the Keep name, the K brand mark and the Ocean palette. The Feed and dashboard were captured at 1440x900 while signed in as the synthetic `local-editor` user in Global, using eight synthetic native v1 alerts, three presets and one dashboard created for the capture. The Feed uses an example query that leaves out an earlier local smoke-test alert; the dashboard name was edited, unsaved, to show the **Unsaved changes** state. The sign-in form was captured at 1421x701 from `/auth/login?fresh=true`, matching the earlier framing. The Feed and Presets and dashboards captions and the guide contents note about the former **Alerts** label were updated to match; other chapter text was not re-inspected.
+
 The guide does not replace the specifications. [Worker scope](../../../keep-design/specs/spec-worker-scope.md) overrides older automatic maintenance-release, inactivity, retention and assignment-cleanup algorithms. Current UI corrections override older acknowledgement and dashboard controls. [Delivery readiness](../../status/delivery-readiness.md) keeps production gates open; this guide does not close them.
 
 ## Chapter authority map
@@ -43,13 +45,13 @@ Read current [implementation status](../../status/implementation-status.md) toge
 
 ## Screenshot and illustration provenance
 
-The copied PNGs are unmodified evidence images using synthetic data. The SVGs are original, editable concept diagrams created for this guide; they are not product screenshots.
+The PNGs are unedited product screenshots using synthetic data. The SVGs are original, editable concept diagrams created for this guide; they are not product screenshots.
 
 | Guide asset | Original / basis |
 |---|---|
-| [sign-in.png](assets/sign-in.png) | [Login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
-| [feed-desktop.png](assets/feed-desktop.png) | [Feed screenshot of 11 October](../../qualification/feed-rename-2026-10-11/feed-desktop.png); out of date since REV-42–45: it shows the removed Active view, older colours, row source lines and the Times in label, and lacks Assigned to me and Group by, as the guide caption says |
-| [dashboard.png](assets/dashboard.png) | [Dashboard toolbar evidence](../../qualification/dashboard-provenance-removal-2026-10-09/toolbar-dirty.png); its older sidebar still says Alerts, and it shows older colours and the revision subtitle that REV-43 removed, as the guide caption says |
+| [sign-in.png](assets/sign-in.png) | Local Keycloak sign-in form with the Keep theme, captured 10 November 2026; replaces the [login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
+| [feed-desktop.png](assets/feed-desktop.png) | Local Feed in Global with synthetic v1 alerts, captured 10 November 2026; replaces the [Feed screenshot of 11 October](../../qualification/feed-rename-2026-10-11/feed-desktop.png) |
+| [dashboard.png](assets/dashboard.png) | Local dashboard with three synthetic count panels and an unsaved name edit, captured 10 November 2026; replaces the [dashboard toolbar evidence](../../qualification/dashboard-provenance-removal-2026-10-09/toolbar-dirty.png) |
 | [concept-map.svg](assets/concept-map.svg) | System product model and tenant boundaries |
 | [shared-views.svg](assets/shared-views.svg) | Preset saved definition versus transient filter contract |
 | [incident-ownership.svg](assets/incident-ownership.svg) | Single active ownership and independent alert/incident lifecycle |
@@ -67,7 +69,7 @@ No new product behavior or normative decision is introduced. These discrepancies
 
 ## Rebuild the reading edition
 
-The Markdown chapters and SVGs are source files. PNGs preserve evidence. [build-guide.mjs](build-guide.mjs) generates [index.html](index.html) using the `marked` Markdown renderer; it embeds every image so the resulting HTML can be read offline or shared as one file. No external fonts, scripts or network image requests are required.
+The Markdown chapters and SVGs are source files. PNGs are product screenshots; retake them from the running local stack with synthetic data when the screens change. [build-guide.mjs](build-guide.mjs) generates [index.html](index.html) using the `marked` Markdown renderer; it embeds every image so the resulting HTML can be read offline or shared as one file. No external fonts, scripts or network image requests are required.
 
 From this directory, use an available installation of `marked`:
 
