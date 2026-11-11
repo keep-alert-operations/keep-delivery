@@ -1,5 +1,55 @@
 # Implementation status
 
+## 2026-11-11 A new tenant starts without an administrator (REV-71)
+
+The user asked that creating a tenant on Admin › Platform go straight to the new
+tenant's Permissions page, without adding the super-admin as its administrator, and
+require adding one there; asked whether to pick the administrator in the create form
+instead, they chose this flow. `POST /api/tenants` accepts an empty `initial_grants`
+list (a non-empty list still needs an eligible administrator), `GET
+/api/tenants/{id}/permissions` adds `meta.has_local_admin`, and the existing rule that
+every permission batch leaves an eligible local administrator makes the first save add
+one. The Platform form sends no grants, rereads the session and opens the new tenant's
+Permissions page; that page warns while no administrator exists, starts the new grant
+at Admin, keeps Save disabled until the draft sets an Admin grant, and asks before
+leaving. Built on `codex/tenant-admin-step` in design, api, contracts, frontend and
+this repository; no migration and no domain change. The frontend pins contracts
+`f9d6984`, and this repository pins every `codex/tenant-admin-step` head.
+
+- Executed on 2026-11-11 against a throwaway PostgreSQL 18.2: new delivery integration
+  `test_tenant_without_admin` (3 cases: empty creation, replay, audit and roster;
+  first batch must add an admin; non-empty grants still need one) passed with
+  `test_tenant_bootstrap_role`, `test_permission_revision` and `test_audit_browsing`,
+  11 passed under the restricted `keep_api` role; the 3 new cases fail on unmodified
+  main. API unit 314 passed (8 native-CEL cases first failed on the CEL one-second
+  deadline while the browser suite ran in parallel, also on main, and passed when run
+  alone). Contracts 58 passed. `generate_contracts.py` changed only `minItems` on
+  `initial_grants`; `check_contracts.py`, `verify_boundaries.py`,
+  `verify_documents.py` with `check_context.py`, delivery context and qualification
+  unit tests (29 passed, 1 skipped) and design `check_docs.py` passed. Frontend
+  typecheck and `next build` passed; `npm run generate` produced no change. An
+  independent review found two low-severity frontend issues, both fixed: a repair
+  reason typed while creation was pending was not asked about before leaving (the new
+  regression spec fails on the earlier code), and the refresh before routing opened the
+  page even when the session read failed or was cut short (now it retries a superseded
+  read once and otherwise stays on Platform). After the fixes the workspace, navigation
+  and audit specs passed 41/41, and the full Playwright suite passed 310 of 321 with
+  11 skipped (before the fixes one `scalability-users` timing case failed while the
+  API unit suite ran in parallel; it passed 9/9 alone).
+- Local journey: the branch API on 58100 with a throwaway database seeded with
+  synthetic principals and a synthetic super-admin session, and the branch UI on
+  `https://127.0.0.1:3543`. Checked: Platform help text; creating Payments opened its
+  Permissions page with the warning, Admin preselected and Save disabled, and no grant
+  for the creator; Feed and the Platform tab asked with the no-administrator question
+  and stayed on Cancel; a pending View grant kept Save disabled, switching it to Admin
+  enabled it, saving removed the warning and leaving no longer asked; creating
+  Logistics and switching tenant with Leave left it without grants, and its
+  Permissions page warned again on return; phone width without horizontal scrolling;
+  audit recorded `tenant-created` with an empty grant list and one
+  `permissions-changed`. After the review fixes, creating Billing again opened its
+  Permissions page with the warning. Not covered: closing the tab (browser
+  beforeunload prompt), a real Keycloak sign-in, and the S1-S4 suites.
+
 ## 2026-11-10 ServiceNow tickets on incidents (REV-70)
 
 The user described KeepHQ's incident ticketing, approved the mock canvas (renaming the
