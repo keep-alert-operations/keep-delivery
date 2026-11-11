@@ -36,11 +36,11 @@
     },
     "keep-frontend": {
       "url": "https://github.com/keep-alert-operations/keep-frontend.git",
-      "revision": "c7b45b8a5cdddb2b4c1c760e919d31ebf498c96b"
+      "revision": "b90bddea1ecb6e6d307214f8a147fee8c5ab4b53"
     },
     "keep-design": {
       "url": "https://github.com/keep-alert-operations/keep-design.git",
-      "revision": "5524957de45219f44f799f7a7bab0185d26c961e"
+      "revision": "8609228eb501ddc39f8a135b632fadd1965cfa99"
     },
     "keep-delivery": {
       "url": "https://github.com/keep-alert-operations/keep-delivery.git",

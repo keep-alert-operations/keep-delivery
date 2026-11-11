@@ -1,5 +1,37 @@
 # Implementation status
 
+## 2026-11-11 Global administration shows Integrations and Platform (REV-72)
+
+The user asked that global super-admins get the Admin page in the Global tenant with
+the Integrations and Platform tabs, and that the other tabs not be visible there.
+Global's rail now shows Admin only to global super-admins; it opens Integrations, and
+the tab bar holds Integrations and Platform. Global's Operators, Permissions and
+Access audit addresses show Page unavailable for everyone, which removes the
+read-only Global access-policy page. Specific tenants are unchanged. Frontend-only on
+`codex/global-admin-tabs` in frontend (from `11335d3`), design (from `9d438a4`) and
+this repository (from `6c30b01`); no API, contract or migration change. This
+repository pins the frontend `b90bdde` and design `8609228` heads.
+
+- Executed on 2026-11-11: frontend typecheck passed. New Playwright cases in
+  `navigation-session.spec.ts` cover the Global super-admin tabs, Platform, the three
+  unavailable addresses, a specific tenant's five tabs, and no Admin link in Global
+  for a non-super-admin. Fixtures that opened operator pages in Global (which the API
+  never allows) moved to a specific tenant. Against the running local dev server
+  (`PLAYWRIGHT_CHANNEL=chrome`), the full suite passed 310 of 323 with 11 skipped and
+  2 failed: `one batched request refreshes every ServiceNow panel` fails the same way
+  on unmodified main against that server, and `picking up a settling panel preserves
+  its visible position` passed when rerun alone. `next build` passed, and Prettier
+  passed with line endings ignored (the Windows checkout uses CRLF). Design
+  `check_docs.py`, delivery `verify_documents.py` and `check_context.py` passed.
+- Local journey on the running stack (UI on `https://localhost:3443` serving the
+  branch, API on 58000), signed in as the local super-admin through Keycloak: Global's
+  Admin opened Integrations with only the Integrations and Platform tabs; Platform
+  showed source processing, tenant creation and platform health; Global's
+  `/permissions`, `/operators` and `/audit` showed Page unavailable; Local Demo's Admin
+  opened Operators with all five tabs; phone width (375 px) without horizontal
+  scrolling. Not covered live: a non-super-admin in Global (covered by the mocked
+  Playwright case) and the S1-S4 suites.
+
 ## 2026-11-11 A new tenant starts without an administrator (REV-71)
 
 The user asked that creating a tenant on Admin › Platform go straight to the new
