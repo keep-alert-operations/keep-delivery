@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Workspace setup, local dependencies, deployments, release inventory and system verification."
 requires-python = ">=3.13,<3.14"
 dependencies = [
-  "keep-api @ git+https://github.com/keep-alert-operations/keep-api.git@38c12c4127be01bc05f46954101101f0916ff9d5",
+  "keep-api @ git+https://github.com/keep-alert-operations/keep-api.git@ad731150a7ce0231aa84157354c411ce525af4f9",
   "keep-ingestion @ git+https://github.com/keep-alert-operations/keep-ingestion.git@8477192a9baa4752b1a4067dc13754d2e0696e36",
   "keep-processor @ git+https://github.com/keep-alert-operations/keep-processor.git@e05f7cd3a09d4e004b9e52462b72ef2cbde8f0fe",
   "keep-correlation @ git+https://github.com/keep-alert-operations/keep-correlation.git@e36cd901b6bf396c0e8576e2ac295ba12e5f6318",

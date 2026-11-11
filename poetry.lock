@@ -1315,8 +1315,8 @@ uvloop = {version = ">=0.22,<1", markers = "sys_platform != \"win32\" and sys_pl
 [package.source]
 type = "git"
 url = "https://github.com/keep-alert-operations/keep-api.git"
-reference = "38c12c4127be01bc05f46954101101f0916ff9d5"
-resolved_reference = "38c12c4127be01bc05f46954101101f0916ff9d5"
+reference = "ad731150a7ce0231aa84157354c411ce525af4f9"
+resolved_reference = "ad731150a7ce0231aa84157354c411ce525af4f9"
 
 [[package]]
 name = "keep-contracts"
@@ -3028,4 +3028,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "5fe939787ad9c51fc7a9495b65219031d3d5738be2bdf320cbff53184b3ff4dc"
+content-hash = "caf5bf0a1f084989d86ac04a58556ff3e8acf2eaa0b90c7cbbac310c881e303c"

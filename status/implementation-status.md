@@ -13,7 +13,8 @@ one. The Platform form sends no grants, rereads the session and opens the new te
 Permissions page; that page warns while no administrator exists, starts the new grant
 at Admin, keeps Save disabled until the draft sets an Admin grant, and asks before
 leaving. Built on `codex/tenant-admin-step` in design, api, contracts, frontend and
-this repository; no migration.
+this repository; no migration and no domain change. The frontend pins contracts
+`f9d6984`, and this repository pins every `codex/tenant-admin-step` head.
 
 - Executed on 2026-11-11 against a throwaway PostgreSQL 18.2: new delivery integration
   `test_tenant_without_admin` (3 cases: empty creation, replay, audit and roster;
