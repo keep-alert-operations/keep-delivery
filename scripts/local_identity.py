@@ -35,7 +35,10 @@ STATE = ROOT / ".local/identity"
 
 # Authelia is the OIDC provider; its issuer is the exact base URL (discovery lives
 # at ``/.well-known/openid-configuration``). Keycloak's ``/realms/...`` path is gone.
-ISSUER = "https://localhost:58443"
+# The loopback IP is used rather than ``localhost`` because Authelia rejects a
+# session cookie domain without a dot; ``127.0.0.1`` is a valid cookie domain and is
+# covered by the generated localhost certificate's SANs.
+ISSUER = "https://127.0.0.1:58443"
 ORIGIN = "https://localhost:3443"
 
 # The isolated directory tree. OpenLDAP generates an immutable ``entryUUID`` for
@@ -266,9 +269,13 @@ def authelia_config(creds):
         "session": {
             "cookies": [
                 {
-                    "domain": "localhost",
+                    # Authelia requires a cookie domain with a dot or an IP; the
+                    # loopback IP matches the issuer host Authelia is reached on.
+                    # No default_redirection_url: the OIDC flow always returns to the
+                    # client's registered redirect_uri, and Authelia requires that URL
+                    # to share this cookie's scope (the app lives on a different host).
+                    "domain": "127.0.0.1",
                     "authelia_url": ISSUER,
-                    "default_redirection_url": ORIGIN,
                 }
             ]
         },
@@ -286,10 +293,14 @@ def authelia_config(creds):
                     }
                 ],
                 # The linchpin: a dedicated scope + claims policy carry the raw
-                # entryUUID into the ID token as a protected custom claim.
+                # entryUUID into the ID token as a protected custom claim. The
+                # ``id_token`` list forces the claim into the ID token itself (Authelia
+                # otherwise exposes custom claims only at the UserInfo endpoint), which
+                # is where the backend reads the immutable directory identity.
                 "claims_policies": {
                     "keep_directory": {
-                        "custom_claims": {DIRECTORY_ID_CLAIM: {"attribute": DIRECTORY_ID_CLAIM}}
+                        "id_token": [DIRECTORY_ID_CLAIM],
+                        "custom_claims": {DIRECTORY_ID_CLAIM: {"attribute": DIRECTORY_ID_CLAIM}},
                     }
                 },
                 "scopes": {DIRECTORY_SCOPE: {"claims": [DIRECTORY_ID_CLAIM]}},
@@ -305,11 +316,12 @@ def authelia_config(creds):
                         "require_pkce": True,
                         "pkce_challenge_method": "S256",
                         "redirect_uris": [ORIGIN + "/auth/callback"],
-                        "post_logout_redirect_uris": [ORIGIN + "/signed-out"],
-                        "scopes": ["openid", "profile", DIRECTORY_SCOPE],
+                        # offline_access + the refresh_token grant let Authelia issue a
+                        # refresh token, which the backend requires for session rotation.
+                        "scopes": ["openid", "profile", "offline_access", DIRECTORY_SCOPE],
                         "claims_policy": "keep_directory",
                         "response_types": ["code"],
-                        "grant_types": ["authorization_code"],
+                        "grant_types": ["authorization_code", "refresh_token"],
                         "token_endpoint_auth_method": "client_secret_basic",
                     }
                 ],
@@ -400,9 +412,12 @@ def prepare():
         ("jwt_secret", credentials["jwt_secret"]),
     ):
         (secrets_dir / name).write_text(value, encoding="utf-8")
-    # OpenLDAP admin password, mounted as a Compose secret.
-    (STATE / "openldap-admin-password.txt").write_text(
-        credentials["ldap_admin_password"] + "\n", encoding="utf-8"
+    # OpenLDAP admin password, mounted as a Compose secret. Write the exact bytes
+    # with no trailing newline: a trailing CRLF (added by text-mode newline
+    # translation on Windows) becomes part of the admin password, so Authelia and
+    # Keep's LDAP worker, which bind with the clean value, would fail with code 49.
+    (STATE / "openldap-admin-password.txt").write_bytes(
+        credentials["ldap_admin_password"].encode("utf-8")
     )
 
     save(STATE / "directory.json", directory_config(credentials))

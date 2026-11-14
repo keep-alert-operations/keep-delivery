@@ -79,7 +79,7 @@ services:
   # LDIF; serves LDAPS on loopback 1636 for Keep's worker and plain LDAP on the
   # private Compose network for Authelia.
   openldap:
-    image: bitnami/openldap:2.6.10@sha256:PLACEHOLDER-set-at-mirror-time
+    image: bitnamilegacy/openldap:2.6.10@sha256:687f14a22b5c74fb057a57221acdbe7b8c82e2d3619fc380db3af48ec4aa04ed
     environment:
       LDAP_ROOT: dc=keep,dc=local
       LDAP_ADMIN_USERNAME: admin
@@ -111,7 +111,7 @@ services:
   # emits the raw entryUUID verbatim in the dedicated keep-directory scope. HTTPS on
   # loopback 58443 under Keep's trusted localhost certificate; issuer is that URL.
   authelia:
-    image: authelia/authelia:4.39.4@sha256:PLACEHOLDER-set-at-mirror-time
+    image: authelia/authelia:4.39.4@sha256:64b356c30fd817817a4baafb4dbc0f9f8702e46b49e1edb92ff42e19e487b517
     depends_on:
       openldap: {condition: service_healthy}
     command: ["--config", "/config/configuration.yml"]
