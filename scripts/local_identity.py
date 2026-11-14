@@ -312,7 +312,12 @@ def authelia_config(creds):
                         "client_secret": "$plaintext$" + creds["web_secret"],
                         "public": False,
                         "authorization_policy": "one_factor",
-                        "consent_mode": "implicit",
+                        # Pre-configured consent: the user approves once (with
+                        # "remember"), then subsequent sign-ins skip the consent screen.
+                        # "implicit" mode is avoided: it mis-handles the offline_access
+                        # grant and pre-configured sessions ("could not perform consent").
+                        "consent_mode": "pre-configured",
+                        "pre_configured_consent_duration": "1y",
                         "require_pkce": True,
                         "pkce_challenge_method": "S256",
                         "redirect_uris": [ORIGIN + "/auth/callback"],
