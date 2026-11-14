@@ -68,7 +68,7 @@ try {
         return
     }
     Checked { & scripts/local-identity.ps1 -Action Start -Restart:$restartManaged }
-    $values = Get-Content -LiteralPath '.local/keycloak/app-environment.json' -Raw | ConvertFrom-Json
+    $values = Get-Content -LiteralPath '.local/identity/app-environment.json' -Raw | ConvertFrom-Json
     foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name,[string]$item.Value,'Process') }
     $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
     $env:KEEP_POOL_SIZE = '1'

@@ -95,7 +95,7 @@ it.
 
 | Repository | Owns |
 |---|---|
-| `keep-frontend` | Next.js/TypeScript application, UI assets, generated API client, frontend tests and image, custom Keycloak login theme. |
+| `keep-frontend` | Next.js/TypeScript application, UI assets, generated API client, frontend tests and image. |
 | `keep-api` | Product HTTP API, human authentication/authorization, management endpoints, synchronous operator provisioning, live hint publishing, Redis subscription, SSE and connected-client reconciliation. |
 | `keep-ingestion` | Native v1/v2 and Grafana admission, validation, trusted routing, Kafka publication, Keep Kong policy plugin and its migrations. Public/private admission are workload variants. |
 | `keep-processor` | Source consumer, source-application orchestration, immutable replay proof, changed-event publication and Kafka input-offset transactions; Kafka protocol cutover tooling. |
@@ -104,7 +104,7 @@ it.
 | `keep-domain` | Shared Python business rules and transactional operations: lifecycle, ownership, maintenance effects, correlation resets, CEL semantics, shared projection fields, persistence and lock helpers. No server or separate database. |
 | `keep-contracts` | Shared native/event definitions, generated HTTP contract artifacts, compatibility fixtures and published language artifacts. No service orchestration or database access. |
 | `keep-migrations` | Complete PostgreSQL migration chain, runner, schema/privilege tests and dedicated migration image. |
-| `keep-delivery` | OpenShift manifests, local Compose/setup, sanitized Keycloak realm/client configuration, workspace tooling, release manifests, system integration/qualification tooling and evidence, operational runbooks and delivery status. |
+| `keep-delivery` | OpenShift manifests, local Compose/setup, sanitized Authelia + OpenLDAP identity configuration, workspace tooling, release manifests, system integration/qualification tooling and evidence, operational runbooks and delivery status. |
 | `keep-design` | Authoritative specifications, architecture diagrams, approved UX references, decision history/register and verification requirements. |
 
 Use **Ingestion API** in design prose and diagrams and `keep-ingestion` for the
@@ -162,11 +162,12 @@ and deferred algorithms.
   deduplication, source order, tenant correlation order and loss diagnostics;
   this is not an atomic transaction spanning PostgreSQL and Kafka.
 - Company LDAP remains authoritative for users/nested teams. The Keep team owns
-  Keycloak. Explicit trusted publication and last-known trusted identity data
-  remain required; automatic directory polling and its five-minute propagation
-  target are deferred under REV-35. Preserve current grants, known revocations,
-  session expiry and restore gates. The isolated local Keycloak user/group
-  exception uses immutable UUIDs and normal OIDC/publication, without a login bypass.
+  the Authelia OIDC provider. Explicit trusted publication and last-known trusted
+  identity data remain required; automatic directory polling and its five-minute
+  propagation target are deferred under REV-35. Preserve current grants, known
+  revocations, session expiry and restore gates. The isolated local OpenLDAP
+  user/group tree behind Authelia uses immutable entryUUIDs and normal
+  OIDC/publication, without a login bypass.
 - The Product API owns synchronous operator provisioning and live publishing/SSE
   under REV-34 and REV-36. No separate operator or live worker is deployed.
   Maintenance expiry release, assignment cleanup, inactivity and retention sweeps
@@ -321,7 +322,7 @@ Proceed with necessary reversible work across affected repositories. Production
 deployment and changes to shared company services require separate authorization;
 existing explicit authorization remains valid for its stated scope.
 
-The Keep team owns the application and Keycloak configuration/operation.
+The Keep team owns the application and the Authelia + OpenLDAP identity configuration/operation.
 Dedicated teams own LDAP, PostgreSQL, Elasticsearch, Kafka, Redis, OpenShift, Kong
 and Grafana infrastructure, including retention, backups, HA, topology, allocation
 and service recovery. Define application requirements and verify supplied service

@@ -11,7 +11,7 @@ For the running local core stack, open **https://localhost:3443** and use the
 service addresses and unavailable features.
 
 For local sign-in without company LDAP, use the
-[local Keycloak setup](../docs/local-keycloak.md). It provides custom users/groups,
+[local Keycloak setup](../docs/local-identity.md). It provides custom users/groups,
 real username/password login and a separate local Keep database.
 
 Keep is a Python/FastAPI and Next.js implementation of the design documents in this repository. PostgreSQL owns application state; Elasticsearch is the current-alert search projection, Kafka carries validated source receipts and transactional changed events, and live views reconcile PostgreSQL progress.

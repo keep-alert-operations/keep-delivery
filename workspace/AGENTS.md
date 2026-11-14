@@ -82,7 +82,7 @@ topic pages, extracted text, memories and old test reports do not replace them.
 
 | Repository | Owns |
 |---|---|
-| keep-frontend | Next.js UI, generated client, browser tests and Keycloak theme. |
+| keep-frontend | Next.js UI, generated client and browser tests. |
 | keep-api | HTTP product API, human auth, synchronous provisioning and live/SSE. |
 | keep-ingestion | Stateless v1/v2/Grafana admission, Kafka publication and Kong plugin. |
 | keep-processor | Source application, immutable replay proof and Kafka offset transactions. |

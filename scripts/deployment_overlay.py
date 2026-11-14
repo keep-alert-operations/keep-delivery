@@ -23,7 +23,7 @@ FILES = tuple(f"{repo}/{path}" for repo in BUILD_REPOS
     f"{repo}/{path}" for repo in BUILD_REPOS if repo != "keep-frontend"
     for path in ("pyproject.toml", "poetry.toml", "poetry.lock")
 ) + (
-    "keep-ingestion/kong/Dockerfile", "keep-frontend/keycloak/Dockerfile",
+    "keep-ingestion/kong/Dockerfile",
     "keep-api/src/keep/operators/proof.py", "keep-api/docs/operator-proof.md",
     "keep-api/docs/operator-proof.example.json", "keep-api/tests/unit/test_operator_proof.py",
     "keep-api/tests/integration/test_operator_proof_postgres.py",

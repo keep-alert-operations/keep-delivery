@@ -6,7 +6,7 @@
     "elasticsearch": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
     "kafka": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
     "redis": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
-    "keycloak": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
+    "authelia": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"capability_evidence": null},
     "ldap": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"schema_reference": null,"five_minute_evidence": null},
     "kong": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"private_mtls_evidence": null},
     "grafana": {"endpoint": null,"version": null,"owner": null,"credential_reference": null,"trust_reference": null,"safe_writer_evidence": null},

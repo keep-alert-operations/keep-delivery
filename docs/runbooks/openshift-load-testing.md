@@ -2,8 +2,9 @@
 
 This is the handoff for an **isolated test environment**. You provide Elasticsearch,
 Kafka and Grafana inside the private network. Deploy Keep, PostgreSQL, Redis,
-Kong and Keycloak in OpenShift. Use dedicated native Keycloak test users and your
-private image registry. No connection to that cluster, deployment, or capacity
+Kong, Authelia and OpenLDAP in OpenShift. Use dedicated Authelia + OpenLDAP test
+identities and your private image registry. OpenLDAP is the directory, Authelia the
+OIDC provider. No connection to that cluster, deployment, or capacity
 result is claimed by this document.
 
 Start with a small diagnostic run. Measure the bottleneck before adding a Redis
@@ -65,9 +66,9 @@ load generator / browsers
 Kafka received --> processor --> PostgreSQL + Kafka changed
 Kafka changed  --> indexer --> Elasticsearch
 Kafka changed  --> correlation --> PostgreSQL (when its capability is enabled)
-Product API --> PostgreSQL, Elasticsearch, Redis, Keycloak
+Product API --> PostgreSQL, Elasticsearch, Redis, Authelia (OIDC), OpenLDAP (LDAPS)
 Product API --> Kong Admin API / external Grafana for operator provisioning
-Keycloak --> its PostgreSQL; Kong --> its PostgreSQL
+Authelia --> OpenLDAP (LDAPS); Kong --> its PostgreSQL
 ```
 
 Domain and contracts are libraries inside service images, not Deployments.
@@ -80,7 +81,7 @@ Before applying anything, obtain:
 1. A dedicated namespace, allowed worker nodes, storage class/PVC expansion policy,
    namespace CPU/memory quota and image pull credentials. Establish that the test
    cannot interfere with another Keep installation.
-2. Four DNS names: application, Keycloak, native v1, and Kong/native v2. Supply
+2. Four DNS names: application, Authelia, native v1, and Kong/native v2. Supply
    trusted certificates, browser trust and service CA bundles. The application
    origin must be the same for the UI, `/api` and `/auth`.
 3. Elasticsearch HTTPS endpoint, actual version, test-only index name, API-key or
@@ -118,11 +119,11 @@ resulting allocation with every test report.
 | Workload | CPU request / limit | Memory request / limit | Storage / notes |
 | --- | --- | --- | --- |
 | Keep PostgreSQL | 1 / 2 | 2Gi / 4Gi | 20Gi initial PVC, **smoke tests only until sized** |
-| Keycloak PostgreSQL | 250m / 1 | 256Mi / 1Gi | 5Gi PVC |
+| OpenLDAP | 250m / 1 | 256Mi / 1Gi | 5Gi PVC for the seeded directory tree |
 | Kong PostgreSQL | 250m / 1 | 256Mi / 1Gi | 5Gi PVC |
 | Redis | 100m / 500m | 128Mi / 512Mi | Ephemeral hints; PostgreSQL reconciliation repairs missed hints |
-| Keycloak | 500m / 2 | 768Mi / 2Gi | Persistent state in its PostgreSQL |
-| Identity publication tool | 100m / 500m | 128Mi / 512Mi | Idle sidecar; runs only on explicit command |
+| Authelia | 250m / 1 | 256Mi / 768Mi | Ephemeral SQLite session store; stateless against OpenLDAP |
+| Identity publication tool | 100m / 500m | 128Mi / 512Mi | Idle pod; runs the LDAP worker only on explicit command |
 | Kong | 250m / 1 | 256Mi / 1Gi | Writable temporary prefix |
 | Operator proof | 100m / 500m | 128Mi / 512Mi | Private API-image workload; bounded read-only SQL pool and direct gateway checks |
 | Search bootstrap Job | 250m / 1 | 256Mi / 1Gi | One-off indexer-image tool, before writers start |
@@ -173,7 +174,6 @@ resulting images. See [workspace build instructions](../repository-workspace.md#
 | Migrations | `../keep-migrations` | `Dockerfile` |
 | Frontend | `../keep-frontend` | `Dockerfile` |
 | Kong + Keep plugin | `../keep-ingestion` | `kong/Dockerfile` |
-| Keycloak + Keep theme | `../keep-frontend` | `keycloak/Dockerfile` |
 | PostgreSQL wrapper, each chosen vendor base | `deploy/images/postgres` | `Dockerfile` |
 | Redis wrapper | `deploy/images/redis` | `Dockerfile` |
 | k6 toolkit | `qualification/load-test` | `Dockerfile` |
@@ -189,10 +189,12 @@ docker build --secret id=github_token,env=KEEP_REPOSITORIES_TOKEN \
 docker build --build-arg KONG_BASE_IMAGE="$KONG_BASE_IMAGE" \
   -f ../keep-ingestion/kong/Dockerfile \
   -t "$BUILD_REGISTRY/keep-kong:$RELEASE" ../keep-ingestion
-docker build --build-arg KEYCLOAK_BASE_IMAGE="$KEYCLOAK_BASE_IMAGE" \
-  -f ../keep-frontend/keycloak/Dockerfile \
-  -t "$BUILD_REGISTRY/keep-keycloak:$RELEASE" ../keep-frontend
 ```
+
+Authelia and OpenLDAP need no Keep-built image: mirror `authelia/authelia` and an
+`entryUUID`-capable OpenLDAP (for example `bitnami/openldap`) by digest and reference
+them directly in the `authelia` and `openldap` configuration image keys. There is no
+Keycloak theme image and no separate identity-provider database.
 
 Repeat the application build for every application/migration image and use the
 specific base arguments documented beside the infrastructure Dockerfiles. Build
@@ -224,8 +226,8 @@ docker push "$PRIVATE_REGISTRY/keep-api:$RELEASE"
 
 Take the **destination registry digest** for each image and put its
 `registry/path@sha256:...` reference in the bundle config. A tag alone is not a
-deployment identity. Include the wrappers, Keycloak theme, Kong plugin and k6
-image in the transfer. This is a local test bundle if it contains uncommitted
+deployment identity. Include the wrappers, Kong plugin, k6 image and the mirrored
+upstream Authelia and OpenLDAP images in the transfer. This is a local test bundle if it contains uncommitted
 patches; preserve the patch hashes rather than claiming they are committed
 release revisions. [OpenShift image guidance](https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/images/managing-images)
 describes registry integration; use the documentation for your installed release.
@@ -233,8 +235,8 @@ describes registry integration; use the documentation for your installed release
 ## 5. Prepare private configuration and test identities
 
 Create a private working directory outside source control. Restrict file access;
-the generated realm import contains passwords/client secrets. Do not put rendered
-Secrets, session cookies or operator keys in reports.
+the generated LDIF seed and Authelia configuration contain passwords/client secrets.
+Do not put rendered Secrets, session cookies or operator keys in reports.
 
 ```bash
 umask 077
@@ -242,7 +244,7 @@ mkdir -p "$HOME/keep-load-private"
 PRIVATE="$HOME/keep-load-private"
 cp deploy/openshift/load-test/configuration.example.json "$PRIVATE/config.json"
 python qualification/load-test-identity/prepare.py \
-  --app-origin "https://$APP_HOST" --keycloak-origin "https://$KEYCLOAK_HOST" \
+  --app-origin "https://$APP_HOST" --authelia-origin "https://$AUTHELIA_HOST" \
   --users 100 --output "$PRIVATE/identity"
 ```
 
@@ -258,26 +260,29 @@ in the specific test tenant through Keep administration. The confidential web
 client uses code flow + PKCE, signed OIDC tokens and normal secure sessions. No
 password grant or preinserted session is used.
 
-Import `keep-local-realm.json` into the dedicated Keycloak database once. Realm
-startup import does not replace an existing realm. Preserve these generated
-credentials/UUIDs with the database; generating them again is a new identity set,
-not a password reset. The generator refuses an existing output directory.
+Mount the generated `seed.ldif` into OpenLDAP once (as the `keep-openldap-seed`
+Secret). OpenLDAP loads it into its data volume on first start and generates an
+immutable `entryUUID` per entry; it does not re-seed over an existing tree. Preserve
+these generated credentials with the volume; generating them again is a new identity
+set, not a password reset. The generator refuses an existing output directory.
 
-Keycloak runs with its optimized PostgreSQL image and HTTPS. Its server certificate
-must include **both the external Keycloak DNS name and `localhost`**. The
-`identity-publisher` container shares its pod network and reads
-`https://localhost:8443/realms/keep-local` with CA validation. Only this manual
-tool uses the existing development-only native directory adapter. The API uses
-the real external issuer, `keycloak-local` source, `sub` as immutable ID and
-the normal authorization guards. This does not generalize native test identities
-to production LDAP. [Keycloak's container guide](https://www.keycloak.org/server/containers)
-describes optimized startup, TLS and realm import.
+OpenLDAP serves LDAPS; Authelia authenticates against it and emits the raw `entryUUID`
+verbatim in the `keep-directory` scope. OpenLDAP's server certificate must cover its
+in-cluster DNS name (`keep-openldap`). After the seed loads, resolve the admin group's
+`entryUUID` and replace the `RESOLVE_AT_DEPLOY_...` placeholder for
+`KEEP_SUPERADMIN_GROUP` in `api-identity.env`. The API uses the real external Authelia
+issuer, the `ldap-local` source, the raw `entryuuid` claim as the immutable ID, and the
+normal authorization guards; `KEEP_OIDC_REQUIRED_ACR` is omitted (optional for Authelia)
+while `amr=pwd` stays required. The `identity-publisher` pod runs Keep's production LDAP
+directory worker over the same OpenLDAP; there is no development-only Keycloak adapter.
+[Authelia's documentation](https://www.authelia.com/configuration/) describes its LDAP
+backend, OIDC provider and claims policies.
 
 Create the versioned Secrets listed in the bundle README. Merge the generated
 `api-identity.env` into the API environment and `publisher-identity.env` into the
 publisher environment; do not replace their database/epoch/wrapping settings.
-Mount `local-directory.json` and `keycloak-ca.crt` in the identity bindings Secret.
-Keycloak must also trust the application CA for signed backchannel logout.
+Mount `directory.json` and the OpenLDAP CA in the identity bindings Secret. Back-channel
+logout is no longer required; RP-initiated `end_session` logout is retained.
 
 ## 6. Application configuration by workload
 
@@ -426,7 +431,7 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    assets. Verify it is the fixed Global created in this database. Preserve the
    migration checksum/revision evidence.
 5. Run Kong's plugin/database migration Job **before** starting Kong. Start
-   Keycloak with realm import, and Kong with its configured PostgreSQL/TLS/plugin.
+   OpenLDAP (seeded) and Authelia against it, and Kong with its configured PostgreSQL/TLS/plugin.
    Follow the bundle's `31-kong-routes.json` initialization procedure to create
    only the fresh gateway's routes, verified upstream and plugins. This does not
    create an operator or satisfy the separate provisioning proof contract.
@@ -435,11 +440,15 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
 6. Run one explicit trusted identity publication:
 
    ```bash
-   oc -n "$NS" exec deploy/keep-keycloak -c identity-publisher -- \
-     python -m keep.identity.local_keycloak_worker \
-     --config /etc/keep/local-directory.json --once --bootstrap
+   oc -n "$NS" scale deploy/keep-directory-publication --replicas=1
+   oc -n "$NS" rollout status deploy/keep-directory-publication --timeout=5m
+   oc -n "$NS" exec deploy/keep-directory-publication -c identity-publisher -- \
+     python -m keep.identity.worker \
+     --config /etc/keep/directory.json --once --bootstrap
    ```
 
+   This runs Keep's production LDAP directory worker against OpenLDAP (the same
+   directory Authelia authenticates against), not a Keycloak adapter.
    Require `complete`, `accepted` and bootstrap readiness in its nonsecret result.
    The initial bootstrap flag cannot lift restore/reconciliation gates. After
    changing users/groups, rerun with `--once` and without `--bootstrap`. There is
@@ -478,8 +487,8 @@ For example, after prerequisites and corresponding manifests are applied:
 
 ```bash
 NS=YOUR_TEST_NAMESPACE
-oc -n "$NS" scale deploy/keep-keycloak --replicas=1
-oc -n "$NS" rollout status deploy/keep-keycloak --timeout=10m
+oc -n "$NS" scale deploy/keep-authelia --replicas=1
+oc -n "$NS" rollout status deploy/keep-authelia --timeout=10m
 # Start the direct member before Kong route initialization.
 oc -n "$NS" scale statefulset/keep-kong --replicas=1
 oc -n "$NS" rollout status statefulset/keep-kong --timeout=10m
@@ -650,7 +659,7 @@ identity and stale-read limits; it is a separate design change.
 | ImagePullBackOff | Destination digest, registry trust and namespace pull Secret; public Internet is not required |
 | Pending / permission denied | Quota, PVC/class, restricted SCC, assigned UID/fsGroup and writable mount permissions; do not solve by granting privileged SCC |
 | API startup profile error | Environment and actual profile; preserve `qualified=false` for diagnostic development |
-| Login succeeds at Keycloak but API rejects it | External issuer/redirects/CA, immutable `sub`, scope/AMR/ACR, explicit accepted directory publication and admin group UUID |
+| Login succeeds at Authelia but API rejects it | External issuer/redirects/CA, immutable `sub`/`sid`/`entryuuid` claim, `keep-directory` scope, `amr=pwd`, explicit accepted directory publication and admin group `entryUUID` |
 | Worker alive but not ready | Real fresh node/PG clock evidence, Kafka advertised addresses/ACLs, DB permissions, gates, cutover/group boundaries |
 | 202 but row not visible | Received lag -> PG commit/proof -> changed lag -> indexer/watermark -> query/render; 202 alone is not completion |
 | v2 fails / 403 or 503 | Operator/key state, Kong plugin loaded/migrated, upstream mTLS CA/fingerprint, actual immutable tenant routing |

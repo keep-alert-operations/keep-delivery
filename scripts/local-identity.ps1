@@ -4,7 +4,7 @@ param([ValidateSet('Start', 'Stop', 'Status', 'Refresh')][string]$Action = 'Stat
 $ErrorActionPreference = 'Stop'
 if ($Restart -and $Action -ne 'Start') { throw '-Restart is only valid with -Action Start.' }
 $repository = Split-Path -Parent $PSScriptRoot
-$state = Join-Path $repository '.local/keycloak'
+$state = Join-Path $repository '.local/identity'
 $python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
 $processFile = Join-Path $state 'processes.json'
@@ -18,6 +18,11 @@ function Get-OwnedProcess($record) {
     $process = Get-Process -Id $record.Id -ErrorAction SilentlyContinue
     if ($process -and $process.StartTime.ToUniversalTime().Ticks -eq ([datetime]$record.StartTime).ToUniversalTime().Ticks) { return $process }
     return $null
+}
+
+function Set-EnvironmentFromFile($path) {
+    $values = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+    foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
 }
 
 Push-Location -LiteralPath $repository
@@ -37,7 +42,7 @@ try {
                 Stop-Process -Id $owned.Id -ErrorAction SilentlyContinue
             }
         }
-        Invoke-Checked { docker compose -p keep-local-stack -f $compose stop keycloak }
+        Invoke-Checked { docker compose -p keep-local-stack -f $compose stop authelia openldap }
         Write-Host 'Local identity processes stopped; credentials and container volumes preserved.'
         return
     }
@@ -47,11 +52,10 @@ try {
         return
     }
     if ($Action -eq 'Refresh') {
-        $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
-        foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
+        Set-EnvironmentFromFile (Join-Path $state 'app-environment.json')
         $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
-        Invoke-Checked { & $python -m keep.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once }
-        Write-Host 'Trusted local identity data refreshed once; no directory worker started.'
+        Invoke-Checked { & $python scripts/local_identity.py publish }
+        Write-Host 'Trusted local identity data refreshed once via the LDAP worker; no directory worker started.'
         return
     }
     # Retire only the directory process recorded and owned by this launcher.
@@ -77,18 +81,20 @@ try {
     Invoke-Checked { & $python scripts/local_identity.py prepare }
     Invoke-Checked { & $python scripts/local_v2.py prepare }
     Invoke-Checked { docker compose -p keep-local-runtime -f $compose stop kafka redis }
-    Invoke-Checked { docker compose -p keep-local-identity -f deploy/local/keycloak.compose.yaml stop keycloak }
     Invoke-Checked { docker compose -p keep-local-operators -f deploy/local/operators.compose.yaml stop }
     Invoke-Checked { docker compose -p keep-local-stack -f $compose up -d }
     Invoke-Checked { & $python scripts/local_identity.py database }
-    Invoke-Checked { & $python scripts/local_identity.py environment }
-    $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
-    foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
     Invoke-Checked { & $python scripts/local_identity.py wait }
+    # Read the server-generated super-admin group entryUUID back from OpenLDAP, then
+    # emit the application environment that depends on it.
     Invoke-Checked { & $python scripts/local_identity.py configure }
+    Invoke-Checked { & $python scripts/local_identity.py environment }
+    Set-EnvironmentFromFile (Join-Path $state 'app-environment.json')
+    # One directory publication through the production LDAP worker (reads the same
+    # OpenLDAP), using the worker database login rather than the migration identity.
     $apiDatabase = $env:KEEP_DATABASE_URL
     $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
-    Invoke-Checked { & $python -m keep.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once --bootstrap }
+    Invoke-Checked { & $python scripts/local_identity.py publish --bootstrap }
     $env:KEEP_DATABASE_URL = $apiDatabase
     $node = (Get-Command node).Source
     $definitions = @(
@@ -107,7 +113,7 @@ try {
     $probe = @'
 import ssl,time,httpx
 from pathlib import Path
-certificate=Path('.local/keycloak/tls/localhost.pem')
+certificate=Path('.local/identity/tls/localhost.pem')
 with httpx.Client(verify=ssl.create_default_context(cafile=str(certificate)),trust_env=False) as client:
     for attempt in range(60):
         try:
@@ -121,10 +127,10 @@ with httpx.Client(verify=ssl.create_default_context(cafile=str(certificate)),tru
             pass
         time.sleep(1)
     else:
-        raise SystemExit('API/ingestion/frontend startup failed; inspect .local/keycloak logs.')
+        raise SystemExit('API/ingestion/frontend startup failed; inspect .local/identity logs.')
 '@
     Invoke-Checked { & $python -c $probe }
     foreach ($record in $current) { if (-not (Get-OwnedProcess $record)) { throw "$($record.Role) exited during startup; inspect its local log." } }
-    Write-Host 'Keep: https://localhost:3443 | Keycloak: https://localhost:58443/admin/'
-    Write-Host 'Local username/password credentials: .local/keycloak/credentials.json'
+    Write-Host 'Keep: https://localhost:3443 | Authelia: https://localhost:58443/'
+    Write-Host 'Local username/password credentials: .local/identity/credentials.json'
 } finally { Pop-Location }

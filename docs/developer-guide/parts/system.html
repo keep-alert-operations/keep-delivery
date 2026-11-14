@@ -21,7 +21,7 @@
 <div class="lane"><span class="lane-label">Independent consumers</span><button data-repo="keep-correlation">Correlation → PostgreSQL</button><span>and</span><button data-repo="keep-indexer">Indexer + PG reconciliation → Elasticsearch</button></div>
 <div class="lane"><span class="lane-label">Human path</span><button data-repo="keep-frontend">Browser</button><b aria-hidden="true">↔</b><button data-repo="keep-api">Product API</button><b aria-hidden="true">↔</b><span>PostgreSQL authority<br>Elasticsearch searches<br>Redis hints + SSE/refetch</span></div>
 </div>
-<p class="caption">Logical flow, not a network topology or replica count. Human identity uses Keycloak and trusted directory publication; source credentials use Kong. Select a service to inspect its repository below.</p>
+<p class="caption">Logical flow, not a network topology or replica count. Human identity uses Authelia over OpenLDAP and trusted directory publication; source credentials use Kong. Select a service to inspect its repository below.</p>
 <div class="interactive"><h3>Repository explorer</h3><p>Select a repository to see its responsibility, starting files, dependencies and a common boundary mistake.</p><div id="repo-buttons" class="repo-buttons" aria-label="Repositories"></div><div id="repo-detail" class="repo-detail" aria-live="polite"></div></div>
 <h3>Which store answers which question</h3>
 <div class="table-scroll"><table><thead><tr><th>Question</th><th>Authority</th><th>Developer consequence</th></tr></thead><tbody>

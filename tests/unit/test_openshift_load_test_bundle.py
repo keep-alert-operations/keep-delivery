@@ -32,10 +32,10 @@ def config():
         },
         "storage_class": "test-class", "image_pull_secret": "test-pull",
         "router_namespace_labels": {"kubernetes.io/metadata.name": "test-router"},
-        "hosts": {key: f"{key}.example.test" for key in ("application", "keycloak", "v1", "v2")},
+        "hosts": {key: f"{key}.example.test" for key in ("application", "authelia", "v1", "v2")},
         "images": {key: f"registry.example.test/{key}@sha256:" + "a" * 64
                    for key in bundle.IMAGE_KEYS},
-        "storage": {"postgres": "20Gi", "keycloak-db": "5Gi", "kong-db": "5Gi"},
+        "storage": {"postgres": "20Gi", "openldap": "5Gi", "kong-db": "5Gi"},
         "resource_overrides": {},
     }
 
@@ -65,7 +65,7 @@ def test_global_must_be_observed_after_migration(tmp_path):
     assert "migration.template.json" in (tmp_path / "render-apps.sh").read_text()
 
 
-@pytest.mark.parametrize("field", ["api", "postgres", "keycloak", "kong"])
+@pytest.mark.parametrize("field", ["api", "postgres", "authelia", "openldap", "kong"])
 def test_mutable_image_tags_refused(field, tmp_path):
     values = config()
     values["images"][field] = "registry.example.test/thing:latest"
@@ -96,9 +96,9 @@ def test_no_fake_evidence_or_unintended_external_service(tmp_path):
     assert all(item["metadata"]["namespace"] == "isolated-test" for item in items)
     workload_names = {item["metadata"]["name"] for item in items
                       if item["kind"] in {"StatefulSet", "Deployment"}}
-    assert workload_names == {"keep-postgres", "keep-keycloak-db", "keep-kong-db",
-                              "keep-redis", "keep-keycloak", "keep-kong",
-                              "keep-operator-proof"}
+    assert workload_names == {"keep-postgres", "keep-openldap", "keep-kong-db",
+                              "keep-redis", "keep-authelia", "keep-directory-publication",
+                              "keep-kong", "keep-operator-proof"}
     assert not any(item["metadata"]["name"] == "keep-clock-health" for item in items)
     for item in items:
         if item["kind"] == "Deployment" and item["metadata"]["name"] != "keep-redis":
@@ -114,14 +114,20 @@ def test_no_fake_evidence_or_unintended_external_service(tmp_path):
                 assert c["securityContext"]["capabilities"]["drop"] == ["ALL"]
 
 
-def test_identity_sidecar_uses_real_loopback_and_waits_for_explicit_execution(tmp_path):
+def test_identity_publisher_uses_real_loopback_and_waits_for_explicit_execution(tmp_path):
     bundle.render(config(), tmp_path)
     item = next(i for i in rendered_items(tmp_path)
-                if i["kind"] == "Deployment" and i["metadata"]["name"] == "keep-keycloak")
+                if i["kind"] == "Deployment"
+                and i["metadata"]["name"] == "keep-directory-publication")
     c = next(c for c in item["spec"]["template"]["spec"]["containers"]
              if c["name"] == "identity-publisher")
+    # The production LDAP worker replaces the deleted Keycloak worker; the pod pauses
+    # until the operator execs an explicit publication.
     assert "local_keycloak_worker" not in str(c["command"])
-    assert {e["name"]: e["value"] for e in c["env"]}["KEEP_ENVIRONMENT"] == "development"
+    assert "threading" in str(c["command"])
+    envs = {e["name"]: e["value"] for e in c["env"]}
+    assert envs["KEEP_ENVIRONMENT"] == "development"
+    assert envs["KEEP_DIRECTORY_CONFIG"] == "/etc/keep/directory.json"
     assert c["image"] == config()["images"]["api"]
 
 

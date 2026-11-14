@@ -12,7 +12,7 @@
   "router_namespace_labels": {"kubernetes.io/metadata.name": "REQUIRED_ROUTER_NAMESPACE"},
   "hosts": {
     "application": "REQUIRED_APPLICATION_DNS_NAME",
-    "keycloak": "REQUIRED_KEYCLOAK_DNS_NAME",
+    "authelia": "REQUIRED_AUTHELIA_DNS_NAME",
     "v1": "REQUIRED_V1_DNS_NAME",
     "v2": "REQUIRED_V2_DNS_NAME"
   },
@@ -25,12 +25,12 @@
     "frontend": "REQUIRED_REGISTRY/frontend@sha256:REQUIRED_DIGEST",
     "migrations": "REQUIRED_REGISTRY/migrations@sha256:REQUIRED_DIGEST",
     "postgres": "REQUIRED_REGISTRY/postgres@sha256:REQUIRED_DIGEST",
-    "keycloak_postgres": "REQUIRED_REGISTRY/keycloak-postgres@sha256:REQUIRED_DIGEST",
     "kong_postgres": "REQUIRED_REGISTRY/kong-postgres@sha256:REQUIRED_DIGEST",
     "redis": "REQUIRED_REGISTRY/redis@sha256:REQUIRED_DIGEST",
-    "keycloak": "REQUIRED_REGISTRY/keycloak@sha256:REQUIRED_DIGEST",
+    "authelia": "REQUIRED_REGISTRY/authelia@sha256:REQUIRED_DIGEST",
+    "openldap": "REQUIRED_REGISTRY/openldap@sha256:REQUIRED_DIGEST",
     "kong": "REQUIRED_REGISTRY/kong@sha256:REQUIRED_DIGEST"
   },
-  "storage": {"postgres": "20Gi", "keycloak-db": "5Gi", "kong-db": "5Gi"},
+  "storage": {"postgres": "20Gi", "openldap": "5Gi", "kong-db": "5Gi"},
   "resource_overrides": {}
 }

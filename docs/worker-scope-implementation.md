@@ -37,7 +37,7 @@ is authoritative and registered as REV-34. Existing uncommitted work was preserv
   supplement: cutover/source receipt semantics, preserved access windows/masking,
   partial-failure recovery, HTTP budgets, provisioning connection and expired-key
   ciphertext disposal on the next successful operator mutation.
-- Identity synchronization is unchanged. Keycloak-only identity supply remains a
+- Identity synchronization is unchanged. LDAP-only identity supply remains a
   discussed alternative requiring a separately accepted, qualified integration.
 
 ## Executed verification
@@ -98,7 +98,7 @@ was stopped. The user's running application stack was not restarted or migrated.
   backend process. Configured budgets are not measured latency guarantees.
 - Storage growth with inactivity/retention cleanup deferred has not been capacity
   qualified. Existing access/expiry rules do not imply physical reclamation.
-- Keycloak-only nested membership, account disablement, five-minute propagation and
+- LDAP-only nested membership, account disablement, five-minute propagation and
   last-trusted outage behavior have not been implemented or qualified. Existing
   identity guarantees still rely on the current directory integration.
 - Earlier Kafka/recovery and infrastructure qualification gaps remain in the
@@ -114,7 +114,7 @@ scope correction neither recreates it nor deletes another project document.
 User requested removing the directory worker and listing it as nice-to-have.
 The release guard now rejects continuous company directory startup; `directory
 --once` retains explicit complete trusted publication and returns failure when
-publication is incomplete. The local Keycloak entry point likewise requires
+publication is incomplete. The local LDAP publication entry point likewise requires
 `--once`. The developer launcher excludes directory polling; local identity Start
 publishes once, starts only API/UI, and retires its previously recorded directory
 process on a subsequent Start. The explicit Refresh action loads the existing
@@ -124,7 +124,7 @@ Identity/access specifications, the architecture diagram, deployment guidance,
 readiness/verification scope and REV-35 decision records reflect this change.
 Assistant-selected boundaries preserve existing trusted identity evidence,
 bootstrap/restore gates and OIDC/grant/session checks. Automatic five-minute LDAP
-propagation is deferred with the poller. This is not a Keycloak-only identity
+propagation is deferred with the poller. This is not a directory-only identity
 implementation. New users/teams need explicitly published complete evidence.
 
 Executed verification:
@@ -141,7 +141,7 @@ Executed verification:
 - `git diff --check` passed.
 
 No database migration, running-stack restart or shared service change was performed.
-Manual publication against real company LDAP/Keycloak and the updated local
+Manual publication against real company LDAP and the updated local
 Start/Refresh process lifecycle remain unqualified; synthetic reader and CLI checks
 are not end-to-end deployment evidence. A currently running directory process is
 not stopped merely by editing these files; the updated local launcher removes its

@@ -26,10 +26,10 @@ SECURITY = {
 # Assistant-selected starting allocations, NOT qualified capacity profiles.
 STARTING_RESOURCES = {
     "postgres": ("1", "2", "2Gi", "4Gi"),
-    "keycloak-db": ("250m", "1", "256Mi", "1Gi"),
+    "openldap": ("250m", "1", "256Mi", "1Gi"),
     "kong-db": ("250m", "1", "256Mi", "1Gi"),
     "redis": ("100m", "500m", "128Mi", "512Mi"),
-    "keycloak": ("500m", "2", "768Mi", "2Gi"),
+    "authelia": ("250m", "1", "256Mi", "768Mi"),
     "kong": ("250m", "1", "256Mi", "1Gi"),
     "api": ("500m", "2", "512Mi", "2Gi"),
     "ingestion": ("250m", "1", "256Mi", "1Gi"),
@@ -44,7 +44,7 @@ STARTING_RESOURCES = {
 }
 IMAGE_KEYS = {
     "api", "ingestion", "processor", "indexer", "correlation", "frontend", "migrations",
-    "postgres", "keycloak_postgres", "kong_postgres", "redis", "keycloak", "kong",
+    "postgres", "kong_postgres", "redis", "authelia", "openldap", "kong",
 }
 
 
@@ -68,7 +68,7 @@ def validate(config, bootstrap_only=False):
     for key, image in config["images"].items():
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}", image):
             raise ValueError(f"Supply an immutable image digest for {key}")
-    for name in ("application", "keycloak", "v1", "v2"):
+    for name in ("application", "authelia", "v1", "v2"):
         host = config["hosts"][name]
         if not re.fullmatch(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?", host) or "." not in host:
             raise ValueError(f"Supply the DNS hostname, without URL/path: {name}")
@@ -80,7 +80,7 @@ def validate(config, bootstrap_only=False):
         raise ValueError("Supply an exact lowercase search physical index")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", search["operation_reference"]):
         raise ValueError("Supply a nonsecret search bootstrap operation reference")
-    for key in ("postgres", "keycloak-db", "kong-db"):
+    for key in ("postgres", "openldap", "kong-db"):
         if not re.fullmatch(r"[1-9][0-9]*(Gi|Ti)", config["storage"][key]):
             raise ValueError(f"Supply a positive PVC capacity in Gi or Ti for {key}")
     for key, values in config.get("resource_overrides", {}).items():
@@ -186,14 +186,17 @@ def foundation(config):
     policies = {
         "keep-postgres": [rule([peer(name) for name in (
             "keep-product-api", "keep-processor", "keep-indexer", "keep-correlation",
-            "keep-bootstrap", "keep-migration", "keep-directory-publication", "keep-keycloak",
+            "keep-bootstrap", "keep-migration", "keep-directory-publication",
             "keep-search-bootstrap", "keep-operator-proof",
         )], 5432)],
-        "keep-keycloak-db": [rule([peer("keep-keycloak")], 5432)],
+        # The directory is LDAP: Authelia authenticates against it and Keep's own
+        # worker / live search read the same OpenLDAP over LDAPS.
+        "keep-openldap": [rule([peer("keep-authelia"), peer("keep-directory-publication"),
+                                peer("keep-product-api")], 636)],
         "keep-kong-db": [rule([peer("keep-kong"), peer("keep-kong-migration")], 5432)],
         "keep-redis": [rule([peer("keep-product-api")], 6379)],
-        "keep-keycloak": [rule([router, peer("keep-product-api"),
-                                   peer("keep-directory-publication")], 8443)],
+        # Browser sign-in via the router and the product API's discovery/token calls.
+        "keep-authelia": [rule([router, peer("keep-product-api")], 9091)],
         "keep-kong": [rule([router, peer("keep-operator-proof")], 8443),
                          rule([peer("keep-product-api"), peer("keep-bootstrap")], 8444)],
         "keep-operator-proof": [rule([peer("keep-product-api")], 8443)],
@@ -208,8 +211,8 @@ def foundation(config):
 
 def postgres(config, key, image):
     name = f"keep-{key}"
-    db = {"postgres": "keep", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
-    user = {"postgres": "keep_migrator", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
+    db = {"postgres": "keep", "kong-db": "kong"}[key]
+    user = {"postgres": "keep_migrator", "kong-db": "kong"}[key]
     c = container(config, image, "postgres", resource_key=key)
     c["env"] = env({
         "PGDATA": "/var/lib/keep-postgres/data", "POSTGRES_DB": db, "POSTGRES_USER": user,
@@ -255,47 +258,84 @@ def redis(config):
     return [d, service("keep-redis", {"tls": 6379})]
 
 
-def keycloak(config):
-    c = container(config, "keycloak")
-    c["args"] = ["start", "--optimized", "--import-realm"]
-    c["envFrom"] = [{"secretRef": {"name": "keep-keycloak-env"}}]
+def openldap(config):
+    """The isolated test directory. Seeded once from an offline LDIF Secret; serves
+    LDAPS only. OpenLDAP generates the immutable entryUUID that Authelia emits and
+    Keep's worker keys principals by."""
+    name = "keep-openldap"
+    c = container(config, "openldap", resource_key="openldap")
+    c["envFrom"] = [{"secretRef": {"name": "keep-openldap-env"}}]
     c["env"] = env({
-        "KC_HOSTNAME": f"https://{config['hosts']['keycloak']}", "KC_HTTP_ENABLED": "false",
-        "KC_HTTPS_CERTIFICATE_FILE": "/run/keycloak-tls/tls.crt",
-        "KC_HTTPS_CERTIFICATE_KEY_FILE": "/run/keycloak-tls/tls.key",
-        "KC_DB": "postgres",
-        "KC_DB_URL": "jdbc:postgresql://keep-keycloak-db:5432/keycloak"
-                     "?sslmode=verify-full&sslrootcert=/run/keycloak-trust/postgres-ca.crt",
-        "KC_DB_USERNAME": "keycloak", "KC_TRUSTSTORE_PATHS": "/run/keycloak-trust",
-        "JAVA_OPTS_KC_HEAP": "-Xms256m -Xmx1024m",
+        "LDAP_ROOT": "dc=keep,dc=local", "LDAP_SKIP_DEFAULT_TREE": "yes",
+        "LDAP_CUSTOM_LDIF_DIR": "/ldifs", "LDAP_ALLOW_ANON_BINDING": "no",
+        "LDAP_LDAPS_PORT_NUMBER": "636", "LDAP_ENABLE_TLS": "yes",
+        "LDAP_TLS_CERT_FILE": "/run/openldap-tls/tls.crt",
+        "LDAP_TLS_KEY_FILE": "/run/openldap-tls/tls.key",
+        "LDAP_TLS_CA_FILE": "/run/openldap-tls/ca.crt",
     })
-    c["ports"] = [{"name": "https", "containerPort": 8443},
-                  {"name": "management", "containerPort": 9000}]
-    # Management probes use TLS as inherited from the HTTPS listener.
-    c["readinessProbe"] = {"httpGet": {"path": "/health/ready", "port": 9000,
+    c["ports"] = [{"name": "ldaps", "containerPort": 636}]
+    c["readinessProbe"] = {"tcpSocket": {"port": "ldaps"}, "periodSeconds": 10}
+    c["startupProbe"] = {"tcpSocket": {"port": "ldaps"}, "periodSeconds": 10,
+                         "failureThreshold": 60}
+    c["volumeMounts"] = [mount("data", "/bitnami/openldap"), mount("tmp", "/tmp"),
+        mount("seed", "/ldifs", True), mount("tls", "/run/openldap-tls", True)]
+    template = pod(config, name, [c], [tmp_volume(),
+        secret_volume("seed", "keep-openldap-seed"),
+        secret_volume("tls", "keep-openldap-tls")])
+    stateful = {
+        "apiVersion": "apps/v1", "kind": "StatefulSet", "metadata": metadata(name),
+        "spec": {"serviceName": name, "replicas": 1,
+                 "selector": {"matchLabels": {"app": name}}, "template": template,
+                 "volumeClaimTemplates": [{"metadata": {"name": "data"}, "spec": {
+                     "accessModes": ["ReadWriteOnce"], "storageClassName": config["storage_class"],
+                     "resources": {"requests": {"storage": config["storage"]["openldap"]}}}}]},
+    }
+    return [stateful, service(name, {"ldaps": 636})]
+
+
+def authelia(config):
+    """Single-binary OIDC provider. Authenticates against OpenLDAP and emits the raw
+    entryUUID verbatim in the keep-directory scope. Secrets arrive via mounted files
+    referenced by AUTHELIA_*_FILE variables in its env Secret."""
+    c = container(config, "authelia", resource_key="authelia")
+    c["args"] = ["--config", "/config/configuration.yml"]
+    c["envFrom"] = [{"secretRef": {"name": "keep-authelia-env"}}]
+    c["ports"] = [{"name": "https", "containerPort": 9091}]
+    c["readinessProbe"] = {"httpGet": {"path": "/api/health", "port": 9091,
+                                       "scheme": "HTTPS"}, "periodSeconds": 10}
+    c["livenessProbe"] = {"httpGet": {"path": "/api/health", "port": 9091,
                                       "scheme": "HTTPS"}, "periodSeconds": 10}
-    c["livenessProbe"] = {"httpGet": {"path": "/health/live", "port": 9000,
-                                     "scheme": "HTTPS"}, "periodSeconds": 10}
     c["startupProbe"] = {**copy.deepcopy(c["livenessProbe"]), "failureThreshold": 60}
-    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("data", "/opt/keycloak/data"),
-        mount("realm", "/opt/keycloak/data/import", True),
-        mount("tls", "/run/keycloak-tls", True), mount("trust", "/run/keycloak-trust", True)]
-    publisher = container(config, "api", "identity-publisher")
-    publisher["command"] = ["python", "-c",
-                            "import threading; threading.Event().wait()"]
-    publisher["envFrom"] = [{"secretRef": {"name": "keep-identity-env"}}]
-    publisher["env"] = env({"KEEP_ENVIRONMENT": "development"})
-    publisher["resources"] = {
+    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("data", "/data"),
+        mount("config", "/config/configuration.yml", True),
+        mount("secrets", "/config/secrets", True),
+        mount("tls", "/config/tls", True)]
+    d = deployment(config, "keep-authelia", [c], [tmp_volume(), tmp_volume("data"),
+        {"name": "config", "secret": {"secretName": "keep-authelia-config",
+                                      "items": [{"key": "configuration.yml",
+                                                 "path": "configuration.yml"}], "defaultMode": 288}},
+        secret_volume("secrets", "keep-authelia-secrets"),
+        secret_volume("tls", "keep-authelia-tls")])
+    return [d, service("keep-authelia", {"https": 9091})]
+
+
+def directory_publication(config):
+    """A paused pod carrying the Keep API image and directory bindings. The operator
+    execs the production LDAP directory publication into it; it never runs a legacy
+    Keycloak worker and starts no polling loop on its own."""
+    c = container(config, "api", "identity-publisher")
+    c["command"] = ["python", "-c", "import threading; threading.Event().wait()"]
+    c["envFrom"] = [{"secretRef": {"name": "keep-identity-env"}}]
+    c["env"] = env({"KEEP_ENVIRONMENT": "development",
+                    "KEEP_DIRECTORY_CONFIG": "/etc/keep/directory.json"})
+    c["resources"] = {
         "requests": {"cpu": "100m", "memory": "128Mi", "ephemeral-storage": "128Mi"},
         "limits": {"cpu": "500m", "memory": "512Mi", "ephemeral-storage": "256Mi"},
     }
-    publisher["volumeMounts"] = [mount("identity", "/etc/keep", True), mount("tmp", "/tmp")]
-    d = deployment(config, "keep-keycloak", [c, publisher], [tmp_volume(), tmp_volume("data"),
-        secret_volume("realm", "keep-keycloak-realm"),
-        secret_volume("tls", "keep-keycloak-tls"),
-        secret_volume("trust", "keep-keycloak-trust"),
-        secret_volume("identity", "keep-identity-bindings")])
-    return [d, service("keep-keycloak", {"https": 8443})]
+    c["volumeMounts"] = [mount("identity", "/etc/keep", True), mount("tmp", "/tmp")]
+    d = deployment(config, "keep-directory-publication", [c],
+        [tmp_volume(), secret_volume("identity", "keep-identity-bindings")])
+    return [d]
 
 
 def kong(config):
@@ -434,7 +474,7 @@ def routes(config):
         route("keep-auth", h["application"], "keep-product-api", "http", "/auth"),
         route("keep-v1", h["v1"], "keep-ingestion-api", "http", "/"),
         route("keep-v2", h["v2"], "keep-kong", "proxy", passthrough=True),
-        route("keep-keycloak", h["keycloak"], "keep-keycloak", "https", passthrough=True),
+        route("keep-authelia", h["authelia"], "keep-authelia", "https", passthrough=True),
     ]
 
 
@@ -519,14 +559,15 @@ def render(config, output, bootstrap_only=False):
                     "hostssl all all ::/0 scram-sha-256\n"
                     "host all all 0.0.0.0/0 reject\nhost all all ::/0 reject\n"}}
     infra = [hba]
-    for key, image in (("postgres", "postgres"), ("keycloak-db", "keycloak_postgres"),
-                       ("kong-db", "kong_postgres")):
+    for key, image in (("postgres", "postgres"), ("kong-db", "kong_postgres")):
         infra.extend(postgres(config, key, image))
+    infra.extend(openldap(config))
     infra.extend(redis(config))
     write_list(output, "10-data-services.json", infra, namespace)
     kong_objects, kong_job = kong(config)
     write_list(output, "21-kong-bootstrap.json", [kong_job], namespace)
-    write_list(output, "30-keycloak-kong.json", keycloak(config) + kong_objects, namespace)
+    write_list(output, "30-identity-kong.json",
+               authelia(config) + directory_publication(config) + kong_objects, namespace)
     write_list(output, "31-kong-routes.json", [kong_routes_job(config)], namespace)
     if not bootstrap_only:
         write_list(output, "32-operator-proof.json", operator_proof(config), namespace)

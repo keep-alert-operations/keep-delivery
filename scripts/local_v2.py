@@ -16,8 +16,8 @@ import time
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
-from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,7 +73,7 @@ def environment():
     from keep.config import Settings
     from psycopg.conninfo import conninfo_to_dict
 
-    values = read(ROOT / ".local/keycloak/app-environment.json")
+    values = read(ROOT / ".local/identity/app-environment.json")
     values["KEEP_DATABASE_URL"] = values["KEEP_LOCAL_WORKER_DATABASE_URL"]
     values["KEEP_POOL_SIZE"] = "1"
     os.environ.update({k: str(v) for k, v in values.items()})
@@ -109,7 +109,7 @@ def client(*, app=False, **kwargs):
 
     context = ssl.create_default_context(cafile=str(STATE / "tls/ca.crt"))
     if app:
-        context.load_verify_locations(str(ROOT / ".local/keycloak/tls/localhost.pem"))
+        context.load_verify_locations(str(ROOT / ".local/identity/tls/localhost.pem"))
     return httpx.Client(verify=context, trust_env=False, timeout=105 if app else 10, **kwargs)
 
 
@@ -622,31 +622,32 @@ def serve(role):
         main()
 
 
-class LoginForm(HTMLParser):
-    action = None
-
-    def handle_starttag(self, tag, attrs):
-        values = dict(attrs)
-        if tag == "form" and values.get("id") == "kc-form-login":
-            self.action = values["action"]
-
-
 def login(http):
+    # Authelia's portal is a single-page app that authenticates through its JSON
+    # first-factor API rather than a server-rendered form. Starting the OIDC flow
+    # redirects an unauthenticated browser to the Authelia portal with the pending
+    # authorization request carried in the `rd` query parameter.
     response = http.get(ORIGIN + "/auth/login", follow_redirects=True)
-    form = LoginForm()
-    form.feed(response.text)
-    if not form.action or not form.action.startswith("https://localhost:58443/"):
-        raise RuntimeError("Expected local Keycloak login form")
-    creds = read(ROOT / ".local/keycloak/credentials.json")
-    response = http.post(
-        form.action,
-        data={
-            "username": "local-admin",
-            "password": creds["users"]["local-admin"]["password"],
-            "credentialId": "",
-        },
-        follow_redirects=True,
+    target = parse_qs(urlsplit(str(response.url)).query).get("rd", [None])[0]
+    if not str(response.url).startswith("https://localhost:58443/") or not target:
+        raise RuntimeError("Expected the local Authelia sign-in portal")
+    creds = read(ROOT / ".local/identity/credentials.json")
+    # Password-only first factor; Authelia sets its session cookie and returns the
+    # authorization URL to resume. Implicit consent then redirects to /auth/callback.
+    first = checked(
+        http.post(
+            "https://localhost:58443/api/firstfactor",
+            json={
+                "username": "local-admin",
+                "password": creds["users"]["local-admin"]["password"],
+                "keepMeLoggedIn": False,
+                "targetURL": target,
+                "requestMethod": "GET",
+            },
+            headers={"Accept": "application/json"},
+        )
     )
+    http.get(first["data"]["redirect"], follow_redirects=True)
     session = checked(http.get(ORIGIN + "/auth/session"))["data"]
     http.headers.update({"X-CSRF-Token": session["csrf_token"], "Origin": ORIGIN})
     return session

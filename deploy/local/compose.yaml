@@ -73,25 +73,63 @@ services:
       retries: 30
     restart: unless-stopped
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.7.4@sha256:82a77884f3af238beab1e7afd63b5f530e1b5c0590bd7aa60b40a40463e29b2c
-    command:
-      - start-dev
-      - --import-realm
-      - --http-enabled=false
-      - --hostname=https://localhost:58443
-      - --https-certificate-file=/tls/localhost.pem
-      - --https-certificate-key-file=/tls/localhost-key.pem
-      - --truststore-paths=/tls/localhost.pem
-    ports: ["127.0.0.1:58443:8443"]
-    env_file: ../../.local/keycloak/bootstrap.env
+  # The isolated development directory. OpenLDAP generates an immutable entryUUID
+  # per entry; both Authelia and Keep's own LDAP worker key principals by it, so dev
+  # exercises the identical production directory code path. Seeded from an offline
+  # LDIF; serves LDAPS on loopback 1636 for Keep's worker and plain LDAP on the
+  # private Compose network for Authelia.
+  openldap:
+    image: bitnami/openldap:2.6.10@sha256:PLACEHOLDER-set-at-mirror-time
+    environment:
+      LDAP_ROOT: dc=keep,dc=local
+      LDAP_ADMIN_USERNAME: admin
+      LDAP_ADMIN_PASSWORD_FILE: /run/secrets/openldap_admin_password
+      LDAP_SKIP_DEFAULT_TREE: "yes"
+      LDAP_CUSTOM_LDIF_DIR: /ldifs
+      LDAP_PORT_NUMBER: "389"
+      LDAP_LDAPS_PORT_NUMBER: "636"
+      LDAP_ENABLE_TLS: "yes"
+      LDAP_TLS_CERT_FILE: /tls/localhost.pem
+      LDAP_TLS_KEY_FILE: /tls/localhost-key.pem
+      LDAP_TLS_CA_FILE: /tls/localhost.pem
+    secrets: [openldap_admin_password]
+    # LDAPS is published on loopback for Keep's worker; plain 389 stays internal.
+    ports: ["127.0.0.1:1636:636"]
     volumes:
-      - ../../.local/keycloak/import:/opt/keycloak/data/import:ro
-      - ../../.local/keycloak/tls:/tls:ro
-      - ../../../keep-frontend/keycloak/themes:/opt/keycloak/themes:ro
-      - keycloak_data:/opt/keycloak/data
+      - ../../.local/identity/openldap/seed.ldif:/ldifs/seed.ldif:ro
+      - ../../.local/identity/tls/localhost.pem:/tls/localhost.pem:ro
+      - ../../.local/identity/tls/localhost-key.pem:/tls/localhost-key.pem:ro
+      - openldap_data:/bitnami/openldap
     healthcheck:
-      test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/8443'"]
+      test: ["CMD-SHELL", "ldapsearch -H ldap://127.0.0.1:389 -x -b dc=keep,dc=local -s base >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  # Lightweight single-binary OIDC provider that authenticates against OpenLDAP and
+  # emits the raw entryUUID verbatim in the dedicated keep-directory scope. HTTPS on
+  # loopback 58443 under Keep's trusted localhost certificate; issuer is that URL.
+  authelia:
+    image: authelia/authelia:4.39.4@sha256:PLACEHOLDER-set-at-mirror-time
+    depends_on:
+      openldap: {condition: service_healthy}
+    command: ["--config", "/config/configuration.yml"]
+    environment:
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: /config/secrets/ldap_password
+      AUTHELIA_SESSION_SECRET_FILE: /config/secrets/session_secret
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /config/secrets/storage_encryption_key
+      AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE: /config/secrets/oidc_hmac_secret
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: /config/secrets/jwt_secret
+    ports: ["127.0.0.1:58443:9091"]
+    volumes:
+      - ../../.local/identity/authelia/configuration.yml:/config/configuration.yml:ro
+      - ../../.local/identity/authelia/secrets:/config/secrets:ro
+      - ../../.local/identity/tls/localhost.pem:/config/tls/public.crt:ro
+      - ../../.local/identity/tls/localhost-key.pem:/config/tls/private.key:ro
+      - authelia_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/9091'"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -204,14 +242,16 @@ services:
     ports: ["127.0.0.1:${KEEP_LOCAL_GRAFANA_PANEL_PORT:-58449}:8443"]
     volumes:
       - ./grafana/panels-proxy.conf:/etc/nginx/nginx.conf:ro
-      - ../../.local/keycloak/tls/localhost.pem:/tls/localhost.pem:ro
-      - ../../.local/keycloak/tls/localhost-key.pem:/tls/localhost-key.pem:ro
+      - ../../.local/identity/tls/localhost.pem:/tls/localhost.pem:ro
+      - ../../.local/identity/tls/localhost-key.pem:/tls/localhost-key.pem:ro
       - ../../.local/operators/tls/ca.crt:/tls/operators-ca.crt:ro
     restart: unless-stopped
 
 secrets:
   postgres_password:
     file: ../../.local/postgres-password.txt
+  openldap_admin_password:
+    file: ../../.local/identity/openldap-admin-password.txt
   kong_password:
     file: ../../.local/operators/kong-password.txt
   grafana_password:
@@ -224,8 +264,10 @@ volumes:
     name: keep-local-runtime_keep_es
   kafka_data:
     name: keep-local-stack_kafka_data
-  keycloak_data:
-    name: keep-local-identity_keycloak-data
+  openldap_data:
+    name: keep-local-identity_openldap_data
+  authelia_data:
+    name: keep-local-identity_authelia_data
   kong_data:
     name: keep-local-operators_kong_data
   grafana_data:

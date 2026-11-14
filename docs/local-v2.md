@@ -22,8 +22,8 @@ Start the [local runtime](local-runtime.md) with the single Compose stack, then 
 ```
 
 The unified [`deploy/local/compose.yaml`](../deploy/local/compose.yaml) includes
-these services alongside Keep PostgreSQL, Elasticsearch, Kafka, Redis and
-Keycloak. Start provisions `Local Demo Sender` in `Local Demo` using the normal local-admin
+these services alongside Keep PostgreSQL, Elasticsearch, Kafka, Redis, OpenLDAP and
+Authelia. Start provisions `Local Demo Sender` in `Local Demo` using the normal local-admin
 login and operator API. The normal Product API request provisions and verifies the Kong
 Consumer/key, Grafana contact point, exact `Keep - Local Demo Sender` policy,
 and authenticated serving-member identity. The initial bootstrap checks transport

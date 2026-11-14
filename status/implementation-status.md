@@ -2348,7 +2348,7 @@ OpenShift and private company-service qualification were not run in this increme
 
 The user requested local Keycloak with custom users/groups instead of external
 LDAP. This development exception is implemented in the
-[local identity guide](../docs/local-keycloak.md). Docker 29.5.2 now runs isolated
+[local identity guide](../docs/local-identity.md). Docker 29.5.2 now runs isolated
 Keycloak 26.7.4; its image is digest-pinned in the dedicated Compose file. A
 native-user/group reader publishes through the existing guarded directory path
 every 60 seconds. Three real password/TOTP accounts, separate API/worker database

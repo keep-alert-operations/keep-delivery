@@ -258,20 +258,10 @@
       "path": "src/keep/identity/directory.py",
       "source_sha256": "978cd315e4936335d465df741916b59e127991c4dbb310ef1c1807f840feb154"
     },
-    "backend/keep/identity/keycloak_directory.py": {
-      "repository": "keep-domain",
-      "path": "src/keep/identity/keycloak_directory.py",
-      "source_sha256": "e3c8639b0d8ebe7108ba3307e5f497613ce32ce8c493f8c44ecbf9b0181558fc"
-    },
     "backend/keep/identity/ldap.py": {
       "repository": "keep-domain",
       "path": "src/keep/identity/ldap.py",
       "source_sha256": "46303c6b37fbdd6fbc18cefce42c193de3624cbc6e5b4bf989903abee59bcb26"
-    },
-    "backend/keep/identity/local_keycloak_worker.py": {
-      "repository": "keep-domain",
-      "path": "src/keep/identity/local_keycloak_worker.py",
-      "source_sha256": "bf96e7fcdcb62ee398a4ea9ce376576b4fd68dce0c75d775c0ce1ce38bac3f8f"
     },
     "backend/keep/identity/oidc.py": {
       "repository": "keep-domain",
@@ -1008,11 +998,6 @@
       "path": "tests/integration/test_live_delivery.py",
       "source_sha256": "c7f1aadc2bdfb4f84c2033e5a9e8e7b14bac347a2cd786475a86024b7786937e"
     },
-    "backend/tests/integration/test_local_keycloak_publication.py": {
-      "repository": "keep-delivery",
-      "path": "tests/integration/test_local_keycloak_publication.py",
-      "source_sha256": "157fd66a3ca9a66bb0794e4fc40cf7688b219336aee6e7471395fc7244d7cbd5"
-    },
     "backend/tests/integration/test_local_search_bootstrap_sql.py": {
       "repository": "keep-delivery",
       "path": "tests/integration/test_local_search_bootstrap_sql.py",
@@ -1268,11 +1253,6 @@
       "path": "tests/unit/test_local_identity_setup.py",
       "source_sha256": "c3cb3bd304fc29b687fdde3adf28019f990868ff85cf532768b8974dfb631f99"
     },
-    "backend/tests/unit/test_local_keycloak_directory.py": {
-      "repository": "keep-domain",
-      "path": "tests/unit/test_local_keycloak_directory.py",
-      "source_sha256": "e52ed998724a5bb145f5ae9a9e4953a4ecbcefaafd917335642d466e0635e147"
-    },
     "backend/tests/unit/test_local_search_bootstrap.py": {
       "repository": "keep-indexer",
       "path": "tests/unit/test_local_search_bootstrap.py",
@@ -1463,56 +1443,6 @@
       "path": "deploy/local/compose.yaml",
       "source_sha256": "5eba66ff4f27910bd1d6d1a77e9633653e19414a8ea78b90f5775641e36e7469"
     },
-    "deploy/local/keycloak/themes/keep/login/login.ftl": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/login.ftl",
-      "source_sha256": "3354d441e90ff76c08153defff91bdee1d459190954ba2ef26c0c2b47ac9e033"
-    },
-    "deploy/local/keycloak/themes/keep/login/resources/css/keep.css": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/resources/css/keep.css",
-      "source_sha256": "daf2041b50bc6224622961edc05ec73a57fd2cfa8ce4d243556616c4aea9c2b1"
-    },
-    "deploy/local/keycloak/themes/keep/login/resources/fonts/geist-latin.woff2": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/resources/fonts/geist-latin.woff2",
-      "source_sha256": "1b5ebfb3a01a97343ac96873e6d59a8cb285c66012b6a1ac509cb2765e995ba8"
-    },
-    "deploy/local/keycloak/themes/keep/login/resources/fonts/OFL.txt": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/resources/fonts/OFL.txt",
-      "source_sha256": "c683bfbcc7e087f5d37a54ef628f10387c451a83ddc459b151403a164ac46c90"
-    },
-    "deploy/local/keycloak/themes/keep/login/resources/img/keep.svg": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/resources/img/keep.svg",
-      "source_sha256": "db6d90b0f254803f90764e55ceb487d67ffa9c2f307b7ee0fbd0890a61e76548"
-    },
-    "deploy/local/keycloak/themes/keep/login/resources/js/keep.js": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/resources/js/keep.js",
-      "source_sha256": "6bebdefd03b6f6adb80d5ae292abcdaade37f8bac1cb9cfa77cec1efdca4e265"
-    },
-    "deploy/local/keycloak/themes/keep/login/resources/js/appearance.js": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/resources/js/appearance.js",
-      "source_sha256": "5d563eea0a9ebc32761e5ba2db35c5508e8535a2911221d5804293bad9e07cd4"
-    },
-    "deploy/local/keycloak/themes/keep/login/theme.properties": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/login/theme.properties",
-      "source_sha256": "332780b672c400d415b108823431a2e95b090dce817714b94217b73f48b09eda"
-    },
-    "deploy/local/keycloak/themes/keep/README.md": {
-      "repository": "keep-frontend",
-      "path": "keycloak/themes/keep/README.md",
-      "source_sha256": "b71b3598222159486a37b10a37f56e364c2922248ea441aba96f0b954524aedf"
-    },
-    "deploy/local/keycloak.compose.yaml": {
-      "repository": "keep-delivery",
-      "path": "deploy/local/keycloak.compose.yaml",
-      "source_sha256": "4a5fd5aa4d2df2b5d02fff32aa718a1b785b00f72450e3a2a1da3cd3ae1ef981"
-    },
     "deploy/local/operators.compose.yaml": {
       "repository": "keep-delivery",
       "path": "deploy/local/operators.compose.yaml",
@@ -1612,11 +1542,6 @@
       "repository": "keep-delivery",
       "path": "docs/kafka-first-implementation.md",
       "source_sha256": "a2ddbb95e78ac68c791363a266a38e6dcfad01319cef251e00d36981cbe6416b"
-    },
-    "docs/local-keycloak.md": {
-      "repository": "keep-delivery",
-      "path": "docs/local-keycloak.md",
-      "source_sha256": "4fa23bf3458b4e0b5b2d925ca805314a2fe1a4861a54140d07c9bea91b42dc05"
     },
     "docs/local-runtime.md": {
       "repository": "keep-delivery",

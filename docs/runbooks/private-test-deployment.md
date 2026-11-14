@@ -3,8 +3,9 @@
 This procedure matches the 2026-10-07 environment clarification: committed Git
 repositories have been transferred; builds can reach only internal mirrors;
 Kafka, Elasticsearch and Grafana 12 are supplied externally. Deploy Keep,
-PostgreSQL, Redis, Kong and Keycloak in a dedicated OpenShift test namespace.
-Use synthetic data and dedicated native Keycloak test identities. No deployment,
+PostgreSQL, Redis, Kong, Authelia and OpenLDAP in a dedicated OpenShift test
+namespace. Use synthetic data and dedicated Authelia + OpenLDAP test identities,
+where OpenLDAP is the directory and Authelia the OIDC provider. No deployment,
 image build or Grafana 12 compatibility result is claimed by this procedure.
 
 The [full deployment guide](openshift-load-testing.md),
@@ -58,7 +59,7 @@ Python's standard library and does not need a dependency installation.
 | Kafka bootstrap and advertised addresses | `REQUIRED_KAFKA_BOOTSTRAP` and every actual reachable broker |
 | Elasticsearch HTTPS endpoint | `https://REQUIRED_ELASTICSEARCH_HOST:REQUIRED_PORT` |
 | Grafana HTTPS endpoint and organization | `https://REQUIRED_GRAFANA_HOST`, actual dedicated organization ID |
-| Cluster/application names | Namespace, storage class, quota, allowed nodes, application/Keycloak/v1/v2 DNS |
+| Cluster/application names | Namespace, storage class, quota, allowed nodes, application/Authelia/v1/v2 DNS |
 | Certificates and credentials | Registry pull secret, runtime TLS/CA files, per-workload credentials |
 
 Mirror the pinned commits of the private Git dependencies with their history.
@@ -69,8 +70,9 @@ native CEL wheel; do not replace a package under the same version with a rebuild
 Mirror build requirements such as Poetry/hatchling as well as runtime packages.
 
 Mirror these base-image lineages by immutable digest: Python 3.13 slim Bookworm,
-Node 22 Bookworm slim, a theme-compatible Keycloak, Keep-plugin-compatible Kong,
-and the chosen compatible PostgreSQL/Redis bases. The PostgreSQL wrapper requires
+Node 22 Bookworm slim, the `authelia/authelia` OIDC provider, an `entryUUID`-capable
+OpenLDAP (for example `bitnami/openldap`), Keep-plugin-compatible Kong, and the
+chosen compatible PostgreSQL/Redis bases. The PostgreSQL wrapper requires
 the official Debian entrypoint and NSS wrapper. Existing local test selections
 are evidence about those local versions, not proof for different vendor images.
 Also mirror the `docker/dockerfile` BuildKit frontend: the Dockerfile `syntax`
@@ -234,12 +236,18 @@ Build the remaining wrappers with mirrored digests, also supplying
 | Result image | Dockerfile / context | Required base argument |
 | --- | --- | --- |
 | Keep Kong | `../keep-ingestion/kong/Dockerfile` / `../keep-ingestion` | `KONG_BASE_IMAGE` |
-| Keep Keycloak theme | `../keep-frontend/keycloak/Dockerfile` / `../keep-frontend` | `KEYCLOAK_BASE_IMAGE` |
 | Keep PostgreSQL | `deploy/images/postgres/Dockerfile` / `deploy/images/postgres` | `POSTGRES_BASE` |
-| Keycloak PostgreSQL | Same wrapper, compatible chosen base | `POSTGRES_BASE` |
 | Kong PostgreSQL | Same wrapper, compatible chosen base | `POSTGRES_BASE` |
 | Redis | `deploy/images/redis/Dockerfile` / `deploy/images/redis` | `REDIS_BASE` |
 | Optional k6 | `qualification/load-test/Dockerfile` / `qualification/load-test` | `K6_IMAGE` |
+
+Authelia and OpenLDAP are consumed directly as mirrored upstream images (by digest)
+with no Keep-built wrapper: there is no Keycloak theme image and no separate Keycloak
+database any more. Mirror `authelia/authelia` and an `entryUUID`-capable OpenLDAP (for
+example `bitnami/openldap`) by digest and reference them in the `authelia` and
+`openldap` configuration image keys. Set those digests when the images are mirrored;
+until then they appear as `sha256:PLACEHOLDER-set-at-mirror-time` in the local Compose
+file and must be replaced with the real mirrored digests.
 
 Do not build Kafka, Elasticsearch or Grafana images for this environment.
 The API image also runs explicit identity publication and operator proof tools;
@@ -289,13 +297,17 @@ route hostnames and all 13 immutable image references. PostgreSQL bases may shar
 one image digest only when that base is compatible with all three applications;
 database data/credentials remain separate. Leave `global_tenant_id` null initially.
 Create per-workload TLS/credential Secrets using the bundle's exact inventory.
-Keep Grafana credentials out of ingestion. Use the generated dedicated native
-Keycloak test realm, normal OIDC and explicit identity publication.
+Keep Grafana credentials out of ingestion. Use the generated dedicated Authelia +
+OpenLDAP test identities (OpenLDAP seed LDIF, Authelia configuration and the LDAP
+`directory.json`), normal OIDC and explicit identity publication. The super-admin
+group id is the admin group's server-generated `entryUUID`: resolve it from OpenLDAP
+after the seed loads and replace the `RESOLVE_AT_DEPLOY_...` placeholder in
+`api-identity.env` before starting the API.
 
 ```bash
 python3 qualification/load-test-identity/prepare.py \
   --app-origin https://REQUIRED_APPLICATION_HOST \
-  --keycloak-origin https://REQUIRED_KEYCLOAK_HOST \
+  --authelia-origin https://REQUIRED_AUTHELIA_HOST \
   --users 10 --output "$PRIVATE/identity"
 python3 deploy/openshift/load-test/render.py \
   --config "$PRIVATE/configuration.json" \
@@ -304,11 +316,12 @@ bash "$PRIVATE/rendered/render-apps.sh"
 ```
 
 Process/dry-run and apply each stage using `oc -n REQUIRED_NAMESPACE`.
-Never apply the entire rendered directory at once. Start foundation and the
-three PostgreSQL instances/Redis, complete the Keep migration Job and runtime
+Never apply the entire rendered directory at once. Start foundation, the two
+PostgreSQL instances, OpenLDAP and Redis, complete the Keep migration Job and runtime
 logins, then read the database-created Global UUID. Update configuration and
-rerender without `--bootstrap-only`. Complete Kong migrations, Keycloak startup,
-fresh-only Kong routing and explicit identity publication. Initialize Kafka while
+rerender without `--bootstrap-only`. Complete Kong migrations, Authelia startup,
+fresh-only Kong routing and explicit identity publication through the LDAP worker.
+Initialize Kafka while
 all ingestion/consumers remain stopped. Supply real clock evidence and complete
 search bootstrap with writers stopped. Start supported API/frontend/processor/
 indexer paths; enable admission and start ingestion only after these steps pass.

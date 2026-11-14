@@ -52,11 +52,11 @@ Mount the cluster CA bundle as `/trust/ca-bundle.pem`; do not add `--insecure-sk
    value in a protected local file `private/operator-key`. The endpoint must be
    the public Kong route, never private ingestion or forged gateway headers.
    V1 uses the public v1 endpoint and the actual fixed Global tenant UUID.
-3. Sign each dedicated Keycloak test user in through the real Keep browser
+3. Sign each dedicated Authelia/OpenLDAP test user in through the real Keep browser
    `/auth/login` flow after trusted publication and grants. Obtain the
    `__Host-keep_session` cookie value using the browser's protected developer
    tools and that user's `principal.id` from `/auth/session`. Do not create a
-   database session, accept a raw Keycloak token as a Keep session, or change
+   database session, accept a raw provider token as a Keep session, or change
    the application to bypass OIDC. Do not share one session between simulated
    users.
 4. Create `private/sessions.json` as an array with one `{ "principal_id": "...",

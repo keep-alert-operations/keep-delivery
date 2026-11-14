@@ -93,7 +93,7 @@ def test_prepare_before_database_bootstrap_preserves_credentials(monkeypatch, tm
     monkeypatch.setattr(local, "environment", unavailable_environment)
     local.prepare()
     expected = local.credentials()
-    assert not (tmp_path / ".local/keycloak/app-environment.json").exists()
+    assert not (tmp_path / ".local/identity/app-environment.json").exists()
     assert (state / "kong-password.txt").read_text().strip() == expected["kong_password"]
     assert (state / "grafana-password.txt").read_text().strip() == expected["grafana_password"]
     local.prepare()

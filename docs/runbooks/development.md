@@ -20,7 +20,7 @@ capability gates, or authorize production deployment. Consult
 Install Python 3.13, `Poetry 2.3.1`, Node.js 22.17 or newer, npm, and PowerShell 7 through approved
 development tooling. The scripts use the committed `poetry.lock` and
 `../keep-frontend/package-lock.json`. They do not install or administer shared PostgreSQL,
-Kafka, Elasticsearch, Redis, LDAP, Keycloak, Kong or Grafana services.
+Kafka, Elasticsearch, Redis, OpenLDAP, Authelia, Kong or Grafana services.
 
 Inject configuration into the terminal environment through your approved secret
 mechanism. Do not put credentials in source control, command arguments or captured
@@ -50,7 +50,7 @@ For real human sign-in, supply the issuer, confidential-client secret, protected
 immutable-directory claim/scope, exact password-authentication ACR/AMR mapping, directory source,
 super-admin team and any approved CA binding described in
 [identity implementation](https://github.com/keep-alert-operations/keep-api/blob/main/docs/identity-implementation.md#required-configuration).
-Use the actual configured Keycloak environment and exact callback/logout URLs.
+Use the actual configured Authelia environment and exact callback/logout URLs.
 Company LDAP verification and the qualified directory bootstrap must publish
 trusted evidence before `human_auth` can become ready. The development launcher
 does not seed users/sessions or set that gate. The directory adapter's `run_cycle`
@@ -140,7 +140,7 @@ progress and the corresponding verification evidence.
 For the isolated local dependency stack, use the single
 [local Compose definition](../../deploy/local/compose.yaml) through
 [`scripts/local-runtime.ps1`](../../scripts/local-runtime.ps1). It runs the local
-PostgreSQL, Elasticsearch, Kafka, Redis, Keycloak, Kong and Grafana services;
+PostgreSQL, Elasticsearch, Kafka, Redis, OpenLDAP, Authelia, Kong and Grafana services;
 the API, UI and workers remain host development processes. This local profile
 does not replace the separately supplied and qualified company services.
 
@@ -212,7 +212,7 @@ database, starts/stops its own unique-port API/UI process trees and uses synthet
 database session evidence exclusively inside the test. It never adds a test login
 route or enables authentication on the ordinary application database. See the
 [frontend evidence](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/frontend.md#real-browserapipostgresql-smoke) for exact assertions
-and the distinction from company Keycloak/LDAP qualification.
+and the distinction from company directory/LDAP qualification.
 
 The fixture seeds its alert through the Kafka-first path: it builds the admission
 envelope and applies it with the source processor's PostgreSQL step, with no broker
@@ -296,8 +296,8 @@ reload is needed; it can restart several processes and run migration/setup check
 
 Use only synthetic data in the local `keep_local` database/loopback stack.
 This is persistent development data, not an automatically disposable database.
-Authenticate through Keycloak using the generated local-admin/editor/viewer
-credentials described in [local identities](../local-keycloak.md). Read credentials
+Authenticate through Authelia using the generated local-admin/editor/viewer
+credentials described in [local identities](../local-identity.md). Read credentials
 locally without printing passwords, cookies, keys or complete configuration.
 Do not inject a session for S1–S4. Browser test TLS exceptions are local to these
 tests; they do not authorize changing Windows trust or backend TLS validation.
@@ -323,7 +323,7 @@ prepare/API reload/Start; never point it at shared company Kong/Grafana.
 
 | ID | Steps through actual entry points | Required observable results | Existing coverage / limits |
 |---|---|---|---|
-| S1 Identity and access | Run the local identity suite; sign in as admin/editor/viewer, inspect Local Demo roles, remove/restore the viewer group with explicit publication, perform signed provider logout. | Normal password-only OIDC produces the expected principal; Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200; logged-out session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` automates these against real Keycloak/API/PG. Provider logout/group revocation test skips without the enrolled console factor: record partial coverage, not an S1 pass. |
+| S1 Identity and access | Run the local identity suite; sign in as admin/editor/viewer, inspect Local Demo roles, remove/restore the viewer group with explicit publication, perform signed provider logout. | Normal password-only OIDC produces the expected principal; Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200; logged-out session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` automates these against real Authelia/OpenLDAP/API/PG. Password-only sign-in needs no authenticator enrollment; confirm Authelia emits `sid` and `amr=pwd` so the API accepts the identity. |
 | S2 Native v1 and alert work | Run the local-runtime browser suite: submit its unique native v1 alert, wait for search, open Global Feed/detail, Assign to me, add a note, reload. | Admission returns 202 only after Kafka acknowledgement; exactly the created alert becomes visible in Global, Feed appears and live delivery reports connected with no update notice (REV-43), assignment acknowledges it, note survives reload and acknowledged CEL search includes its ID. A 202 alone does not prove processing/search. | `local-runtime.spec.ts` uses real login, ingestion, workers, Elasticsearch and browser. Its note reload is automated; additionally reload and confirm the assignee remains the acting user. The connected live status proves connection, not every SSE recovery path. |
 | S3 Native v2 isolation | Run gateway `verify`, then `send`; open the resulting IDs in Local Demo Feed/detail through the browser. | Missing/invalid/forged credentials rejected; duplicate/unsupported key transport rejected, direct private listener requires mTLS. Valid batch has 3 accepted results with 202; all 3 become searchable with expected components and names (REV-54), detail works only in the owning tenant, the same IDs under Global return 404. Browser shows the matching records. | `local_v2_verify.py` automates gateway/API/search assertions, including 401/400/404/422 distinctions; the final browser inspection is manual. No receipt lookup. It does not test Grafana's scheduled delivery or fleet propagation. |
 | S4 Manual incident lifecycle | As editor/admin in the S2 alert's tenant, open Incidents → New incident, enter a unique title and explicit severity, and create. Confirm open/unassigned state; use Link alerts on detail to select the run's unowned alert. Add a uniquely tagged note, reload, resolve, reload, reopen and reload. | Created incident, subsequent link and note persist after reload; severity remains immutable; resolve leaves alert status unchanged. With no competing owner, reopen succeeds, starts a new lifecycle cycle and retains the link/history. Inspect detail plus its normal API/history responses for results not visible in the UI. | Manual real-stack procedure; no dedicated automated end-to-end suite was found. Mocked creation/note tests and PG integration tests cover parts, not the full journey. Follow the authoritative [incident rules](../../../keep-design/specs/spec-incident-operations.md). |

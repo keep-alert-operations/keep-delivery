@@ -867,7 +867,7 @@ def main():
         thread.start()
         threads.append(thread)
         if args.phase == "combined":
-            tls = ROOT / ".local/keycloak/tls"
+            tls = ROOT / ".local/identity/tls"
             # Use the real process entrypoint. Embedding the API in the generator's
             # thread changes Windows CEL spawn startup and resource contention.
             api_environment = private_environment(settings)
