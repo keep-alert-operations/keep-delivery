@@ -22,20 +22,14 @@ def secrets(request):
     old = EnvelopeCipher({"old": b"a" * 32}, "old")
     current = EnvelopeCipher({"old": b"a" * 32, "current": b"b" * 32}, "current")
     principal, operator, credential, receipt = (uuid4() for _ in range(4))
-    handle, login = sha256(uuid4().bytes).digest(), sha256(uuid4().bytes).digest()
+    handle = sha256(uuid4().bytes).digest()
     records = {
         "operator-credentials": (
             credential,
             f"operator-key:{operator}:{credential}:1",
             b"existing-api-key",
         ),
-        "session-tokens": (
-            handle,
-            "session-tokens:" + handle.hex(),
-            b'{"refresh_token":"existing-refresh"}',
-        ),
         "session-csrf": (handle, "session-csrf:" + handle.hex(), b"existing-csrf"),
-        "login-transactions": (login, "login:" + login.hex(), b'{"state":"existing-login"}'),
         "ingest-receipts": (receipt, f"receipt:{receipt}", b'{"receipt_token":"existing-receipt"}'),
     }
     ciphertexts = {family: old.seal(value, aad) for family, (_, aad, value) in records.items()}
@@ -60,20 +54,13 @@ def secrets(request):
             ),
         )
         conn.execute(
-            "INSERT INTO auth_sessions(handle_hash,principal_id,issuer,subject,provider_sid,tokens,csrf_hash,csrf_cipher,auth_time,activity_at,absolute_at,deployment_epoch) VALUES(%s,%s,'https://test.invalid',%s,%s,%s,%s,%s,clock_timestamp(),clock_timestamp(),clock_timestamp()+interval '1 day','test')",
+            "INSERT INTO auth_sessions(handle_hash,principal_id,csrf_hash,csrf_cipher,auth_time,absolute_at,deployment_epoch) VALUES(%s,%s,%s,%s,clock_timestamp(),clock_timestamp()+interval '1 day','test')",
             (
                 handle,
                 principal,
-                str(principal),
-                str(uuid4()),
-                ciphertexts["session-tokens"],
                 sha256(b"existing-csrf").digest(),
                 ciphertexts["session-csrf"],
             ),
-        )
-        conn.execute(
-            "INSERT INTO login_transactions(state_hash,browser_hash,encrypted_state,expires_at) VALUES(%s,%s,%s,clock_timestamp()+interval '10 minutes')",
-            (login, sha256(b"browser").digest(), ciphertexts["login-transactions"]),
         )
         conn.execute(
             "INSERT INTO ingest_requests(id,tenant_id,version,retry_scope,fingerprint,receipt_hash,response_cipher,response_status,admitted_at,expires_at) VALUES(%s,%s,'v1','test',%s,%s,%s,202,clock_timestamp(),clock_timestamp()+interval '1 day')",
@@ -125,8 +112,9 @@ def test_all_known_families_rewrap_without_changing_identity_or_lifecycle(secret
         database.transaction = original
 
 
-@pytest.mark.parametrize("family", ["operator-credentials", "session-tokens"])
-def test_rewrap_cannot_resurrect_revocation_or_overwrite_refresh(secrets, family):
+@pytest.mark.parametrize("family", ["operator-credentials", "session-csrf"])
+def test_rewrap_cannot_resurrect_revocation_or_overwrite_newer_ciphertext(secrets, family):
+    """Requirements: REV-73 (session token and login-transaction families are gone)."""
     database, _, current, records = secrets
     identity, aad, _ = records[family]
     entered, release = Event(), Event()
@@ -151,8 +139,8 @@ def test_rewrap_cannot_resurrect_revocation_or_overwrite_refresh(secrets, family
                     )
                 else:
                     conn.execute(
-                        "UPDATE auth_sessions SET tokens=%s,refresh_generation=refresh_generation+1 WHERE handle_hash=%s",
-                        (current.seal(b"new-refresh-token", aad), identity),
+                        "UPDATE auth_sessions SET csrf_cipher=%s WHERE handle_hash=%s",
+                        (current.seal(b"new-csrf", aad), identity),
                     )
         finally:
             release.set()
@@ -162,8 +150,7 @@ def test_rewrap_cannot_resurrect_revocation_or_overwrite_refresh(secrets, family
     if family == "operator-credentials":
         assert row["ciphertext"] is None and row["state"] == "revoked"
     else:
-        assert current.open(bytes(row["tokens"]), aad) == b"new-refresh-token"
-        assert row["refresh_generation"] == 1
+        assert current.open(bytes(row["csrf_cipher"]), aad) == b"new-csrf"
 
 
 def test_parallel_rewrap_workers_converge_via_exact_ciphertext_cas(secrets):
@@ -193,25 +180,30 @@ def test_parallel_rewrap_workers_converge_via_exact_ciphertext_cas(secrets):
 def test_bounded_keyset_pages_and_verify_only_do_not_rewrite(secrets):
     database, old, current, records = secrets
     with database.transaction() as conn:
+        principal = conn.execute(
+            "SELECT principal_id FROM auth_sessions WHERE handle_hash=%s",
+            (records["session-csrf"][0],),
+        ).fetchone()["principal_id"]
         for _ in range(4):
             identity = sha256(uuid4().bytes).digest()
             conn.execute(
-                "INSERT INTO login_transactions(state_hash,browser_hash,encrypted_state,expires_at) VALUES(%s,%s,%s,clock_timestamp()+interval '10 minutes')",
+                "INSERT INTO auth_sessions(handle_hash,principal_id,csrf_hash,csrf_cipher,auth_time,absolute_at,deployment_epoch) VALUES(%s,%s,%s,%s,clock_timestamp(),clock_timestamp()+interval '1 day','test')",
                 (
                     identity,
-                    sha256(b"browser").digest(),
-                    old.seal(b"login", "login:" + identity.hex()),
+                    principal,
+                    sha256(b"csrf").digest(),
+                    old.seal(b"csrf", "session-csrf:" + identity.hex()),
                 ),
             )
-    verification = rewrap_page(database, current, "login-transactions", limit=2, verify_only=True)
+    verification = rewrap_page(database, current, "session-csrf", limit=2, verify_only=True)
     assert verification.needs_rewrap == 2 and verification.rewrapped == 0
     assert verification.next_cursor
     with pytest.raises(AppError) as failure:
-        rewrap_page(database, current, "session-csrf", cursor=verification.next_cursor)
+        rewrap_page(database, current, "operator-credentials", cursor=verification.next_cursor)
     assert failure.value.code == "rewrap_cursor_invalid"
     count, cursor = 0, None
     for _ in range(10):
-        page = rewrap_page(database, current, "login-transactions", limit=2, cursor=cursor)
+        page = rewrap_page(database, current, "session-csrf", limit=2, cursor=cursor)
         assert page.examined <= 2
         count += page.rewrapped
         cursor = page.next_cursor

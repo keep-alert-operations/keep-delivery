@@ -33,7 +33,7 @@ def test_selected_alert_is_fresh_without_mutating_state(
     original = routes.compiled
     with real_db.transaction() as conn:
         activity = conn.execute(
-            "SELECT activity_at FROM auth_sessions WHERE principal_id=%s", (actor,)
+            "SELECT revoked_at,absolute_at FROM auth_sessions WHERE principal_id=%s", (actor,)
         ).fetchone()
         before = conn.execute("SELECT revision FROM alerts WHERE id=%s", (alert,)).fetchone()
 
@@ -55,7 +55,7 @@ def test_selected_alert_is_fresh_without_mutating_state(
         )
         assert (
             conn.execute(
-                "SELECT activity_at FROM auth_sessions WHERE principal_id=%s", (actor,)
+                "SELECT revoked_at,absolute_at FROM auth_sessions WHERE principal_id=%s", (actor,)
             ).fetchone()
             == activity
         )

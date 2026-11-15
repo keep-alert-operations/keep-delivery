@@ -41,17 +41,17 @@ def test_unchanged_authority_proves_original_input_and_rechecks_without_activity
     args = candidate(db, tenant, client)
     with db.transaction(tenant) as conn:
         before = conn.execute(
-            "SELECT s.activity_at FROM auth_sessions s JOIN visibility_views v ON v.session_hash=s.handle_hash WHERE v.tenant_id=%s",
+            "SELECT s.revoked_at,s.absolute_at FROM auth_sessions s JOIN visibility_views v ON v.session_hash=s.handle_hash WHERE v.tenant_id=%s",
             (tenant,),
-        ).fetchone()["activity_at"]
+        ).fetchone()
     result = prove(db, args)
     assert result.proven and result.reason == "uninterrupted_authority"
     with db.transaction(tenant) as conn:
         assert recheck_authority(conn, result.token) == result
         after = conn.execute(
-            "SELECT s.activity_at FROM auth_sessions s JOIN visibility_views v ON v.session_hash=s.handle_hash WHERE v.tenant_id=%s",
+            "SELECT s.revoked_at,s.absolute_at FROM auth_sessions s JOIN visibility_views v ON v.session_hash=s.handle_hash WHERE v.tenant_id=%s",
             (tenant,),
-        ).fetchone()["activity_at"]
+        ).fetchone()
         assert after == before
 
 
@@ -269,7 +269,8 @@ def test_changed_or_legacy_authority_is_unclassified_never_retroactive_exclusion
             )
         elif change == "binding":
             conn.execute(
-                "UPDATE auth_sessions SET provider_sid='different-provider-session' WHERE handle_hash=%s",
+                # REV-73: the binding covers the sign-in time, not provider fields.
+                "UPDATE auth_sessions SET auth_time=auth_time-interval '1 second' WHERE handle_hash=%s",
                 (row["session_hash"],),
             )
         else:
@@ -292,19 +293,15 @@ def test_changed_or_legacy_authority_is_unclassified_never_retroactive_exclusion
         )
 
 
-def test_new_heartbeat_cannot_extend_original_snapshot_authorization_bound(inputs):
+def test_original_snapshot_authorization_ends_at_the_session_absolute_deadline(inputs):
+    """Requirements: REV-73 (sessions have no idle timeout; the absolute deadline bounds authority)."""
     db, tenant, client = inputs
     with db.transaction(tenant) as conn:
         conn.execute(
-            "UPDATE auth_sessions SET activity_at=clock_timestamp()-interval '30 minutes'+interval '2 seconds' WHERE principal_id IN (SELECT principal_id FROM tenant_grants WHERE tenant_id=%s)",
+            "UPDATE auth_sessions SET absolute_at=clock_timestamp()+interval '2 seconds' WHERE principal_id IN (SELECT principal_id FROM tenant_grants WHERE tenant_id=%s)",
             (tenant,),
         )
     view = register(client, tenant)
-    with db.transaction(tenant) as conn:
-        conn.execute(
-            "UPDATE auth_sessions SET activity_at=clock_timestamp() WHERE handle_hash=(SELECT session_hash FROM visibility_views WHERE tenant_id=%s)",
-            (tenant,),
-        )
     sleep(2.1)
     with db.transaction(tenant) as conn:
         original = seed(conn, tenant)["input"]

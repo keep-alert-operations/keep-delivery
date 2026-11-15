@@ -42,7 +42,8 @@ def test_live_invalidation_does_not_wait_for_slow_tenant_load():
 
 
 @pytest.mark.asyncio
-async def test_activity_sql_runs_in_worker_while_event_loop_remains_responsive(monkeypatch):
+async def test_session_sql_runs_in_worker_while_event_loop_remains_responsive(monkeypatch):
+    """Requirements: REV-73 (the activity heartbeat is gone; sign-out is the session write)."""
     from keep.identity import session
 
     event_loop_thread = get_ident()
@@ -56,13 +57,9 @@ async def test_activity_sql_runs_in_worker_while_event_loop_remains_responsive(m
             assert release.wait(2)
             yield SimpleNamespace(execute=lambda *a: None)
 
-    async def refresh(_):
-        pass
-
     monkeypatch.setattr(session, "authenticate", lambda *a, **kw: ({}, {"handle_hash": b"test"}))
-    monkeypatch.setattr(session, "refresh_session", refresh)
     request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(db=Database())))
-    task = asyncio.create_task(session.activity(request))
+    task = asyncio.create_task(session.logout(request))
     try:
         assert await asyncio.to_thread(started.wait, 1)
         await asyncio.sleep(0)
