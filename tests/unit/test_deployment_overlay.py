@@ -25,6 +25,12 @@ def test_python_build_overlay_transfers_poetry_metadata_and_lock():
                 assert f"{repo}/{path}" in overlay.FILES
 
 
+def test_overlay_carries_the_mock_adapi_and_no_keycloak_image():
+    """Requirements: REV-73 (Keycloak removed; the load test runs the mock ADAPI)."""
+    assert "keep-delivery/scripts/local_adapi.py" in overlay.FILES
+    assert not [name for name in overlay.FILES if "keycloak" in name.lower()]
+
+
 def archive(tmp_path, files=None, extra=None):
     files = files or {NAME: (b"new", b"old"), NEW: (b"guide", None)}
     manifest = {"format": "keep-isolated-test-overlay-v1", "classification": "test",

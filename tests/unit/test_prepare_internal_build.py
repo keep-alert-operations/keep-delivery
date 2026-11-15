@@ -41,6 +41,12 @@ content-hash = "REPLACE_HASH"
 
 
 
+def test_build_inputs_no_longer_stage_a_keycloak_theme():
+    """Requirements: REV-73 (no Keycloak image or theme to build)."""
+    assert not [name for name in build.INPUTS if "keycloak" in name.lower()]
+    assert {"Dockerfile", "src", "scripts"} <= set(build.INPUTS)
+
+
 def documents():
     original = build.tomllib.loads(LOCK)
     refreshed = copy.deepcopy(original)

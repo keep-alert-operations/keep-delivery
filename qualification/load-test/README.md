@@ -12,7 +12,7 @@ an initial executable toolkit, not previously executed capacity evidence.
 | `seed.js` | Admit a run-specific fixture of 5,000 unresolved alerts, in batches of up to 100 distinct keys. Fail on any invalid/uncertain acknowledgement. |
 | `verify-seed.js` | Using a normal signed-in session, poll the exact run-specific search count until it equals the seed count with no projection lag. It does not replace authoritative PostgreSQL/proof checks. |
 | `ingestion.js` | Native v1/v2 arrival-rate workload, single-object or batched, bounded or growing lifecycle, individual member accounting, JSON summary and failure thresholds. |
-| `reads.js` | Real authorized dashboard-count and alert-search HTTP requests, with normal session activity/refresh and actual saved dashboard/preset revisions. |
+| `reads.js` | Real authorized dashboard-count and alert-search HTTP requests, with normal session refresh and actual saved dashboard/preset revisions. |
 
 The k6 generator does **not** automate browser rendering/SSE, Grafana webhook
 formatting, management commands, tenant-isolation attacks, PostgreSQL replay-proof
@@ -52,13 +52,14 @@ Mount the cluster CA bundle as `/trust/ca-bundle.pem`; do not add `--insecure-sk
    value in a protected local file `private/operator-key`. The endpoint must be
    the public Kong route, never private ingestion or forged gateway headers.
    V1 uses the public v1 endpoint and the actual fixed Global tenant UUID.
-3. Sign each dedicated Keycloak test user in through the real Keep browser
-   `/auth/login` flow after trusted publication and grants. Obtain the
-   `__Host-keep_session` cookie value using the browser's protected developer
-   tools and that user's `principal.id` from `/auth/session`. Do not create a
-   database session, accept a raw Keycloak token as a Keep session, or change
-   the application to bypass OIDC. Do not share one session between simulated
-   users.
+3. Sign each dedicated test user in on the real Keep `/sign-in` page (which posts
+   to `POST /auth/login`) after the bootstrap directory refresh and grants, with
+   the username and password from the identity generator's `credentials.json`.
+   Obtain the `__Host-keep_session` cookie value using the browser's protected
+   developer tools and that user's `principal.id` from `/auth/session`. Do not
+   create a database session or change the application to bypass sign-in. Do not
+   share one session between simulated users. These scripts never sign in
+   themselves and never read passwords.
 4. Create `private/sessions.json` as an array with one `{ "principal_id": "...",
    "cookie": "..." }` per concurrent read user; see the placeholder-only
    [example](profiles/sessions.example.json). Copy secrets directly to the file;
@@ -233,18 +234,19 @@ also run the repeated-preset and distinct-query cases separately.
 Each VU loads the actual dashboard and preset revisions on first use. Changes,
 missing definitions, wrong panel count, access failure or invalid observations
 produce a failure rather than a guessed revision/retry. `GET /auth/session`
-refreshes normally each minute; `POST /auth/activity` represents an active user
-and carries the fetched CSRF token and exact configured HTTPS Origin. No command
-UUIDs or invented assignment/acknowledgement endpoints are sent.
+refreshes normally each minute and supplies the CSRF token that requests carry
+with the exact configured HTTPS Origin. Sessions have no idle timeout (REV-73), so
+there is no activity call. No command UUIDs or invented assignment/acknowledgement
+endpoints are sent.
 
 Read chunks are capped at one hour, and the script refuses a session whose
-server-reported absolute expiry cannot cover the chunk plus margin. Normal idle
-and 24-hour session expiry remain in force. Refresh secrets by signing in again
+server-reported absolute expiry cannot cover the chunk plus margin. The normal
+24-hour session limit remains in force. Refresh secrets by signing in again
 normally between chunks; a mounted file is read at process initialization, so
 updating a Secret does not renew an already-running generator. For 24-hour combined
 testing, schedule successive fresh-login read chunks while ingestion continues,
 report all gaps and separately execute expiry/login/browser scenarios. There is
-no unattended 24-hour OIDC login automation in this toolkit.
+no unattended 24-hour sign-in automation in this toolkit.
 
 ## Result interpretation and verification
 

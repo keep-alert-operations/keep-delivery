@@ -1,9 +1,9 @@
 """Isolated combined Kafka/PG/ES/API workload, using explicit synthetic fixtures.
 
-Not a production qualification or an OIDC/gateway/browser benchmark. Reads use
+Not a production qualification or a sign-in/gateway/browser benchmark. Reads use
 the real HTTPS Product API, normal authorization, distinct fixture sessions and
 bounded quick counts. Arrivals use production KafkaAdmission with a controlled
-trusted-routing fixture. The existing real-browser suite tests OIDC separately.
+trusted-routing fixture. The existing real-browser suite tests sign-in separately.
 Requires KEEP_SCALE_ADMIN_URL for an explicitly isolated loopback PostgreSQL
 cluster. All created database/index/topic names are unique and removed afterward.
 
@@ -313,7 +313,7 @@ def main():
         "host_memory_at_start": host_memory(),
         "run": run,
         "profile": vars(args) | {"output": str(args.output)},
-        "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no OIDC/gateway/render or enabled rule/maintenance capacity claim",
+        "scope": "Synthetic authorized sessions; HTTPS API, Kafka admission/library, real source and indexer; no sign-in/gateway/render or enabled rule/maintenance capacity claim",
         "feature_profile": profile if args.features else None,
         "source_sql_scope": (
             "Not instrumented in process mode; per-process postgres_apply and durable received-to-recorded latency include real SQL waits."
@@ -673,12 +673,10 @@ def main():
                     [(tenant, principal) for tenant in tenants],
                 )
                 conn.execute(
-                    "INSERT INTO auth_sessions(handle_hash,principal_id,issuer,subject,provider_sid,csrf_hash,csrf_cipher,auth_time,activity_at,absolute_at,deployment_epoch) VALUES(%s,%s,'https://synthetic.invalid',%s,%s,%s,%s,clock_timestamp(),clock_timestamp(),clock_timestamp()+interval '2 hours',%s)",
+                    "INSERT INTO auth_sessions(handle_hash,principal_id,csrf_hash,csrf_cipher,auth_time,absolute_at,deployment_epoch) VALUES(%s,%s,%s,%s,clock_timestamp(),clock_timestamp()+interval '2 hours',%s)",
                     (
                         digest,
                         principal,
-                        str(principal),
-                        str(principal),
                         hashlib.sha256(csrf.encode()).digest(),
                         cipher.seal(csrf.encode(), "session-csrf:" + digest.hex()),
                         run,
@@ -712,7 +710,7 @@ def main():
             finally:
                 fixture_db.close()
             result["scope"] = (
-                "Synthetic authorized sessions and feature profile; HTTPS API, Kafka admission/library, source/indexer/correlation and mixed maintenance; no OIDC/gateway/render or production qualification"
+                "Synthetic authorized sessions and feature profile; HTTPS API, Kafka admission/library, source/indexer/correlation and mixed maintenance; no sign-in/gateway/render or production qualification"
             )
         for future in kafka.create_topics(
             [NewTopic(topic, args.partitions, 1) for topic in topics]
@@ -867,7 +865,7 @@ def main():
         thread.start()
         threads.append(thread)
         if args.phase == "combined":
-            tls = ROOT / ".local/keycloak/tls"
+            tls = ROOT / ".local/identity/tls"
             # Use the real process entrypoint. Embedding the API in the generator's
             # thread changes Windows CEL spawn startup and resource contention.
             api_environment = private_environment(settings)
@@ -1018,7 +1016,7 @@ def main():
             result["stage"] = "user_startup"
             print(f"Preload visible; establishing {args.users} active user sessions", flush=True)
             # Ordinary authorized requests establish a ready, warm steady-state
-            # starting point; cold-start/real OIDC behavior is a separate suite.
+            # starting point; cold-start/real sign-in behavior is a separate suite.
             context = ssl.create_default_context(cafile=str(tls / "localhost.pem"))
             handle, csrf = sessions[0]
             async with httpx.AsyncClient(
@@ -1111,14 +1109,13 @@ def main():
                                 stream_ready.set()
 
                         async def session_check(label):
-                            responses = (
-                                await client.get("/auth/session"),
-                                await client.post("/auth/activity", json={}),
-                            )
-                            for response in responses:
-                                if response.status_code != 200:
-                                    http_failure(label, response)
-                            return all(response.status_code == 200 for response in responses)
+                            # REV-73: a session lasts 24 hours from sign-in with no idle
+                            # timeout or activity heartbeat, so an active user's periodic
+                            # session traffic is the session read alone.
+                            response = await client.get("/auth/session")
+                            if response.status_code != 200:
+                                http_failure(label, response)
+                            return response.status_code == 200
 
                         async def read_once(startup=False):
                             label = "startup_read" if startup else "read"
@@ -1455,7 +1452,7 @@ def main():
             result["stage"] = "pipeline"
             result["scope"] = (
                 "Fixed drained workloads through KafkaAdmission and production source, "
-                "correlation and indexer worker processes; no API, OIDC or production qualification"
+                "correlation and indexer worker processes; no API, sign-in or production qualification"
             )
             result["workload"] = workload(args)
             result["environment"] = environment(db_url, es, ROOT)

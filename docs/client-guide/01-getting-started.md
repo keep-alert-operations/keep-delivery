@@ -5,7 +5,7 @@
 ## Sign in and choose your workspace
 
 1. Open the Keep address supplied by your organization.
-2. If Keep shows its landing page, choose **Sign in with company account**. On the sign-in form, enter your company username and password and select **Sign in**. An existing company sign-in session may take you straight into Keep.
+2. If you are not signed in, Keep opens its own sign-in page. Enter your company username (without a domain) and your company password, and select **Sign in**. Keep returns you to the page you opened. After signing out, use the sign-in link on the signed-out page.
 3. Check the tenant selector beside the breadcrumb. Choose the team or service workspace you intend to work in.
 4. Check the access label. **View access** lets you investigate; **Edit access** also lets you change operational records and shared configuration.
 
@@ -13,11 +13,11 @@ Keep opens your last accessible tenant, otherwise **Global**. A tenant is a boun
 
 ![Keep sign-in page with username, password, password visibility and Sign in controls](assets/sign-in.png)
 
-*The company sign-in form. Use your organization's supplied account, not the names shown in guide examples.*
+*Keep's sign-in page. Use your company username and password, not the names shown in guide examples.*
 
 Global is the shared tenant for legacy alerts; eligible signed-in company users have Edit access there. Other tenants have their own access grants. If an expected tenant is missing, ask the team that manages Keep access. Being assigned an alert does not grant access to its tenant.
 
-Use your company's normal password reset or account unlock process if you cannot sign in. Keep does not give you a separate company password. A stale sign-in attempt should be restarted from the page's sign-in control.
+Use your company's normal password reset or account unlock process if you cannot sign in. Keep has no separate password and does not lock your account itself, but repeated wrong passwords count toward the company's own lockout. If the page says your account isn't in the company directory, or that sign-in is unavailable right now, contact the team that manages Keep access or try again shortly.
 
 ## Understand the six main concepts
 
@@ -69,7 +69,7 @@ These permissions do not remove other restrictions, such as a concurrent edit or
 
 ## Keep your session and work safe
 
-Keep sessions expire after 30 minutes without accepted activity, or after 24 hours even with continued activity. A visible dashboard keeps the session active, but a hidden background tab does not. Save useful shared changes before leaving; drafts are held in the current tab and are not reliable storage across a reload or session loss.
+A Keep session lasts 24 hours from sign-in, whether or not you are active; there is no idle timeout. After 24 hours, even a visible dashboard needs a fresh sign-in. **Sign out** ends your Keep session in this browser only; it does not sign you out of other company systems. Save useful shared changes before leaving; drafts are held in the current tab and are not reliable storage across a reload or session loss.
 
 Changing tenants clears that tenant's current selection and working context. If you have an unsaved definition, review the leave/discard prompt before switching. Access loss can clear protected content immediately; it does not wait for a draft to be saved.
 

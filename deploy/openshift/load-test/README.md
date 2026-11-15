@@ -27,7 +27,8 @@ bash "$HOME/keep-load-test-private/rendered/render-apps.sh"
 The renderer never connects to the cluster and never writes real secrets. Supply
 all image digests from the private registry; versions, DNS, storage class and
 router namespace selector must come from your actual environment. Each image
-reference is immutable, including PostgreSQL, Redis, Keycloak and Kong.
+reference is immutable, including PostgreSQL, Redis, OpenLDAP, the mock ADAPI's
+Python image and Kong.
 
 `--bootstrap-only` emits the database migration but no running application
 workloads. After applying migrations, read `SELECT id FROM tenants WHERE
@@ -37,16 +38,16 @@ commands without `--bootstrap-only`. Do not invent the Global UUID.
 | Output | Meaning and order |
 |---|---|
 | `00-foundation.json` | Service account and per-service ingress NetworkPolicies. Apply after creating namespace, platform authorization and private pull secret. |
-| `10-data-services.json` | Three distinct PostgreSQL StatefulSets/PVCs and ephemeral Redis. Required Secrets must already exist. |
+| `10-data-services.json` | Two distinct PostgreSQL StatefulSets/PVCs (Keep and Kong) and ephemeral Redis. Required Secrets must already exist. |
 | `20-keep-migration.json` | Canonical dedicated migration Job; run and wait for success before any Keep writer. |
 | `21-kong-bootstrap.json` | Fresh Kong database/plugin bootstrap only. Do not run against an existing Kong database; use its documented upgrade procedure. |
-| `30-keycloak-kong.json` | Keycloak plus explicit identity-tooling sidecar, and Kong. Both render at zero replicas. Scale after prerequisites. |
+| `30-identity-kong.json` | Test identity (REV-73): OpenLDAP, the mock ADAPI and the idle identity-tooling pod; and Kong. All render at zero replicas. Scale after prerequisites. |
 | `31-kong-routes.json` | Explicit one-off fresh-Kong route/plugin initialization. Run only after Kong is healthy and actual clock publication works; does not establish operator qualification. |
 | `32-operator-proof.json` | Private API-image proof helper and Service; initially zero replicas. Configure exact direct Kong members and shared operator binding before starting. |
 | `35-kafka-cutover.json` | One-off cutover Job derived from the processor pod template. Requires stopped ingestion/legacy/new workers and verified external Kafka inputs; run before activating pipeline traffic. |
 | `36-search-bootstrap.json` | Explicit initial-development search activation using the indexer image, live ES probes and current clock evidence; keep writers stopped until success. |
 | `40-*.json` | Canonical application workloads; all initially zero replicas. |
-| `50-routes.json` | Shared application origin for `/`, `/api`, `/auth`; separate v1, v2 and Keycloak hosts. Apply after TLS/DNS checks. |
+| `50-routes.json` | Shared application origin for `/`, `/api`, `/auth`; separate v1 and v2 hosts. Apply after TLS/DNS checks. |
 | `allocation.json` | Starting requests/limits and storage; no qualification claim. |
 
 Use `oc -n "$NAMESPACE" apply --dry-run=server -f FILE` on **each stage** before
@@ -173,7 +174,7 @@ Use distinct generated passwords stored privately. Roles inherit the published
 DDL ownership, role creation or BYPASSRLS. The current worker group remains broad
 cross-tenant authority by design. The API uses its API login for normal SQL and
 `keep_operator_login` only through `KEEP_OPERATOR_DATABASE_URL`. Mount the
-identity login only in the identity-tooling sidecar. Keep recovery credentials
+identity login only in the identity-tooling pod. Keep recovery credentials
 out of ordinary application pods. There is no ingestion database login.
 
 ## Secret and trust inventory
@@ -191,7 +192,7 @@ Secret intentionally; initial `create` commands fail safely on existing names.
 
 ```bash
 PRIVATE="$HOME/keep-load-test-private"
-for db in postgres keycloak-db kong-db; do
+for db in postgres kong-db; do
   oc -n "$NAMESPACE" create secret generic "keep-$db-credentials" \
     --from-file="password=$PRIVATE/$db/password"
   oc -n "$NAMESPACE" create secret generic "keep-$db-tls" \
@@ -205,21 +206,19 @@ oc -n "$NAMESPACE" create secret generic keep-redis-tls \
   --from-file="tls.crt=$PRIVATE/redis/tls.crt" \
   --from-file="tls.key=$PRIVATE/redis/tls.key" \
   --from-file="ca.crt=$PRIVATE/redis/ca.crt"
-oc -n "$NAMESPACE" create secret generic keep-keycloak-env \
-  --from-env-file="$PRIVATE/keycloak.env"
-oc -n "$NAMESPACE" create secret generic keep-keycloak-realm \
-  --from-file="keep-local-realm.json=$PRIVATE/identity/keep-local-realm.json"
-oc -n "$NAMESPACE" create secret generic keep-keycloak-tls \
-  --from-file="tls.crt=$PRIVATE/keycloak/tls.crt" \
-  --from-file="tls.key=$PRIVATE/keycloak/tls.key"
-oc -n "$NAMESPACE" create secret generic keep-keycloak-trust \
-  --from-file="postgres-ca.crt=$PRIVATE/keycloak-db/ca.crt" \
-  --from-file="application-ca.crt=$PRIVATE/application/ca.crt"
+oc -n "$NAMESPACE" create secret generic keep-openldap-env \
+  --from-env-file="$PRIVATE/openldap.env"
+oc -n "$NAMESPACE" create secret generic keep-openldap-seed \
+  --from-file="users.ldif=$PRIVATE/identity/openldap-users.ldif"
+oc -n "$NAMESPACE" create secret generic keep-adapi-mock-env \
+  --from-env-file="$PRIVATE/identity/adapi-mock.env"
+oc -n "$NAMESPACE" create configmap keep-adapi-mock-code \
+  --from-file=local_adapi.py=scripts/local_adapi.py
+oc -n "$NAMESPACE" create configmap keep-adapi-mock-directory \
+  --from-file="adapi-directory.json=$PRIVATE/identity/adapi-directory.json"
 oc -n "$NAMESPACE" create secret generic keep-identity-env \
   --from-env-file="$PRIVATE/identity.env"
 oc -n "$NAMESPACE" create secret generic keep-identity-bindings \
-  --from-file="local-directory.json=$PRIVATE/identity/local-directory.json" \
-  --from-file="keycloak-ca.crt=$PRIVATE/keycloak/ca.crt" \
   --from-file="postgres-ca.crt=$PRIVATE/postgres/ca.crt"
 oc -n "$NAMESPACE" create secret generic keep-kong-env \
   --from-env-file="$PRIVATE/kong.env"
@@ -242,20 +241,19 @@ the cluster's approved credential procedure; never use a password CLI flag.
 | Secret | Required keys/content |
 |---|---|
 | `keep-postgres-credentials` | `password` for the dedicated `keep_migrator` bootstrap/migration login. |
-| `keep-keycloak-db-credentials` | `password` for the isolated `keycloak` DB login. |
 | `keep-kong-db-credentials` | `password` for the isolated `kong` DB login. |
-| `keep-postgres-tls`, `keep-keycloak-db-tls`, `keep-kong-db-tls` | Each has `tls.crt`, `tls.key`; server SANs must include its Service DNS names used by clients. |
+| `keep-postgres-tls`, `keep-kong-db-tls` | Each has `tls.crt`, `tls.key`; server SANs must include its Service DNS names used by clients. |
 | `keep-redis-config` | `redis.conf` from this directory and private `users.acl`; example below. |
 | `keep-redis-tls` | `tls.crt`, `tls.key`, `ca.crt`; server SAN includes `keep-redis` and full service DNS when used. |
-| `keep-keycloak-env` | `KC_DB_PASSWORD` matching Keycloak DB; `KC_BOOTSTRAP_ADMIN_USERNAME`, `KC_BOOTSTRAP_ADMIN_PASSWORD` for initial setup. Remove bootstrap credentials after setup and roll the pod. |
-| `keep-keycloak-realm` | `keep-local-realm.json` from the dedicated test-identity preparation in the runbook. |
-| `keep-keycloak-tls` | `tls.crt`, `tls.key`; SANs include **localhost and public Keycloak route hostname**. |
-| `keep-keycloak-trust` | `postgres-ca.crt` for its JDBC connection and `application-ca.crt` trusting the application Route for signed backchannel logout; trusted CA certificates only. |
-| `keep-identity-env` | Dedicated identity publisher `KEEP_DATABASE_URL`, wrapping/epoch settings and `KEEP_LOCAL_DIRECTORY_SECRET`; see main runbook. |
-| `keep-identity-bindings` | `local-directory.json` pointing at `https://localhost:8443/realms/keep-local`, Keycloak CA and PostgreSQL CA at referenced `/etc/keep/` paths. |
+| `keep-openldap-env` | The supplied OpenLDAP image's own settings: suffix `dc=keep,dc=local`, admin `cn=admin,dc=keep,dc=local` with the generated `openldap-admin-password`, plain LDAP on port 1389, TLS off, and its seed directory `/run/openldap-seed`. Variable names depend on that image. |
+| `keep-openldap-seed` | `users.ldif` from the test-identity preparation: base entry, `ou=people` and one person per test user with `{SSHA}` password hashes only. |
+| `keep-adapi-mock-env` | `KEEP_ADAPI_CLIENT_ID` from the preparation's `adapi-mock.env`; the mock refuses any other `ClientId`. |
+| `keep-adapi-mock-code`, `keep-adapi-mock-directory` (ConfigMaps) | `local_adapi.py` from this checkout's `scripts/`, and the preparation's `adapi-directory.json` (names and groups, no passwords). |
+| `keep-identity-env` | Dedicated identity-tooling `KEEP_DATABASE_URL` (identity login), wrapping/epoch settings and the preparation's `publisher-identity.env` (`KEEP_ADAPI_URL`, `KEEP_ADAPI_CLIENT_ID`, `KEEP_SUPERADMIN_GROUP`); see main runbook. |
+| `keep-identity-bindings` | PostgreSQL CA at the `/etc/keep/` path the identity `KEEP_DATABASE_URL` references. |
 | `keep-kong-env` | `KONG_PG_PASSWORD` matching its isolated DB. Additional approved Kong settings as needed. |
 | `keep-kong-tls` | `server.crt`, `server.key` for proxy/admin HTTPS, with SANs for the public v2 host, `keep-kong` and direct `keep-kong-0.keep-kong-members`; `kong.crt`, `kong.key` for private-ingestion client mTLS; `ca-bundle.crt` trusts the Kong DB and private-ingestion server. |
-| `keep-api-env`, `keep-api-bindings` | Product API settings and referenced files; include CA files, development capacity profile, operator/recovery bindings when qualified. |
+| `keep-api-env`, `keep-api-bindings` | Product API settings and referenced files, including the preparation's `api-identity.env` (LDAP host `keep-openldap:389`, bind format, ADAPI URL and ClientId, super-admin group); include CA files, development capacity profile, operator/recovery bindings when qualified. |
 | `keep-ingestion-env`, `keep-ingestion-bindings` | Public ingestion settings and Kafka CA/client files only; never a Keep database credential. |
 | `keep-private-ingestion-env`, `keep-private-ingestion-bindings` | Private ingestion settings, Kafka files, gateway server/client CA and probe credentials; never a Keep database credential. |
 | `keep-processor-env`, `keep-processor-bindings` | Source worker settings and referenced TLS/profile files. |
@@ -295,8 +293,8 @@ The build verifies NSS wrapper exists. The wrapper uses the official initdb
 entrypoint, a PVC child directory, read-only TLS input copied into a UID-owned
 0600 private-key file, TLS-only network authentication and an `emptyDir` mounted at
 the official image's `/var/run/postgresql` socket directory. It never
-requests root, fixed runtime UID, privileged SCC or `anyuid`. The three PostgreSQL
-instances can select different approved majors for Keep, Keycloak and Kong.
+requests root, fixed runtime UID, privileged SCC or `anyuid`. The two PostgreSQL
+instances can select different approved majors for Keep and Kong.
 Choose versions supported by their actual clients and verify on the target cluster.
 Do not change the PostgreSQL major against an existing data PVC without its upgrade
 procedure. These standalone test databases are not an HA or backup design.
@@ -309,17 +307,34 @@ ephemeral data safely because PostgreSQL generation reconciliation repairs hints
 The PostgreSQL bootstrap account created by the upstream image is a superuser;
 it is used only for the migration/bootstrap operations. After migration, create
 separate restricted runtime logins as described in the runbook. Never mount its
-password in the API/workers/ingestion. Keycloak and Kong own their separate
-disposable test databases; tighten their bootstrap/runtime roles for a production
-deployment using their supported procedures.
+password in the API/workers/ingestion. Kong owns its separate disposable test
+database; tighten its bootstrap/runtime roles for a production deployment using
+its supported procedure.
+
+Test identity follows REV-73: a password is checked by one LDAP bind and people
+and groups come from ADAPI. In this bundle both are stand-ins, never the company
+directory. `openldap` must be an approved OpenLDAP image that runs under the
+namespace's arbitrary non-root UID with a read-only root filesystem, writes only to
+`/tmp` and `/var/lib/keep-openldap`, listens for plain LDAP on 1389 and loads
+`/run/openldap-seed/users.ldif` on an empty database. The local
+`osixia/openldap:1.5.0` image runs as root and does not meet this; choose or build a
+conforming image and verify it on the cluster (assistant-selected contract, not yet
+verified). Its data is ephemeral and reseeded from the LDIF on restart.
+`adapi_mock` runs the stdlib-only `scripts/local_adapi.py` and needs only Python
+3.13; mirror the base the Python repositories already build on, observed on
+2026-11-15 as `python:3.13-slim-bookworm@sha256:a5a7017efc5969e00ae2b91c8eb0631049a569652aa4ffc4501769049ae45c72`.
+It listens on 8080 with its test hooks off and reads its data from the ConfigMap;
+changing users or groups means replacing that ConfigMap, restarting the pod and
+running the refresh.
 
 The defaults are assistant-selected starting requests/limits for diagnostics.
 Override by service in `resource_overrides`, e.g.
 `"api": ["1", "2", "1Gi", "2Gi"]` means CPU request/limit and memory request/limit.
 All app replicas start at 0; initial test scale is usually 1. Increasing replicas
 requires rechecking DB pool totals, Kafka partition ownership, serving-pool proof
-and actual clock/profile applicability. The identity sidecar adds 100m/128Mi
-requested and 500m/512Mi limit to the Keycloak pod; it sleeps until explicit exec.
+and actual clock/profile applicability. The identity-tooling pod
+(`keep-directory-publication`) requests 100m/128Mi with a 500m/512Mi limit when
+scaled to one; it sleeps until an explicit `oc exec` runs the directory refresh.
 
 20Gi Keep PostgreSQL and 5Gi supporting PVCs are **smoke-test starting values**.
 The formal 250 deliveries/s for 24 hours produces 21.6 million accepted deliveries
@@ -332,16 +347,20 @@ deletion; never delete a namespace/PVC as routine rollback.
 
 Application/API/auth Routes share an origin; the API Routes go directly to Python
 so Next.js is not an extra proxy for SSE or long operator requests. Edge routes
-rely on the cluster router's trusted wildcard/domain certificates. Kong/Keycloak
-use passthrough TLS and their supplied matching certificates. Only v2 enters Kong;
+rely on the cluster router's trusted wildcard/domain certificates. Kong uses
+passthrough TLS and its supplied matching certificate. Only v2 enters Kong;
 private ingestion has no Route and only accepts Kong mTLS. Kong Admin has no Route
 and its policy permits Product API plus an explicitly labelled bootstrap pod.
+OpenLDAP and the mock ADAPI have no Route either. OpenLDAP admits only the Product
+API (clients use `keep-openldap:389`, which the Service maps to the pod's 1389);
+the mock admits the Product API and the identity-tooling pod. Both are plain,
+unencrypted services inside the namespace, as REV-73 accepts for the private network.
 
 Ingress NetworkPolicies use namespaced pod selectors and the actual router
 namespace selector. Anyone allowed to create pods in this test namespace can copy
 labels, so namespace RBAC is part of the boundary. Pod probes require the cluster's
 normal node-to-pod probe allowance. The bundle does **not** create egress policy:
-have the platform authorize DNS, route/OIDC reachability and supplied ES/Kafka/
+have the platform authorize DNS, route reachability and supplied ES/Kafka/
 Grafana endpoints including all advertised Kafka brokers. Do not add an invented
 CIDR or a permanent broad allow rule to work around an existing deny policy.
 
@@ -349,5 +368,4 @@ Read-only filesystems, arbitrary UID, SCC volume permissions, pull access, PVC
 provisioning, Routes, CNI policy, TLS, migrations, clients and capacity require
 target-cluster verification. Local renderer/unit checks cannot establish them.
 Useful primary references: [PostgreSQL official image](https://hub.docker.com/_/postgres),
-[Keycloak containers](https://www.keycloak.org/server/containers),
 [Kong PostgreSQL TLS](https://developer.konghq.com/gateway/postgresql-tls-reference/).

@@ -11,8 +11,9 @@ The schema is `{"current":"version-id","keys":{"version-id":"base64"},
 Every referenced ID must exist in `keys`, with standard base64 encoding of
 exactly 32 bytes. The displayed schema contains placeholders, not usable secrets.
 `purposes` is optional for legacy compatibility; omitted purposes use `current`.
-Supported purposes are `operator-key`, `session-tokens`, `session-csrf`, `login`,
-`receipt`, `cursor`, `search-cursor`, and `rewrap-cursor`. Supply separate
+Supported purposes are `operator-key`, `session-csrf`, `receipt`, `cursor`,
+`search-cursor`, and `rewrap-cursor`; REV-73 removed the provider-token and
+login-transaction purposes. Supply separate
 cursor/CSRF versions as required by system completion §21. Purpose and record
 identity remain authenticated even when reading a legacy shared wrapping key.
 
@@ -34,8 +35,8 @@ python -m keep.shared.rewrap operator-credentials --limit 100
 python -m keep.shared.rewrap operator-credentials --cursor '<returned next_cursor>'
 ```
 
-Run each family: `operator-credentials`, `session-tokens`, `session-csrf`,
-`login-transactions`, and `ingest-receipts`. Each invocation processes at most
+Run each family: `operator-credentials`, `session-csrf` and `ingest-receipts`.
+Each invocation processes at most
 100 records, yields after approximately 100 ms between records, and bounds each
 CAS statement to 100 ms with a 50 ms lock wait. The initial keyset read uses the
 database's ordinary bounded read timeout. Resume while `next_cursor` is non-null.
@@ -46,7 +47,7 @@ Changing the family's target requires restarting its scan.
 Rewrap authenticates both ciphertext layers under the original exact AAD, then
 rewraps the same data key. Payload ciphertext and payload nonce are unchanged.
 Database writes compare the exact old ciphertext and its AAD identity columns.
-A concurrent refresh, another rewrap, or ciphertext erasure wins that comparison;
+A concurrent write, another rewrap, or ciphertext erasure wins that comparison;
 the operation reports a conflict instead of overwriting or resurrecting material.
 No lifecycle, verifier, token identity, retry fingerprint or expiry is modified.
 Output contains only family/key IDs, counts, and encrypted continuation. Failure
@@ -57,13 +58,13 @@ families show zero `needs_rewrap` and resolve every conflict/error. A scan alone
 does not authorize removing a wrapping version: concurrent inserts can sort
 behind a keyset cursor, outstanding browser/search cursors are not stored here,
 and supported backups/restores may still need older keys. Preserve overlap for
-at least the longest valid client cursor/login transaction (currently 15-minute
-cursors and 10-minute login transactions), and preserve the recovery versions
+at least the longest valid client cursor (currently 15 minutes), and preserve
+the recovery versions
 required by the platform policy. The tool neither retires keys nor schedules
 their removal. The selected rotation schedule remains 90 days and compromise.
 
 Local verification uses actual AES-GCM and isolated PostgreSQL: purpose/AAD
 rejection, legacy overlap, unchanged ciphertext payload, fixed cursor expiry,
-all five record families, restricted worker role, bounded pages, parallel rewrap,
-revocation and refresh races. No company secret store or remote system is touched;
+all three record families, restricted worker role, bounded pages, parallel rewrap,
+and revocation and newer-ciphertext races. No company secret store or remote system is touched;
 these checks do not qualify production key custody or recovery.

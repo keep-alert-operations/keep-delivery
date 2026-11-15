@@ -4,10 +4,12 @@ param([ValidateSet('Start', 'Stop', 'Status', 'Refresh')][string]$Action = 'Stat
 $ErrorActionPreference = 'Stop'
 if ($Restart -and $Action -ne 'Start') { throw '-Restart is only valid with -Action Start.' }
 $repository = Split-Path -Parent $PSScriptRoot
-$state = Join-Path $repository '.local/keycloak'
+$state = Join-Path $repository '.local/identity'
 $python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
 $processFile = Join-Path $state 'processes.json'
+# The mock ADAPI (REV-73) serves .local/identity/adapi-directory.json on loopback only.
+$adapi = @{ Role='Adapi'; File=$python; Directory=$repository; Arguments=('scripts/local_adapi.py --host 127.0.0.1 --port 58092 --data "' + (Join-Path $state 'adapi-directory.json') + '" --client-id-env KEEP_ADAPI_CLIENT_ID') }
 
 function Invoke-Checked([scriptblock]$Command) {
     & $Command
@@ -20,94 +22,124 @@ function Get-OwnedProcess($record) {
     return $null
 }
 
+function Stop-Owned($record) {
+    $owned = Get-OwnedProcess $record
+    if ($owned) {
+        # Next's server child and the venv launcher's Python child belong to the exact process started by this script.
+        foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($owned.Id)")) { Stop-Process -Id $child.ProcessId -ErrorAction SilentlyContinue }
+        Stop-Process -Id $owned.Id -ErrorAction SilentlyContinue
+    }
+}
+
+function Save-Records {
+    @($script:records) | ConvertTo-Json -AsArray | Set-Content -LiteralPath $processFile -Encoding utf8
+}
+
+function Start-Owned([hashtable]$Definition) {
+    if (@($script:records | Where-Object { $_.Role -eq $Definition.Role -and (Get-OwnedProcess $_) }).Count) { return }
+    $process = Start-Process -FilePath $Definition.File -ArgumentList $Definition.Arguments -WorkingDirectory $Definition.Directory -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$($Definition.Role).out.log") -RedirectStandardError (Join-Path $state "$($Definition.Role).err.log")
+    $record = [pscustomobject]@{ Role=$Definition.Role; Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o') }
+    $script:records = @($script:records | Where-Object { $_.Role -ne $Definition.Role }) + @($record)
+    Save-Records
+}
+
+function Import-Environment {
+    $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
+    foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
+}
+
+function Invoke-DirectoryRefresh([switch]$Bootstrap) {
+    # One ADAPI publication as the worker login; it starts no directory worker and exits
+    # non-zero naming the roots that failed.
+    $apiDatabase = $env:KEEP_DATABASE_URL
+    $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
+    $env:KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED = if ($Bootstrap) { 'true' } else { 'false' }
+    try { Invoke-Checked { & $python -m keep.worker directory --once } }
+    finally {
+        $env:KEEP_DATABASE_URL = $apiDatabase
+        Remove-Item Env:KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED -ErrorAction SilentlyContinue
+    }
+}
+
+function Stop-LegacyIdentityContainers {
+    # REV-73 removed Keycloak. Stop (never delete) containers an older setup left running:
+    # the keycloak service of this project and the old keep-local-identity project.
+    # Their volumes are kept.
+    $ids = @(docker ps -q --filter 'label=com.docker.compose.project=keep-local-stack' --filter 'label=com.docker.compose.service=keycloak')
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot list local containers.' }
+    $ids += @(docker ps -q --filter 'label=com.docker.compose.project=keep-local-identity')
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot list local containers.' }
+    $ids = @($ids | Where-Object { $_ } | Select-Object -Unique)
+    if ($ids.Count) {
+        Invoke-Checked { docker stop @ids | Out-Null }
+        Write-Host "Stopped $($ids.Count) legacy identity container(s); their volumes were kept."
+    }
+}
+
 Push-Location -LiteralPath $repository
 try {
     $portJson = & $python scripts/local_v2.py ports
     if ($LASTEXITCODE -ne 0) { throw 'Invalid local port configuration; no services changed.' }
     $portValues = $portJson | ConvertFrom-Json
     foreach ($item in $portValues.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
-    $records = if (Test-Path -LiteralPath $processFile) { @(Get-Content -LiteralPath $processFile -Raw | ConvertFrom-Json) } else { @() }
+    $script:records = if (Test-Path -LiteralPath $processFile) { @(Get-Content -LiteralPath $processFile -Raw | ConvertFrom-Json) } else { @() }
     if ($Action -eq 'Stop') {
-        foreach ($record in $records) {
-            $owned = Get-OwnedProcess $record
-            if ($owned) {
-                # Next's server child belongs to the exact process started by this script.
-                $children = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($owned.Id)")
-                foreach ($child in $children) { Stop-Process -Id $child.ProcessId -ErrorAction SilentlyContinue }
-                Stop-Process -Id $owned.Id -ErrorAction SilentlyContinue
-            }
-        }
-        Invoke-Checked { docker compose -p keep-local-stack -f $compose stop keycloak }
-        Write-Host 'Local identity processes stopped; credentials and container volumes preserved.'
+        foreach ($record in $script:records) { Stop-Owned $record }
+        Invoke-Checked { docker compose -p keep-local-stack -f $compose stop openldap }
+        Write-Host 'Local identity processes and OpenLDAP stopped; credentials preserved.'
         return
     }
     if ($Action -eq 'Status') {
         Invoke-Checked { docker compose -p keep-local-stack -f $compose ps }
-        foreach ($record in $records) { Write-Host "$($record.Role): $([bool](Get-OwnedProcess $record))" }
+        foreach ($record in $script:records) { Write-Host "$($record.Role): $([bool](Get-OwnedProcess $record))" }
         return
     }
     if ($Action -eq 'Refresh') {
-        $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
-        foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
-        $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
-        Invoke-Checked { & $python -m keep.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once }
+        # Apply edits to credentials.json users (OpenLDAP) and adapi-directory.json (the
+        # mock), then publish once.
+        Import-Environment
+        Invoke-Checked { & $python scripts/local_identity.py configure }
+        Start-Owned $adapi
+        Invoke-Checked { & $python scripts/local_identity.py wait }
+        Invoke-Checked { & $python scripts/local_identity.py reload }
+        Invoke-DirectoryRefresh
         Write-Host 'Trusted local identity data refreshed once; no directory worker started.'
         return
     }
     # Retire only the directory process recorded and owned by this launcher.
-    foreach ($record in @($records | Where-Object { $_.Role -eq 'Directory' })) {
-        $owned = Get-OwnedProcess $record
-        if ($owned) {
-            foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($owned.Id)")) { Stop-Process -Id $child.ProcessId -ErrorAction SilentlyContinue }
-            Stop-Process -Id $owned.Id -ErrorAction SilentlyContinue
-        }
-    }
-    $records = @($records | Where-Object { $_.Role -ne 'Directory' })
-    if (Test-Path -LiteralPath $processFile) { $records | ConvertTo-Json -AsArray | Set-Content -LiteralPath $processFile -Encoding utf8 }
+    foreach ($record in @($script:records | Where-Object { $_.Role -eq 'Directory' })) { Stop-Owned $record }
+    $script:records = @($script:records | Where-Object { $_.Role -ne 'Directory' })
+    if (Test-Path -LiteralPath $processFile) { Save-Records }
     if ($Restart) {
-        foreach ($record in $records) {
-            $owned = Get-OwnedProcess $record
-            if ($owned) {
-                foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($owned.Id)")) { Stop-Process -Id $child.ProcessId -ErrorAction SilentlyContinue }
-                Stop-Process -Id $owned.Id -ErrorAction SilentlyContinue
-            }
-        }
-        $records = @()
+        foreach ($record in $script:records) { Stop-Owned $record }
+        $script:records = @()
     }
     Invoke-Checked { & $python scripts/local_identity.py prepare }
     Invoke-Checked { & $python scripts/local_v2.py prepare }
     Invoke-Checked { docker compose -p keep-local-runtime -f $compose stop kafka redis }
-    Invoke-Checked { docker compose -p keep-local-identity -f deploy/local/keycloak.compose.yaml stop keycloak }
+    Stop-LegacyIdentityContainers
     Invoke-Checked { docker compose -p keep-local-operators -f deploy/local/operators.compose.yaml stop }
     Invoke-Checked { docker compose -p keep-local-stack -f $compose up -d }
     Invoke-Checked { & $python scripts/local_identity.py database }
+    # After migration 0070 and before the first ADAPI publication; a no-op once done.
+    Invoke-Checked { & $python scripts/local_identity.py remap }
     Invoke-Checked { & $python scripts/local_identity.py environment }
-    $values = Get-Content -LiteralPath (Join-Path $state 'app-environment.json') -Raw | ConvertFrom-Json
-    foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
+    Import-Environment
+    Start-Owned $adapi
     Invoke-Checked { & $python scripts/local_identity.py wait }
     Invoke-Checked { & $python scripts/local_identity.py configure }
-    $apiDatabase = $env:KEEP_DATABASE_URL
-    $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
-    Invoke-Checked { & $python -m keep.identity.local_keycloak_worker --config (Join-Path $state 'directory.json') --once --bootstrap }
-    $env:KEEP_DATABASE_URL = $apiDatabase
+    Invoke-DirectoryRefresh -Bootstrap
     $node = (Get-Command node).Source
     $definitions = @(
         @{ Role='Api'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
         @{ Role='Ingestion'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.ingestion.main:create_app --factory --host 127.0.0.1 --port 58001 --no-access-log' },
         @{ Role='Frontend'; File=$node; Directory=(Join-Path (Split-Path -Parent $repository) 'keep-frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
     )
-    $current = @()
-    foreach ($definition in $definitions) {
-        $existing = @($records | Where-Object { $_.Role -eq $definition.Role -and (Get-OwnedProcess $_) })
-        if ($existing.Count) { $current += $existing; continue }
-        $process = Start-Process -FilePath $definition.File -ArgumentList $definition.Arguments -WorkingDirectory $definition.Directory -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$($definition.Role).out.log") -RedirectStandardError (Join-Path $state "$($definition.Role).err.log")
-        $current += @{ Role=$definition.Role; Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o') }
-        $current | ConvertTo-Json -AsArray | Set-Content -LiteralPath $processFile -Encoding utf8
-    }
+    foreach ($definition in $definitions) { Start-Owned $definition }
     $probe = @'
 import ssl,time,httpx
 from pathlib import Path
-certificate=Path('.local/keycloak/tls/localhost.pem')
+certificate=Path('.local/identity/tls/localhost.pem')
 with httpx.Client(verify=ssl.create_default_context(cafile=str(certificate)),trust_env=False) as client:
     for attempt in range(60):
         try:
@@ -121,10 +153,10 @@ with httpx.Client(verify=ssl.create_default_context(cafile=str(certificate)),tru
             pass
         time.sleep(1)
     else:
-        raise SystemExit('API/ingestion/frontend startup failed; inspect .local/keycloak logs.')
+        raise SystemExit('API/ingestion/frontend startup failed; inspect .local/identity logs.')
 '@
     Invoke-Checked { & $python -c $probe }
-    foreach ($record in $current) { if (-not (Get-OwnedProcess $record)) { throw "$($record.Role) exited during startup; inspect its local log." } }
-    Write-Host 'Keep: https://localhost:3443 | Keycloak: https://localhost:58443/admin/'
-    Write-Host 'Local username/password credentials: .local/keycloak/credentials.json'
+    foreach ($record in $script:records) { if (-not (Get-OwnedProcess $record)) { throw "$($record.Role) exited during startup; inspect its local log." } }
+    Write-Host 'Keep: https://localhost:3443 | OpenLDAP: ldap://127.0.0.1:58389 | mock ADAPI: http://127.0.0.1:58092'
+    Write-Host 'Local usernames and passwords: .local/identity/credentials.json'
 } finally { Pop-Location }

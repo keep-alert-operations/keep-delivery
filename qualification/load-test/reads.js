@@ -20,7 +20,7 @@ requireThat(config.pauseSeconds >= 0.25 && config.pauseSeconds <= 60, 'pauseSeco
 requireThat(seconds(config.duration) <= 3600, 'Read chunks limited to one hour: repeat with fresh normal logins');
 requireThat(typeof config.searchCEL === 'string' && config.searchCEL.length > 0, 'Supply an actual searchCEL expression');
 requireThat(Array.isArray(accounts) && accounts.length === config.vus, 'Exactly one signed-in account/session per VU required');
-requireThat(accounts.every((a) => uuid.test(a.principal_id) && /^[A-Za-z0-9_-]{20,128}$/.test(a.cookie)), 'Use principal_id and __Host-keep_session value from normal OIDC sessions');
+requireThat(accounts.every((a) => uuid.test(a.principal_id) && /^[A-Za-z0-9_-]{20,128}$/.test(a.cookie)), 'Use principal_id and __Host-keep_session value from normal sign-in sessions');
 requireThat(new Set(accounts.map((a) => a.principal_id)).size === config.vus && new Set(accounts.map((a) => a.cookie)).size === config.vus, 'Use distinct test accounts and sessions');
 
 const readOK = new Rate('keep_read_ok');
@@ -67,10 +67,8 @@ function session() {
   if (!loaded && expires < now + (seconds(config.duration) + 90) * 1000) {
     exec.test.abort('Session will expire during this read chunk; sign in normally and mount fresh sessions.');
   }
-  if (expires < now + 60000) exec.test.abort('Session is near absolute expiry; fresh normal OIDC sign-in is required.');
-  // This explicitly models active users. Ordinary reads do not bypass idle expiry.
-  const activity = checkedJSON(request('POST', '/auth/activity', {}, 'user_activity'), 'Active-user session activity');
-  ensureRuntime(activity?.data?.accepted === true, 'Session activity was not accepted');
+  if (expires < now + 60000) exec.test.abort('Session is near absolute expiry; fresh normal sign-in is required.');
+  // REV-73: sessions have a 24-hour absolute limit and no idle timeout or activity call.
   refreshed = now;
 }
 
@@ -105,7 +103,7 @@ export default function () {
   const searchOK = search.status === 200 && feed && Array.isArray(feed.data) && !!feed.meta?.evaluated_at;
   readOK.add(!!searchOK);
   check(search, {'search returns an evaluated alert page': () => !!searchOK});
-  if (search.status === 401 || search.status === 403) exec.test.abort('Session/access failed; obtain fresh normal OIDC sessions.');
+  if (search.status === 401 || search.status === 403) exec.test.abort('Session/access failed; obtain fresh normal sign-in sessions.');
   sleep(config.pauseSeconds);
 }
 

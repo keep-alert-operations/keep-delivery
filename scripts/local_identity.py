@@ -1,15 +1,27 @@
-"""Prepare isolated native Keycloak identities; secrets stay in ignored local files."""
+"""Prepare local OpenLDAP and mock ADAPI identities (REV-73); secrets stay in ignored files.
+
+Local sign-in binds against OpenLDAP and reads people and groups from the mock ADAPI
+(``scripts/local_adapi.py``). Everything private lives in ``.local/identity/``:
+``credentials.json`` (user passwords, the OpenLDAP admin password, the ADAPI ClientId,
+database role passwords, the wrapping key and the deployment epoch), ``tls/``,
+``adapi-directory.json`` (the mock's data) and ``app-environment.json``.
+
+An older setup kept these under ``.local/keycloak/``. ``prepare`` copies their values
+once, unchanged, and leaves that folder in place; it never regenerates a key, password
+or epoch that already exists. ``remap`` then moves the old local principals to their
+ADAPI keys by UPDATE, so every grant, assignment and history row keeps its principal.
+"""
 
 import argparse
 import base64
 import hashlib
-import hmac
 import ipaddress
 import json
 import os
 import secrets
-import struct
+import shutil
 import subprocess
+import sys
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -17,23 +29,70 @@ from pathlib import Path
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
-STATE = ROOT / ".local/keycloak"
-ISSUER = "https://localhost:58443/realms/keep-local"
+STATE = ROOT / ".local/identity"
 ORIGIN = "https://localhost:3443"
-BACKCHANNEL = "https://host.docker.internal:3443/auth/backchannel-logout"
+LDAP_HOST = "127.0.0.1"
+LDAP_PORT = 58389
+BASE_DN = "dc=keep,dc=local"
+PEOPLE_DN = "ou=people," + BASE_DN
+ADMIN_DN = "cn=admin," + BASE_DN
+BIND_FORMAT = "uid={username}," + PEOPLE_DN
+ADAPI_URL = "http://127.0.0.1:58092"
+SOURCE = "adapi"
+SUPERADMIN_GROUP = "keep-administrators"
+# The mock's groups: keep-developers reaches keep-dev-announce, a distribution group.
+GROUPS = (
+    {"sAMAccountName": SUPERADMIN_GROUP, "cn": "Keep Administrators",
+     "displayName": "Keep Administrators"},
+    {"sAMAccountName": "keep-developers", "cn": "Developers", "displayName": "Developers",
+     "nested": ("keep-dev-announce",)},
+    {"sAMAccountName": "keep-dev-announce", "cn": "Developer Announcements",
+     "distribution": True},
+    {"sAMAccountName": "keep-observers", "cn": "Observers", "displayName": "Observers"},
+)
+# username, label, direct groups, disabled (userAccountControl 514 in the mock).
+USERS = (
+    ("local-admin", "Local Administrator", (SUPERADMIN_GROUP,), False),
+    ("local-editor", "Local Editor", ("keep-developers",), False),
+    ("local-viewer", "Local Viewer", ("keep-observers",), False),
+    ("local-hebrew", "משתמש Local Hebrew", ("keep-developers",), False),
+    ("local-distribution", "Local Distribution", ("keep-dev-announce",), False),
+    ("local-disabled", "Local Disabled", ("keep-dev-announce",), True),
+)
+# One-time move from the earlier local identity provider (REV-73). Its principals used
+# source "keycloak-local" and UUID object ids; its groups are keyed by their real labels.
+LEGACY_SOURCE = "keycloak-local"
+LEGACY_GROUPS = {
+    "Keep Administrators": SUPERADMIN_GROUP,
+    "Developers": "keep-developers",
+    "Observers": "keep-observers",
+}
+# Values that must survive the move unchanged; a missing one is restored, never invented.
+PRESERVED = ("wrapping_key", "deployment_epoch")
+COPIED = ("api_password", "worker_password")
+
+
+class RemapError(RuntimeError):
+    """The remap refused before changing anything."""
+
+
+def legacy_state():
+    return ROOT / ".local/keycloak"
+
+
+def read(path):
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def save(path, value):
-    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    """Write JSON atomically, so an interrupted run never leaves a half-written secret."""
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
 
 
-def mapper(name, provider):
-    return {
-        "name": name,
-        "protocol": "openid-connect",
-        "protocolMapper": provider,
-        "config": {"id.token.claim": "true", "access.token.claim": "true"},
-    }
+def credentials():
+    return read(STATE / "credentials.json")
 
 
 def tls():
@@ -102,192 +161,139 @@ def tls():
     print("Issued local TLS certificate; existing private key preserved when present.")
 
 
+def generated_password(username):
+    if username == "local-hebrew":
+        # A mixed Hebrew/English password exercises the UTF-8 bind (REV-73).
+        return "שלום-Keep-" + secrets.token_urlsafe(12)
+    return secrets.token_urlsafe(24)
+
+
+def moved_credentials(legacy):
+    """The earlier setup's values, copied unchanged: keys, epoch, role and user passwords."""
+    missing = [field for field in PRESERVED if not legacy.get(field)]
+    if missing:
+        raise RuntimeError(
+            "The earlier local credentials lack " + ", ".join(missing)
+            + "; restore .local/keycloak/credentials.json from a backup before preparing"
+        )
+    creds = {field: legacy[field] for field in PRESERVED}
+    creds.update({field: legacy[field] for field in COPIED if legacy.get(field)})
+    users = {}
+    for username, user in legacy.get("users", {}).items():
+        group = LEGACY_GROUPS.get(user.get("group"))
+        users[username] = {
+            "password": user["password"],
+            "label": user.get("label") or username,
+            "groups": [group] if group else [],
+        }
+    creds["users"] = users
+    creds["remap"] = {
+        "source": LEGACY_SOURCE,
+        "users": {name: user["id"] for name, user in legacy.get("users", {}).items()
+                  if user.get("id")},
+        "groups": dict(legacy.get("groups", {})),
+    }
+    return creds
+
+
+def complete(creds):
+    """Add only values that never existed; existing ones are never replaced."""
+    users = creds.setdefault("users", {})
+    for username, label, groups, disabled in USERS:
+        if username not in users:
+            users[username] = {
+                "password": generated_password(username),
+                "label": label,
+                "groups": list(groups),
+                **({"disabled": True} if disabled else {}),
+            }
+    creds.setdefault("ldap_admin_password", secrets.token_urlsafe(32))
+    creds.setdefault("adapi_client_id", secrets.token_urlsafe(32))
+    return creds
+
+
+def directory_data(creds):
+    """The mock ADAPI's people and groups, built from the local users."""
+    members = {group["sAMAccountName"]: [] for group in GROUPS}
+    for username, user in creds["users"].items():
+        for group in user.get("groups", []):
+            members.setdefault(group, []).append(username)
+    groups = []
+    for group in GROUPS:
+        name = group["sAMAccountName"]
+        entry = {key: value for key, value in group.items() if key != "nested"}
+        entry["members"] = members.pop(name) + list(group.get("nested", ()))
+        groups.append(entry)
+    groups.extend({"sAMAccountName": name, "members": names} for name, names in members.items())
+    users = [
+        {"sAMAccountName": username, "displayName": user["label"],
+         **({"disabled": True} if user.get("disabled") else {})}
+        for username, user in creds["users"].items()
+    ]
+    return {"users": users, "groups": groups}
+
+
 def prepare():
     STATE.mkdir(parents=True, exist_ok=True)
     postgres_password = ROOT / ".local/postgres-password.txt"
     if not postgres_password.exists():
         postgres_password.write_text(secrets.token_urlsafe(32) + "\n", encoding="utf-8")
-    if (STATE / "credentials.json").exists():
-        print("Existing local credentials preserved.")
-        return
-    (STATE / "import").mkdir(exist_ok=True)
-    tls()
-    groups = {
-        name: str(uuid.uuid4())
-        for name in ("Keep Administrators", "Developers", "Observers")
-    }
-    users = {}
-    for username, label, group in (
-        ("local-admin", "Local Administrator", "Keep Administrators"),
-        ("local-editor", "Local Editor", "Developers"),
-        ("local-viewer", "Local Viewer", "Observers"),
-    ):
-        users[username] = {
-            "id": str(uuid.uuid4()),
-            "password": secrets.token_urlsafe(24),
-            "label": label,
-            "group": group,
+    path = STATE / "credentials.json"
+    legacy = legacy_state()
+    if path.exists():
+        creds = read(path)
+        missing = [field for field in PRESERVED if not creds.get(field)]
+        if missing:
+            raise RuntimeError(
+                "Local credentials lack " + ", ".join(missing)
+                + "; restore .local/identity/credentials.json from a backup"
+            )
+        outcome = "Existing local credentials preserved."
+    elif (legacy / "credentials.json").exists():
+        creds = moved_credentials(read(legacy / "credentials.json"))
+        for name in ("localhost.pem", "localhost-key.pem"):
+            source, target = legacy / "tls" / name, STATE / "tls" / name
+            if source.exists() and not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+        processes = legacy / "processes.json"
+        if processes.exists() and not (STATE / "processes.json").exists():
+            # Launcher records let Start/Stop find processes an earlier Start owned.
+            shutil.copy2(processes, STATE / "processes.json")
+        outcome = (
+            "Moved local credentials, keys and TLS from .local/keycloak to .local/identity"
+            " with their values unchanged; .local/keycloak was left in place."
+        )
+    else:
+        creds = {
+            "wrapping_key": base64.b64encode(secrets.token_bytes(32)).decode(),
+            "deployment_epoch": str(uuid.uuid4()),
         }
-    credentials = {
-        "users": users,
-        "groups": groups,
-        "console_username": "bootstrap-admin",
-        "console_password": secrets.token_urlsafe(32),
-        "web_secret": secrets.token_urlsafe(32),
-        "directory_secret": secrets.token_urlsafe(32),
-        "wrapping_key": base64.b64encode(secrets.token_bytes(32)).decode(),
-        "deployment_epoch": str(uuid.uuid4()),
-    }
-    realm = {
-        "realm": "keep-local",
-        "enabled": True,
-        "displayName": "Keep local development",
-        "sslRequired": "all",
-        "registrationAllowed": False,
-        "rememberMe": False,
-        "resetPasswordAllowed": False,
-        "bruteForceProtected": True,
-        "failureFactor": 5,
-        "waitIncrementSeconds": 900,
-        "maxFailureWaitSeconds": 900,
-        "ssoSessionIdleTimeout": 1800,
-        "ssoSessionMaxLifespan": 86400,
-        "accessTokenLifespan": 300,
-        "revokeRefreshToken": True,
-        "refreshTokenMaxReuse": 0,
-        "attributes": {"CreateDefaultClientScopes": "true"},
-        "browserFlow": "keep-password",
-        "authenticationFlows": [
-            {
-                "alias": "keep-password",
-                "providerId": "basic-flow",
-                "topLevel": True,
-                "builtIn": False,
-                "authenticationExecutions": [
-                    {
-                        "authenticator": "auth-username-password-form",
-                        "requirement": "REQUIRED",
-                        "priority": 10,
-                        "authenticatorFlow": False,
-                        "authenticatorConfig": "keep-password-evidence",
-                    },
-                ],
-            }
-        ],
-        "authenticatorConfig": [
-            {
-                "alias": "keep-password-evidence",
-                "config": {
-                    "default.reference.value": "pwd",
-                    "default.reference.maxAge": "86400",
-                },
-            },
-        ],
-        "groups": [{"id": ident, "name": label} for label, ident in groups.items()],
-        "clientScopes": [
-            {
-                "name": "keep-directory",
-                "protocol": "openid-connect",
-                "attributes": {"include.in.token.scope": "true"},
-            }
-        ],
-        "clients": [
-            {
-                "clientId": "keep-web",
-                "enabled": True,
-                "protocol": "openid-connect",
-                "publicClient": False,
-                "secret": credentials["web_secret"],
-                "standardFlowEnabled": True,
-                "directAccessGrantsEnabled": False,
-                "implicitFlowEnabled": False,
-                "serviceAccountsEnabled": False,
-                "redirectUris": [ORIGIN + "/auth/callback"],
-                "webOrigins": [ORIGIN],
-                "attributes": {
-                    "login_theme": "keep",
-                    "pkce.code.challenge.method": "S256",
-                    "post.logout.redirect.uris": ORIGIN + "/signed-out",
-                    "backchannel.logout.url": BACKCHANNEL,
-                    "backchannel.logout.session.required": "true",
-                },
-                "defaultClientScopes": ["basic", "profile", "keep-directory"],
-                "optionalClientScopes": [],
-                "protocolMappers": [
-                    mapper("amr", "oidc-amr-mapper"),
-                    mapper("acr", "oidc-acr-mapper"),
-                ],
-            },
-            {
-                "clientId": "keep-directory",
-                "enabled": True,
-                "protocol": "openid-connect",
-                "publicClient": False,
-                "secret": credentials["directory_secret"],
-                "standardFlowEnabled": False,
-                "directAccessGrantsEnabled": False,
-                "implicitFlowEnabled": False,
-                "serviceAccountsEnabled": True,
-                "defaultClientScopes": ["roles"],
-            },
-        ],
-        "users": [
-            {
-                "username": username,
-                "id": user["id"],
-                "enabled": True,
-                "firstName": user["label"].split(" ", 1)[0],
-                "lastName": user["label"].split(" ", 1)[1],
-                "email": username + "@example.invalid",
-                "emailVerified": True,
-                "groups": ["/" + user["group"]],
-                "credentials": [
-                    {"type": "password", "value": user["password"], "temporary": False},
-                ],
-            }
-            for username, user in users.items()
-        ]
-        + [
-            {
-                "username": "service-account-keep-directory",
-                "enabled": True,
-                "serviceAccountClientId": "keep-directory",
-                "clientRoles": {
-                    "realm-management": ["view-users", "query-users", "query-groups"]
-                },
-            }
-        ],
-    }
-    save(STATE / "import/keep-local-realm.json", realm)
-    (STATE / "bootstrap.env").write_text(
-        "KC_BOOTSTRAP_ADMIN_USERNAME=bootstrap-admin\nKC_BOOTSTRAP_ADMIN_PASSWORD="
-        + credentials["console_password"]
-        + "\n",
-        encoding="utf-8",
-    )
-    save(
-        STATE / "directory.json",
-        {
-            "issuer": ISSUER,
-            "source": "keycloak-local",
-            "client_id": "keep-directory",
-            "client_secret_env": "KEEP_LOCAL_DIRECTORY_SECRET",
-            "ca_file": str(STATE / "tls/localhost.pem"),
-            "superadmin_group": groups["Keep Administrators"],
-            "max_objects": 1000,
-            "page_size": 100,
-            "max_pages": 1000,
-            "local_only": True,
-        },
-    )
-    save(STATE / "credentials.json", credentials)
-    print(
-        "Prepared private local credentials, realm import and localhost TLS certificate."
+        outcome = "Prepared private local credentials."
+    complete(creds)
+    tls()
+    secret = STATE / "openldap-admin-password.txt"
+    if not secret.exists() or secret.read_text(encoding="utf-8") != creds["ldap_admin_password"]:
+        secret.write_text(creds["ldap_admin_password"], encoding="utf-8")
+    directory = STATE / "adapi-directory.json"
+    if not directory.exists():
+        save(directory, directory_data(creds))
+    # Credentials last: an interrupted move simply runs again from the earlier folder.
+    save(path, creds)
+    print(outcome)
+
+
+def admin_url():
+    return os.environ.get(
+        "KEEP_LOCAL_DATABASE_ADMIN_URL",
+        "postgresql://keep_migrator:"
+        + quote((ROOT / ".local/postgres-password.txt").read_text().strip(), safe="")
+        + "@127.0.0.1:55433/postgres?connect_timeout=5",
     )
 
 
 def environment():
-    creds = json.loads((STATE / "credentials.json").read_text())
+    creds = credentials()
     capacity_profile = ROOT / "qualification/development-capacity.json"
     operator_path = ROOT / ".local/operators/credentials.json"
     operator_values = {}
@@ -323,16 +329,15 @@ def environment():
         "KEEP_WRAPPING_KEY": creds["wrapping_key"],
         "KEEP_DEPLOYMENT_EPOCH": creds["deployment_epoch"],
         "KEEP_PUBLIC_ORIGIN": ORIGIN,
-        "KEEP_OIDC_ISSUER": ISSUER,
-        "KEEP_OIDC_CLIENT_SECRET": creds["web_secret"],
-        "KEEP_OIDC_DIRECTORY_SOURCE": "keycloak-local",
-        "KEEP_OIDC_DIRECTORY_ID_CLAIM": "sub",
-        "KEEP_OIDC_DIRECTORY_SCOPE": "keep-directory",
-        "KEEP_OIDC_REQUIRED_ACR": "1",
-        "KEEP_OIDC_REQUIRED_AMR": '["pwd"]',
-        "KEEP_OIDC_CA_FILE": str(STATE / "tls/localhost.pem"),
-        "KEEP_SUPERADMIN_GROUP": creds["groups"]["Keep Administrators"],
-        "KEEP_LOCAL_DIRECTORY_SECRET": creds["directory_secret"],
+        # REV-73: one LDAP bind checks the password (plain LDAP locally); people and
+        # groups come from the mock ADAPI. The refresh command reads the same values.
+        "KEEP_LDAP_HOST": LDAP_HOST,
+        "KEEP_LDAP_PORT": str(LDAP_PORT),
+        "KEEP_LDAP_USE_TLS": "false",
+        "KEEP_LDAP_BIND_FORMAT": BIND_FORMAT,
+        "KEEP_ADAPI_URL": ADAPI_URL,
+        "KEEP_ADAPI_CLIENT_ID": creds["adapi_client_id"],
+        "KEEP_SUPERADMIN_GROUP": SUPERADMIN_GROUP,
         "KEEP_ELASTICSEARCH_URL": "http://127.0.0.1:59201",
         "KEEP_ELASTICSEARCH_INDEX": "keep-local-alerts",
         "KEEP_CAPACITY_PROFILE": str(capacity_profile),
@@ -364,12 +369,7 @@ def database():
     from psycopg import sql
     from psycopg.conninfo import make_conninfo
 
-    admin = os.environ.get(
-        "KEEP_LOCAL_DATABASE_ADMIN_URL",
-        "postgresql://keep_migrator:"
-        + quote((ROOT / ".local/postgres-password.txt").read_text().strip(), safe="")
-        + "@127.0.0.1:55433/postgres?connect_timeout=5",
-    )
+    admin = admin_url()
     dump = ROOT / ".local/runtime/keep-local-migration.dump"
     marker = ROOT / ".local/runtime/keep-local-migration.restored.json"
     restore_existing = dump.exists() and not marker.exists()
@@ -421,7 +421,7 @@ def database():
             cwd=ROOT,
         )
     migrate(make_conninfo(admin, dbname="keep_local"), migration_directory())
-    creds = json.loads((STATE / "credentials.json").read_text())
+    creds = credentials()
     with psycopg.connect(admin) as conn:
         for role, parent, field in (
             ("keep_local_api", "keep_api", "api_password"),
@@ -461,251 +461,284 @@ def database():
     print("Dedicated keep_local database migrated.")
 
 
-def wait():
-    import ssl
+def remap_mapping(creds, directory):
+    """Old object id -> (kind, samAccountName) from credentials.json; refuses on gaps."""
+    legacy = creds.get("remap") or {}
+    users = legacy.get("users", {})
+    groups = legacy.get("groups", {})
+    problems = []
+    unknown = sorted(label for label in groups if label not in LEGACY_GROUPS)
+    if unknown:
+        problems.append("group labels without a samAccountName: " + ", ".join(unknown))
+    unlisted = sorted(name for name in users if name not in creds.get("users", {}))
+    if unlisted:
+        problems.append("users missing from credentials.json users: " + ", ".join(unlisted))
+    mapping = {}
+    for name, object_id in users.items():
+        mapping[str(object_id)] = ("user", name.lower())
+    for label, object_id in groups.items():
+        if label in LEGACY_GROUPS:
+            mapping[str(object_id)] = ("team", LEGACY_GROUPS[label])
+    known = {
+        "user": {str(row.get("sAMAccountName", "")).lower() for row in directory.get("users", [])},
+        "team": {str(row.get("sAMAccountName", "")).lower() for row in directory.get("groups", [])},
+    }
+    absent = sorted(name for kind, name in mapping.values() if name not in known[kind])
+    if absent:
+        problems.append("names missing from adapi-directory.json: " + ", ".join(absent))
+    targets = [name for _, name in mapping.values()]
+    duplicates = sorted({name for name in targets if targets.count(name) > 1})
+    if duplicates:
+        problems.append("names mapped twice: " + ", ".join(duplicates))
+    if problems:
+        raise RemapError("Remap stopped before changing anything; " + "; ".join(problems))
+    return mapping
 
-    import httpx
 
-    with httpx.Client(
-        verify=ssl.create_default_context(cafile=str(STATE / "tls/localhost.pem")),
-        trust_env=False,
-    ) as client:
-        for _ in range(90):
-            try:
-                response = client.get(
-                    ISSUER + "/.well-known/openid-configuration", timeout=3
+def remap(dry_run=False, dsn=None, creds=None, directory=None, out=print):
+    """Move ``keycloak-local`` principals to ``('adapi', samAccountName)`` in place.
+
+    Runs after migration 0070 and before the first ADAPI publication: the UPDATE keeps
+    each principal's id, so grants, memberships, sessions, assignments and history keep
+    pointing at the same person or group. Returns ``{"planned", "unmapped", "applied"}``.
+    """
+    import psycopg
+    from psycopg.conninfo import make_conninfo
+
+    creds = credentials() if creds is None else creds
+    if directory is None:
+        directory = read(STATE / "adapi-directory.json")
+    dsn = make_conninfo(admin_url(), dbname="keep_local") if dsn is None else dsn
+    result = {"planned": [], "unmapped": [], "applied": False}
+    with psycopg.connect(dsn) as conn:
+        ledger = conn.execute("SELECT to_regclass('public.schema_migrations')").fetchone()[0]
+        if not ledger or not conn.execute(
+            "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name LIKE %s)", ("0070\\_%",)
+        ).fetchone()[0]:
+            raise RemapError("Remap needs migration 0070; run local_identity.py database first")
+        # The identity guard first, as every directory mutation takes it.
+        conn.execute("SELECT 1 FROM authorization_guards WHERE scope='identity' FOR UPDATE")
+        rows = conn.execute(
+            "SELECT id, object_id, kind, display_name FROM principals "
+            "WHERE directory_source=%s ORDER BY kind, display_name, object_id",
+            (LEGACY_SOURCE,),
+        ).fetchall()
+        if not rows:
+            out(f"No {LEGACY_SOURCE} principals; nothing to remap.")
+            return result
+        mapping = remap_mapping(creds, directory)
+        for principal_id, object_id, kind, label in rows:
+            if object_id not in mapping:
+                result["unmapped"].append((principal_id, object_id, kind, label))
+                continue
+            expected, name = mapping[object_id]
+            if expected != kind:
+                raise RemapError(
+                    f"Remap stopped before changing anything; {object_id} is a {kind},"
+                    f" but credentials.json names it as a {expected}"
                 )
-                if response.status_code == 200 and response.json()["issuer"] == ISSUER:
-                    print("Local Keycloak HTTPS discovery verified.")
-                    return
-            except (httpx.HTTPError, ValueError, KeyError):
-                pass
+            result["planned"].append((principal_id, object_id, kind, name))
+        mode = " (dry run)" if dry_run else ""
+        out(
+            f"Principal remap {LEGACY_SOURCE} -> {SOURCE}{mode}: {len(result['planned'])}"
+            f" planned, {len(result['unmapped'])} left unmapped."
+        )
+        for _, object_id, kind, name in result["planned"]:
+            out(f"  {kind} {object_id} -> {name}")
+        for _, object_id, kind, label in result["unmapped"]:
+            out(f"  left unmapped: {kind} {object_id} {json.dumps(label)}"
+                f" (stays {LEGACY_SOURCE}; add it to the mock ADAPI and remap by hand if needed)")
+        names = [name for *_, name in result["planned"]]
+        existing = [
+            row[0]
+            for row in conn.execute(
+                "SELECT object_id FROM principals WHERE directory_source=%s"
+                " AND object_id = ANY(%s::text[]) ORDER BY object_id",
+                (SOURCE, names),
+            ).fetchall()
+        ] if names else []
+        if existing:
+            raise RemapError(
+                f"Remap refused; ({SOURCE}, name) principals already exist for "
+                + ", ".join(existing)
+                + ". Restore the database backup taken before the first ADAPI refresh."
+            )
+        if dry_run:
+            conn.rollback()
+            out("Dry run: nothing changed.")
+            return result
+        for principal_id, object_id, _, name in result["planned"]:
+            changed = conn.execute(
+                "UPDATE principals SET directory_source=%s, object_id=%s"
+                " WHERE id=%s AND directory_source=%s AND object_id=%s",
+                (SOURCE, name, principal_id, LEGACY_SOURCE, object_id),
+            ).rowcount
+            if changed != 1:
+                raise RemapError(f"Remap stopped; principal {principal_id} changed meanwhile")
+        if result["planned"]:
+            # Identity keys changed: fence in-flight visibility proofs once (0038).
+            conn.execute(
+                "UPDATE authorization_guards SET directory_revision=directory_revision+1"
+                " WHERE scope='identity'"
+            )
+            result["applied"] = True
+            out(f"Remapped {len(result['planned'])} principals; ids and references unchanged.")
+    return result
+
+
+def wait(timeout=180):
+    """Wait until OpenLDAP accepts the admin bind and the mock ADAPI answers."""
+    import httpx
+    import ldap3
+    from ldap3.core.exceptions import LDAPException
+
+    creds = credentials()
+    deadline = time.monotonic() + timeout
+    ready = {"ldap": False, "adapi": False}
+    with httpx.Client(trust_env=False, timeout=3) as client:
+        while time.monotonic() < deadline:
+            if not ready["ldap"]:
+                try:
+                    ldap3.Connection(
+                        ldap3.Server(LDAP_HOST, port=LDAP_PORT, connect_timeout=2),
+                        user=ADMIN_DN, password=creds["ldap_admin_password"],
+                        receive_timeout=3, raise_exceptions=True, auto_bind=True,
+                    ).unbind()
+                    ready["ldap"] = True
+                except LDAPException:
+                    pass
+            if not ready["adapi"]:
+                try:
+                    response = client.get(
+                        ADAPI_URL + "/groups",
+                        params={"samAccountName": SUPERADMIN_GROUP},
+                        headers={"ClientId": creds["adapi_client_id"]},
+                    )
+                    ready["adapi"] = response.status_code == 200 and len(response.json()) == 1
+                except (httpx.HTTPError, ValueError):
+                    pass
+            if all(ready.values()):
+                print("Local OpenLDAP bind and mock ADAPI verified.")
+                return
             time.sleep(2)
+    waiting = " and ".join(name for name, value in ready.items() if not value)
     raise RuntimeError(
-        "Local Keycloak did not become ready; inspect its container logs"
+        f"Local {waiting} did not become ready; inspect `docker compose -p keep-local-stack"
+        " logs openldap` and .local/identity/Adapi.err.log"
     )
 
 
-def configure_password_login(client, origin):
-    """Upgrade the isolated Keep realm, including already enrolled users."""
-    realm_url = origin + "/admin/realms/keep-local"
-    response = client.get(realm_url)
-    response.raise_for_status()
-    alias = response.json()["browserFlow"]
-    if alias not in {"keep-password", "keep-password-otp"}:
-        raise RuntimeError("Unexpected local browser flow; refusing to alter it")
-    executions_url = realm_url + f"/authentication/flows/{alias}/executions"
-    response = client.get(executions_url)
-    response.raise_for_status()
-    for execution in response.json():
-        if execution.get("providerId") == "auth-otp-form":
-            execution["requirement"] = "DISABLED"
-            response = client.put(executions_url, json=execution)
-            response.raise_for_status()
+def ssha(password):
+    """An OpenLDAP ``{SSHA}`` userPassword; the password is hashed as UTF-8 bytes."""
+    salt = secrets.token_bytes(8)
+    digest = hashlib.sha1(password.encode("utf-8") + salt).digest()
+    return "{SSHA}" + base64.b64encode(digest + salt).decode("ascii")
 
-    action_url = realm_url + "/authentication/required-actions/CONFIGURE_TOTP"
-    response = client.get(action_url)
-    response.raise_for_status()
-    action = response.json()
-    action.update(enabled=False, defaultAction=False)
-    response = client.put(action_url, json=action)
-    response.raise_for_status()
-    first = 0
+
+def seed(creds):
+    """Add every local user to OpenLDAP, or reset its password and name; idempotent."""
+    import ldap3
+    from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult
+
+    server = ldap3.Server(LDAP_HOST, port=LDAP_PORT, connect_timeout=2)
+    conn = ldap3.Connection(
+        server, user=ADMIN_DN, password=creds["ldap_admin_password"],
+        receive_timeout=5, raise_exceptions=True, auto_bind=True,
+    )
+    try:
+        try:
+            conn.add(PEOPLE_DN, ["organizationalUnit", "top"], {"ou": "people"})
+        except LDAPEntryAlreadyExistsResult:
+            pass
+        for username, user in creds["users"].items():
+            dn = BIND_FORMAT.format(username=username)
+            values = {"cn": user["label"], "displayName": user["label"],
+                      "userPassword": ssha(user["password"])}
+            try:
+                conn.add(dn, ["inetOrgPerson", "organizationalPerson", "person", "top"],
+                         {**values, "sn": username, "uid": username})
+            except LDAPEntryAlreadyExistsResult:
+                conn.modify(dn, {key: [(ldap3.MODIFY_REPLACE, [value])]
+                                 for key, value in values.items()})
+    finally:
+        conn.unbind()
+    for username, user in creds["users"].items():
+        ldap3.Connection(
+            server, user=BIND_FORMAT.format(username=username),
+            password=user["password"].encode("utf-8"), receive_timeout=3,
+            raise_exceptions=True, auto_bind=True,
+        ).unbind()
+
+
+def configure(timeout=120):
+    """Seed OpenLDAP from credentials.json; retries while its first start settles."""
+    from ldap3.core.exceptions import LDAPException
+
+    creds = credentials()
+    deadline = time.monotonic() + timeout
     while True:
-        response = client.get(realm_url + "/users", params={"first": first, "max": 100})
-        response.raise_for_status()
-        users = response.json()
-        for user in users:
-            actions = user.get("requiredActions", [])
-            if "CONFIGURE_TOTP" in actions:
-                response = client.put(
-                    realm_url + "/users/" + user["id"],
-                    json={
-                        "requiredActions": [a for a in actions if a != "CONFIGURE_TOTP"]
-                    },
-                )
-                response.raise_for_status()
-        if len(users) < 100:
+        try:
+            seed(creds)
             break
-        first += len(users)
-
-    # Existing installations keep their credentials and historical flow alias.
-    import_path = STATE / "import/keep-local-realm.json"
-    realm = json.loads(import_path.read_text(encoding="utf-8"))
-    for flow in realm["authenticationFlows"]:
-        for execution in flow["authenticationExecutions"]:
-            if execution.get("authenticator") == "auth-otp-form":
-                execution["requirement"] = "DISABLED"
-    for user in realm["users"]:
-        user["credentials"] = [
-            item for item in user.get("credentials", []) if item["type"] != "otp"
-        ]
-        user["requiredActions"] = [
-            action
-            for action in user.get("requiredActions", [])
-            if action != "CONFIGURE_TOTP"
-        ]
-    save(import_path, realm)
+        except LDAPException as error:
+            if time.monotonic() >= deadline:
+                raise RuntimeError(
+                    f"Could not seed local OpenLDAP ({type(error).__name__})"
+                ) from None
+            time.sleep(2)
+    print(f"Local OpenLDAP users ready: {len(creds['users'])} (passwords unchanged).")
 
 
-def configure_login_theme(client, origin):
-    """Apply Keep branding only to its client, preserving all other settings."""
-    clients_url = origin + "/admin/realms/keep-local/clients"
-    response = client.get(clients_url, params={"clientId": "keep-web"})
-    response.raise_for_status()
-    matches = [item for item in response.json() if item["clientId"] == "keep-web"]
-    if len(matches) != 1:
-        raise RuntimeError("Expected exactly one local keep-web client")
-    client_url = clients_url + "/" + matches[0]["id"]
-    response = client.get(client_url)
-    response.raise_for_status()
-    config = response.json()
-    attributes = config.get("attributes", {})
-    if attributes.get("login_theme") != "keep":
-        config["attributes"] = {**attributes, "login_theme": "keep"}
-        response = client.put(client_url, json=config)
-        response.raise_for_status()
-
-    import_path = STATE / "import/keep-local-realm.json"
-    realm = json.loads(import_path.read_text(encoding="utf-8"))
-    for item in realm["clients"]:
-        if item["clientId"] == "keep-web":
-            item.setdefault("attributes", {})["login_theme"] = "keep"
-    save(import_path, realm)
-
-
-def configure():
-    """Configure Keep password login and separate console administrator MFA."""
-    import ssl
-
+def reload():
+    """Load the mock ADAPI's data file again through its loopback test hook."""
     import httpx
 
-    marker = STATE / "configured.json"
-    previous = json.loads(marker.read_text()) if marker.exists() else {}
-    if (
-        previous.get("keep_login") == "username-password"
-        and previous.get("login_theme") == "keep"
-    ):
-        print("Local username/password login and Keep theme configuration preserved.")
-        return
-    creds = json.loads((STATE / "credentials.json").read_text())
-    origin = "https://localhost:58443"
-    with httpx.Client(
-        verify=ssl.create_default_context(cafile=str(STATE / "tls/localhost.pem")),
-        trust_env=False,
-    ) as client:
-        login = {
-            "grant_type": "password",
-            "client_id": "admin-cli",
-            "username": creds["console_username"],
-            "password": creds["console_password"],
-        }
-        if creds.get("console_otp_secret"):
-            login["totp"] = otp_value(creds["console_otp_secret"])
-        token = client.post(
-            origin + "/realms/master/protocol/openid-connect/token",
-            data=login,
-        )
-        token.raise_for_status()
-        client.headers["Authorization"] = "Bearer " + token.json()["access_token"]
-        configure_login_theme(client, origin)
-        if previous.get("keep_login") != "username-password":
-            configure_password_login(client, origin)
-        if previous:
-            save(
-                marker,
-                {
-                    **previous,
-                    "keep_login": "username-password",
-                    "login_theme": "keep",
-                },
-            )
-            print("Local Keep password login and theme configured.")
-            return
-        for username, user in creds["users"].items():
-            response = client.put(
-                origin + "/admin/realms/keep-local/users/" + user["id"],
-                json={
-                    "firstName": user["label"].split(" ", 1)[0],
-                    "lastName": user["label"].split(" ", 1)[1],
-                    "email": username + "@example.invalid",
-                    "emailVerified": True,
-                },
-            )
-            response.raise_for_status()
-        admins = client.get(
-            origin + "/admin/realms/master/users",
-            params={"username": creds["console_username"], "exact": "true"},
-        )
-        admins.raise_for_status()
-        admin = admins.json()[0]
-        response = client.put(
-            origin + "/admin/realms/master/users/" + admin["id"],
-            json={
-                "requiredActions": sorted(
-                    set(admin.get("requiredActions", [])) | {"CONFIGURE_TOTP"}
-                )
-            },
-        )
-        response.raise_for_status()
-    save(
-        marker,
-        {
-            "configured_at": datetime.now(UTC).isoformat(),
-            "console_totp_enrollment_required": True,
-            "keep_login": "username-password",
-            "login_theme": "keep",
-        },
-    )
-    print(
-        "Custom user profiles ready; Keycloak console administrator must enroll TOTP."
-    )
-
-
-def otp_value(secret):
-    counter = struct.pack(">Q", int(time.time()) // 30)
-    digest = hmac.new(base64.b32decode(secret), counter, hashlib.sha1).digest()
-    offset = digest[-1] & 15
-    return f"{(struct.unpack('>I', digest[offset : offset + 4])[0] & 0x7FFFFFFF) % 1000000:06d}"
-
-
-def otp(username):
-    credentials = json.loads((STATE / "credentials.json").read_text())
-    if username != credentials["console_username"]:
-        raise ValueError("Keep users sign in with username and password only")
-    print(otp_value(credentials["console_otp_secret"]))
+    data = read(STATE / "adapi-directory.json")
+    response = httpx.post(ADAPI_URL + "/__set", json={"data": data}, trust_env=False,
+                          timeout=10)
+    if response.status_code != 200:
+        raise RuntimeError(f"Mock ADAPI reload failed: HTTP {response.status_code}")
+    print("Mock ADAPI reloaded from .local/identity/adapi-directory.json.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "action",
         choices=(
             "prepare",
+            "tls",
             "database",
+            "remap",
             "environment",
-            "otp",
             "wait",
             "configure",
-            "tls",
+            "reload",
         ),
     )
-    parser.add_argument("username", nargs="?", default="bootstrap-admin")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="remap: print the planned pairs and change nothing")
     args = parser.parse_args()
-    if args.action == "prepare":
-        prepare()
-    elif args.action == "tls":
-        tls()
-    elif args.action == "database":
-        database()
-    elif args.action == "environment":
-        save(STATE / "app-environment.json", environment())
-    elif args.action == "wait":
-        wait()
-    elif args.action == "configure":
-        configure()
-    else:
-        otp(args.username)
+    try:
+        if args.action == "prepare":
+            prepare()
+        elif args.action == "tls":
+            tls()
+        elif args.action == "database":
+            database()
+        elif args.action == "remap":
+            remap(dry_run=args.dry_run)
+        elif args.action == "environment":
+            save(STATE / "app-environment.json", environment())
+        elif args.action == "wait":
+            wait()
+        elif args.action == "configure":
+            configure()
+        else:
+            reload()
+    except RemapError as error:
+        print(str(error), file=sys.stderr)
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":

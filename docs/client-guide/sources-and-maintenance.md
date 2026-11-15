@@ -51,7 +51,7 @@ The PNGs are unedited product screenshots using synthetic data. The SVGs are ori
 
 | Guide asset | Original / basis |
 |---|---|
-| [sign-in.png](assets/sign-in.png) | Local Keycloak sign-in form with the Keep theme, captured 10 November 2026; replaces the [login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
+| [sign-in.png](assets/sign-in.png) | Local sign-in form with the Keep theme, captured 10 November 2026 on the Keycloak setup that was removed by REV-73; Keep's own `/sign-in` page keeps this design. Replaces the [login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
 | [feed-desktop.png](assets/feed-desktop.png) | Local Feed in Global with synthetic v1 alerts, captured 10 November 2026; replaces the [Feed screenshot of 11 October](../../qualification/feed-rename-2026-10-11/feed-desktop.png) |
 | [dashboard.png](assets/dashboard.png) | Local dashboard with three synthetic count panels and an unsaved name edit, captured 10 November 2026; replaces the [dashboard toolbar evidence](../../qualification/dashboard-provenance-removal-2026-10-09/toolbar-dirty.png) |
 | [concept-map.svg](assets/concept-map.svg) | System product model and tenant boundaries |

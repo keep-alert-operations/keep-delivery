@@ -20,7 +20,7 @@ capability gates, or authorize production deployment. Consult
 Install Python 3.13, `Poetry 2.3.1`, Node.js 22.17 or newer, npm, and PowerShell 7 through approved
 development tooling. The scripts use the committed `poetry.lock` and
 `../keep-frontend/package-lock.json`. They do not install or administer shared PostgreSQL,
-Kafka, Elasticsearch, Redis, LDAP, Keycloak, Kong or Grafana services.
+Kafka, Elasticsearch, Redis, LDAP, ADAPI, Kong or Grafana services.
 
 Inject configuration into the terminal environment through your approved secret
 mechanism. Do not put credentials in source control, command arguments or captured
@@ -46,18 +46,22 @@ both run without limits (REV-39); they have no capability gate. Any other missin
 or gated capability remains visibly unavailable; do not open its gate to make a
 page look successful.
 
-For real human sign-in, supply the issuer, confidential-client secret, protected
-immutable-directory claim/scope, exact password-authentication ACR/AMR mapping, directory source,
-super-admin team and any approved CA binding described in
-[identity implementation](https://github.com/keep-alert-operations/keep-api/blob/main/docs/identity-implementation.md#required-configuration).
-Use the actual configured Keycloak environment and exact callback/logout URLs.
-Company LDAP verification and the qualified directory bootstrap must publish
-trusted evidence before `human_auth` can become ready. The development launcher
-does not seed users/sessions or set that gate. The directory adapter's `run_cycle`
-remains available for explicit trusted publication. Directory polling and its
-five-minute propagation qualification are nice-to-have under REV-35. Run the
-configured company verifier explicitly with `python -m keep.worker directory
---once`; the development worker launcher excludes continuous directory startup. Other
+For real human sign-in (REV-73), supply the LDAP bind settings `KEEP_LDAP_HOST`,
+`KEEP_LDAP_PORT`, `KEEP_LDAP_USE_TLS`, optional `KEEP_LDAP_CA_FILE` and
+`KEEP_LDAP_BIND_FORMAT` (for example `{username}@corp.example`); the ADAPI binding
+`KEEP_ADAPI_URL` and the secret `KEEP_ADAPI_CLIENT_ID`; and the super-admin group's
+samAccountName in `KEEP_SUPERADMIN_GROUP`. `KEEP_ADAPI_LOOKUP_BATCH` and
+`KEEP_ADAPI_SEARCH_CACHE_TTL_SECONDS` have defaults (50 and 7200). The settings are
+defined in [identity configuration 3 and 6](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md#3-username-and-password-authentication).
+A qualified bootstrap refresh must publish trusted directory evidence before
+`human_auth` can become ready. The development launcher does not seed users or
+sessions or set that gate. Directory polling and its five-minute propagation
+qualification are nice-to-have under REV-35. Run the refresh explicitly with
+`python -m keep.worker directory --once` (or `python -m keep.identity.worker --once`
+from an API image); set `KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED=true` only on the first,
+bootstrap refresh. It prints one `directory_root_failed` line per failed root and a
+`directory_refresh` totals line, and exits non-zero when any root failed. The
+development worker launcher excludes continuous directory startup. Other
 implemented roles are listed in `scripts/dev.ps1` and the relevant domain runbooks;
 each requires its own explicit binding, capacity and readiness prerequisites.
 
@@ -111,8 +115,9 @@ stops the selected workload. Nothing is registered as a background service.
 ./scripts/dev.ps1 -Action Start -Role Frontend -FrontendPort 3443
 ```
 
-Open the exact `KEEP_PUBLIC_ORIGIN`. The UI uses backend OIDC and opaque Secure
-cookies; HTTP development pages are not an equivalent authentication test. TLS
+Open the exact `KEEP_PUBLIC_ORIGIN`. The UI signs in on Keep's `/sign-in` page,
+which posts to the API's `POST /auth/login`, and uses opaque Secure cookies; HTTP
+development pages are not an equivalent authentication test. TLS
 files may instead be passed with `-TlsCertificate` and `-TlsKey`. The API port and
 `KEEP_BACKEND_URL` must agree. Without verified identity/bootstrap, sign-in is
 gated, rather than replaced with a local password or synthetic user.
@@ -140,8 +145,8 @@ progress and the corresponding verification evidence.
 For the isolated local dependency stack, use the single
 [local Compose definition](../../deploy/local/compose.yaml) through
 [`scripts/local-runtime.ps1`](../../scripts/local-runtime.ps1). It runs the local
-PostgreSQL, Elasticsearch, Kafka, Redis, Keycloak, Kong and Grafana services;
-the API, UI and workers remain host development processes. This local profile
+PostgreSQL, Elasticsearch, Kafka, Redis, OpenLDAP, Kong and Grafana services;
+the API, UI, workers and the mock ADAPI remain host development processes. This local profile
 does not replace the separately supplied and qualified company services.
 
 ## Verification commands
@@ -212,7 +217,7 @@ database, starts/stops its own unique-port API/UI process trees and uses synthet
 database session evidence exclusively inside the test. It never adds a test login
 route or enables authentication on the ordinary application database. See the
 [frontend evidence](https://github.com/keep-alert-operations/keep-frontend/blob/main/docs/frontend.md#real-browserapipostgresql-smoke) for exact assertions
-and the distinction from company Keycloak/LDAP qualification.
+and the distinction from company LDAP and ADAPI qualification.
 
 The fixture seeds its alert through the Kafka-first path: it builds the admission
 envelope and applies it with the source processor's PostgreSQL step, with no broker
@@ -296,8 +301,9 @@ reload is needed; it can restart several processes and run migration/setup check
 
 Use only synthetic data in the local `keep_local` database/loopback stack.
 This is persistent development data, not an automatically disposable database.
-Authenticate through Keycloak using the generated local-admin/editor/viewer
-credentials described in [local identities](../local-keycloak.md). Read credentials
+Sign in on the Keep `/sign-in` page with the generated local-admin/editor/viewer
+usernames and passwords from `.local/identity/credentials.json`, described in
+[local sign-in and directory](../local-identity.md). Read credentials
 locally without printing passwords, cookies, keys or complete configuration.
 Do not inject a session for S1–S4. Browser test TLS exceptions are local to these
 tests; they do not authorize changing Windows trust or backend TLS validation.
@@ -312,8 +318,8 @@ in the ledger instead of relying on shared names. Never select unrelated records
 by title alone. Preserve generated reports before another run overwrites them.
 
 S1 creates Local Demo and its group grants if missing and may temporarily remove
-and restore the local viewer's Observers membership. Run serially in this dedicated
-test realm with no competing identity tests. S3 uses the existing Local Demo Sender;
+and restore the local viewer's `keep-observers` membership in the mock ADAPI. Run
+serially against this dedicated local directory with no competing identity tests. S3 uses the existing Local Demo Sender;
 key Copy is audited, and gateway verification can bootstrap the initial local gate
 and retry provisioning. It is not a read-only probe. On an unprepared stack, follow
 [local v2 setup](../local-v2.md#synchronous-provisioning-startup-rev-34), including
@@ -323,7 +329,7 @@ prepare/API reload/Start; never point it at shared company Kong/Grafana.
 
 | ID | Steps through actual entry points | Required observable results | Existing coverage / limits |
 |---|---|---|---|
-| S1 Identity and access | Run the local identity suite; sign in as admin/editor/viewer, inspect Local Demo roles, remove/restore the viewer group with explicit publication, perform signed provider logout. | Normal password-only OIDC produces the expected principal; Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200; logged-out session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` automates these against real Keycloak/API/PG. Provider logout/group revocation test skips without the enrolled console factor: record partial coverage, not an S1 pass. |
+| S1 Identity and access | Run the local identity suite; on the Keep `/sign-in` page sign in as admin/editor/viewer with passwords from `.local/identity/credentials.json`, inspect Local Demo roles, remove/restore the viewer's group membership with a refresh after each change, try a wrong password and `local-disabled`, sign out. | Each username/password sign-in produces the expected principal; `local-admin` is a global super-admin. Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200. A wrong password and the disabled account both get 401 `authentication_rejected` with no session. After sign-out the old session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` runs against the real local OpenLDAP, mock ADAPI, API and PostgreSQL. Any case it skips or doesn't cover is partial coverage, not an S1 pass; check it by hand in the browser. |
 | S2 Native v1 and alert work | Run the local-runtime browser suite: submit its unique native v1 alert, wait for search, open Global Feed/detail, Assign to me, add a note, reload. | Admission returns 202 only after Kafka acknowledgement; exactly the created alert becomes visible in Global, Feed appears and live delivery reports connected with no update notice (REV-43), assignment acknowledges it, note survives reload and acknowledged CEL search includes its ID. A 202 alone does not prove processing/search. | `local-runtime.spec.ts` uses real login, ingestion, workers, Elasticsearch and browser. Its note reload is automated; additionally reload and confirm the assignee remains the acting user. The connected live status proves connection, not every SSE recovery path. |
 | S3 Native v2 isolation | Run gateway `verify`, then `send`; open the resulting IDs in Local Demo Feed/detail through the browser. | Missing/invalid/forged credentials rejected; duplicate/unsupported key transport rejected, direct private listener requires mTLS. Valid batch has 3 accepted results with 202; all 3 become searchable with expected components and names (REV-54), detail works only in the owning tenant, the same IDs under Global return 404. Browser shows the matching records. | `local_v2_verify.py` automates gateway/API/search assertions, including 401/400/404/422 distinctions; the final browser inspection is manual. No receipt lookup. It does not test Grafana's scheduled delivery or fleet propagation. |
 | S4 Manual incident lifecycle | As editor/admin in the S2 alert's tenant, open Incidents → New incident, enter a unique title and explicit severity, and create. Confirm open/unassigned state; use Link alerts on detail to select the run's unowned alert. Add a uniquely tagged note, reload, resolve, reload, reopen and reload. | Created incident, subsequent link and note persist after reload; severity remains immutable; resolve leaves alert status unchanged. With no competing owner, reopen succeeds, starts a new lifecycle cycle and retains the link/history. Inspect detail plus its normal API/history responses for results not visible in the UI. | Manual real-stack procedure; no dedicated automated end-to-end suite was found. Mocked creation/note tests and PG integration tests cover parts, not the full journey. Follow the authoritative [incident rules](../../../keep-design/specs/spec-incident-operations.md). |
@@ -367,7 +373,7 @@ in the normal HTTPS UI, not by directly mutating the database.
 | Python repositories | Owned CI runs Poetry lock/install, Ruff, unit tests and wheel build; migrations CI additionally provisions PostgreSQL and runs its tests. | Run changed repository checks and affected shared-package consumers; service CI is not system E2E. |
 | Delivery | CI bootstraps pinned siblings and runs contract, boundary and document checks; `verify.ps1` provides Unit/Build/Browser/Database/BrowserReal. | Use affected PG/Kafka/search integration cases, explicit isolated bindings and real entry points. `All` can skip Database/BrowserReal and does not establish S1–S4. |
 | Frontend | CI runs generation/drift, format, typecheck and build; `npm test` has controlled-route browser scenarios for alerts, incidents, navigation, dashboards/presets and access loss. | CI currently does not run Playwright. Run affected browser files locally plus S1–S4; mocked routes cannot establish persistence or real authentication. Keep local opt-ins unset for the controlled suite. |
-| Real local stack | Separate opt-in S1/S2 suites and S3 helper. | Outside default CI. S1 factor prerequisite, S3 manual browser inspection and S4 manual lifecycle remain explicit obligations. BrowserReal seeds through the source step without a broker or real sign-in. |
+| Real local stack | Separate opt-in S1/S2 suites and S3 helper. | Outside default CI. Serial S1 runs, S3 manual browser inspection and S4 manual lifecycle remain explicit obligations. BrowserReal seeds through the source step without a broker or real sign-in. |
 | Release qualification | Existing capability, replay, recovery, capacity and private-integration cases in design/delivery. | Smoke is not release qualification; preserve all existing gates, deferred-worker corrections and stronger regression requirements. |
 
 When shared commands/domain/auth/contracts change, broaden to affected producers,

@@ -27,7 +27,7 @@
 | Assign, Save or Create is missing | Check your tenant and role. View access permits investigation but not operational changes. Ask your tenant administrator if your duties require Edit access. |
 | An assignee is missing from the picker | Use an eligible person with access to the tenant. Ask an administrator about access or identity updates; typing a name cannot grant access. |
 | A tenant or shared link is unavailable | Choose an accessible tenant and check the link with its sender. Access may have changed, or the resource may have been deleted. |
-| Session expired | Sign in again. A background tab does not keep the session alive, and continuous activity does not remove the absolute session limit. |
+| Session expired | Sign in again on Keep's sign-in page with your company username and password. A session lasts 24 hours from sign-in; activity does not extend it. |
 | CEL validation failed | Read the marked field or expression diagnostic. Use the editor's supported field suggestions, correct the expression and rerun it. An invalid query does not mean no matches. |
 | Someone changed the record before you saved | Reload/review the latest record and reconsider your action. For shared definitions, preserve your intended changes while comparing, or use Save as new if a separate shared view is appropriate. |
 | A command timed out and the outcome is uncertain | Use **Retry original command** or the specific retry offered by the page. Do not repeatedly create a new record to guess whether the first request worked. Inspect the current state when it becomes available. |

@@ -23,8 +23,8 @@ Run `python qualification/check_context.py` after changing the catalog or its so
 
 For an isolated private-cluster deployment with supplied Elasticsearch, Kafka and
 Grafana, start with the [OpenShift deployment and load-testing guide](docs/runbooks/openshift-load-testing.md).
-It includes image transfer, service configuration/resources, dedicated Keycloak
-test users, staged startup and executable load-generator assets.
+It includes image transfer, service configuration/resources, dedicated test users
+on a test OpenLDAP and mock ADAPI, staged startup and executable load-generator assets.
 
 ## Development
 

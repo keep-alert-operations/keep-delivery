@@ -53,7 +53,7 @@ poetry build --format wheel</code></pre>
   <p>Inspect the existing environment before starting anything. Delivery coordinates one Compose project and managed local application processes. A second processor or launcher pointed at the same stores can compete with the first. Historical startup notes show past evidence; they do not establish that services are running now.</p>
   <pre><code class="language-powershell"># Working directory: keep-delivery
 .\scripts\local-runtime.ps1 -Action Status</code></pre>
-  <p>Follow <a href="../local-runtime.md">the local runtime guide</a> and <a href="../local-keycloak.md">local identity setup</a> before Start. Establish the intended isolated stores, matching local credentials, TLS trust and required cutover/evidence gates. Start is consequential local setup: it can prepare credentials, launch dependencies and apply migrations before writers. Keep existing volumes and their matching <code>.local</code> material.</p>
+  <p>Follow <a href="../local-runtime.md">the local runtime guide</a> and <a href="../local-identity.md">local sign-in and directory setup</a> before Start. Establish the intended isolated stores, matching local credentials, TLS trust and required cutover/evidence gates. Start is consequential local setup: it can prepare credentials, launch dependencies and apply migrations before writers. Keep existing volumes and their matching <code>.local</code> material.</p>
   <pre><code class="language-powershell"># Working directory: keep-delivery
 # Only after the local-runtime prerequisites and existing processes are checked.
 .\scripts\local-runtime.ps1 -Action Start
@@ -151,7 +151,7 @@ poetry run alembic heads</code></pre>
 .\scripts\verify.ps1 -Suite BrowserReal -BrowserChannel chrome
 # Separate integration suite; requires KEEP_TEST_DATABASE_URL.
 .\scripts\verify.ps1 -Suite Database</code></pre>
-  <p>The Database suite applies migrations and writes synthetic records to its configured isolated test database. Real browser evidence still does not qualify real Keycloak sign-in or the complete Kafka/search pipeline. The local-runtime browser configuration exercises a different, explicitly opt-in environment; follow its runbook instead of interchanging these tests.</p>
+  <p>The Database suite applies migrations and writes synthetic records to its configured isolated test database. Real browser evidence still does not qualify real sign-in against Active Directory or the complete Kafka/search pipeline. The local-runtime browser configuration exercises a different, explicitly opt-in environment; follow its runbook instead of interchanging these tests.</p>
 
   <h3>Understand CI and finish with honest evidence</h3>
   <p>The common Python workflow performs locked install, Ruff, owned unit tests and wheel build. Delivery additionally bootstraps the pinned workspace and checks contracts, boundaries and documentation. Frontend CI regenerates its client, fails on generated-file drift, then checks formatting, types and build. Its current workflow does not run Playwright, so a green frontend CI result alone is not browser verification.</p>

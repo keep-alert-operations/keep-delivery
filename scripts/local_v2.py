@@ -16,7 +16,6 @@ import time
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
-from html.parser import HTMLParser
 from pathlib import Path
 from uuid import uuid4
 
@@ -28,7 +27,7 @@ PORT_ENVIRONMENT = {
     "grafana": "KEEP_LOCAL_GRAFANA_PORT",
 }
 # Other listeners in the unified local stack keep their existing contracts.
-FIXED_PORTS = {3443, 55433, 56380, 58000, 58001, 58443, 58444, 58445, 58446, 59201, 19093}
+FIXED_PORTS = {3443, 55433, 56380, 58000, 58001, 58092, 58389, 58444, 58445, 58446, 59201, 19093}
 
 
 def load_ports(path=None):
@@ -73,7 +72,7 @@ def environment():
     from keep.config import Settings
     from psycopg.conninfo import conninfo_to_dict
 
-    values = read(ROOT / ".local/keycloak/app-environment.json")
+    values = read(ROOT / ".local/identity/app-environment.json")
     values["KEEP_DATABASE_URL"] = values["KEEP_LOCAL_WORKER_DATABASE_URL"]
     values["KEEP_POOL_SIZE"] = "1"
     os.environ.update({k: str(v) for k, v in values.items()})
@@ -109,7 +108,7 @@ def client(*, app=False, **kwargs):
 
     context = ssl.create_default_context(cafile=str(STATE / "tls/ca.crt"))
     if app:
-        context.load_verify_locations(str(ROOT / ".local/keycloak/tls/localhost.pem"))
+        context.load_verify_locations(str(ROOT / ".local/identity/tls/localhost.pem"))
     return httpx.Client(verify=context, trust_env=False, timeout=105 if app else 10, **kwargs)
 
 
@@ -622,30 +621,19 @@ def serve(role):
         main()
 
 
-class LoginForm(HTMLParser):
-    action = None
-
-    def handle_starttag(self, tag, attrs):
-        values = dict(attrs)
-        if tag == "form" and values.get("id") == "kc-form-login":
-            self.action = values["action"]
-
-
 def login(http):
-    response = http.get(ORIGIN + "/auth/login", follow_redirects=True)
-    form = LoginForm()
-    form.feed(response.text)
-    if not form.action or not form.action.startswith("https://localhost:58443/"):
-        raise RuntimeError("Expected local Keycloak login form")
-    creds = read(ROOT / ".local/keycloak/credentials.json")
-    response = http.post(
-        form.action,
-        data={
-            "username": "local-admin",
-            "password": creds["users"]["local-admin"]["password"],
-            "credentialId": "",
-        },
-        follow_redirects=True,
+    """Sign in as local-admin through Keep's own password sign-in (REV-73)."""
+    creds = read(ROOT / ".local/identity/credentials.json")
+    checked(
+        http.post(
+            ORIGIN + "/auth/login",
+            json={
+                "username": "local-admin",
+                "password": creds["users"]["local-admin"]["password"],
+                "return_to": "/",
+            },
+            headers={"Origin": ORIGIN},
+        )
     )
     session = checked(http.get(ORIGIN + "/auth/session"))["data"]
     http.headers.update({"X-CSRF-Token": session["csrf_token"], "Origin": ORIGIN})

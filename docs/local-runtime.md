@@ -1,5 +1,11 @@
 # Running the local Keep workspace
 
+**2026-11-15 sign-in and directory (REV-73):** Keep's own `/sign-in` page checks
+the password with one LDAP bind, and people and groups come from ADAPI. Locally,
+OpenLDAP and a mock ADAPI stand in for them. The first Start after this change
+moves the local credentials and remaps the local principals once; see
+[local sign-in and directory](local-identity.md#moving-from-the-earlier-local-setup).
+
 **2026-10-26 Kafka topic identity (REV-41):** the source processor refuses a received
 topic that is not the incarnation recorded at cutover, and refuses while none is
 recorded. This stack's cutover predates migration 0054: with source, correlation and
@@ -51,18 +57,18 @@ The user's authorized deletion of the demo rule `fdsfa` was refused by the norma
 API with `recovery_not_ready`; the rule and all readiness fences remain preserved.
 The alert relay was corrected to ignore unrelated resource outbox streams.
 
-Open **https://localhost:3443**. The core local services were started and verified
-on 2026-09-23. Sign in as `local-admin`; its generated password is under
-`users.local-admin.password` in `.local/keycloak/credentials.json`. Keep now
-uses only username and password, with no one-time code.
+Open **https://localhost:3443**. A signed-out visit opens the Keep `/sign-in`
+page. Sign in as `local-admin`; its generated password is under
+`users.local-admin.password` in `.local/identity/credentials.json`. Sign-in uses
+only a username and password, with no one-time code.
 
-The [identity guide](local-keycloak.md) covers the editor/viewer accounts, custom
-users/groups and separate Keycloak console authentication. The launcher
-does not change Windows trust automatically. On this workstation, the user
-explicitly approved trusting the generated certificate on 2026-09-23; both
-Keep and Keycloak now load with normal browser certificate validation. If an
-old tab still displays the certificate error, reopen the URL in a new tab.
-Fresh workstations need their own explicit local certificate trust setup.
+The [local sign-in and directory guide](local-identity.md) covers the other test
+accounts, adding users and groups, the mock ADAPI test hooks and the one-time move.
+The launcher does not change Windows trust automatically. On this workstation, the
+user explicitly approved trusting the generated certificate on 2026-09-23, so Keep
+loads with normal browser certificate validation. If an old tab still displays the
+certificate error, reopen the URL in a new tab. Fresh workstations need their own
+explicit local certificate trust setup.
 
 Select **Global → Alerts** to find the synthetic `Keep local demo` alert. The
 live browser check received this alert through native v1, waited for processing
@@ -89,8 +95,8 @@ processes. Stop halts those processes and Compose containers without removing
 their volumes. Nothing is installed as a Windows service.
 
 The single dependency definition is [`deploy/local/compose.yaml`](../deploy/local/compose.yaml).
-It includes PostgreSQL, Elasticsearch, Redis, Kafka, Keycloak, Kong, Kong's
-dedicated PostgreSQL database, and Grafana. The Python API,
+It includes PostgreSQL, Elasticsearch, Redis, Kafka, OpenLDAP, Kong, Kong's
+dedicated PostgreSQL database, and Grafana. The Python API, the mock ADAPI,
 processing workers and Next.js development server still run as local processes
 so the workspace's editable source and installed developer dependencies are used.
 This is a local development setup, not the production OpenShift deployment.
@@ -119,7 +125,8 @@ password file does not change the password already stored in a PostgreSQL volume
 | Product API | http://127.0.0.1:58000 |
 | Public Ingestion API / native v1 | http://127.0.0.1:58001/api/ingest/v1/alerts |
 | Private Ingestion API (mTLS) | https://127.0.0.1:58444 |
-| Keycloak / console | https://localhost:58443/admin/ |
+| OpenLDAP (Compose, plain LDAP) | ldap://127.0.0.1:58389 |
+| Mock ADAPI | http://127.0.0.1:58092 |
 | Keep PostgreSQL 18.2 (Compose) | 127.0.0.1:55433 |
 | Elasticsearch 9.0.0 (Compose) | http://127.0.0.1:59201 |
 | Kafka 4.0.0 (Compose) | 127.0.0.1:19093 |
@@ -132,7 +139,8 @@ password file does not change the password already stored in a PostgreSQL volume
 The previous native PostgreSQL and Elasticsearch remain on ports 55432 and
 59200 as rollback sources; Keep uses the Compose-managed ports above. All
 published dependency ports bind to loopback. Docker volumes persist Keep data,
-Keycloak identities, Kong configuration, Kafka state and Grafana configuration.
+Kong configuration, Kafka state and Grafana configuration. OpenLDAP has no volume;
+Start seeds it again from `.local/identity/credentials.json`.
 Kafka keeps its log in `kafka_data` through `KAFKA_LOG_DIRS`; before 2026-10-25 it
 used the container layer, and recreating the container lost both topics. After the
 recorded cutover, Start no longer creates missing application topics and refuses to
@@ -140,19 +148,20 @@ start workers when the broker ends below, or holds another delivery at, an offse
 PostgreSQL recorded. That state needs the reviewed reset in
 [Kafka failure and recovery](runbooks/kafka-first.md#failure-and-recovery).
 
-Local startup publishes trusted Keycloak users/groups once. Later changes require
+Local startup publishes the mock ADAPI's users and groups once. Later changes require
 `./scripts/local-identity.ps1 -Action Refresh`; directory polling is nice-to-have.
 After cutover, the required workers handle Kafka source processing and search
 consumption/reconciliation, and the correlation worker always starts. The Product API publishes live hints and serves SSE. The legacy alert relay and hint-consumer roles are retired.
-Their logs, process records and heartbeats are in `.local/runtime`; identity,
-API and frontend process state/logs are in `.local/keycloak`.
+Their logs, process records and heartbeats are in `.local/runtime`; mock ADAPI,
+API and frontend process state/logs are in `.local/identity`.
 
 ## Verified scope and remaining gates
 
-Working evidence covers real sign-in, group roles and logout (password-only login
-reverified on 2026-09-24),
-native v1 admission, PostgreSQL processing, Elasticsearch search, live events, browser
-acknowledgement and notes. The development search bootstrap requires the actual
+Working evidence covers native v1 admission, PostgreSQL processing, Elasticsearch
+search, live events, browser acknowledgement and notes. Sign-in, group role and
+sign-out evidence from before REV-73 does not cover the LDAP bind or the mock
+ADAPI; see [implementation status](../status/implementation-status.md) for runs
+on the current setup. The development search bootstrap requires the actual
 passing search/count compatibility report at
 `qualification/pytest-local-runtime-es.xml`, exact local store bindings and an
 initial search gate. It cannot clear restore fences. Initial activation and
@@ -183,7 +192,7 @@ the local binding, so rebuild with that CLI. From `keep-delivery` in PowerShell 
 
 ```powershell
 ./scripts/local-runtime.ps1 -Action Start -Restart   # migrates, then stops at search_mapping_mismatch
-$values = Get-Content .local/keycloak/app-environment.json -Raw | ConvertFrom-Json
+$values = Get-Content .local/identity/app-environment.json -Raw | ConvertFrom-Json
 foreach ($item in $values.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
 $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
 .venv/Scripts/python.exe -c "from keep.search.local_bootstrap import binding; print(binding().model_dump_json())" | Set-Content .local/runtime/search-binding.json -Encoding utf8NoBOM
@@ -251,7 +260,7 @@ One-time upgrade of this stack, from `keep-delivery` in PowerShell:
    and inspect the proof counts:
 
    ```powershell
-   (Get-Content .local/keycloak/app-environment.json -Raw | ConvertFrom-Json).PSObject.Properties |
+   (Get-Content .local/identity/app-environment.json -Raw | ConvertFrom-Json).PSObject.Properties |
      ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, [string]$_.Value, 'Process') }
    $env:KEEP_DATABASE_URL = $env:KEEP_LOCAL_WORKER_DATABASE_URL
    .\.venv\Scripts\python.exe -m keep.worker maintenance-warmup --tenant <tenant UUID>
@@ -347,13 +356,16 @@ the prefilled form. With the variable empty, incidents show no ticket row.
 The rename to Keep changed every stored format tag, so a stack from before it cannot
 be read and starts empty. The Compose volumes now have `keep-` names; the old
 `appchi-local-*` volumes stay untouched as a rollback copy until you remove them
-yourself. Move the old `.local/keycloak`, `.local/runtime` and `.local/operators`
-aside (keep `.local/keycloak/tls` so the certificate stays the same), then:
+yourself. Move the old `.local/identity`, `.local/runtime` and `.local/operators`
+aside (keep `.local/identity/tls` so the certificate stays the same), then:
+
+A stack that still has `.local/keycloak` from the setup removed by REV-73 moves that folder aside too; otherwise Start copies its old keys back.
+
 
 1. `.\scripts\local-runtime.ps1 -Action Start` migrates `keep_local` to the head and
    starts the API and UI. On an empty broker it stops before the workers because no
    Kafka cutover is recorded yet.
-2. With `.local/keycloak/app-environment.json` loaded and `KEEP_DATABASE_URL` set to
+2. With `.local/identity/app-environment.json` loaded and `KEEP_DATABASE_URL` set to
    the worker URL, run `.venv/Scripts/python.exe scripts/local_runtime.py probe`
    (creates the two `keep.development.alerts.*` topics), then
    `.venv/Scripts/python.exe -m keep.kafka_cutover --ingress-and-legacy-workers-stopped --local-config .local/runtime/kafka-protocol.json`.
@@ -370,6 +382,6 @@ two kinds of state can still point at the old path. Compose does not recreate th
 `postgres` and `kong-db` containers for a moved secret file, so Start fails with
 "bind source path does not exist"; recreate just those two with
 `docker compose -p keep-local-stack -f deploy/local/compose.yaml up -d --no-deps --force-recreate postgres kong-db`
-(their named volumes are kept). The `ca_file` entries in `.local/keycloak/directory.json`
-and `.local/operators/binding.json` also keep the old path, which stops directory
-publication with `FileNotFoundError`; point them at the same files under the new folder.
+(their named volumes are kept). The `ca_file` entries in `.local/operators/binding.json`
+also keep the old path, so calls that use them fail with `FileNotFoundError`; point
+them at the same files under the new folder.

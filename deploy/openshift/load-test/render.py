@@ -26,10 +26,11 @@ SECURITY = {
 # Assistant-selected starting allocations, NOT qualified capacity profiles.
 STARTING_RESOURCES = {
     "postgres": ("1", "2", "2Gi", "4Gi"),
-    "keycloak-db": ("250m", "1", "256Mi", "1Gi"),
     "kong-db": ("250m", "1", "256Mi", "1Gi"),
     "redis": ("100m", "500m", "128Mi", "512Mi"),
-    "keycloak": ("500m", "2", "768Mi", "2Gi"),
+    "openldap": ("100m", "500m", "128Mi", "512Mi"),
+    "adapi-mock": ("100m", "500m", "128Mi", "512Mi"),
+    "directory-publication": ("100m", "500m", "128Mi", "512Mi"),
     "kong": ("250m", "1", "256Mi", "1Gi"),
     "api": ("500m", "2", "512Mi", "2Gi"),
     "ingestion": ("250m", "1", "256Mi", "1Gi"),
@@ -44,8 +45,13 @@ STARTING_RESOURCES = {
 }
 IMAGE_KEYS = {
     "api", "ingestion", "processor", "indexer", "correlation", "frontend", "migrations",
-    "postgres", "keycloak_postgres", "kong_postgres", "redis", "keycloak", "kong",
+    "postgres", "kong_postgres", "redis", "openldap", "adapi_mock", "kong",
 }
+HOSTS = ("application", "v1", "v2")
+# Test identity (REV-73): OpenLDAP checks passwords, the mock ADAPI supplies people and
+# groups. OpenLDAP listens on an unprivileged port; its Service publishes LDAP's 389.
+OPENLDAP_PORT = 1389
+ADAPI_MOCK_PORT = 8080
 
 
 def validate(config, bootstrap_only=False):
@@ -68,19 +74,21 @@ def validate(config, bootstrap_only=False):
     for key, image in config["images"].items():
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}", image):
             raise ValueError(f"Supply an immutable image digest for {key}")
-    for name in ("application", "keycloak", "v1", "v2"):
+    if set(config["hosts"]) != set(HOSTS):
+        raise ValueError("Supply exactly the documented route hostnames")
+    for name in HOSTS:
         host = config["hosts"][name]
         if not re.fullmatch(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?", host) or "." not in host:
             raise ValueError(f"Supply the DNS hostname, without URL/path: {name}")
-    if len(set(config["hosts"].values())) != 4:
-        raise ValueError("Use four distinct route hostnames")
+    if len(set(config["hosts"].values())) != len(HOSTS):
+        raise ValueError("Use three distinct route hostnames")
     search = config["search_bootstrap"]
     UUID(search["index_epoch"])
     if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,199}", search["physical_index"]):
         raise ValueError("Supply an exact lowercase search physical index")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", search["operation_reference"]):
         raise ValueError("Supply a nonsecret search bootstrap operation reference")
-    for key in ("postgres", "keycloak-db", "kong-db"):
+    for key in ("postgres", "kong-db"):
         if not re.fullmatch(r"[1-9][0-9]*(Gi|Ti)", config["storage"][key]):
             raise ValueError(f"Supply a positive PVC capacity in Gi or Ti for {key}")
     for key, values in config.get("resource_overrides", {}).items():
@@ -186,14 +194,16 @@ def foundation(config):
     policies = {
         "keep-postgres": [rule([peer(name) for name in (
             "keep-product-api", "keep-processor", "keep-indexer", "keep-correlation",
-            "keep-bootstrap", "keep-migration", "keep-directory-publication", "keep-keycloak",
+            "keep-bootstrap", "keep-migration", "keep-directory-publication",
             "keep-search-bootstrap", "keep-operator-proof",
         )], 5432)],
-        "keep-keycloak-db": [rule([peer("keep-keycloak")], 5432)],
         "keep-kong-db": [rule([peer("keep-kong"), peer("keep-kong-migration")], 5432)],
         "keep-redis": [rule([peer("keep-product-api")], 6379)],
-        "keep-keycloak": [rule([router, peer("keep-product-api"),
-                                   peer("keep-directory-publication")], 8443)],
+        # Only sign-in binds; the refresh reads people and groups from ADAPI alone.
+        "keep-openldap": [rule([peer("keep-product-api")], OPENLDAP_PORT)],
+        "keep-adapi-mock": [rule([peer("keep-product-api"),
+                                  peer("keep-directory-publication")], ADAPI_MOCK_PORT)],
+        "keep-directory-publication": [],
         "keep-kong": [rule([router, peer("keep-operator-proof")], 8443),
                          rule([peer("keep-product-api"), peer("keep-bootstrap")], 8444)],
         "keep-operator-proof": [rule([peer("keep-product-api")], 8443)],
@@ -208,8 +218,8 @@ def foundation(config):
 
 def postgres(config, key, image):
     name = f"keep-{key}"
-    db = {"postgres": "keep", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
-    user = {"postgres": "keep_migrator", "keycloak-db": "keycloak", "kong-db": "kong"}[key]
+    db = {"postgres": "keep", "kong-db": "kong"}[key]
+    user = {"postgres": "keep_migrator", "kong-db": "kong"}[key]
     c = container(config, image, "postgres", resource_key=key)
     c["env"] = env({
         "PGDATA": "/var/lib/keep-postgres/data", "POSTGRES_DB": db, "POSTGRES_USER": user,
@@ -255,47 +265,59 @@ def redis(config):
     return [d, service("keep-redis", {"tls": 6379})]
 
 
-def keycloak(config):
-    c = container(config, "keycloak")
-    c["args"] = ["start", "--optimized", "--import-realm"]
-    c["envFrom"] = [{"secretRef": {"name": "keep-keycloak-env"}}]
-    c["env"] = env({
-        "KC_HOSTNAME": f"https://{config['hosts']['keycloak']}", "KC_HTTP_ENABLED": "false",
-        "KC_HTTPS_CERTIFICATE_FILE": "/run/keycloak-tls/tls.crt",
-        "KC_HTTPS_CERTIFICATE_KEY_FILE": "/run/keycloak-tls/tls.key",
-        "KC_DB": "postgres",
-        "KC_DB_URL": "jdbc:postgresql://keep-keycloak-db:5432/keycloak"
-                     "?sslmode=verify-full&sslrootcert=/run/keycloak-trust/postgres-ca.crt",
-        "KC_DB_USERNAME": "keycloak", "KC_TRUSTSTORE_PATHS": "/run/keycloak-trust",
-        "JAVA_OPTS_KC_HEAP": "-Xms256m -Xmx1024m",
-    })
-    c["ports"] = [{"name": "https", "containerPort": 8443},
-                  {"name": "management", "containerPort": 9000}]
-    # Management probes use TLS as inherited from the HTTPS listener.
-    c["readinessProbe"] = {"httpGet": {"path": "/health/ready", "port": 9000,
-                                      "scheme": "HTTPS"}, "periodSeconds": 10}
-    c["livenessProbe"] = {"httpGet": {"path": "/health/live", "port": 9000,
-                                     "scheme": "HTTPS"}, "periodSeconds": 10}
-    c["startupProbe"] = {**copy.deepcopy(c["livenessProbe"]), "failureThreshold": 60}
-    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("data", "/opt/keycloak/data"),
-        mount("realm", "/opt/keycloak/data/import", True),
-        mount("tls", "/run/keycloak-tls", True), mount("trust", "/run/keycloak-trust", True)]
-    publisher = container(config, "api", "identity-publisher")
-    publisher["command"] = ["python", "-c",
-                            "import threading; threading.Event().wait()"]
-    publisher["envFrom"] = [{"secretRef": {"name": "keep-identity-env"}}]
-    publisher["env"] = env({"KEEP_ENVIRONMENT": "development"})
-    publisher["resources"] = {
-        "requests": {"cpu": "100m", "memory": "128Mi", "ephemeral-storage": "128Mi"},
-        "limits": {"cpu": "500m", "memory": "512Mi", "ephemeral-storage": "256Mi"},
-    }
-    publisher["volumeMounts"] = [mount("identity", "/etc/keep", True), mount("tmp", "/tmp")]
-    d = deployment(config, "keep-keycloak", [c, publisher], [tmp_volume(), tmp_volume("data"),
-        secret_volume("realm", "keep-keycloak-realm"),
-        secret_volume("tls", "keep-keycloak-tls"),
-        secret_volume("trust", "keep-keycloak-trust"),
-        secret_volume("identity", "keep-identity-bindings")])
-    return [d, service("keep-keycloak", {"https": 8443})]
+def openldap(config):
+    """Plain LDAP for sign-in binds only; no Route, and only the Product API may connect.
+
+    The supplied image takes its suffix and admin settings from ``keep-openldap-env``,
+    loads ``/run/openldap-seed/users.ldif`` on first start, runs as the namespace's
+    arbitrary non-root UID and writes only to its two emptyDir mounts. Its data is
+    ephemeral: a restarted pod is seeded again from the same private LDIF.
+    """
+    c = container(config, "openldap")
+    c["envFrom"] = [{"secretRef": {"name": "keep-openldap-env"}}]
+    c["ports"] = [{"name": "ldap", "containerPort": OPENLDAP_PORT}]
+    probe = {"tcpSocket": {"port": "ldap"}, "periodSeconds": 10}
+    c["readinessProbe"] = probe
+    c["startupProbe"] = {**copy.deepcopy(probe), "failureThreshold": 30}
+    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("data", "/var/lib/keep-openldap"),
+                          mount("seed", "/run/openldap-seed", True)]
+    d = deployment(config, "keep-openldap", [c], [tmp_volume(), tmp_volume("data"),
+        secret_volume("seed", "keep-openldap-seed")])
+    ldap = service("keep-openldap", {"ldap": 389})
+    ldap["spec"]["ports"][0]["targetPort"] = OPENLDAP_PORT
+    return [d, ldap]
+
+
+def adapi_mock(config):
+    """The stdlib mock ADAPI (scripts/local_adapi.py) from a ConfigMap; hooks stay off."""
+    c = container(config, "adapi_mock", "adapi-mock", resource_key="adapi-mock")
+    c["command"] = ["python", "-I", "/opt/keep-adapi/local_adapi.py", "--host", "0.0.0.0",
+                    "--port", str(ADAPI_MOCK_PORT), "--data",
+                    "/etc/keep-adapi/adapi-directory.json",
+                    "--client-id-env", "KEEP_ADAPI_CLIENT_ID"]
+    c["envFrom"] = [{"secretRef": {"name": "keep-adapi-mock-env"}}]
+    c["ports"] = [{"name": "http", "containerPort": ADAPI_MOCK_PORT}]
+    # Every route needs the ClientId header, which must not appear in a probe.
+    probe = {"tcpSocket": {"port": "http"}, "periodSeconds": 10}
+    c["readinessProbe"] = probe
+    c["startupProbe"] = {**copy.deepcopy(probe), "failureThreshold": 30}
+    c["volumeMounts"] = [mount("tmp", "/tmp"), mount("code", "/opt/keep-adapi", True),
+                          mount("directory", "/etc/keep-adapi", True)]
+    d = deployment(config, "keep-adapi-mock", [c], [tmp_volume(),
+        {"name": "code", "configMap": {"name": "keep-adapi-mock-code"}},
+        {"name": "directory", "configMap": {"name": "keep-adapi-mock-directory"}}])
+    return [d, service("keep-adapi-mock", {"http": ADAPI_MOCK_PORT})]
+
+
+def directory_publication(config):
+    """API-image identity tooling for the explicit ADAPI refresh; idle until exec."""
+    c = container(config, "api", "identity-publisher", resource_key="directory-publication")
+    c["command"] = ["python", "-c", "import threading; threading.Event().wait()"]
+    c["envFrom"] = [{"secretRef": {"name": "keep-identity-env"}}]
+    c["env"] = env({"KEEP_ENVIRONMENT": "development"})
+    c["volumeMounts"] = [mount("identity", "/etc/keep", True), mount("tmp", "/tmp")]
+    return [deployment(config, "keep-directory-publication", [c], [tmp_volume(),
+        secret_volume("identity", "keep-identity-bindings")])]
 
 
 def kong(config):
@@ -434,7 +456,6 @@ def routes(config):
         route("keep-auth", h["application"], "keep-product-api", "http", "/auth"),
         route("keep-v1", h["v1"], "keep-ingestion-api", "http", "/"),
         route("keep-v2", h["v2"], "keep-kong", "proxy", passthrough=True),
-        route("keep-keycloak", h["keycloak"], "keep-keycloak", "https", passthrough=True),
     ]
 
 
@@ -519,14 +540,14 @@ def render(config, output, bootstrap_only=False):
                     "hostssl all all ::/0 scram-sha-256\n"
                     "host all all 0.0.0.0/0 reject\nhost all all ::/0 reject\n"}}
     infra = [hba]
-    for key, image in (("postgres", "postgres"), ("keycloak-db", "keycloak_postgres"),
-                       ("kong-db", "kong_postgres")):
+    for key, image in (("postgres", "postgres"), ("kong-db", "kong_postgres")):
         infra.extend(postgres(config, key, image))
     infra.extend(redis(config))
     write_list(output, "10-data-services.json", infra, namespace)
     kong_objects, kong_job = kong(config)
     write_list(output, "21-kong-bootstrap.json", [kong_job], namespace)
-    write_list(output, "30-keycloak-kong.json", keycloak(config) + kong_objects, namespace)
+    identity = openldap(config) + adapi_mock(config) + directory_publication(config)
+    write_list(output, "30-identity-kong.json", identity + kong_objects, namespace)
     write_list(output, "31-kong-routes.json", [kong_routes_job(config)], namespace)
     if not bootstrap_only:
         write_list(output, "32-operator-proof.json", operator_proof(config), namespace)
