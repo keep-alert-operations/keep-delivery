@@ -239,6 +239,25 @@ def test_remap_keeps_ids_and_references_and_runs_once(cluster):
     assert snapshot(dsn) == after
 
 
+def test_a_finished_remap_ignores_later_edits_to_the_local_files(cluster):
+    """Requirements: REV-73; plan "One-time local remap" (later Starts are no-ops).
+
+    After the remap only the left-unmapped row keeps the old source. Removing a mapped
+    person from adapi-directory.json or credentials.json afterwards must not stop Start.
+    """
+    dsn = cluster()
+    seed(dsn)
+    run(dsn)
+    after = snapshot(dsn)
+    creds, directory = files()
+    directory["users"] = [u for u in directory["users"] if u["sAMAccountName"] != "local-viewer"]
+    del creds["users"]["local-editor"]
+    again, lines = run(dsn, creds=creds, directory=directory)
+    assert not again["applied"] and again["planned"] == [] and len(again["unmapped"]) == 1
+    assert lines[0] == "Principal remap keycloak-local -> adapi: 0 planned, 1 left unmapped."
+    assert snapshot(dsn) == after
+
+
 def test_an_existing_adapi_row_for_a_mapped_name_refuses_the_whole_remap(cluster):
     """Requirements: REV-73; plan "One-time local remap" (refuse, never merge)."""
     dsn = cluster()

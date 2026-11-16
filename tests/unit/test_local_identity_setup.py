@@ -244,6 +244,13 @@ def test_start_order_and_compose_identity_services():
     ]
     positions = [source.index(step, start) for step in order]
     assert positions == sorted(positions)
+    # The first Start after REV-73 must still find what the earlier launcher started:
+    # records come from .local/keycloak until prepare has moved them.
+    reader = source[source.index("function Read-Records"):source.index("function Save-Records")]
+    assert "'.local/keycloak/processes.json'" in reader
+    loaded = source.index("$script:records = Read-Records")
+    assert loaded < source.index("foreach ($record in $script:records) { Stop-Owned $record }")
+    assert loaded < start
     assert "-m keep.worker directory --once" in source
     assert "KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED" in source
     assert "keycloak.compose" not in source

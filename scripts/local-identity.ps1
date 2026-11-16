@@ -31,6 +31,16 @@ function Stop-Owned($record) {
     }
 }
 
+function Read-Records {
+    # Until the first prepare has moved them, an earlier launcher's records are still in
+    # the folder REV-73 retired (.local/keycloak); read them there so Start -Restart and
+    # Stop find the processes it owns.
+    $legacy = Join-Path $repository '.local/keycloak/processes.json'
+    $path = if (Test-Path -LiteralPath $processFile) { $processFile } elseif (Test-Path -LiteralPath $legacy) { $legacy } else { $null }
+    if ($path) { return @(Get-Content -LiteralPath $path -Raw | ConvertFrom-Json) }
+    return @()
+}
+
 function Save-Records {
     @($script:records) | ConvertTo-Json -AsArray | Set-Content -LiteralPath $processFile -Encoding utf8
 }
@@ -82,7 +92,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Invalid local port configuration; no services changed.' }
     $portValues = $portJson | ConvertFrom-Json
     foreach ($item in $portValues.PSObject.Properties) { [Environment]::SetEnvironmentVariable($item.Name, [string]$item.Value, 'Process') }
-    $script:records = if (Test-Path -LiteralPath $processFile) { @(Get-Content -LiteralPath $processFile -Raw | ConvertFrom-Json) } else { @() }
+    $script:records = Read-Records
     if ($Action -eq 'Stop') {
         foreach ($record in $script:records) { Stop-Owned $record }
         Invoke-Checked { docker compose -p keep-local-stack -f $compose stop openldap }

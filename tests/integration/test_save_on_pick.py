@@ -16,7 +16,7 @@ import secrets
 import threading
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -422,6 +422,26 @@ def test_group_too_slow_for_the_request_saves_in_the_background(site, adapi_fact
     assert pending(site.db, "big-team") is None and publications(site.db, "big-team") == 1
 
 
+def test_one_call_too_slow_for_the_request_saves_in_the_background(site, mock_adapi):
+    """A members call past the 3 s inline call cap is a save that doesn't fit, not an
+    outage: 202 with nothing published, then the saver (5 s call cap) saves it.
+
+    Requirements: REV-73; tenant access 5 (inline save, background save); plan A22.
+    """
+    mock_adapi.set_latency("members", 3.5)
+    with api(site.db, mock_adapi) as client:
+        response = resolve(client, site, site.admin, "team", "keep-observers")
+        assert response.status_code == 202, response.text
+        assert publications(site.db, "keep-observers") == 0
+        row = pending(site.db, "keep-observers")
+        assert row["lease_owner"] and not row["last_failure"]
+        answer = wait_saved(client, site, "team", "keep-observers")
+        assert answer.status_code == 200, answer.text
+        assert outcomes(client.saver, "keep-observers") == [("published", None)]
+    assert pending(site.db, "keep-observers") is None
+    assert publications(site.db, "keep-observers") == 1
+
+
 # --- A21 (resolve side) -------------------------------------------------------------------
 
 
@@ -448,6 +468,31 @@ def publish_now(db, evidence):
     with db.transaction() as conn:
         lock_identity(conn)
         return publish(conn, evidence, superadmin_group=principal_key(SUPERADMIN))
+
+
+def test_a_deleted_group_back_in_the_directory_is_saved_again_on_pick(site, mock_adapi):
+    """A stored tombstone isn't a saved group: picking the name reads ADAPI again.
+
+    A team a refresh marked deleted, which no grant references any more, is never read
+    by a later refresh; recreated in AD, it must be savable on pick.
+    Requirements: REV-73; tenant access 5 (save on pick); plan A12.
+    """
+    evidence = team_evidence(site.db, "keep-observers")
+    key = principal_key("keep-observers")
+    tombstone = replace(
+        evidence,
+        objects={key: DirectoryObject(key, "team", "keep-observers", False, True)},
+        edges={},
+    )
+    assert publish_now(site.db, tombstone).accepted
+    assert stored(site.db, "keep-observers")["deleted"]
+    with api(site.db, mock_adapi) as client:
+        response = resolve(client, site, site.admin, "team", "keep-observers")
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["selectable"]
+    row = stored(site.db, "keep-observers")
+    assert not row["deleted"] and row["checkpoint"] is not None
+    assert publications(site.db, "keep-observers") == 2
 
 
 def test_resolve_fenced_twice_answers_directory_busy(site, mock_adapi):

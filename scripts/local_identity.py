@@ -461,11 +461,18 @@ def database():
     print("Dedicated keep_local database migrated.")
 
 
-def remap_mapping(creds, directory):
-    """Old object id -> (kind, samAccountName) from credentials.json; refuses on gaps."""
+def remap_mapping(creds, directory, object_ids=None):
+    """Old object id -> (kind, samAccountName) from credentials.json; refuses on gaps.
+
+    With ``object_ids`` (the legacy principals still in the database), only those entries
+    are checked, so a finished remap isn't refused later because the files changed.
+    """
     legacy = creds.get("remap") or {}
     users = legacy.get("users", {})
     groups = legacy.get("groups", {})
+    if object_ids is not None:
+        users = {name: oid for name, oid in users.items() if str(oid) in object_ids}
+        groups = {label: oid for label, oid in groups.items() if str(oid) in object_ids}
     problems = []
     unknown = sorted(label for label in groups if label not in LEGACY_GROUPS)
     if unknown:
@@ -526,7 +533,7 @@ def remap(dry_run=False, dsn=None, creds=None, directory=None, out=print):
         if not rows:
             out(f"No {LEGACY_SOURCE} principals; nothing to remap.")
             return result
-        mapping = remap_mapping(creds, directory)
+        mapping = remap_mapping(creds, directory, {str(row[1]) for row in rows})
         for principal_id, object_id, kind, label in rows:
             if object_id not in mapping:
                 result["unmapped"].append((principal_id, object_id, kind, label))
