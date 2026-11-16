@@ -487,6 +487,15 @@ def test_a_deleted_group_back_in_the_directory_is_saved_again_on_pick(site, mock
     assert publish_now(site.db, tombstone).accepted
     assert stored(site.db, "keep-observers")["deleted"]
     with api(site.db, mock_adapi) as client:
+        # The picker saves only a listed row that is unsaved, eligible and not deleted.
+        listing = client.get(
+            f"/api/tenants/{site.tenant}/permission-principals",
+            params={"q": "keep-observers"},
+            headers=site.admin.headers,
+        )
+        assert listing.status_code == 200, listing.text
+        [listed] = [row for row in listing.json()["data"] if row["object_id"] == key.object_id]
+        assert listed["id"] is None and not listed["deleted"] and listed["eligible"]
         response = resolve(client, site, site.admin, "team", "keep-observers")
         assert response.status_code == 200, response.text
         assert response.json()["data"]["selectable"]
