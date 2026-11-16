@@ -1,5 +1,28 @@
 # Implementation status
 
+## 2026-11-16 Lighthouse logo
+
+The user asked for logo options and, after three rounds, picked the Lighthouse mark: a
+navy tower with a signal-amber light, a blue band and a line of sea. It replaces the
+typed "K" tile in the rail, on the signed-out screen, on the sign-in page and as the
+favicon (`src/app/icon.svg`). Colours come from four brand roles in the frontend
+theme, set separately for light and dark, and signal amber is used only in the mark.
+The frontend's DESIGN.md and PRODUCT.md record the choice. No specification describes
+the logo, and routes, API calls, permissions and copy are unchanged, so no design
+change was needed. Merged with a merge commit after both CI `verify` runs passed:
+frontend #45 (`975af9e`, on top of REV-74's `a5a476e`); this change pins that head
+in the manifest.
+
+- Executed on 2026-11-16 on the branch rebased onto `a5a476e`: `npm ci`, client
+  generation with no diff, Prettier with line endings ignored (the Windows checkout
+  uses CRLF), typecheck and build passed. `navigation-session`, `sign-in`, `theme`,
+  `workspace`, `redesign` and `ui-cleanup` passed 62/62 in Chrome. Light and dark
+  screenshots against a mocked session showed the mark at 34 px in the rail and
+  40 px on sign-in, and the favicon switching colours with the colour scheme. Not
+  checked on the signed-in local stack.
+- The three client-guide screenshots were taken at frontend `1717203` and still show
+  the K mark; they have not been retaken.
+
 ## 2026-11-16 Observability: logs, metrics and real user monitoring (REV-74)
 
 The user asked for full logs and metrics on every service, including real user
