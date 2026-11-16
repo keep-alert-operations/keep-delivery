@@ -96,7 +96,9 @@ their volumes. Nothing is installed as a Windows service.
 
 The single dependency definition is [`deploy/local/compose.yaml`](../deploy/local/compose.yaml).
 It includes PostgreSQL, Elasticsearch, Redis, Kafka, OpenLDAP, Kong, Kong's
-dedicated PostgreSQL database, and Grafana. The Python API, the mock ADAPI,
+dedicated PostgreSQL database, Grafana, the Fluent Bit log transport (see
+[Logs in Elasticsearch](#logs-in-elasticsearch-rev-74)) and Prometheus (see
+[Metrics](#metrics-rev-74)). The Python API, the mock ADAPI,
 processing workers and Next.js development server still run as local processes
 so the workspace's editable source and installed developer dependencies are used.
 This is a local development setup, not the production OpenShift deployment.
@@ -135,6 +137,9 @@ password file does not change the password already stored in a PostgreSQL volume
 | Kong Admin API (Compose) | https://localhost:58447 |
 | Grafana 11.6.0 (Compose) | https://localhost:58448 |
 | Grafana for Grafana panels (Compose proxy) | https://localhost:58449 |
+| Fluent Bit 5.1.2 log input (Compose) | http://127.0.0.1:59880 |
+| Fluent Bit's own metrics and health (Compose) | http://127.0.0.1:59820 |
+| Prometheus 2.54.1 (Compose) | http://127.0.0.1:59090 |
 
 The previous native PostgreSQL and Elasticsearch remain on ports 55432 and
 59200 as rollback sources; Keep uses the Compose-managed ports above. All
@@ -350,6 +355,144 @@ never calls it: incidents accept ticket links only into that address and Create 
 ServiceNow opens its new incident form in a browser tab, which does not load for the
 reserved `.example` name. Point it at a real ServiceNow instance you may use to check
 the prefilled form. With the variable empty, incidents show no ticket row.
+
+## Logs in Elasticsearch (REV-74)
+
+The Compose stack runs one Fluent Bit. The launcher puts its address in the generated
+environment as `KEEP_LOG_SHIP_URL` (`http://127.0.0.1:59880` unless
+`KEEP_LOCAL_LOG_SHIP_URL` or `KEEP_LOCAL_LOG_SHIP_PORT` overrides it), so every Keep
+process that sets up logging posts its records there, each to the path for its
+service. Fluent Bit writes them to Elasticsearch, one index per service:
+`keep-logs-ingestion`, `keep-logs-processor`, `keep-logs-correlation`,
+`keep-logs-indexer` and `keep-logs-api`, and `keep-logs-frontend`,
+`keep-logs-browser` and `keep-logs-migrations` once those services ship records. Every record is also
+still written to the process's `.err.log` file. The configuration is
+[`deploy/local/fluent-bit/fluent-bit.conf`](../deploy/local/fluent-bit/fluent-bit.conf).
+
+The logs cluster is set separately from the alert-search cluster. The applications
+read the alert-search cluster from `KEEP_ELASTICSEARCH_URL`. Fluent Bit reads the
+logs cluster from `KEEP_LOCAL_LOGS_ELASTICSEARCH_HOST` and
+`KEEP_LOCAL_LOGS_ELASTICSEARCH_PORT`, which default to the stack's own
+Elasticsearch, so locally both are the same cluster. Keep creates no index
+template, retention or role there. Elasticsearch therefore maps every string field
+as text with a `.keyword` sub-field: use the `.keyword` name to sort or aggregate.
+
+To follow one alert, send it and search by its application, then by the IDs the
+records carry:
+
+```powershell
+$body = '{"application":"demo-app","object":"database","node_name":"db-1","message":"disk is full","operator":"legacy","time_created":"12-11-2026 14:00:00","severity":"error"}'
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:58001/api/ingest/v1/alerts -ContentType application/json -Body $body
+$query = '{"size":100,"sort":[{"@timestamp":"asc"},{"event.sequence":"asc"}],"query":{"match_phrase":{"keep.alert.application":"demo-app"}}}'
+(Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:59201/keep-logs-*/_search' -ContentType application/json -Body $query).hits.hits |
+    ForEach-Object { '{0} {1,-22} {2} {3}' -f $_._source.'@timestamp', $_._index, $_._source.event.action, $_._source.message }
+```
+
+| To find | Query (`match_phrase` on) |
+|---|---|
+| One arrival in ingestion, the source processor and correlation | `keep.delivery_id` |
+| The same arrival in the indexer | `keep.changed_event_id`, named on the processor's `alert_applied` record |
+| Everything that happened to an alert after ingestion | `keep.alert.id` |
+| Alerts by their own fields | `keep.alert.application`, `keep.alert.object` or `keep.alert.component`, `keep.alert.severity` and the rest |
+| One HTTP request, including a rejected alert or a refused command | `http.request.id`: the `request_id` of an ingestion response, the `X-Request-ID` header of a Product API response |
+| What one user did | `user.id`, the user's principal UUID |
+
+Correlation's and the indexer's `alert_change_consumed` records are written before
+the alert's content is loaded, so they carry the alert ID and the changed-event ID
+but not its application or component. A search by application alone misses those
+two steps; a search by either ID returns them.
+
+Checked on 2026-11-12 against this stack: a new v1 alert, a repeat and a clear each
+left eleven steps in order across the four indices (received, validated and
+published; consumed, matched, applied and change published; consumed and correlated
+or skipped; consumed and indexed), an alert with a missing and an unknown field left
+`alert_rejected` naming both, and Fluent Bit reported every record written with no
+error, retry or drop. With the Fluent Bit container stopped, ingestion still
+answered 202 in under 10 ms and the alert was processed; once Fluent Bit was back
+all eleven records arrived with their original `@timestamp`. Assigning and then resolving
+that alert in the UI as the local editor left, for each action, `alert_changed`
+with the cause and the user, `alert_notification_published` and the request record
+in `keep-logs-api`, followed by correlation's and the indexer's steps for the new
+changed event: 25 records for the alert from arrival to resolution. Kibana is not
+part of the stack; any Elasticsearch client works against `http://127.0.0.1:59201`.
+
+The API writes a successful read, search or session check
+that the same user repeats for the same resource once, and then once a minute
+with `keep.repeats`, so an open UI does not fill the index.
+
+Fluent Bit serves its own counters at `http://127.0.0.1:59820/api/v1/metrics`.
+While it is down, records queue in each process (10,000 records; beyond that the
+oldest are dropped from shipping and counted). Fluent Bit is configured to buffer
+on its `fluent_bit_data` volume while Elasticsearch is away; that case has not been
+exercised here, because locally the logs cluster is also the alert-search cluster.
+
+## Metrics (REV-74)
+
+Each Keep process serves `GET /metrics` on its own loopback port, set by the
+launcher that starts it. The stack's Prometheus scrapes them every five seconds,
+together with Fluent Bit's own counters, and evaluates the Keep rules. The
+application ports do not serve `/metrics`.
+
+| Process | Metrics port | Prometheus job |
+|---|---|---|
+| Product API | 59101 | `keep-api` |
+| Ingestion API | 59102 | `keep-ingestion` |
+| Source processor | 59103 | `keep-processor` |
+| Indexer | 59104 | `keep-indexer` |
+| Correlation | 59105 | `keep-correlation` |
+| Fluent Bit | container port 2020 | `keep-fluent-bit` |
+
+| What | Where |
+|---|---|
+| Prometheus (queries, targets, alerts) | http://127.0.0.1:59090 |
+| Dashboard "Keep pipeline" in the local Grafana, folder "Keep monitoring" | https://localhost:58449/d/keep-pipeline (the Grafana proxy under the trusted localhost certificate; https://localhost:58448 is the same Grafana under the operators' certificate) |
+| Scrape configuration | [`deploy/local/prometheus/prometheus.yml`](../deploy/local/prometheus/prometheus.yml) |
+| Rules and their unit tests | [`deploy/monitoring/prometheus`](../deploy/monitoring/prometheus) |
+| Dashboard file | [`deploy/monitoring/grafana/keep-pipeline.json`](../deploy/monitoring/grafana/keep-pipeline.json) |
+
+Every log event is also a counter of the same name: `keep_events_total` with the
+labels `event`, `outcome` and `reason`. For example
+`sum by (outcome) (rate(keep_events_total{event="alert_applied"}[1m]))` is the rate
+of created, updated, unchanged, resolved and reopened alerts, and
+`keep_events_total{outcome="failure"}` lists every failure with its reason. Stage
+timings are `keep_event_delay_seconds` and `keep_event_duration_seconds` by event;
+HTTP requests are `keep_http_requests_total` by route; Kafka lag is
+`keep_kafka_consumer_lag_messages`.
+
+A caught-up consumer of the changed topic shows a lag of 1: the last entry is the
+transaction marker, which is never delivered as a message.
+
+Checked on 2026-11-12: all six targets up; after a known mix of new, repeated,
+cleared and rejected alerts, each of eleven counters moved by exactly the number
+sent; the target-down alert fired while the processes were stopped and cleared
+after they started.
+
+Check the rule file after editing it:
+
+```powershell
+docker run --rm -v "${PWD}/deploy/monitoring/prometheus:/rules:ro" -w /rules --entrypoint promtool prom/prometheus:v2.54.1 test rules keep-rules.test.yml
+```
+
+## Real user monitoring (REV-74)
+
+The local API accepts the browser's monitoring events: the generated environment
+sets `KEEP_RUM_ENABLED=true` (`KEEP_LOCAL_RUM_ENABLED=false` turns it off). The UI
+collects what users experience and posts a batch to `POST /api/rum-events` every
+30 seconds and when the tab is hidden. With the setting off the endpoint answers
+"not found" and the browser stops sending for that session.
+
+The API turns the events into `keep_rum_*` metrics on its own metrics port, shown
+in the row "What users experience (browser)" of the Keep pipeline dashboard: page
+views by section, page load timings, API calls as the browser saw them, live
+connection states and losses, and JavaScript errors. Unhandled JavaScript errors,
+failed API calls and lost live connections are also written to
+`keep-logs-browser`, with the user's ID and, for a failed call, the failed
+request's ID in `http.request.id`. An error's own text is never recorded.
+
+Checked on 2026-11-12: after signing in, moving between Feed and Incidents and
+raising one deliberate error in the page, two batches were accepted and the page
+views, timings, API call counts, live-connection time and the error record were
+all present.
 
 ## Fresh start after the Keep rename (REV-67)
 

@@ -1,0 +1,169 @@
+# Keep recording and alert rules (REV-74; reliability 2 to 5 and 21).
+#
+# Delivered as a file and run in the local stack. Installing it in company
+# monitoring, routing and paging stay with the owning teams. Thresholds marked
+# "design" come from the reliability specification; the others are starting
+# values to tune. Rules are written only over metrics that exist today.
+groups:
+  - name: keep-service-levels
+    rules:
+      # Availability per service level class (reliability 3): good / (good + bad).
+      - record: keep:sli_availability:ratio_rate5m
+        expr: >
+          sum by (sli) (rate(keep_sli_requests_total{outcome="good"}[5m]))
+          / sum by (sli) (rate(keep_sli_requests_total{outcome=~"good|bad"}[5m]))
+      - record: keep:sli_availability:ratio_rate1h
+        expr: >
+          sum by (sli) (rate(keep_sli_requests_total{outcome="good"}[1h]))
+          / sum by (sli) (rate(keep_sli_requests_total{outcome=~"good|bad"}[1h]))
+      # Share of alert changes whose correlation pass ended within 2 seconds.
+      - record: keep:correlation_within_2s:ratio_rate5m
+        expr: >
+          sum(rate(keep_event_delay_seconds_bucket{event="alert_correlated",le="2.0"}[5m]))
+          / sum(rate(keep_event_delay_seconds_count{event="alert_correlated"}[5m]))
+      # Share of alert changes searchable within 5 seconds of the change.
+      - record: keep:searchable_within_5s:ratio_rate5m
+        expr: >
+          sum(rate(keep_event_delay_seconds_bucket{event="alert_indexed",le="5.0"}[5m]))
+          / sum(rate(keep_event_delay_seconds_count{event="alert_indexed"}[5m]))
+      # Share of delivered inputs applied within 1 second of their receipt.
+      - record: keep:applied_within_1s:ratio_rate5m
+        expr: >
+          sum(rate(keep_event_delay_seconds_bucket{event="alert_applied",le="1.0"}[5m]))
+          / sum(rate(keep_event_delay_seconds_count{event="alert_applied"}[5m]))
+
+      # Design: burn rate 14.4 over 1 hour and 5 minutes against 99.9%, with at
+      # least 100 observations in the long window and 20 in the short one.
+      - alert: KeepAvailabilityBurningFast
+        expr: >
+          (1 - keep:sli_availability:ratio_rate1h) > 14.4 * 0.001
+          and (1 - keep:sli_availability:ratio_rate5m) > 14.4 * 0.001
+          and sum by (sli) (increase(keep_sli_requests_total{outcome=~"good|bad"}[1h])) >= 100
+          and sum by (sli) (increase(keep_sli_requests_total{outcome=~"good|bad"}[5m])) >= 20
+        labels:
+          severity: urgent
+        annotations:
+          summary: "{{ $labels.sli }} requests are failing fast enough to spend the month's budget in two days"
+
+  - name: keep-pipeline
+    rules:
+      # Design: unknown proof or possible loss of accepted data is immediate.
+      - alert: KeepPartitionFenced
+        expr: keep_kafka_partitions_held{state="fenced"} > 0
+        labels:
+          severity: immediate
+        annotations:
+          summary: "{{ $labels.job }} holds a fenced partition until a reviewed repair"
+      # Design: a partition held at one offset for over a minute is urgent.
+      - alert: KeepPartitionHeld
+        expr: keep_kafka_partitions_held{state="retrying"} > 0
+        for: 1m
+        labels:
+          severity: urgent
+        annotations:
+          summary: "{{ $labels.job }} has retried one offset for over a minute"
+      - alert: KeepPublishUnconfirmed
+        expr: >
+          sum(rate(keep_events_total{event="alert_unconfirmed"}[5m]))
+          / sum(rate(keep_events_total{event=~"alert_published|alert_unconfirmed"}[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: urgent
+        annotations:
+          summary: "More than 1% of accepted alerts were not confirmed by Kafka"
+      - alert: KeepConsumerLagGrowing
+        expr: >
+          keep_kafka_consumer_lag_messages > 100
+          and deriv(keep_kafka_consumer_lag_messages[10m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} is falling behind on {{ $labels.topic }} partition {{ $labels.partition }}"
+      - alert: KeepAlertsRefusedAfterAcceptance
+        expr: sum by (reason) (increase(keep_events_total{event="alert_refused"}[15m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Accepted alerts were refused by the source processor: {{ $labels.reason }}"
+
+  - name: keep-processes
+    rules:
+      - alert: KeepMetricsTargetDown
+        expr: up{job=~"keep-.*"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} does not answer its metrics scrape"
+      - alert: KeepWorkerNotReady
+        expr: keep_worker_ready == 0
+        for: 2m
+        labels:
+          severity: urgent
+        annotations:
+          summary: "Worker {{ $labels.role }} has not been ready for two minutes"
+      - alert: KeepWorkerTransportRestarting
+        expr: increase(keep_worker_transport_restarts_total[10m]) > 3
+        labels:
+          severity: urgent
+        annotations:
+          summary: "Worker {{ $labels.role }} keeps discarding its Kafka client"
+      - alert: KeepUnhandledErrors
+        expr: >
+          sum by (job) (increase(keep_http_unhandled_errors_total[10m])) > 0
+          or sum by (job) (increase(keep_process_unhandled_errors_total[10m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} raised an exception nothing handled"
+
+  - name: keep-browser
+    rules:
+      - alert: KeepBrowserErrors
+        expr: sum by (view) (increase(keep_rum_js_errors_total[10m])) > 5
+        labels:
+          severity: warning
+        annotations:
+          summary: "The UI raised more than five unhandled JavaScript errors on the {{ $labels.view }} view in ten minutes"
+      - alert: KeepBrowserApiFailing
+        expr: >
+          sum(rate(keep_rum_api_requests_total{outcome=~"network|unreadable|server_error"}[10m]))
+          / sum(rate(keep_rum_api_requests_total[10m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 5% of the browser's API calls fail without a usable answer"
+      - alert: KeepLiveUpdatesMostlyDown
+        expr: >
+          sum(rate(keep_rum_live_state_seconds_total{state="connected"}[15m]))
+          / sum(rate(keep_rum_live_state_seconds_total{state!="hidden"}[15m])) < 0.8
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Browsers are connected to live updates less than 80% of the time"
+
+  - name: keep-log-pipeline
+    rules:
+      - alert: KeepLogShippingFailing
+        expr: increase(keep_log_ship_failures_total[5m]) > 3
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} cannot post its log records to Fluent Bit"
+      - alert: KeepLogRecordsDropped
+        expr: increase(keep_log_ship_records_total{outcome="dropped"}[10m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} dropped log records from shipping; they remain in its own output"
+      - alert: KeepFluentBitOutputFailing
+        expr: >
+          sum(increase(fluentbit_output_errors_total[5m])) > 0
+          or sum(increase(fluentbit_output_retries_failed_total[5m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fluent Bit is failing to write log records to Elasticsearch"

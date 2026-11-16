@@ -8,6 +8,9 @@ $state = Join-Path $repository '.local/runtime'
 $python = Join-Path $repository '.venv/Scripts/python.exe'
 $compose = Join-Path $repository 'deploy/local/compose.yaml'
 $modules = @{ source='keep.processor.main'; correlation='keep.correlation.main'; indexer='keep.search.main' }
+# Each worker serves /metrics on its own loopback port (REV-74), scraped by the stack's
+# Prometheus. The API and ingestion ports are in local-identity.ps1.
+$metrics = @{ source='59103'; indexer='59104'; correlation='59105' }
 $recordFile = Join-Path $state 'workers.json'
 $stackMarker = Join-Path $state 'compose-stack.json'
 $env:KEEP_LOCAL_KAFKA_PORT = '19093'
@@ -86,6 +89,7 @@ try {
             continue
         }
         $env:KEEP_WORKER_HEALTH_PATH = Join-Path $state "$role.health.json"
+        $env:KEEP_METRICS_PORT = $metrics[$role]
         $process = Start-Process -FilePath $python -ArgumentList "-m $($modules[$role])" -WorkingDirectory $repository -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$role.out.log") -RedirectStandardError (Join-Path $state "$role.err.log")
         $record = [pscustomobject]@{ Role=$role; Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o'); WorkerId=0 }
         $record.WorkerId = Worker-Id $record
@@ -93,6 +97,7 @@ try {
         $current | ConvertTo-Json -AsArray | Set-Content -LiteralPath $recordFile -Encoding utf8
     }
     $current | ConvertTo-Json -AsArray | Set-Content -LiteralPath $recordFile -Encoding utf8
+    Remove-Item Env:KEEP_METRICS_PORT -ErrorAction SilentlyContinue
     Checked { & $python scripts/local_runtime.py wait-workers }
     if (Test-Path -LiteralPath (Join-Path $repository '.local/operators/verification.json')) {
         Checked { & scripts/local-v2.ps1 -Action Start -Restart:$restartManaged }

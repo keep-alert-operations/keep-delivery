@@ -36,6 +36,42 @@ services:
       retries: 60
     restart: unless-stopped
 
+  # Log transport (REV-74). Keep processes post their log records here and Fluent Bit
+  # writes them to Elasticsearch, one index per service (keep-logs-<service>). The
+  # logs cluster is set separately from the alert-search cluster; locally it
+  # defaults to the same Elasticsearch.
+  fluent-bit:
+    image: fluent/fluent-bit:5.1.2
+    command: ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/keep/fluent-bit.conf"]
+    depends_on:
+      elasticsearch: {condition: service_healthy}
+    environment:
+      KEEP_LOGS_ELASTICSEARCH_HOST: ${KEEP_LOCAL_LOGS_ELASTICSEARCH_HOST:-elasticsearch}
+      KEEP_LOGS_ELASTICSEARCH_PORT: ${KEEP_LOCAL_LOGS_ELASTICSEARCH_PORT:-9200}
+    ports:
+      - "127.0.0.1:${KEEP_LOCAL_LOG_SHIP_PORT:-59880}:9880"
+      - "127.0.0.1:${KEEP_LOCAL_FLUENT_BIT_PORT:-59820}:2020"
+    volumes:
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/keep/fluent-bit.conf:ro
+      - fluent_bit_data:/fluent-bit/storage
+    restart: unless-stopped
+
+  # Metrics collection (REV-74). Scrapes /metrics from every Keep process on the
+  # host and from Fluent Bit, and evaluates the Keep rules. Grafana reads it.
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["127.0.0.1:${KEEP_LOCAL_PROMETHEUS_PORT:-59090}:9090"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
   redis:
     image: redis:7.4.2
     ports: ["127.0.0.1:56380:6379"]
@@ -189,6 +225,7 @@ services:
       - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/keep-local.yaml:ro
       - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/keep-local.yaml:ro
       - ./grafana/dashboards:/var/lib/keep-dashboards:ro
+      - ../monitoring/grafana:/var/lib/keep-monitoring-dashboards:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -kfsS https://localhost:3000/api/health >/dev/null"]
       interval: 10s
@@ -225,6 +262,10 @@ volumes:
     name: keep-local-runtime_keep_es
   kafka_data:
     name: keep-local-stack_kafka_data
+  fluent_bit_data:
+    name: keep-local-stack_fluent_bit_data
+  prometheus_data:
+    name: keep-local-stack_prometheus_data
   kong_data:
     name: keep-local-operators_kong_data
   grafana_data:
