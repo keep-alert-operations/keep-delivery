@@ -19,8 +19,8 @@ user each time. Keep small tasks with the lead agent and use the fewest agents
 needed. Assign clear ownership and bounded responsibilities, avoid duplicate
 work, and preserve other agents' changes. Allow at most three concurrent
 sub-agents, within native runtime limits. Sub-agents must not delegate recursively.
-Use `eng-coordinate` for bounded assignments and integration; keep internal work
-in sub-agents rather than creating user-visible chats.
+Use the `parallel-build` skill for bounded parallel packages and their integration;
+keep internal work in sub-agents rather than starting separate sessions.
 
 ## Workspace layout and instruction ownership
 
@@ -251,9 +251,10 @@ git -C ./keep-api diff --stat
 ```
 
 Check staged and untracked changes as well as ordinary diffs before editing or
-staging. Keep branches, commits and reviews per repository. Use the `codex/` branch
-prefix when creating a branch unless the user specifies another convention; reuse
-the relevant existing branch when appropriate. Determine base branches from the
+staging. Keep branches, commits and reviews per repository. Name a new branch by
+the kind of work, `feat/`, `fix/`, `docs/`, `refactor/`, `test/` or `chore/`,
+followed by a short kebab-case description, unless the user specifies another
+convention; reuse the relevant existing branch when appropriate. Determine base branches from the
 repository instead of assuming `main`. Stage only task-related changes. Preserve
 unrelated work; never use blanket resets, cleans, stashes or force pushes to make
 the workspace appear clean.

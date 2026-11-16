@@ -40,7 +40,7 @@
     },
     "keep-design": {
       "url": "https://github.com/keep-alert-operations/keep-design.git",
-      "revision": "3a930a2fa6724e6c04d98ac7b620dc2b9041f005"
+      "revision": "4c64d555b95de73f489d82a1d0e1c09cfcacddc0"
     },
     "keep-delivery": {
       "url": "https://github.com/keep-alert-operations/keep-delivery.git",

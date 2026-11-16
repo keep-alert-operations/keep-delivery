@@ -190,7 +190,7 @@ poetry build --format wheel</code></pre>
   <ol>
     <li>Read alert operations section 17 and the frontend UI design. The invariant is that assigning a firing alert displays Acknowledged; removing assignment displays Firing. Suppression is separate.</li>
     <li>Inspect <code>src/lib/alert-status.ts</code>, <code>src/components/alert-table.tsx</code>, <code>src/components/alerts.tsx</code> and the existing synthetic scenarios in <code>tests/redesign.spec.ts</code>. Identify a genuinely missing assertion or edge case; do not duplicate existing coverage.</li>
-    <li>Check the frontend branch and local changes. Reuse the relevant task branch, or create a suitable <code>codex/</code> branch from the verified starting revision. Add one focused regression using existing fixture conventions.</li>
+    <li>Check the frontend branch and local changes. Reuse the relevant task branch, or create a <code>test/</code> branch (or <code>fix/</code> if it needs a correction) from the verified starting revision. Add one focused regression using existing fixture conventions.</li>
     <li>Run the targeted browser file in the isolated synthetic test environment below. If it exposes a defect, implement the smallest correction consistent with the invariant and rerun that scenario.</li>
     <li>Review the rendered result and diff. Run affected frontend checks, then describe precisely whether you added coverage, changed behavior, or both. This exercise does not authorize a production release.</li>
   </ol>
