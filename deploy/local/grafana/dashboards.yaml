@@ -8,3 +8,11 @@ providers:
     allowUiUpdates: false
     options:
       path: /var/lib/keep-dashboards
+  # The Keep monitoring dashboards (REV-74), the same files delivered for company Grafana.
+  - name: keep-monitoring
+    folder: Keep monitoring
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/keep-monitoring-dashboards

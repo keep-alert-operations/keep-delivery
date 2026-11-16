@@ -343,6 +343,14 @@ def environment():
         "KEEP_CAPACITY_PROFILE": str(capacity_profile),
         "KEEP_KAFKA_BOOTSTRAP": "127.0.0.1:19093",
         "KEEP_REDIS_URL": "redis://127.0.0.1:56380/0",
+        # Log records go to the stack's Fluent Bit, which writes them to
+        # Elasticsearch, one index per service (REV-74).
+        "KEEP_LOG_SHIP_URL": os.environ.get(
+            "KEEP_LOCAL_LOG_SHIP_URL",
+            "http://127.0.0.1:" + os.environ.get("KEEP_LOCAL_LOG_SHIP_PORT", "59880"),
+        ),
+        # Real user monitoring (REV-74): the local API accepts the browser's events.
+        "KEEP_RUM_ENABLED": os.environ.get("KEEP_LOCAL_RUM_ENABLED", "true"),
         "KEEP_POOL_SIZE": "2",
         "KEEP_BACKEND_URL": "http://127.0.0.1:58000",
         "KEEP_TICKET_COUNT_URL": os.environ.get(

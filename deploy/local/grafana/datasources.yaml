@@ -6,3 +6,13 @@ datasources:
     type: grafana-testdata-datasource
     access: proxy
     editable: false
+  # Keep's own metrics from the stack's Prometheus (REV-74).
+  - name: Keep metrics
+    uid: keep-local-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 5s

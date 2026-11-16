@@ -1,0 +1,36 @@
+# Local metrics collection for Keep (REV-74, observability 7).
+#
+# Every Keep process serves GET /metrics on its own port (KEEP_METRICS_PORT). The
+# local processes run on the host, so Prometheus reaches them through the Docker
+# host name. In a deployment the same endpoints are found by pod annotations; an
+# OpenTelemetry collector's Prometheus receiver takes the same scrape settings.
+#
+# One job per service, so a metric's own `service` label is never renamed.
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/keep-rules.yml
+
+scrape_configs:
+  - job_name: keep-api
+    static_configs:
+      - targets: ["host.docker.internal:59101"]
+  - job_name: keep-ingestion
+    static_configs:
+      - targets: ["host.docker.internal:59102"]
+  - job_name: keep-processor
+    static_configs:
+      - targets: ["host.docker.internal:59103"]
+  - job_name: keep-indexer
+    static_configs:
+      - targets: ["host.docker.internal:59104"]
+  - job_name: keep-correlation
+    static_configs:
+      - targets: ["host.docker.internal:59105"]
+  # The log transport's own counters: records in, written, retried and dropped.
+  - job_name: keep-fluent-bit
+    metrics_path: /api/v1/metrics/prometheus
+    static_configs:
+      - targets: ["fluent-bit:2020"]
