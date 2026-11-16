@@ -14,8 +14,12 @@ mock ADAPI (127.0.0.1:58092) stand in for AD and ADAPI, and the existing local
 principals were remapped in place (same ids). Branch `codex/ldap-adapi-login` in
 design (from `94ba5da`), migrations (from `4606530`), domain (from `87c5ef4`), api
 (from `3492b14`), contracts (from `b6940ef`), frontend (from `fd95d8d`) and this
-repository (from `30b56ee`); local commits, not pushed. Pins (api → domain, frontend
-→ contracts, this repository's manifest) move at merge.
+repository (from `30b56ee`), plus domain-pin-only branches in ingestion, processor,
+correlation and indexer. api and those four pin keep-domain `47b8257` (the relock
+drops authlib from runtime dependencies), the frontend pins keep-contracts `419da98`,
+and this repository's `pyproject.toml`, lock and workspace manifest pin every branch
+head. Merge order: design, migrations, domain, then api and the four services,
+contracts, frontend, and this repository last.
 
 - Executed on 2026-11-16: domain unit 892 passed; api unit 353 passed; this
   repository's unit tests 350 passed, 1 skipped; ruff clean in all three.
