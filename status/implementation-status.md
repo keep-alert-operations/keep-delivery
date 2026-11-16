@@ -1,5 +1,50 @@
 # Implementation status
 
+## 2026-11-16 Observability: logs, metrics and real user monitoring (REV-74)
+
+The user asked for full logs and metrics on every service, including real user
+monitoring. Every service writes catalogued events as ECS JSON records (the field
+registry and event catalog live in keep-domain), sends them through one Fluent Bit
+to Elasticsearch, one index for each service (`keep-logs-<service>`), and serves
+Prometheus metrics on its own metrics port. An alert leaves its steps inside each
+service, the Product API's actions on an alert are in the same trail, every event
+is counted and timed, the browser reports through `POST /api/rum-events`, and
+every sign-in outcome is an event that names no username. All of it is off unless
+configured. The local stack runs Fluent Bit (127.0.0.1:59880) and Prometheus
+(127.0.0.1:59090) with rules and the pipeline dashboard. What is built and what is
+left is in the [implementation plan](../docs/observability-implementation-plan.md).
+Branch `feat/observability` in design (from `f3cad1e`), contracts (from `3a6d24b`),
+domain (from `a50e628`), api (from `6569e72`), ingestion (from `5be3ba4`),
+processor (from `d121486`), correlation (from `ec92196`), indexer (from `6c792e5`),
+frontend (from `d336c38`) and this repository (from `c1ccf05`); migrations is
+unchanged. keep-domain pins keep-contracts `89adb37`; api and the four services pin
+keep-domain `762f122` (the relock adds prometheus-client); the frontend pins
+keep-contracts `89adb37` and regenerates its client; this repository's
+`pyproject.toml`, lock and workspace manifest pin every branch head. Merge order:
+design, contracts, domain, then api and the four services, frontend, and this
+repository last.
+
+- Executed on 2026-11-16, before the pin commits, against the sibling checkouts
+  through the documented editable override: unit suites domain 988, contracts 58,
+  api 382, ingestion 109, processor 55, correlation 8, indexer 96 and this
+  repository 353 (1 skipped), with unregistered events and fields failing the
+  tests; ruff clean. Real PostgreSQL 18.2 in a throwaway container: the alert-flow,
+  API-command and RUM endpoint tests, 26 pipeline, maintenance and
+  correlation-runtime tests (2 skipped), processor 3 and api 5 (8 skipped).
+  Frontend typecheck and format check pass; the browser suite ran 328 passed, 13
+  skipped and 1 failed (`scalability-users.spec.ts`, "one invalidation uses one
+  feed and one count batch", which fails as often on main: 2 of 8 runs each way).
+  The 21 Prometheus rules pass their unit tests.
+- Local stack on 2026-11-16: eleven containers and six Prometheus targets up; one
+  alert left its eleven ordered steps across the ingestion, processor, correlation
+  and indexer indices; a 38-request mix moved eleven counters by exactly the number
+  sent; a signed-in browser's batch of 22 events was accepted; a rejected and a
+  successful sign-in each left one event and its request record under one request
+  ID; no username or display name of the local directory is in any log index.
+- Not executed: the locks of the pin commits were resolved but the suites were not
+  rerun from them; S1 to S4; anything on OpenShift, where the Fluent Bit
+  Deployment, scrape settings and logs-cluster credentials are not written yet.
+
 ## 2026-11-16 Keep password sign-in and the ADAPI directory replace Keycloak (REV-73)
 
 The user asked to remove Keycloak: people sign in on Keep's own `/sign-in` page with
