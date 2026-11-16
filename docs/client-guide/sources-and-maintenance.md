@@ -30,6 +30,8 @@ Prepared on 11 October 2026 using these checked-out revisions **plus their exist
 
 **Revised 10 November 2026 (REV-70):** the Incidents chapter gained **Link a ServiceNow ticket**, written from keep-frontend branch `codex/incident-ticket` (based on `184bc58`) and its approved design; labels were checked against that source and the running local stack. Other chapters were not re-inspected.
 
+**Revised 16 November 2026 (REV-73):** Keep's own sign-in page replaced the Keycloak form. `sign-in.png` was retaken at 1421x701 in headless Chrome from `/sign-in` on the local stack running keep-frontend `8e36bc7` (branch `codex/ldap-adapi-login`, unmerged). Getting started and Troubleshooting and glossary no longer describe single sign-on or the idle timeout; other chapters were not re-inspected.
+
 The guide does not replace the specifications. [Worker scope](../../../keep-design/specs/spec-worker-scope.md) overrides older automatic maintenance-release, inactivity, retention and assignment-cleanup algorithms. Current UI corrections override older acknowledgement and dashboard controls. [Delivery readiness](../../status/delivery-readiness.md) keeps production gates open; this guide does not close them.
 
 ## Chapter authority map
@@ -51,7 +53,7 @@ The PNGs are unedited product screenshots using synthetic data. The SVGs are ori
 
 | Guide asset | Original / basis |
 |---|---|
-| [sign-in.png](assets/sign-in.png) | Local sign-in form with the Keep theme, captured 10 November 2026 on the Keycloak setup that was removed by REV-73; Keep's own `/sign-in` page keeps this design. Replaces the [login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
+| [sign-in.png](assets/sign-in.png) | Keep's own `/sign-in` page (REV-73), light theme, captured 16 November 2026; replaces the Keycloak form captured 10 November and, before it, the [login-theme screenshot](../../qualification/login-theme-2026-09-27/login.png) |
 | [feed-desktop.png](assets/feed-desktop.png) | Local Feed in Global with synthetic v1 alerts, captured 10 November 2026; replaces the [Feed screenshot of 11 October](../../qualification/feed-rename-2026-10-11/feed-desktop.png) |
 | [dashboard.png](assets/dashboard.png) | Local dashboard with three synthetic count panels and an unsaved name edit, captured 10 November 2026; replaces the [dashboard toolbar evidence](../../qualification/dashboard-provenance-removal-2026-10-09/toolbar-dirty.png) |
 | [concept-map.svg](assets/concept-map.svg) | System product model and tenant boundaries |
