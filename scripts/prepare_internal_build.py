@@ -21,7 +21,7 @@ PYTHON_REPOS = {f"keep-{name}" for name in (
 REPOS = PYTHON_REPOS | {"keep-frontend"}
 INPUTS = ("Dockerfile", "pyproject.toml", "poetry.toml", "poetry.lock", "src", "scripts",
           "package.json", "package-lock.json", "next.config.ts", "next-env.d.ts",
-          "tsconfig.json", "keycloak", ".dockerignore")
+          "tsconfig.json", ".dockerignore")
 ORIGINAL = ".keep-source-poetry.lock"
 RECEIPT = ".keep-internal-build.json"
 

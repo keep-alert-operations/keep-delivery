@@ -45,7 +45,8 @@ function Validate-Configuration {
     Require-Environment @('KEEP_DATABASE_URL', 'KEEP_DEPLOYMENT_EPOCH', 'KEEP_PUBLIC_ORIGIN')
     if (-not $env:KEEP_WRAPPING_KEY -and -not $env:KEEP_WRAPPING_KEYRING) { throw 'Supply KEEP_WRAPPING_KEYRING or KEEP_WRAPPING_KEY.' }
     if ($RequireIdentityConfiguration) {
-        Require-Environment @('KEEP_OIDC_ISSUER', 'KEEP_OIDC_CLIENT_SECRET', 'KEEP_OIDC_DIRECTORY_SOURCE', 'KEEP_OIDC_DIRECTORY_ID_CLAIM', 'KEEP_OIDC_DIRECTORY_SCOPE', 'KEEP_OIDC_REQUIRED_ACR', 'KEEP_OIDC_REQUIRED_AMR', 'KEEP_SUPERADMIN_GROUP')
+        # REV-73: the LDAP bind checks passwords and ADAPI supplies people and groups.
+        Require-Environment @('KEEP_LDAP_HOST', 'KEEP_LDAP_BIND_FORMAT', 'KEEP_ADAPI_URL', 'KEEP_ADAPI_CLIENT_ID', 'KEEP_SUPERADMIN_GROUP')
     }
     $validation = @'
 import sys

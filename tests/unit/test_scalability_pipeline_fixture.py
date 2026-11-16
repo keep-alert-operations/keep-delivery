@@ -1,5 +1,6 @@
 """The benchmark clock remains complete through Windows sharing conflicts."""
 
+import ast
 import asyncio
 from contextlib import asynccontextmanager
 import importlib.util
@@ -193,6 +194,30 @@ def test_clock_sharing_retry_has_finite_deadline(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "replace", replace)
     with pytest.raises(PermissionError):
         fixture.publish_clock(tmp_path / "clock.json")
+
+
+def test_session_check_reads_the_session_without_the_removed_activity_call():
+    """Requirements: REV-73; identity configuration 2 and 4 (no activity heartbeat)."""
+    path = Path(__file__).resolve().parents[2] / "qualification/scalability_load.py"
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    checks = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "session_check"
+    ]
+    assert len(checks) == 1
+    routes = {
+        node.value
+        for node in ast.walk(checks[0])
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    }
+    assert "/auth/session" in routes
+    every_string = {
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    }
+    assert not [value for value in every_string if value.startswith("/auth/activity")]
 
 
 def test_process_adapter_keeps_production_lifecycle_and_private_settings(tmp_path, monkeypatch):

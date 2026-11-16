@@ -1,5 +1,67 @@
 # Implementation status
 
+## 2026-11-16 Keep password sign-in and the ADAPI directory replace Keycloak (REV-73)
+
+The user asked to remove Keycloak: people sign in on Keep's own `/sign-in` page with
+their company username and password (`POST /auth/login`: one LDAP simple bind, a
+WhoAmI check, then an ADAPI lookup by lowercase samAccountName), sessions last 24
+hours with no idle timeout, sign-out is local, and ADAPI is the only directory.
+The picker searches ADAPI (cached in Redis for 2 hours) and saves a pick inline
+within 7 seconds, otherwise in the background, shown as pending. A manual refresh
+(`directory --once`) rereads saved people and groups. Migration 0070 drops the
+OpenID Connect tables and session columns. Locally, OpenLDAP (127.0.0.1:58389) and a
+mock ADAPI (127.0.0.1:58092) stand in for AD and ADAPI, and the existing local
+principals were remapped in place (same ids). Branch `codex/ldap-adapi-login` in
+design (from `94ba5da`), migrations (from `4606530`), domain (from `87c5ef4`), api
+(from `3492b14`), contracts (from `b6940ef`), frontend (from `fd95d8d`) and this
+repository (from `30b56ee`), plus domain-pin-only branches in ingestion, processor,
+correlation and indexer. api and those four pin keep-domain `47b8257` (the relock
+drops authlib from runtime dependencies), the frontend pins keep-contracts `419da98`,
+and this repository's `pyproject.toml`, lock and workspace manifest pin every branch
+head. Merge order: design, migrations, domain, then api and the four services,
+contracts, frontend, and this repository last.
+
+- Executed on 2026-11-16: domain unit 892 passed; api unit 353 passed; this
+  repository's unit tests 350 passed, 1 skipped; ruff clean in all three.
+  `scripts/workspace.py test` passed in all nine repositories with unit tests (with
+  the local stack running, native-CEL compile deadlines failed 2–3 tests in domain or
+  indexer; with it stopped, none failed). Identity
+  integration set (13 files, OpenLDAP + mock ADAPI + PostgreSQL 18) 117 passed; the
+  10,000-member publication held the identity guard 0.52–0.56 s. Save on pick 19
+  passed, local identity setup and remap 19 passed, keep-migrations 53 passed (0001–0069
+  checksums unchanged). `check_contracts.py`, `verify_boundaries.py` and
+  `check_context.py` exit 0; `verify_documents.py` errors []; design `check_docs.py`
+  passed. Frontend at `8e36bc7`: typecheck clean, `next build` passed, Prettier passed
+  with line endings ignored (the Windows checkout uses CRLF), and the full Playwright
+  suite passed 329 with 13 skipped (they need the local stack).
+- Two review rounds. Fixed with a failing test first: an ADAPI call slower than its
+  inline timeout now hands the save to the background (202) instead of 503; a deleted
+  stored group recreated in the directory is listed as unsaved and saved again on pick
+  (the second round found the picker couldn't reach the first fix); the local launcher
+  finds an earlier launcher's processes; a finished local remap ignores later edits to
+  the local files.
+- Local stack run from the branch worktrees after a `pg_dump` of `keep_local` and a
+  copy of `.local`: 0070 applied, remap 6 of 6, bootstrap refresh published 4 units
+  with no failed roots, and grant, assignment and dashboard owners were identical
+  before and after. Smoke S1 found that a click before hydration submitted the
+  sign-in form as GET with the credentials in the URL; the form now posts, reads its
+  fields at submit and keeps its button disabled until the script runs. After the
+  fix S1 passed 7 of 7 and S2 1 of 1. S3 was not run: the local operator has been
+  `setup_pending` since 2026-11-10.
+- An independent verifier on the running stack: local-admin signs in as super-admin;
+  wrong password, empty password and the disabled account get the same 401 with no
+  session; sign-out is local and the old cookie is refused; the Hebrew/English
+  password signs in; picker search by display name escapes `x)(objectClass=*`; a new
+  mock group was saved on pick, granted, and its member got the role, while a viewer
+  gets 403 from resolve; a refresh after disabling a user ended their session; a
+  repeated search was served from the cache; a signed-out workspace URL returns there
+  after sign-in; the production build served `/sign-in` 200 with `/auth` and `/api`
+  answered by Python; S4 (manual incident lifecycle) passed in Global; no Keycloak
+  container runs. Its 56-test integration rerun and migrations 53 passed.
+- Not verified: real AD/ADAPI response shapes and WhoAmI form (mock built from the
+  user's description); S3; the picker save of a recreated group in a browser (API
+  test only). Client guide `sign-in.png` retaken from `/sign-in`.
+
 ## 2026-11-11 Global administration shows Integrations and Platform (REV-72)
 
 The user asked that global super-admins get the Admin page in the Global tenant with
@@ -2348,7 +2410,7 @@ OpenShift and private company-service qualification were not run in this increme
 
 The user requested local Keycloak with custom users/groups instead of external
 LDAP. This development exception is implemented in the
-[local identity guide](../docs/local-keycloak.md). Docker 29.5.2 now runs isolated
+[local identity guide](https://github.com/keep-alert-operations/keep-delivery/blob/30b56ee558637a891a0f759ebcf724754d642f0e/docs/local-keycloak.md). Docker 29.5.2 now runs isolated
 Keycloak 26.7.4; its image is digest-pinned in the dedicated Compose file. A
 native-user/group reader publishes through the existing guarded directory path
 every 60 seconds. Three real password/TOTP accounts, separate API/worker database

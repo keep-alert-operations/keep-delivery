@@ -93,11 +93,41 @@ def test_prepare_before_database_bootstrap_preserves_credentials(monkeypatch, tm
     monkeypatch.setattr(local, "environment", unavailable_environment)
     local.prepare()
     expected = local.credentials()
-    assert not (tmp_path / ".local/keycloak/app-environment.json").exists()
+    assert not (tmp_path / ".local/identity/app-environment.json").exists()
     assert (state / "kong-password.txt").read_text().strip() == expected["kong_password"]
     assert (state / "grafana-password.txt").read_text().strip() == expected["grafana_password"]
     local.prepare()
     assert local.credentials() == expected
+
+
+def test_login_posts_the_password_sign_in_and_keeps_the_csrf_token(monkeypatch, tmp_path):
+    """Requirements: REV-73; identity configuration 14 (password sign-in, no provider)."""
+    state = tmp_path / ".local/identity"
+    state.mkdir(parents=True)
+    (state / "credentials.json").write_text(
+        json.dumps({"users": {"local-admin": {"password": "s3cret-ש"}}}), encoding="utf-8"
+    )
+    monkeypatch.setattr(local, "ROOT", tmp_path)
+    calls = []
+
+    def respond(request):
+        calls.append((request.method, request.url.path))
+        if request.method == "POST":
+            assert request.url.path == "/auth/login"
+            assert request.headers["Origin"] == local.ORIGIN
+            assert request.headers["Content-Type"] == "application/json"
+            assert json.loads(request.content) == {
+                "username": "local-admin", "password": "s3cret-ש", "return_to": "/"}
+            return httpx.Response(200, json={"data": {"return_to": "/"}})
+        assert request.url.path == "/auth/session"
+        return httpx.Response(200, json={"data": {"csrf_token": "csrf-1", "tenants": []}})
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as http:
+        session = local.login(http)
+        assert http.headers["X-CSRF-Token"] == "csrf-1"
+        assert http.headers["Origin"] == local.ORIGIN
+    assert session["csrf_token"] == "csrf-1"
+    assert calls == [("POST", "/auth/login"), ("GET", "/auth/session")]
 
 
 def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):

@@ -480,20 +480,15 @@ def main():
 
                     sweep(db, profile=profile)
                 else:
-                    import os
-                    from pathlib import Path
-                    from keep.identity.directory import PrincipalKey
-                    from keep.identity.worker import load_directory_config, run_cycle
+                    from keep.identity.worker import bootstrap_from_environment, refresh
 
-                    config = load_directory_config(Path(os.environ["KEEP_DIRECTORY_CONFIG"]))
-                    _, publication = run_cycle(
-                        db,
-                        config,
-                        PrincipalKey(config.source, os.environ["KEEP_SUPERADMIN_OBJECT_ID"]),
-                        bootstrap_qualified=os.getenv("KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED")
-                        == "true",
+                    # REV-73: the same refresh as `python -m keep.identity.worker --once`:
+                    # KEEP_ADAPI_URL/KEEP_ADAPI_CLIENT_ID, KEEP_SUPERADMIN_GROUP (a
+                    # samAccountName) and KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED=true.
+                    summary = refresh(
+                        db, settings, bootstrap_qualified=bootstrap_from_environment()
                     )
-                    if not publication.accepted:
+                    if not summary.ok:
                         raise unavailable("directory_publication_incomplete")
                 health.publish(ready=True)
             except Exception:

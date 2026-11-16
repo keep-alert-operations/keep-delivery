@@ -1,5 +1,11 @@
 # Worker scope implementation record
 
+**Later user decision — 2026-11-15 (REV-73):** Keep's password sign-in (one LDAP
+bind) and the ADAPI directory replaced the earlier identity provider and Keep's
+LDAP directory reader. The identity notes below describe the state on 2026-09-30.
+Today the manual refresh is `python -m keep.worker directory --once`, reading ADAPI;
+see [identity configuration](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md).
+
 **Later correction — REV-35:** automatic directory synchronization is now
 nice-to-have. The earlier REV-34 identity statements below are historical;
 [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)
@@ -37,8 +43,9 @@ is authoritative and registered as REV-34. Existing uncommitted work was preserv
   supplement: cutover/source receipt semantics, preserved access windows/masking,
   partial-failure recovery, HTTP budgets, provisioning connection and expired-key
   ciphertext disposal on the next successful operator mutation.
-- Identity synchronization is unchanged. Keycloak-only identity supply remains a
-  discussed alternative requiring a separately accepted, qualified integration.
+- Identity synchronization was unchanged by this record. Another identity supply
+  was then a discussed alternative requiring a separately accepted, qualified
+  integration; REV-73 later chose ADAPI.
 
 ## Executed verification
 
@@ -98,9 +105,8 @@ was stopped. The user's running application stack was not restarted or migrated.
   backend process. Configured budgets are not measured latency guarantees.
 - Storage growth with inactivity/retention cleanup deferred has not been capacity
   qualified. Existing access/expiry rules do not imply physical reclamation.
-- Keycloak-only nested membership, account disablement, five-minute propagation and
-  last-trusted outage behavior have not been implemented or qualified. Existing
-  identity guarantees still rely on the current directory integration.
+- Five-minute propagation and last-trusted outage behavior against the company
+  directory (ADAPI since REV-73) have not been qualified.
 - Earlier Kafka/recovery and infrastructure qualification gaps remain in the
   [Kafka-first record](kafka-first-implementation.md) and
   [delivery checklist](../status/delivery-readiness.md).
@@ -114,8 +120,8 @@ scope correction neither recreates it nor deletes another project document.
 User requested removing the directory worker and listing it as nice-to-have.
 The release guard now rejects continuous company directory startup; `directory
 --once` retains explicit complete trusted publication and returns failure when
-publication is incomplete. The local Keycloak entry point likewise requires
-`--once`. The developer launcher excludes directory polling; local identity Start
+publication is incomplete. The local directory entry point of that time likewise
+required `--once`. The developer launcher excludes directory polling; local identity Start
 publishes once, starts only API/UI, and retires its previously recorded directory
 process on a subsequent Start. The explicit Refresh action loads the existing
 local bindings and publishes once without restarting applications or dependencies.
@@ -123,9 +129,9 @@ local bindings and publishes once without restarting applications or dependencie
 Identity/access specifications, the architecture diagram, deployment guidance,
 readiness/verification scope and REV-35 decision records reflect this change.
 Assistant-selected boundaries preserve existing trusted identity evidence,
-bootstrap/restore gates and OIDC/grant/session checks. Automatic five-minute LDAP
-propagation is deferred with the poller. This is not a Keycloak-only identity
-implementation. New users/teams need explicitly published complete evidence.
+bootstrap/restore gates and sign-in/grant/session checks. Automatic five-minute
+directory propagation is deferred with the poller. This record did not change the
+identity source. New users/teams need explicitly published complete evidence.
 
 Executed verification:
 
@@ -141,7 +147,7 @@ Executed verification:
 - `git diff --check` passed.
 
 No database migration, running-stack restart or shared service change was performed.
-Manual publication against real company LDAP/Keycloak and the updated local
+Manual publication against the real company directory and the updated local
 Start/Refresh process lifecycle remain unqualified; synthetic reader and CLI checks
 are not end-to-end deployment evidence. A currently running directory process is
 not stopped merely by editing these files; the updated local launcher removes its

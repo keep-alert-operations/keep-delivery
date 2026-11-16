@@ -32,10 +32,10 @@ def config():
         },
         "storage_class": "test-class", "image_pull_secret": "test-pull",
         "router_namespace_labels": {"kubernetes.io/metadata.name": "test-router"},
-        "hosts": {key: f"{key}.example.test" for key in ("application", "keycloak", "v1", "v2")},
+        "hosts": {key: f"{key}.example.test" for key in ("application", "v1", "v2")},
         "images": {key: f"registry.example.test/{key}@sha256:" + "a" * 64
                    for key in bundle.IMAGE_KEYS},
-        "storage": {"postgres": "20Gi", "keycloak-db": "5Gi", "kong-db": "5Gi"},
+        "storage": {"postgres": "20Gi", "kong-db": "5Gi"},
         "resource_overrides": {},
     }
 
@@ -65,7 +65,7 @@ def test_global_must_be_observed_after_migration(tmp_path):
     assert "migration.template.json" in (tmp_path / "render-apps.sh").read_text()
 
 
-@pytest.mark.parametrize("field", ["api", "postgres", "keycloak", "kong"])
+@pytest.mark.parametrize("field", ["api", "postgres", "openldap", "adapi_mock", "kong"])
 def test_mutable_image_tags_refused(field, tmp_path):
     values = config()
     values["images"][field] = "registry.example.test/thing:latest"
@@ -96,8 +96,9 @@ def test_no_fake_evidence_or_unintended_external_service(tmp_path):
     assert all(item["metadata"]["namespace"] == "isolated-test" for item in items)
     workload_names = {item["metadata"]["name"] for item in items
                       if item["kind"] in {"StatefulSet", "Deployment"}}
-    assert workload_names == {"keep-postgres", "keep-keycloak-db", "keep-kong-db",
-                              "keep-redis", "keep-keycloak", "keep-kong",
+    assert workload_names == {"keep-postgres", "keep-kong-db", "keep-redis",
+                              "keep-openldap", "keep-adapi-mock",
+                              "keep-directory-publication", "keep-kong",
                               "keep-operator-proof"}
     assert not any(item["metadata"]["name"] == "keep-clock-health" for item in items)
     for item in items:
@@ -114,21 +115,74 @@ def test_no_fake_evidence_or_unintended_external_service(tmp_path):
                 assert c["securityContext"]["capabilities"]["drop"] == ["ALL"]
 
 
-def test_identity_sidecar_uses_real_loopback_and_waits_for_explicit_execution(tmp_path):
+def test_identity_tooling_uses_the_api_image_and_waits_for_explicit_execution(tmp_path):
+    """Requirements: REV-73 (refresh only when run explicitly; no directory polling)."""
     bundle.render(config(), tmp_path)
     item = next(i for i in rendered_items(tmp_path)
-                if i["kind"] == "Deployment" and i["metadata"]["name"] == "keep-keycloak")
+                if i["kind"] == "Deployment"
+                and i["metadata"]["name"] == "keep-directory-publication")
+    assert item["spec"]["replicas"] == 0
     c = next(c for c in item["spec"]["template"]["spec"]["containers"]
              if c["name"] == "identity-publisher")
-    assert "local_keycloak_worker" not in str(c["command"])
+    assert c["command"] == ["python", "-c", "import threading; threading.Event().wait()"]
     assert {e["name"]: e["value"] for e in c["env"]}["KEEP_ENVIRONMENT"] == "development"
+    assert c["envFrom"] == [{"secretRef": {"name": "keep-identity-env"}}]
     assert c["image"] == config()["images"]["api"]
+
+
+def test_test_identity_is_reachable_only_from_its_consumers(tmp_path):
+    """Requirements: REV-73; identity configuration 14 (LDAP bind for sign-in, ADAPI for
+    the directory); no Keycloak workload, policy, Service or Route remains."""
+    bundle.render(config(), tmp_path)
+    items = rendered_items(tmp_path)
+    policies = {i["metadata"]["name"]: i["spec"]["ingress"] for i in items
+                if i["kind"] == "NetworkPolicy"}
+    assert policies["keep-openldap"] == [
+        bundle.rule([bundle.peer("keep-product-api")], bundle.OPENLDAP_PORT)]
+    assert policies["keep-adapi-mock"] == [bundle.rule(
+        [bundle.peer("keep-product-api"), bundle.peer("keep-directory-publication")],
+        bundle.ADAPI_MOCK_PORT)]
+    assert policies["keep-directory-publication"] == []
+    postgres_peers = {p["podSelector"]["matchLabels"]["app"]
+                      for p in policies["keep-postgres"][0]["from"]}
+    assert "keep-directory-publication" in postgres_peers
+    assert not {"keep-openldap", "keep-adapi-mock"} & postgres_peers
+    assert "keycloak" not in json.dumps(policies).lower()
+    assert not [i for i in items if "keycloak" in json.dumps(i).lower()]
+    services = {i["metadata"]["name"]: i["spec"]["ports"] for i in items
+                if i["kind"] == "Service"}
+    assert services["keep-openldap"] == [
+        {"name": "ldap", "port": 389, "targetPort": bundle.OPENLDAP_PORT}]
+    assert services["keep-adapi-mock"] == [
+        {"name": "http", "port": bundle.ADAPI_MOCK_PORT, "targetPort": bundle.ADAPI_MOCK_PORT}]
+    assert not {r["spec"]["to"]["name"] for r in items if r["kind"] == "Route"} & {
+        "keep-openldap", "keep-adapi-mock", "keep-directory-publication"}
+    mock = next(i for i in items if i["kind"] == "Deployment"
+                and i["metadata"]["name"] == "keep-adapi-mock")
+    c = mock["spec"]["template"]["spec"]["containers"][0]
+    assert c["image"] == config()["images"]["adapi_mock"]
+    assert c["command"][:3] == ["python", "-I", "/opt/keep-adapi/local_adapi.py"]
+    assert "--enable-hooks" not in c["command"]
+    assert c["command"][c["command"].index("--client-id-env") + 1] == "KEEP_ADAPI_CLIENT_ID"
+    ldap = next(i for i in items if i["kind"] == "Deployment"
+                and i["metadata"]["name"] == "keep-openldap")
+    c = ldap["spec"]["template"]["spec"]["containers"][0]
+    assert c["ports"] == [{"name": "ldap", "containerPort": bundle.OPENLDAP_PORT}]
+    assert {m["mountPath"]: m["readOnly"] for m in c["volumeMounts"]}["/run/openldap-seed"]
+
+
+def test_hosts_are_exactly_application_v1_and_v2(tmp_path):
+    """Requirements: REV-73 (no identity-provider host)."""
+    values = config()
+    values["hosts"]["keycloak"] = "keycloak.example.test"
+    with pytest.raises(ValueError):
+        bundle.render(values, tmp_path)
 
 
 def test_routes_exclude_admin_and_private_ingestion_and_share_browser_origin(tmp_path):
     bundle.render(config(), tmp_path)
     routes = [i["spec"] for i in rendered_items(tmp_path) if i["kind"] == "Route"]
-    assert len(routes) == 6
+    assert len(routes) == 5
     assert {r["path"] for r in routes if r["host"] == "application.example.test"} == {
         "/", "/api", "/auth"}
     assert not any(r["to"]["name"] in {"keep-postgres", "keep-private-ingestion"}
@@ -149,7 +203,7 @@ def test_database_is_tls_only_and_does_not_admit_ingestion(tmp_path):
     assert "host all all 0.0.0.0/0 reject" in hba
     assert "hostssl all all 0.0.0.0/0 scram-sha-256" in hba
     states = [i for i in items if i["kind"] == "StatefulSet" and "volumeClaimTemplates" in i["spec"]]
-    assert len(states) == 3
+    assert len(states) == 2
     assert all(i["spec"]["volumeClaimTemplates"][0]["spec"]["storageClassName"] == "test-class"
                for i in states)
 

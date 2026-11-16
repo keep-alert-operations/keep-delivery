@@ -4,43 +4,43 @@
   "repositories": {
     "keep-contracts": {
       "url": "https://github.com/keep-alert-operations/keep-contracts.git",
-      "revision": "f9d69845231daee28ba55468de4640cbb5f283da"
+      "revision": "419da982e242a919b86b1c4ff1ab27f8ee4b85da"
     },
     "keep-domain": {
       "url": "https://github.com/keep-alert-operations/keep-domain.git",
-      "revision": "9e6f24147d2183281e90a875f622604d094cc3e6"
+      "revision": "47b825773249f6cfd378e7f470d87a3a63138e5c"
     },
     "keep-migrations": {
       "url": "https://github.com/keep-alert-operations/keep-migrations.git",
-      "revision": "1c4e049f3638cb7d8be903241e165edee318da19"
+      "revision": "4c4a5bb9d2779d9120055bd0f9de1a158e96a0e0"
     },
     "keep-api": {
       "url": "https://github.com/keep-alert-operations/keep-api.git",
-      "revision": "ad731150a7ce0231aa84157354c411ce525af4f9"
+      "revision": "77925eecfb2dda1e02b3b2546cc4a6db3c982800"
     },
     "keep-ingestion": {
       "url": "https://github.com/keep-alert-operations/keep-ingestion.git",
-      "revision": "8477192a9baa4752b1a4067dc13754d2e0696e36"
+      "revision": "1c22d010907078c76a81caa245c61e075d68a49b"
     },
     "keep-processor": {
       "url": "https://github.com/keep-alert-operations/keep-processor.git",
-      "revision": "e05f7cd3a09d4e004b9e52462b72ef2cbde8f0fe"
+      "revision": "94a27df00b4243871114bf0db0e03fcad56f1261"
     },
     "keep-correlation": {
       "url": "https://github.com/keep-alert-operations/keep-correlation.git",
-      "revision": "e36cd901b6bf396c0e8576e2ac295ba12e5f6318"
+      "revision": "ff5b1c2aad9520cc80cb3bf37201a2f213671d84"
     },
     "keep-indexer": {
       "url": "https://github.com/keep-alert-operations/keep-indexer.git",
-      "revision": "d7afc0fb9c9bd44177d5007fe68d45506185af7d"
+      "revision": "75b63571b1452d0d05955b8316bbefbb0993543e"
     },
     "keep-frontend": {
       "url": "https://github.com/keep-alert-operations/keep-frontend.git",
-      "revision": "b90bddea1ecb6e6d307214f8a147fee8c5ab4b53"
+      "revision": "ffd2ffa7ada7fbf563e13264d015f7b4f5cd8a90"
     },
     "keep-design": {
       "url": "https://github.com/keep-alert-operations/keep-design.git",
-      "revision": "8609228eb501ddc39f8a135b632fadd1965cfa99"
+      "revision": "3a930a2fa6724e6c04d98ac7b620dc2b9041f005"
     },
     "keep-delivery": {
       "url": "https://github.com/keep-alert-operations/keep-delivery.git",

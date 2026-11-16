@@ -66,8 +66,8 @@ def test_register_lifecycle_replay_scope_and_no_activity(registry, real_db):
     body = registration()
     with real_db.transaction() as conn:
         activity = conn.execute(
-            "SELECT activity_at FROM auth_sessions WHERE principal_id=%s", (actor,)
-        ).fetchone()["activity_at"]
+            "SELECT revoked_at,absolute_at FROM auth_sessions WHERE principal_id=%s", (actor,)
+        ).fetchone()
     result = client.post(path, json=body)
     assert result.status_code == 200, result.text
     first = result.json()
@@ -96,8 +96,8 @@ def test_register_lifecycle_replay_scope_and_no_activity(registry, real_db):
     with real_db.transaction(tenant) as conn:
         assert (
             conn.execute(
-                "SELECT activity_at FROM auth_sessions WHERE principal_id=%s", (actor,)
-            ).fetchone()["activity_at"]
+                "SELECT revoked_at,absolute_at FROM auth_sessions WHERE principal_id=%s", (actor,)
+            ).fetchone()
             == activity
         )
         controls = conn.execute(
@@ -154,10 +154,10 @@ def test_other_session_cannot_read_or_change_view(registry, real_db):
     handle = "different-synthetic-session-" + str(uuid4())
     with real_db.transaction() as conn:
         conn.execute(
-            """INSERT INTO auth_sessions(handle_hash,principal_id,issuer,subject,provider_sid,
-          csrf_hash,csrf_cipher,auth_time,activity_at,absolute_at,deployment_epoch)
-          SELECT %s,principal_id,issuer,subject,provider_sid,csrf_hash,csrf_cipher,auth_time,
-          activity_at,absolute_at,deployment_epoch FROM auth_sessions WHERE principal_id=%s""",
+            """INSERT INTO auth_sessions(handle_hash,principal_id,
+          csrf_hash,csrf_cipher,auth_time,absolute_at,deployment_epoch)
+          SELECT %s,principal_id,csrf_hash,csrf_cipher,auth_time,
+          absolute_at,deployment_epoch FROM auth_sessions WHERE principal_id=%s""",
             (hashlib.sha256(handle.encode()).digest(), actor),
         )
     client.cookies.set("__Host-keep_session", handle)

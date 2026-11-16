@@ -11,7 +11,7 @@ const runId = __ENV.RUN_ID;
 requireThat(/^https:\/\/[^/@?#\s]+$/.test(origin || ''), 'API_ORIGIN must be the HTTPS browser origin');
 requireThat(/^[A-Za-z0-9][A-Za-z0-9-]{0,39}$/.test(runId || ''), 'RUN_ID required');
 requireThat(/^[a-f0-9-]{36}$/i.test(tenant || ''), 'Real tenant UUID required');
-requireThat(account && /^[A-Za-z0-9_-]{20,128}$/.test(account.cookie), 'A normal OIDC session is required');
+requireThat(account && /^[A-Za-z0-9_-]{20,128}$/.test(account.cookie), 'A normal sign-in session is required');
 export const options = {scenarios: {verification: {
   executor: 'shared-iterations', vus: 1, iterations: 1, maxDuration: '11m',
 }}, insecureSkipTLSVerify: false,

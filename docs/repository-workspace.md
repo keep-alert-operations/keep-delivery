@@ -196,7 +196,8 @@ the isolated local dependency stack. These scripts retain the existing local por
 and Compose project identity. Stop the monorepo-managed local stack before starting
 this workspace's stack, so both sets of processes do not consume or manage the same
 development resources. Bootstrap does not start services or copy local credentials.
-Generate a fresh development environment with the documented local identity setup.
+Generate a fresh development environment with the
+[local sign-in and directory setup](local-identity.md).
 
 Run `scripts/verify.ps1 -Suite Unit` for all owned Python unit suites. The database
 suite requires `KEEP_TEST_DATABASE_URL` pointing to an isolated disposable test

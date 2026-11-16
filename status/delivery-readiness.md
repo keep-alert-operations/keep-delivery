@@ -24,13 +24,13 @@ Require a validated, versioned environment manifest with each service's supporte
 | Kafka team | Topic namespaces, logical-key received/tenant-key changed ordering, idempotent/transactional producer fencing, read_committed consumers, stable partition topology, message limits, offsets/replay/retention and allocation. No PG ingress queue; Kafka retention can lose accepted unprocessed inputs. |
 | Redis team | Authenticated Pub/Sub namespace and connection limits. Failure selects PG reconciliation/polling, not data loss. |
 | Kong/Grafana owners | Installed Keep policy plugin, all-serving-node generation/digest/expiry proof, trusted host clocks, operator supplement's auth/private context, credential IDs, supported management APIs, exact Unicode routing-label round trip and external writer safety. Unsupported remote contract keeps operations pending. |
-| LDAP owner / Keep Keycloak team | Immutable identity schema, nested/primary memberships, paged completeness, upstream visibility within the five-minute budget; installed OIDC/password sign-in/console MFA/refresh/logout behavior. Unknown facts never become trusted memberships. |
+| AD/LDAP and ADAPI owners | LDAP host, port and encryption setting; the bind name format and WhoAmI answer, confirmed by one real sign-in; ADAPI `/users`, `/groups` and recursive-members response shapes, `ClientId` binding, 1,000-row search cap and error behavior, confirmed by one real call per route; stable samAccountNames, nested memberships and AD's own lockout policy. Unknown facts never become trusted memberships. |
 | OpenShift/security/observability owners | Workload model/allocation, secret protection, trust, probes/grace, SSE flush/timeouts, metrics/traces/log interfaces and existing on-call routes. |
 | Recovery-evidence owner | Independently protected ordered append/checkpoint interface and demonstrable rollback survival for minimal fences. Deletion/restore gates remain enforced until verified. |
 
 Use adapter contract tests against a staging instance of the actual version. If a supplied service lacks a selected capability, the release stays gated and records a compatibility defect; no silent fallback that changes product behavior. Other teams choose infrastructure retention/backups/HA and perform service operations. Keep chooses its schema/client usage and validates their offered guarantees. Do not claim a universal RPO/RTO or zero-loss service failover before those facts exist.
 
-Collect the internal Keycloak/application hostnames, installed supported release, directory type/schema, TLS trust, LDAP read credentials/search bases, immutable-ID mapping and designated super-admin group ID. Confirm directory visibility and query capacity against section 7. These are integration inputs and qualification prerequisites; they do not reopen the selected configuration.
+Collect the internal application hostname, the AD domain, the LDAP host, port and encryption setting (with its CA file when TLS is on), the bind name format, the ADAPI URL and version, the `ClientId` secret reference and the designated super-admin group's samAccountName. Confirm directory visibility and query capacity against section 7. These are integration inputs and qualification prerequisites; they do not reopen the selected configuration.
 
 ## CI and release artifacts
 
@@ -42,7 +42,7 @@ Build immutable images once and promote the same digests. The release bundle inc
 
 Select six dependency-ordered milestones: (1) contracts/manifests and build/migration foundation; (2) identity/tenant authorization plus durable native ingress; (3) authoritative alerts/history and CEL/search; (4) maintenance, incidents/correlation and retention/recovery; (5) operators/Grafana plus presets/dashboards/live UI; (6) full qualification, support handoff and controlled production release. Parallel implementation is possible inside a milestone where transaction contracts are stable, but no incomplete safety boundary is enabled in production. Dates and named engineers are staffing inputs rather than design choices fabricated here.
 
-Use separate development/staging/production namespaces, realms, databases/namespaces and service credentials under owner-provided infrastructure. Seed only synthetic qualification data. Bootstrap Global idempotently and validate the designated LDAP super-admin group before human administration. Support native v1/v2 simultaneously; no legacy enriched-state import, cross-version identity merge or automatic historical replay migration is included.
+Use separate development/staging/production namespaces, databases/namespaces and service credentials under owner-provided infrastructure. Seed only synthetic qualification data. Bootstrap Global idempotently and validate the designated AD super-admin group before human administration. Support native v1/v2 simultaneously; no legacy enriched-state import, cross-version identity merge or automatic historical replay migration is included.
 
 Roll out expand/read-compatible application changes, validate/backfill in bounded fenced jobs, then enable new writes/features only when old incompatible writers are drained. Canary stateless APIs by supported routing and workers by explicit tenant/role fencing; never let two incompatible worker generations concurrently write a tenant. Reconcile desired remote operator state rather than duplicate provisioning during rollout. Roll back application images only within declared schema/event compatibility, preserving monotonic versions/epochs and authoritative data; no database rewind as a deployment rollback. Follow the existing error-budget policy.
 
@@ -62,7 +62,7 @@ Roll out expand/read-compatible application changes, validate/backfill in bounde
 
 ## Runbooks and support
 
-The user's team is accountable for Keep application behavior, releases, Keycloak configuration/operation and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Keep still has no product notifications.
+The user's team is accountable for Keep application behavior, releases, Keep's sign-in and directory configuration (LDAP bind settings, ADAPI binding and super-admin group) and first-line application triage. Technology owners execute their own failover, storage expansion, backup restore, certificate/service maintenance and infrastructure policy. Record actual primary/secondary contacts in the environment manifest before launch. Existing company on-call tooling handles operational alerts; Keep still has no product notifications.
 
 Deliver runbooks with the following selected containment and exit checks:
 
@@ -73,7 +73,7 @@ Deliver runbooks with the following selected containment and exit checks:
 | Correlation blocked | Preserve incidents/alerts, show reason, correct validated configuration or use permitted fresh reset; never replay expired windows. |
 | Maintenance lag/error | Preserve cause truth and historical boundaries, fence unsafe evaluation, repair reducer/jobs; verify overlap union and searchable/rendered generation. |
 | Search unavailable/rebuild | Keep authoritative reads/ingestion where healthy, label stale views, snapshot/catch up/switch under the selected index epoch protocol. |
-| Identity outage or access defect | Continue valid last-known-data policy for unavailable refresh; enforce known negative evidence/current grants; gate absent authority and restore sessions only through fresh SSO after rollback. |
+| Identity outage or access defect | Continue valid last-known-data policy for unavailable refresh; enforce known negative evidence/current grants; gate absent authority and restore sessions only through fresh sign-in after rollback. |
 | Key compromise/provisioning failure | Revoke authoritatively, erase ciphertext, reconcile remote resources with existing saga; verify no old generation can activate. |
 | Retirement/evidence failure | Keep content inaccessible only once logical retirement commits; retain protected pending work, reconcile intents, gate unsafe physical deletion/restoration. |
 | Clock anomaly | Fence timestamp-dependent actions, escalate owner repair, preserve recorded times and resume only with trusted monotonic decision time. |
@@ -99,7 +99,7 @@ a separately executed offline cutover; the disposable test migration is not that
 | DEL-03 Capacity qualification | Keep performance lead + service owners | Shared system section 23 measured combined profile, selected numeric budgets, actual pool/resource settings and sustained/recovery results. |
 | DEL-04 Correctness/security/UX | Keep engineering and reviewers | [Verification plan](https://github.com/keep-alert-operations/keep-design/blob/main/verification/verification-plan.md) acceptance executions, isolation/replay/permission tests, accessibility and redaction evidence. |
 | DEL-05 Recovery protection | Evidence/service owners + Keep | Independent intent/fence contract, backup-restore handoff, credential/permission/deletion reconciliation and full rebuild exercise. |
-| DEL-06 Identity and remote integration | Keep Keycloak/integration owners + LDAP/Kong/Grafana owners | Installed-version configuration tests, nested membership/five-minute evidence, exact routing labels, safe external writer mode and credential lifecycle verification. |
+| DEL-06 Identity and remote integration | Keep sign-in/integration owners + AD/ADAPI/Kong/Grafana owners | Installed-version configuration tests, a real sign-in and one real call per ADAPI route, nested membership/five-minute evidence, exact routing labels, safe external writer mode and credential lifecycle verification. |
 | DEL-07 Release and support | Keep release/support owners | Immutable release bundle, compatible rollout/rollback rehearsal, staffed contacts and exercised runbooks. |
 | DEL-08 Operational observation | Keep + observability owner | Live SLI measurement/coverage and ongoing rolling-window results after deployment; preproduction tests alone cannot prove a production 30-day SLO. |
 
@@ -133,7 +133,7 @@ Directory polling and its five-minute propagation evidence in DEL-06 are deferre
 with the nice-to-have worker. Explicit complete bootstrap/manual publication,
 immutable identity binding, nested membership, unknown-user/team refusal,
 last-trusted authorization and session/restore safeguards remain required. This
-does not close any DEL item or qualify company LDAP/Keycloak. See
+does not close any DEL item or qualify company AD or ADAPI. See
 [worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
 
 ## REV-36 live publishing scope
@@ -149,7 +149,8 @@ no DEL item is closed by this scope change alone.
 
 The [isolated deployment and load-test handoff](../docs/runbooks/openshift-load-testing.md)
 assumes supplied Elasticsearch, Kafka and Grafana, an internal image registry and
-dedicated native Keycloak test users. It provides container/deployment assets,
+dedicated test users, now served by OpenLDAP and the mock ADAPI (the Keycloak
+test users of 2026-10-05 were removed by REV-73). It provides container/deployment assets,
 starting allocations and executable workload scripts. See the
 [local evidence](../qualification/openshift-load-test-handoff.md) for actual checks
 and unbuilt/unexecuted coverage. The

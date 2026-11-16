@@ -2,9 +2,10 @@
 
 This is the handoff for an **isolated test environment**. You provide Elasticsearch,
 Kafka and Grafana inside the private network. Deploy Keep, PostgreSQL, Redis,
-Kong and Keycloak in OpenShift. Use dedicated native Keycloak test users and your
-private image registry. No connection to that cluster, deployment, or capacity
-result is claimed by this document.
+Kong and the test identity services in OpenShift: OpenLDAP checks passwords and a
+mock ADAPI supplies people and groups (REV-73). Use dedicated synthetic test users
+and your private image registry. No connection to that cluster, deployment, or
+capacity result is claimed by this document.
 
 Start with a small diagnostic run. Measure the bottleneck before adding a Redis
 cache: Redis is already required for live hints, but the current architecture
@@ -41,7 +42,8 @@ used for builds, or immutable built images plus this delivery checkout.
 | [Bundle instructions](../../deploy/openshift/load-test/README.md) | Exact Secret inventory, database bootstrap and render interface |
 | [Cluster initialization](cluster-initialization.md) | Search activation, internal operator proof, direct Kong member binding and retry procedures |
 | [Load toolkit](../../qualification/load-test/README.md) | Executable k6 seed, ingestion and authenticated API-read tests |
-| [Test identity generator](../../qualification/load-test-identity/prepare.py) | Private native-user realm and identity configuration |
+| [Test identity generator](../../qualification/load-test-identity/prepare.py) | Private test users: OpenLDAP seed, mock ADAPI data and identity settings |
+| [Mock ADAPI](../../scripts/local_adapi.py) | Stdlib stand-in for ADAPI, run from a ConfigMap |
 | [PostgreSQL wrapper](../../deploy/images/postgres/Dockerfile) | Arbitrary-UID PostgreSQL image |
 | [Redis wrapper](../../deploy/images/redis/Dockerfile) | Arbitrary-UID Redis image |
 | [Existing application templates](../../deploy/openshift/) | Canonical service deployment definitions |
@@ -65,9 +67,10 @@ load generator / browsers
 Kafka received --> processor --> PostgreSQL + Kafka changed
 Kafka changed  --> indexer --> Elasticsearch
 Kafka changed  --> correlation --> PostgreSQL (when its capability is enabled)
-Product API --> PostgreSQL, Elasticsearch, Redis, Keycloak
+Product API --> PostgreSQL, Elasticsearch, Redis, OpenLDAP (bind), mock ADAPI
 Product API --> Kong Admin API / external Grafana for operator provisioning
-Keycloak --> its PostgreSQL; Kong --> its PostgreSQL
+identity-tooling pod --> mock ADAPI, PostgreSQL (manual directory refresh)
+Kong --> its PostgreSQL
 ```
 
 Domain and contracts are libraries inside service images, not Deployments.
@@ -80,7 +83,7 @@ Before applying anything, obtain:
 1. A dedicated namespace, allowed worker nodes, storage class/PVC expansion policy,
    namespace CPU/memory quota and image pull credentials. Establish that the test
    cannot interfere with another Keep installation.
-2. Four DNS names: application, Keycloak, native v1, and Kong/native v2. Supply
+2. Three DNS names: application, native v1, and Kong/native v2. Supply
    trusted certificates, browser trust and service CA bundles. The application
    origin must be the same for the UI, `/api` and `/auth`.
 3. Elasticsearch HTTPS endpoint, actual version, test-only index name, API-key or
@@ -104,8 +107,8 @@ Before applying anything, obtain:
 
 Record these in a private copy of the
 [environment manifest](../../qualification/environment-manifest.example.json).
-Keep unverified capabilities unqualified. The native-user test exception supplies
-no evidence about LDAP integration or company-directory propagation.
+Keep unverified capabilities unqualified. The test OpenLDAP and mock ADAPI supply
+no evidence about company AD sign-in, ADAPI or company-directory propagation.
 
 ## 3. Starting resource allocations
 
@@ -118,11 +121,11 @@ resulting allocation with every test report.
 | Workload | CPU request / limit | Memory request / limit | Storage / notes |
 | --- | --- | --- | --- |
 | Keep PostgreSQL | 1 / 2 | 2Gi / 4Gi | 20Gi initial PVC, **smoke tests only until sized** |
-| Keycloak PostgreSQL | 250m / 1 | 256Mi / 1Gi | 5Gi PVC |
 | Kong PostgreSQL | 250m / 1 | 256Mi / 1Gi | 5Gi PVC |
 | Redis | 100m / 500m | 128Mi / 512Mi | Ephemeral hints; PostgreSQL reconciliation repairs missed hints |
-| Keycloak | 500m / 2 | 768Mi / 2Gi | Persistent state in its PostgreSQL |
-| Identity publication tool | 100m / 500m | 128Mi / 512Mi | Idle sidecar; runs only on explicit command |
+| OpenLDAP | 100m / 500m | 128Mi / 512Mi | Ephemeral; reseeded from the private LDIF on restart |
+| Mock ADAPI | 100m / 500m | 128Mi / 512Mi | Stateless; data from a ConfigMap |
+| Identity tooling (`keep-directory-publication`) | 100m / 500m | 128Mi / 512Mi | Idle API-image pod; runs the refresh only on explicit command |
 | Kong | 250m / 1 | 256Mi / 1Gi | Writable temporary prefix |
 | Operator proof | 100m / 500m | 128Mi / 512Mi | Private API-image workload; bounded read-only SQL pool and direct gateway checks |
 | Search bootstrap Job | 250m / 1 | 256Mi / 1Gi | One-off indexer-image tool, before writers start |
@@ -173,10 +176,15 @@ resulting images. See [workspace build instructions](../repository-workspace.md#
 | Migrations | `../keep-migrations` | `Dockerfile` |
 | Frontend | `../keep-frontend` | `Dockerfile` |
 | Kong + Keep plugin | `../keep-ingestion` | `kong/Dockerfile` |
-| Keycloak + Keep theme | `../keep-frontend` | `keycloak/Dockerfile` |
 | PostgreSQL wrapper, each chosen vendor base | `deploy/images/postgres` | `Dockerfile` |
 | Redis wrapper | `deploy/images/redis` | `Dockerfile` |
 | k6 toolkit | `qualification/load-test` | `Dockerfile` |
+
+OpenLDAP and the mock ADAPI's Python base are mirrored images, not built here.
+The supplied OpenLDAP image must meet the contract in the
+[bundle instructions](../../deploy/openshift/load-test/README.md#images-restrictions-and-storage);
+the mock ADAPI runs `scripts/local_adapi.py` from a ConfigMap on a Python 3.13
+Bookworm image.
 
 Example application build; obtain `KEEP_REPOSITORIES_TOKEN` through your normal
 credential manager without printing it. `$BUILD_REGISTRY`, `$RELEASE` and every
@@ -189,9 +197,6 @@ docker build --secret id=github_token,env=KEEP_REPOSITORIES_TOKEN \
 docker build --build-arg KONG_BASE_IMAGE="$KONG_BASE_IMAGE" \
   -f ../keep-ingestion/kong/Dockerfile \
   -t "$BUILD_REGISTRY/keep-kong:$RELEASE" ../keep-ingestion
-docker build --build-arg KEYCLOAK_BASE_IMAGE="$KEYCLOAK_BASE_IMAGE" \
-  -f ../keep-frontend/keycloak/Dockerfile \
-  -t "$BUILD_REGISTRY/keep-keycloak:$RELEASE" ../keep-frontend
 ```
 
 Repeat the application build for every application/migration image and use the
@@ -224,8 +229,8 @@ docker push "$PRIVATE_REGISTRY/keep-api:$RELEASE"
 
 Take the **destination registry digest** for each image and put its
 `registry/path@sha256:...` reference in the bundle config. A tag alone is not a
-deployment identity. Include the wrappers, Keycloak theme, Kong plugin and k6
-image in the transfer. This is a local test bundle if it contains uncommitted
+deployment identity. Include the wrappers, Kong plugin, OpenLDAP, the mock ADAPI's
+Python base and k6 image in the transfer. This is a local test bundle if it contains uncommitted
 patches; preserve the patch hashes rather than claiming they are committed
 release revisions. [OpenShift image guidance](https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/images/managing-images)
 describes registry integration; use the documentation for your installed release.
@@ -233,8 +238,8 @@ describes registry integration; use the documentation for your installed release
 ## 5. Prepare private configuration and test identities
 
 Create a private working directory outside source control. Restrict file access;
-the generated realm import contains passwords/client secrets. Do not put rendered
-Secrets, session cookies or operator keys in reports.
+the generated `credentials.json` holds plaintext test passwords. Do not put
+rendered Secrets, passwords, session cookies or operator keys in reports.
 
 ```bash
 umask 077
@@ -242,8 +247,7 @@ mkdir -p "$HOME/keep-load-private"
 PRIVATE="$HOME/keep-load-private"
 cp deploy/openshift/load-test/configuration.example.json "$PRIVATE/config.json"
 python qualification/load-test-identity/prepare.py \
-  --app-origin "https://$APP_HOST" --keycloak-origin "https://$KEYCLOAK_HOST" \
-  --users 100 --output "$PRIVATE/identity"
+  --app-origin "https://$APP_HOST" --users 100 --output "$PRIVATE/identity"
 ```
 
 Fill the bundle config with namespace, release ID, storage class, registry secret,
@@ -251,33 +255,36 @@ DNS hosts and all image digests. Initially leave `global_tenant_id` null and use
 bootstrap rendering. Global is created by migrations; read its actual UUID later.
 Never generate a replacement UUID or create a second Global tenant.
 
-The identity generator creates one `load-admin` and 100 separate load users with
-random passwords and immutable UUIDs. Only the admin belongs to the global admin
-group. Global's normal baseline still applies; grant users the appropriate role
-in the specific test tenant through Keep administration. The confidential web
-client uses code flow + PKCE, signed OIDC tokens and normal secure sessions. No
-password grant or preinserted session is used.
+The identity generator contacts no service. It creates one `load-admin` and 100
+separate load users (`load-user-001` …) with random passwords. Only the admin
+belongs to the super-admin group `keep-load-administrators`; the load users
+belong to `keep-load-users`. Global's normal baseline still applies; grant
+`keep-load-users` (or single users) the appropriate role in the specific test
+tenant through Keep administration. It writes:
 
-Import `keep-local-realm.json` into the dedicated Keycloak database once. Realm
-startup import does not replace an existing realm. Preserve these generated
-credentials/UUIDs with the database; generating them again is a new identity set,
-not a password reset. The generator refuses an existing output directory.
+| File | Use |
+|---|---|
+| `credentials.json` | Plaintext usernames and passwords, for signing the load users in. |
+| `openldap-users.ldif` | The OpenLDAP seed, with `{SSHA}` hashes only. |
+| `openldap-admin-password` | The OpenLDAP admin password for the supplied image's settings. |
+| `adapi-directory.json` | The mock ADAPI's people and groups; no passwords. |
+| `api-identity.env` | LDAP host `keep-openldap:389`, plain LDAP, the bind format, the ADAPI URL and ClientId, and the super-admin group, for the Product API. |
+| `publisher-identity.env` | The ADAPI URL and ClientId and the super-admin group, for the identity-tooling pod. It holds no bootstrap flag. |
+| `adapi-mock.env` | The ClientId the mock accepts. |
 
-Keycloak runs with its optimized PostgreSQL image and HTTPS. Its server certificate
-must include **both the external Keycloak DNS name and `localhost`**. The
-`identity-publisher` container shares its pod network and reads
-`https://localhost:8443/realms/keep-local` with CA validation. Only this manual
-tool uses the existing development-only native directory adapter. The API uses
-the real external issuer, `keycloak-local` source, `sub` as immutable ID and
-the normal authorization guards. This does not generalize native test identities
-to production LDAP. [Keycloak's container guide](https://www.keycloak.org/server/containers)
-describes optimized startup, TLS and realm import.
+Preserve these files with the database; generating them again is a new identity
+set, not a password reset. The generator refuses an existing output directory.
 
-Create the versioned Secrets listed in the bundle README. Merge the generated
-`api-identity.env` into the API environment and `publisher-identity.env` into the
-publisher environment; do not replace their database/epoch/wrapping settings.
-Mount `local-directory.json` and `keycloak-ca.crt` in the identity bindings Secret.
-Keycloak must also trust the application CA for signed backchannel logout.
+Sign-in is Keep's own: the browser posts the username and password to
+`POST /auth/login`, the API checks them with one bind against `keep-openldap`,
+reads the person from the mock ADAPI and creates a normal secure session. No
+preinserted session is used. Both services are plain and unencrypted inside the
+namespace, as REV-73 accepts for the private network. This does not stand for the
+company AD or ADAPI.
+
+Create the versioned Secrets and ConfigMaps listed in the bundle README. Merge the
+generated `api-identity.env` into the API environment and `publisher-identity.env`
+into `identity.env`; do not replace their database/epoch/wrapping settings.
 
 ## 6. Application configuration by workload
 
@@ -285,7 +292,7 @@ Use one deployment epoch and one wrapping-key version for this isolated database
 Generate a random 32-byte base64 wrapping key using a secret manager. Retain it
 with the database for the lifetime of the test. Supply exactly one of
 `KEEP_WRAPPING_KEY` and a mounted `KEEP_WRAPPING_KEYRING`. Do not give those
-keys, DB credentials or OIDC secrets to ingestion.
+keys, DB credentials or the ADAPI ClientId to ingestion.
 
 For the first diagnostic run, set `KEEP_ENVIRONMENT=development` explicitly.
 Use TLS, certificate validation and network isolation throughout. This permits
@@ -298,7 +305,7 @@ unlimited, and those features no longer need `qualified` to run.
 | Workload | Environment and mounted files |
 | --- | --- |
 | All Keep processes | `KEEP_ENVIRONMENT`, `KEEP_DEPLOYMENT_EPOCH`; template role/listener/clock settings; relevant CA files |
-| API | Runtime `KEEP_DATABASE_URL`, wrapping key/keyring, `KEEP_POOL_SIZE=2`, `KEEP_CAPACITY_PROFILE=/etc/keep/capacity.json`; all generated OIDC values; Kafka, ES and Redis below |
+| API | Runtime `KEEP_DATABASE_URL`, wrapping key/keyring, `KEEP_POOL_SIZE=2`, `KEEP_CAPACITY_PROFILE=/etc/keep/capacity.json`; all generated `api-identity.env` values; Kafka, ES and Redis below |
 | Public ingestion | Kafka settings below, `KEEP_KAFKA_ADMISSION_ENABLED=false` initially; template supplies `KEEP_GLOBAL_TENANT_ID` and role `ingestion-api` |
 | Private ingestion | Same Kafka settings; role `private-ingestion`; all four `KEEP_GATEWAY_*` TLS/peer settings from the bundle/readiness instructions |
 | Processor | Worker `KEEP_DATABASE_URL`, wrapping key/keyring, pool 2, capacity profile, Kafka settings; template supplies Global UUID |
@@ -307,8 +314,10 @@ unlimited, and those features no longer need `qualified` to run.
 | Operator proof | Dedicated `KEEP_PROOF_DATABASE_URL`, shared deployment epoch, fixed member config, identical operator binding, distinct API/gateway probe tokens and server TLS; see cluster initialization |
 | Correlation | Worker DB, wrapping key/keyring, pool 2, Kafka; profile supporting correlation with current evidence and existing capability/recovery fences |
 | Migration Job | Dedicated migration DSN only, as required by the migration template; never API or worker login |
-| Identity tool | Dedicated identity login granted normal worker publication privileges, wrapping key/keyring, epoch, development environment, generated publisher secret and directory JSON |
-| Frontend | Template port/host; no DB, Kafka, Redis or secret OIDC client credential |
+| Identity tooling | Dedicated identity login granted normal worker publication privileges, wrapping key/keyring, epoch, development environment and the generated `publisher-identity.env` |
+| OpenLDAP | The supplied image's settings in `keep-openldap-env` and the `keep-openldap-seed` LDIF; no Keep credentials |
+| Mock ADAPI | `KEEP_ADAPI_CLIENT_ID` from `adapi-mock.env`; code and data from ConfigMaps |
+| Frontend | Template port/host; no DB, Kafka, Redis, LDAP or ADAPI credential |
 
 For example, prepare private `processor.env` with these fields, replacing every
 placeholder. The password must be URI encoded, while the mounted CA path is a
@@ -334,9 +343,9 @@ use `SSL`, omit all SASL fields and supply `KEEP_KAFKA_CLIENT_CERT` and
 `KEEP_KAFKA_CLIENT_KEY`. Mount corresponding CA/client files. API, indexer and
 correlation use their own login/password and permitted Kafka identity. API adds
 the generated identity fragment and its ES/Redis/operator settings. Indexer adds
-ES. Identity publication does not need Kafka, ES or Redis. Its `identity.env`
+ES. Identity tooling does not need Kafka, ES, Redis or LDAP. Its `identity.env`
 contains development environment, shared epoch/wrapping key, its dedicated DB URL
-and the generated publisher secret.
+and the generated `publisher-identity.env` values.
 
 Public ingestion's environment contains only environment, deployment epoch,
 Kafka fields and `KEEP_KAFKA_ADMISSION_ENABLED=false` initially. Global UUID and
@@ -415,7 +424,7 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    Secrets. Render bootstrap-only assets and inspect every object. Perform
    `oc apply --dry-run=server` against the installed OpenShift API. Restricted SCC,
    arbitrary UID, writable mounts, storage class and network rules must admit.
-2. Apply foundation and the three PostgreSQL instances plus Redis. Wait for ready
+2. Apply foundation and the two PostgreSQL instances plus Redis. Wait for ready
    state and prove TLS/auth from an allowed pod. Separate PG instances avoid
    accidentally coupling Keep and vendor database versions/credentials.
 3. Run the dedicated Keep migration Job and require successful completion.
@@ -426,24 +435,27 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    assets. Verify it is the fixed Global created in this database. Preserve the
    migration checksum/revision evidence.
 5. Run Kong's plugin/database migration Job **before** starting Kong. Start
-   Keycloak with realm import, and Kong with its configured PostgreSQL/TLS/plugin.
+   OpenLDAP, the mock ADAPI and the identity-tooling pod from
+   `30-identity-kong.json`, and Kong with its configured PostgreSQL/TLS/plugin.
    Follow the bundle's `31-kong-routes.json` initialization procedure to create
    only the fresh gateway's routes, verified upstream and plugins. This does not
    create an operator or satisfy the separate provisioning proof contract.
    The Kong Admin API stays private. Private ingestion must admit only its approved
    Kong client certificate fingerprint. Never expose private ingestion directly.
-6. Run one explicit trusted identity publication:
+6. Run one explicit directory refresh with the bootstrap flag:
 
    ```bash
-   oc -n "$NS" exec deploy/keep-keycloak -c identity-publisher -- \
-     python -m keep.identity.local_keycloak_worker \
-     --config /etc/keep/local-directory.json --once --bootstrap
+   oc -n "$NS" exec deploy/keep-directory-publication -c identity-publisher -- \
+     python -m keep.identity.worker --once --bootstrap
    ```
 
-   Require `complete`, `accepted` and bootstrap readiness in its nonsecret result.
-   The initial bootstrap flag cannot lift restore/reconciliation gates. After
-   changing users/groups, rerun with `--once` and without `--bootstrap`. There is
-   no polling daemon. Check disabled and recreated users do not inherit access.
+   Require exit 0, no `directory_root_failed` lines and a final
+   `directory_refresh … failed_roots=0 bootstrap_ready=true` line. The initial
+   bootstrap flag cannot lift restore/reconciliation gates. After changing users
+   or groups (replace the `keep-adapi-mock-directory` ConfigMap and restart the
+   mock), rerun the command without `--bootstrap`. There is no polling daemon.
+   To check disablement, mark a user `"disabled": true` in that data, refresh, and
+   confirm the user's sessions end and sign-in is refused.
 7. With **all ingestion and consumers still stopped**, apply the rendered
    `35-kafka-cutover.json` one-off Job. It executes the processor image's
    `python -m keep.kafka_cutover --ingress-and-legacy-workers-stopped`
@@ -454,7 +466,7 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    remain stopped and require success. Configure and start `32-operator-proof.json`
    with the observed direct Kong member binding before provisioning. Start API, frontend,
    processor and indexer for their supported paths.
-   Verify normal OIDC login and an authorized UI action. Examine application
+   Verify a normal sign-in on `/sign-in` and an authorized UI action. Examine application
    capability diagnostics, not only HTTP liveness.
 9. Enable `KEEP_KAFKA_ADMISSION_ENABLED=true` in both ingestion Secrets, then
    start public/private ingestion. Provision a test operator via the normal API/UI
@@ -478,8 +490,11 @@ For example, after prerequisites and corresponding manifests are applied:
 
 ```bash
 NS=YOUR_TEST_NAMESPACE
-oc -n "$NS" scale deploy/keep-keycloak --replicas=1
-oc -n "$NS" rollout status deploy/keep-keycloak --timeout=10m
+oc -n "$NS" scale deploy/keep-openldap deploy/keep-adapi-mock \
+  deploy/keep-directory-publication --replicas=1
+oc -n "$NS" rollout status deploy/keep-openldap --timeout=10m
+oc -n "$NS" rollout status deploy/keep-adapi-mock --timeout=5m
+oc -n "$NS" rollout status deploy/keep-directory-publication --timeout=5m
 # Start the direct member before Kong route initialization.
 oc -n "$NS" scale statefulset/keep-kong --replicas=1
 oc -n "$NS" rollout status statefulset/keep-kong --timeout=10m
@@ -578,7 +593,7 @@ metrics when interpreting database/ES pressure; 100 members of 64KiB would excee
 the 4MiB envelope limit and are refused before sending.
 
 Run `reads.js` concurrently with distinct users' sessions obtained through normal
-OIDC sign-in. Begin at 5 users, then 50 and 100. Use saved alert views, an actual
+sign-in on the Keep `/sign-in` page. Begin at 5 users, then 50 and 100. Use saved alert views, an actual
 dashboard with 10 then 24 panels, including shared/repeated presets. The script
 uses current definition revisions and CSRF/session handling. A raw API read test
 does not measure browser rendering, SSE delivery or interactive commands. The
@@ -650,7 +665,8 @@ identity and stale-read limits; it is a separate design change.
 | ImagePullBackOff | Destination digest, registry trust and namespace pull Secret; public Internet is not required |
 | Pending / permission denied | Quota, PVC/class, restricted SCC, assigned UID/fsGroup and writable mount permissions; do not solve by granting privileged SCC |
 | API startup profile error | Environment and actual profile; preserve `qualified=false` for diagnostic development |
-| Login succeeds at Keycloak but API rejects it | External issuer/redirects/CA, immutable `sub`, scope/AMR/ACR, explicit accepted directory publication and admin group UUID |
+| Sign-in returns 401 for a correct password | Bind format and WhoAmI answer (`dn:` for OpenLDAP), the user's entry in `openldap-users.ldif`, and whether the mock ADAPI marks the user disabled |
+| Sign-in returns 403 or 503 | 403 `account_not_in_directory` or `account_ambiguous`: the mock's data. 503 `sign_in_unavailable`: OpenLDAP or mock ADAPI reachability (network policies), the ClientId, and the bootstrap refresh result |
 | Worker alive but not ready | Real fresh node/PG clock evidence, Kafka advertised addresses/ACLs, DB permissions, gates, cutover/group boundaries |
 | 202 but row not visible | Received lag -> PG commit/proof -> changed lag -> indexer/watermark -> query/render; 202 alone is not completion |
 | v2 fails / 403 or 503 | Operator/key state, Kong plugin loaded/migrated, upstream mTLS CA/fingerprint, actual immutable tenant routing |
@@ -669,4 +685,4 @@ after preserving evidence; never use tenant deletion as cleanup (unsupported).
 This package is preparation for execution in your network. Its local validation
 record is [OpenShift load-test handoff evidence](../../qualification/openshift-load-test-handoff.md).
 Server-side admission, private TLS/DNS, actual external-service compatibility,
-native-user bootstrap and sustained load remain checks to execute there.
+test-identity bootstrap and sustained load remain checks to execute there.

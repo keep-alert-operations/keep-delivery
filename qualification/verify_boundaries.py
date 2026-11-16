@@ -38,7 +38,7 @@ class Boundary(importlib.abc.MetaPathFinder):
         if owner and owner not in {self.selected, "keep-contracts", "keep-domain"}:
             raise ImportError(f"{self.selected} attempted import from {owner}: {fullname}")
         if self.selected == "keep-ingestion" and fullname.split(".")[0] in {
-            "psycopg", "psycopg_pool", "elasticsearch", "redis", "celpy", "authlib", "ldap3"
+            "psycopg", "psycopg_pool", "elasticsearch", "redis", "celpy", "ldap3"
         }:
             raise ImportError(f"Stateless ingestion imported an unrelated adapter: {fullname}")
         return None

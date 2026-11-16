@@ -3,7 +3,7 @@
 The current coordinator implements the first recovery boundary: it drains guarded
 application transactions, persists a new deployment epoch, closes the remaining
 capability gates (`human_auth`, `search`, `v2_ingress`, `recovery`,
-`audit_retention`), invalidates restored sessions and login transactions, and stages an
+`audit_retention`), invalidates restored sessions, and stages an
 independently supplied evidence checkpoint. **It has no reopen command.**
 `collected` means transport completeness, never restored application correctness.
 Correlation and maintenance have no gate since REV-39 (2026-10-24), so restore does
@@ -50,9 +50,9 @@ python -m keep.recovery.restore_cli assess '<operation UUID>' \
 The operation reference must contain no secrets. A retry of `begin` uses exactly
 the same inputs. A different active operation or conflicting epoch is rejected.
 The old runtime epoch cannot resume after the control epoch changes. All sessions
-are revoked, retained OAuth tokens erased, refresh generations advanced and
-pending login transactions removed in the same transaction as the gate closure.
-Fresh SSO is still unavailable until the later identity recovery checks exist.
+are revoked in the same transaction as the gate closure; since REV-73, sessions
+hold no provider tokens and there are no login transactions to remove. Fresh
+sign-in is still unavailable until the later identity recovery checks exist.
 
 The runtime guard has two forms. Tenant-scoped units, and unscoped units that
 pass `read_committed=True`, are pinned to READ COMMITTED and take a shared

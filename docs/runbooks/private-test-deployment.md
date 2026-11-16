@@ -3,9 +3,10 @@
 This procedure matches the 2026-10-07 environment clarification: committed Git
 repositories have been transferred; builds can reach only internal mirrors;
 Kafka, Elasticsearch and Grafana 12 are supplied externally. Deploy Keep,
-PostgreSQL, Redis, Kong and Keycloak in a dedicated OpenShift test namespace.
-Use synthetic data and dedicated native Keycloak test identities. No deployment,
-image build or Grafana 12 compatibility result is claimed by this procedure.
+PostgreSQL, Redis, Kong and the test identity services (OpenLDAP and a mock ADAPI,
+REV-73) in a dedicated OpenShift test namespace. Use synthetic data and dedicated
+synthetic test users. No deployment, image build or Grafana 12 compatibility
+result is claimed by this procedure.
 
 The [full deployment guide](openshift-load-testing.md),
 [bundle interface/Secret inventory](../../deploy/openshift/load-test/README.md) and
@@ -58,7 +59,7 @@ Python's standard library and does not need a dependency installation.
 | Kafka bootstrap and advertised addresses | `REQUIRED_KAFKA_BOOTSTRAP` and every actual reachable broker |
 | Elasticsearch HTTPS endpoint | `https://REQUIRED_ELASTICSEARCH_HOST:REQUIRED_PORT` |
 | Grafana HTTPS endpoint and organization | `https://REQUIRED_GRAFANA_HOST`, actual dedicated organization ID |
-| Cluster/application names | Namespace, storage class, quota, allowed nodes, application/Keycloak/v1/v2 DNS |
+| Cluster/application names | Namespace, storage class, quota, allowed nodes, application/v1/v2 DNS |
 | Certificates and credentials | Registry pull secret, runtime TLS/CA files, per-workload credentials |
 
 Mirror the pinned commits of the private Git dependencies with their history.
@@ -69,8 +70,9 @@ native CEL wheel; do not replace a package under the same version with a rebuild
 Mirror build requirements such as Poetry/hatchling as well as runtime packages.
 
 Mirror these base-image lineages by immutable digest: Python 3.13 slim Bookworm,
-Node 22 Bookworm slim, a theme-compatible Keycloak, Keep-plugin-compatible Kong,
-and the chosen compatible PostgreSQL/Redis bases. The PostgreSQL wrapper requires
+Node 22 Bookworm slim, Keep-plugin-compatible Kong, an OpenLDAP image that meets
+the bundle's non-root contract, and the chosen compatible PostgreSQL/Redis bases.
+The mock ADAPI runs on the mirrored Python 3.13 slim Bookworm image. The PostgreSQL wrapper requires
 the official Debian entrypoint and NSS wrapper. Existing local test selections
 are evidence about those local versions, not proof for different vendor images.
 Also mirror the `docker/dockerfile` BuildKit frontend: the Dockerfile `syntax`
@@ -234,9 +236,7 @@ Build the remaining wrappers with mirrored digests, also supplying
 | Result image | Dockerfile / context | Required base argument |
 | --- | --- | --- |
 | Keep Kong | `../keep-ingestion/kong/Dockerfile` / `../keep-ingestion` | `KONG_BASE_IMAGE` |
-| Keep Keycloak theme | `../keep-frontend/keycloak/Dockerfile` / `../keep-frontend` | `KEYCLOAK_BASE_IMAGE` |
 | Keep PostgreSQL | `deploy/images/postgres/Dockerfile` / `deploy/images/postgres` | `POSTGRES_BASE` |
-| Keycloak PostgreSQL | Same wrapper, compatible chosen base | `POSTGRES_BASE` |
 | Kong PostgreSQL | Same wrapper, compatible chosen base | `POSTGRES_BASE` |
 | Redis | `deploy/images/redis/Dockerfile` / `deploy/images/redis` | `REDIS_BASE` |
 | Optional k6 | `qualification/load-test/Dockerfile` / `qualification/load-test` | `K6_IMAGE` |
@@ -286,16 +286,16 @@ offset, switch on Kong's local clock bypass, or remove clock gates to start pods
 Copy `deploy/openshift/load-test/configuration.example.json` into `$PRIVATE`.
 Replace every placeholder with namespace, release ID, storage class, pull Secret,
 route hostnames and all 13 immutable image references. PostgreSQL bases may share
-one image digest only when that base is compatible with all three applications;
+one image digest only when that base is compatible with both applications;
 database data/credentials remain separate. Leave `global_tenant_id` null initially.
 Create per-workload TLS/credential Secrets using the bundle's exact inventory.
-Keep Grafana credentials out of ingestion. Use the generated dedicated native
-Keycloak test realm, normal OIDC and explicit identity publication.
+Keep Grafana credentials out of ingestion. Use the generated test users, Keep's
+password sign-in against the test OpenLDAP and an explicit directory refresh from
+the mock ADAPI.
 
 ```bash
 python3 qualification/load-test-identity/prepare.py \
   --app-origin https://REQUIRED_APPLICATION_HOST \
-  --keycloak-origin https://REQUIRED_KEYCLOAK_HOST \
   --users 10 --output "$PRIVATE/identity"
 python3 deploy/openshift/load-test/render.py \
   --config "$PRIVATE/configuration.json" \
@@ -305,10 +305,11 @@ bash "$PRIVATE/rendered/render-apps.sh"
 
 Process/dry-run and apply each stage using `oc -n REQUIRED_NAMESPACE`.
 Never apply the entire rendered directory at once. Start foundation and the
-three PostgreSQL instances/Redis, complete the Keep migration Job and runtime
+two PostgreSQL instances/Redis, complete the Keep migration Job and runtime
 logins, then read the database-created Global UUID. Update configuration and
-rerender without `--bootstrap-only`. Complete Kong migrations, Keycloak startup,
-fresh-only Kong routing and explicit identity publication. Initialize Kafka while
+rerender without `--bootstrap-only`. Complete Kong migrations, OpenLDAP, mock
+ADAPI and identity-tooling startup, fresh-only Kong routing and the explicit
+bootstrap directory refresh. Initialize Kafka while
 all ingestion/consumers remain stopped. Supply real clock evidence and complete
 search bootstrap with writers stopped. Start supported API/frontend/processor/
 indexer paths; enable admission and start ingestion only after these steps pass.

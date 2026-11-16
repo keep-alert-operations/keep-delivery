@@ -32,7 +32,7 @@ def test_saved_ended_window_viewer_test_is_read_only(maintenance_browser, mainte
             "SELECT admission_order,last_clock FROM tenant_work_state WHERE tenant_id=%s", (tenant,)
         ).fetchone()
         activity = conn.execute(
-            "SELECT activity_at FROM auth_sessions WHERE principal_id=%s", (maintenance_browser[2],)
+            "SELECT revoked_at,absolute_at FROM auth_sessions WHERE principal_id=%s", (maintenance_browser[2],)
         ).fetchone()
         revisions = conn.execute(
             "SELECT count(*) AS n FROM maintenance_revisions WHERE window_id=%s", (window["id"],)
@@ -56,7 +56,7 @@ def test_saved_ended_window_viewer_test_is_read_only(maintenance_browser, mainte
         )
         assert (
             conn.execute(
-                "SELECT activity_at FROM auth_sessions WHERE principal_id=%s",
+                "SELECT revoked_at,absolute_at FROM auth_sessions WHERE principal_id=%s",
                 (maintenance_browser[2],),
             ).fetchone()
             == activity
