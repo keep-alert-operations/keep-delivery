@@ -382,6 +382,21 @@ def test_hooks_are_off_unless_loopback_or_enabled(start):
     assert local_adapi.LocalADAPI(host="127.0.0.1").enable_hooks
 
 
+def test_a_refused_post_reads_its_body_before_answering(start):
+    """A 404 sent while request bytes are unread lets Windows reset the connection.
+
+    Requirements: REV-73; plan Delivery and design (fake-service pattern).
+    """
+    server = start(enable_hooks=False)
+    big = b"{" + b" " * 1_000_000 + b"}"
+    # Hooks off → 404; a product route without the ClientId header → 401.
+    for path, status in (("/__set", 404), ("/no-such-route", 401)):
+        response = HTTP.post(
+            server.base_url + path, content=big, headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == status
+
+
 def test_base_path_prefix(start):
     """Requirements: REV-73; plan Settings (KEEP_ADAPI_URL may carry a path)."""
     server = start(base_path="/adapi/api/")

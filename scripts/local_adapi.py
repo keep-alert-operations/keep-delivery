@@ -1088,9 +1088,13 @@ class _Handler(BaseHTTPRequestHandler):
         started = time.monotonic()
         adapi = self.server.adapi
         try:
+            # Read the whole body before answering: a reply sent while request bytes are
+            # still unread lets Windows reset the connection (WinError 10053).
+            length = int(self.headers.get("Content-Length") or 0)
+            payload = self.rfile.read(length) if length > 0 else b""
             status, body, route = adapi.handle(self.command, self.path, self.headers)
             if route == "hooks" and status is None:
-                status, body = self._hooks(adapi)
+                status, body = self._hooks(adapi, payload)
         except Exception as error:  # a mock bug must still answer, never hang the client
             status, body = 500, {"error": "mock failure", "detail": type(error).__name__}
         try:
@@ -1098,16 +1102,15 @@ class _Handler(BaseHTTPRequestHandler):
         finally:
             self._log(status, started)
 
-    def _hooks(self, adapi):
+    def _hooks(self, adapi, payload):
         if urlsplit(self.path).path.rstrip("/").endswith("/__log"):
             if self.command != "GET":
                 return 405, {"error": "method not allowed"}
             return 200, adapi.log()
         if self.command != "POST":
             return 405, {"error": "method not allowed"}
-        length = int(self.headers.get("Content-Length") or 0)
         try:
-            body = json.loads(self.rfile.read(length) or b"{}")
+            body = json.loads(payload or b"{}")
             if not isinstance(body, dict):
                 raise ValueError("body must be an object")
             adapi.apply(body)
