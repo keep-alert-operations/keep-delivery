@@ -457,8 +457,9 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    bootstrap flag cannot lift restore/reconciliation gates. After changing users
    or groups (replace the `keep-adapi-mock-directory` ConfigMap and restart the
    mock), rerun the command without `--bootstrap`. There is no polling daemon.
-   To check disablement, mark a user `"disabled": true` in that data, refresh, and
-   confirm the user's sessions end and sign-in is refused.
+   To check a membership change, remove a user from a granted group in that data,
+   refresh, and confirm the user loses that group's access while their session stays
+   open. Keep ignores `"disabled": true` (REV-76).
 
    `40-directory-refresh.json` holds the daily refresh CronJob (REV-75), rendered
    with `SUSPEND=true`, the identity login's `keep-identity-env` and
@@ -686,7 +687,7 @@ identity and stale-read limits; it is a separate design change.
 | ImagePullBackOff | Destination digest, registry trust and namespace pull Secret; public Internet is not required |
 | Pending / permission denied | Quota, PVC/class, restricted SCC, assigned UID/fsGroup and writable mount permissions; do not solve by granting privileged SCC |
 | API startup profile error | Environment and actual profile; preserve `qualified=false` for diagnostic development |
-| Sign-in returns 401 for a correct password | Bind format and WhoAmI answer (`dn:` for OpenLDAP), the user's entry in `openldap-users.ldif`, and whether the mock ADAPI marks the user disabled |
+| Sign-in returns 401 for a correct password | Bind format and WhoAmI answer (`dn:` for OpenLDAP) and the user's entry in `openldap-users.ldif` |
 | Sign-in returns 403 or 503 | 403 `account_not_in_directory` or `account_ambiguous`: the mock's data. 503 `sign_in_unavailable`: OpenLDAP or mock ADAPI reachability (network policies), the ClientId, and the bootstrap refresh result |
 | Worker alive but not ready | Real fresh node/PG clock evidence, Kafka advertised addresses/ACLs, DB permissions, gates, cutover/group boundaries |
 | 202 but row not visible | Received lag -> PG commit/proof -> changed lag -> indexer/watermark -> query/render; 202 alone is not completion |

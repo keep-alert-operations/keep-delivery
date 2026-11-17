@@ -8,6 +8,7 @@ refresh, which opens human authorization and makes local-admin a global super-ad
 local Start does. Requests go through ``keep.main.create_app`` with its middleware.
 
 Requirements: REV-73; identity configuration 2-5, 8-10; plan A1-A10, A20, A23, A24.
+REV-76; plan (REV-75/76) B3, B6 (a), B9.
 """
 
 import base64
@@ -212,15 +213,51 @@ def test_wrong_password_is_refused_without_cookie_session_or_adapi_call(client, 
     assert stack.adapi.count() == 0
 
 
-def test_disabled_account_with_the_right_password_gets_the_same_refusal(client, stack):
-    """Requirements: REV-73; identity configuration 3; plan A4."""
-    response = sign_in(client, "local-disabled", stack.ldap.users["local-disabled"])
-    assert response.status_code == 401
-    assert error(response)["code"] == "authentication_rejected"
-    assert error(response)["message"] == REJECTED_MESSAGE
-    assert "set-cookie" not in response.headers and sessions(stack.db, "local-disabled") == []
-    saved = principal(stack.db, "local-disabled")
-    assert saved is None or not saved["eligible"]
+def test_a_person_adapi_reports_disabled_signs_in_and_ends_no_other_session(stack):
+    """Requirements: REV-76; identity configuration 3, 6; plan (REV-75/76) B3, B9.
+
+    ADAPI's ``userAccountControl`` is ignored: a correct bind for a person ADAPI reports
+    as 514 signs in, publishes nothing, and leaves that person's other sessions open.
+    The person is read with one ``/users/user`` call and no ``/users`` search.
+    """
+    with api(stack) as first, api(stack) as second:
+        signed_in(first, stack, "local-viewer")
+        stack.adapi.remove_user("local-viewer")
+        stack.adapi.add_user("local-viewer", displayName="Local Viewer", disabled=True)
+        row = stack.adapi.directory.search("users", {"samaccountname": ["local-viewer"]}, 10)
+        assert [r["userAccountControl"] for r in row] == [local_adapi.DISABLED]
+        before = revision(stack.db)
+        stack.adapi.reset_log()
+        response = sign_in(second, "local-viewer", stack.ldap.users["local-viewer"])
+        assert response.status_code == 200, response.text
+        assert stack.adapi.count("user") == 1 and stack.adapi.count("users") == 0
+        assert revision(stack.db) == before
+        saved = principal(stack.db, "local-viewer")
+        assert saved["eligible"] and not saved["deleted"]
+        assert [row["revoked_at"] for row in sessions(stack.db, "local-viewer")] == [None, None]
+        assert first.get("/auth/session").status_code == 200
+        assert second.get("/auth/session").status_code == 200
+
+
+def test_sign_in_lifts_a_person_stored_ineligible_or_deleted(client, stack):
+    """Requirements: REV-76; identity configuration 3, 7; plan (REV-75/76) B6 (a).
+
+    A row an older version wrote (ineligible, or deleted) is published again at the
+    person's next sign-in, which then succeeds.
+    """
+    signed_in(client, stack, "local-editor")
+    for change in ("eligible=false", "eligible=false,deleted=true"):
+        with stack.db.transaction() as conn:
+            conn.execute(
+                f"UPDATE principals SET {change} WHERE directory_source='adapi' AND object_id='local-editor'"
+            )
+        assert client.get("/auth/session").status_code == 401
+        before = revision(stack.db)
+        signed_in(client, stack, "local-editor")
+        saved = principal(stack.db, "local-editor")
+        assert saved["eligible"] and not saved["deleted"], change
+        assert revision(stack.db) == before + 1
+        assert client.get("/auth/session").status_code == 200
 
 
 def _closed_port():
@@ -236,7 +273,7 @@ def test_ldap_or_adapi_down_answers_503_without_a_session(stack):
         response = sign_in(unreachable, "local-editor", password)
         assert response.status_code == 503 and error(response)["code"] == "sign_in_unavailable"
     with api(stack) as client:
-        stack.adapi.fail("users", status=500)
+        stack.adapi.fail("user", status=500)  # REV-76 B9: sign-in reads /users/user
         response = sign_in(client, "local-editor", password)
         assert response.status_code == 503 and error(response)["code"] == "sign_in_unavailable"
         stack.adapi.clear_failures()
@@ -372,36 +409,6 @@ def test_which_account_signed_in_and_directory_rows_decide(client, stack):
         "More than one directory account has this username. Contact your administrator."
     )
     assert "set-cookie" not in response.headers and sessions(stack.db, "local-viewer") == []
-
-
-def test_a_person_re_enabled_after_a_refresh_can_sign_in_again(client, stack):
-    """Requirements: REV-73; identity configuration 3, 8; plan A23."""
-    signed_in(client, stack, "local-editor")
-    stack.adapi.disable_user("local-editor")
-    run_cycle(stack.db, adapi_config(stack.adapi), SUPERADMIN)
-    assert not principal(stack.db, "local-editor")["eligible"]
-    assert sessions(stack.db, "local-editor")[0]["revoked_at"] is not None
-    assert client.get("/auth/session").status_code == 401
-    assert sign_in(client, "local-editor", stack.ldap.users["local-editor"]).status_code == 401
-    stack.adapi.enable_user("local-editor")
-    signed_in(client, stack, "local-editor")
-    assert principal(stack.db, "local-editor")["eligible"]
-    assert client.get("/auth/session").status_code == 200
-
-
-def test_disabled_at_sign_in_ends_the_persons_other_sessions(client, stack):
-    """Requirements: REV-73; identity configuration 3, 8; plan A23."""
-    first = signed_in(client, stack, "local-viewer")
-    use_cookie(client, None)
-    stack.adapi.disable_user("local-viewer")
-    before = revision(stack.db)
-    response = sign_in(client, "local-viewer", stack.ldap.users["local-viewer"])
-    assert response.status_code == 401 and error(response)["message"] == REJECTED_MESSAGE
-    assert not principal(stack.db, "local-viewer")["eligible"]
-    assert [row["revoked_at"] is not None for row in sessions(stack.db, "local-viewer")] == [True]
-    assert revision(stack.db) == before + 1
-    use_cookie(client, first)
-    assert client.get("/auth/session").status_code == 401
 
 
 def test_unchanged_sign_in_publishes_nothing(client, stack):

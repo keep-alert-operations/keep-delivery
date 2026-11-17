@@ -1,6 +1,7 @@
 """The mock ADAPI copies the user-stated ADAPI contract that later Keep tests rely on.
 
-Requirements: REV-73; plan A9, A11, A13, A19-A22, A25-A27 (fixture for them).
+Requirements: REV-73; plan A9, A11, A13, A19-A22, A25-A27 (fixture for them). REV-76;
+plan (REV-75/76) B7 and B9 (``/users/user``, no disable hooks, no disabled fixture user).
 """
 
 import io
@@ -65,8 +66,36 @@ def test_exact_user_lookup_is_case_insensitive_and_has_the_stated_shape(adapi):
     assert row["userAccountControl"] == "512"
     assert all(isinstance(v, str) for k, v in row.items() if k != "memberOf")
     assert row["memberOf"] == ["CN=Keep Administrators,OU=Groups,DC=keep,DC=local"]
-    disabled = get(adapi, "/users", {"samAccountName": "local-disabled"}).json()
-    assert disabled[0]["userAccountControl"] == "514"
+    assert get(adapi, "/users", {"samAccountName": "local-disabled"}).json() == []
+
+
+def test_users_user_answers_one_person_with_the_users_parameters(adapi):
+    """``GET /users/user``: the ``/users`` parameters and rows, as a one-object list.
+
+    Requirements: REV-76; identity configuration 6; plan B9.
+    """
+    rows = get(adapi, "/users/user", {"samAccountName": "LOCAL-ADMIN"}).json()
+    assert rows == get(adapi, "/users", {"samAccountName": "local-admin"}).json()
+    assert len(rows) == 1 and list(rows[0]) == list(local_adapi.USER_ATTRIBUTES)
+    shaped = get(adapi, "/users/user", [("samAccountName", "local-editor"),
+                                        ("attributesToLoad", "sAMAccountName"),
+                                        ("attributesToLoad", "displayName")]).json()
+    assert shaped == [{"displayName": "Local Editor", "sAMAccountName": "local-editor"}]
+    # A group is not a person, and no match is 200 with an empty list.
+    assert get(adapi, "/users/user", {"samAccountName": "keep-developers"}).json() == []
+    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).json() == []
+    assert get(adapi, "/users/user", {"samAccountName": "local-admin"},
+               client_id=None).status_code == 401
+    assert get(adapi, "/users/user", {"samAccountName": "local-admin"},
+               client_id="wrong").status_code == 401
+    assert get(adapi, "/users/user", {"customFilter": "(sAMAccountName=x"}).status_code == 400
+    adapi.set_unknown_user_status(404)
+    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).status_code == 404
+    assert get(adapi, "/users", {"samAccountName": "nobody"}).json() == []
+    adapi.fail("user", 503, name="local-viewer", times=1)
+    assert get(adapi, "/users/user", {"samAccountName": "local-viewer"}).status_code == 503
+    assert get(adapi, "/users", {"samAccountName": "local-viewer"}).status_code == 200
+    assert adapi.count("user") == 9 and adapi.log()["requests"][0]["path"] == "/users/user"
 
 
 def test_groups_use_their_own_casing_and_hide_display_name_unless_asked(adapi):
@@ -102,7 +131,7 @@ def test_wildcards_and_or_ed_parameters(adapi):
     assert names(hebrew) == ["local-hebrew"]
     assert names(get(adapi, "/users", {"aNR": "Local Ed"})) == ["local-editor"]
     assert names(get(adapi, "/users", {"commonName": "local viewer"})) == ["local-viewer"]
-    assert len(names(get(adapi, "/users", {"samAccountName": ""}))) == 7  # null = no filter
+    assert len(names(get(adapi, "/users", {"samAccountName": ""}))) == 6  # null = no filter
 
 
 def test_custom_filter_batch_of_fifty_escaped_names(start):
@@ -217,10 +246,10 @@ def test_recursive_members_follow_distribution_groups(adapi):
                    {"samAccountName": "KEEP-DEVELOPERS", "isRecursive": "true"})
     rows = response.json()
     assert [r["sAMAccountName"] for r in rows] == [
-        "local-editor", "local-hebrew", "WS-0001$", "local-distribution", "local-disabled",
+        "local-editor", "local-hebrew", "WS-0001$", "local-distribution",
     ]
     assert all(list(r) == list(local_adapi.MEMBER_ATTRIBUTES) for r in rows)
-    assert {r["sAMAccountName"]: r["userAccountControl"] for r in rows}["local-disabled"] == "514"
+    assert {r["sAMAccountName"]: r["userAccountControl"] for r in rows}["WS-0001$"] == "4096"
     direct = get(adapi, "/groups/members/user",
                  {"samAccountName": "keep-developers", "isRecursive": "false"})
     assert names(direct) == ["local-editor", "local-hebrew", "WS-0001$"]
@@ -315,11 +344,12 @@ def test_request_log_and_counters(adapi):
 
 
 def test_data_mutations(adapi):
-    """Requirements: REV-73; plan A4, A13, A20, A23 (disable, rename, duplicates)."""
-    adapi.disable_user("local-editor")
-    row = get(adapi, "/users", {"samAccountName": "local-editor"}).json()[0]
-    assert row["userAccountControl"] == "514"
-    adapi.enable_user("local-editor")
+    """Requirements: REV-73; plan A4, A13, A20, A23 (rename, duplicates); REV-76 (no
+    disable hooks; a ``disabled`` data entry still answers ADAPI's 514)."""
+    assert not hasattr(adapi, "disable_user") and not hasattr(adapi, "enable_user")
+    adapi.add_user("old-disabled", disabled=True)
+    assert get(adapi, "/users", {"samAccountName": "old-disabled"}).json()[0][
+        "userAccountControl"] == "514"
     adapi.rename("local-editor", "Renamed Editor")
     row = get(adapi, "/users", {"samAccountName": "local-editor"}).json()[0]
     assert (row["userAccountControl"], row["displayName"]) == ("512", "Renamed Editor")
@@ -338,7 +368,7 @@ def test_data_mutations(adapi):
     adapi.remove_group("new-team")
     assert names(get(adapi, "/groups", {"samAccountName": "new-team"})) == []
     with pytest.raises(KeyError):
-        adapi.disable_user("nobody")
+        adapi.remove_user("nobody")
 
 
 def test_set_hook_over_http(adapi):
@@ -347,20 +377,22 @@ def test_set_hook_over_http(adapi):
         return HTTP.post(adapi.base_url + "/__set", json=body)
 
     assert post({
-        "disable_user": "local-viewer",
+        "disable_user": "local-viewer",  # REV-76: removed, so ignored like any unknown key
         "rename": {"name": "keep-observers", "displayName": "Watchers", "kind": "group"},
         "add_group": {"name": "ops", "members": ["local-admin"], "distribution": True},
         "add_member": {"group": "ops", "member": "local-editor"},
         "search_cap": 2,
         "missing_value": None,
         "unknown_group_status": 404,
+        "unknown_user_status": 404,
         "latency": {"groups": 0.01},
         "fail": [{"route": "members", "status": 503, "name": "keep-observers"}],
     }).status_code == 200
     viewer = get(adapi, "/users", {"samAccountName": "local-viewer"}).json()[0]
-    assert viewer["userAccountControl"] == "514" and viewer["ipPhone"] is None
+    assert viewer["userAccountControl"] == "512" and viewer["ipPhone"] is None
     assert len(get(adapi, "/users").json()) == 2
     assert get(adapi, "/groups/members/user", {"samAccountName": "nobody"}).status_code == 404
+    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).status_code == 404
     path = "/groups/members/user"
     assert get(adapi, path, {"samAccountName": "keep-observers"}).status_code == 503
     assert names(get(adapi, path, {"samAccountName": "ops"})) == ["local-admin", "local-editor"]
@@ -368,7 +400,7 @@ def test_set_hook_over_http(adapi):
     log = HTTP.get(adapi.base_url + "/__log").json()
     assert log["counts"]["users"] == 2
     assert post({"reset_log": True, "clear_failures": True}).json()["counts"] == {}
-    assert post({"disable_user": "nobody"}).status_code == 400
+    assert post({"remove_user": "nobody"}).status_code == 400
     assert post({"pause": {"route": "users"}}).status_code == 200
     assert post({"release": {"route": "users"}}).status_code == 200 and adapi.gates == []
 
@@ -413,7 +445,7 @@ def test_scale_datasets():
     directory = local_adapi.Directory(data)
     assert len(directory.recursive_members("team20")) == 200
     merged = local_adapi.merge_directories(local_adapi.sample_directory(), data)
-    assert len(local_adapi.Directory(merged).users) == 3007
+    assert len(local_adapi.Directory(merged).users) == 3006
     roundtrip = local_adapi.Directory(directory.dump())
     assert roundtrip.dump() == directory.dump()
 

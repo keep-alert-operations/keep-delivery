@@ -73,7 +73,7 @@ def snapshot(folder):
 
 
 def test_fresh_prepare_creates_local_users_groups_and_secrets(setup):
-    """Requirements: REV-73; identity configuration 14."""
+    """Requirements: REV-73; identity configuration 14; REV-76 (no disabled fixture user)."""
     setup.prepare()
     state = setup.STATE
     creds = json.loads((state / "credentials.json").read_text())
@@ -92,8 +92,9 @@ def test_fresh_prepare_creates_local_users_groups_and_secrets(setup):
     assert "password" not in json.dumps(data).lower()
     directory = local_adapi.Directory(data)
     names = {row["sAMAccountName"]: row for row in directory.users}
-    assert names["local-disabled"]["userAccountControl"] == local_adapi.DISABLED
-    assert names["local-admin"]["userAccountControl"] == local_adapi.ACTIVE
+    # REV-76: no disabled fixture user; every local person is an ordinary account.
+    assert "local-disabled" not in names
+    assert {row["userAccountControl"] for row in directory.users} == {local_adapi.ACTIVE}
     groups = {row["sAMAccountName"]: row for row in directory.groups}
     assert set(groups) == {"keep-administrators", "keep-developers", "keep-dev-announce",
                            "keep-observers"}
@@ -103,9 +104,9 @@ def test_fresh_prepare_creates_local_users_groups_and_secrets(setup):
         return {row["sAMAccountName"] for row in directory.recursive_members(group)}
 
     assert members(setup.SUPERADMIN_GROUP) == {"local-admin"}
-    # keep-developers -> keep-dev-announce (distribution) -> local-distribution/disabled.
+    # keep-developers -> keep-dev-announce (distribution) -> local-distribution.
     assert members("keep-developers") == {"local-editor", "local-hebrew",
-                                          "local-distribution", "local-disabled"}
+                                          "local-distribution"}
     assert members("keep-observers") == {"local-viewer"}
 
 
@@ -124,7 +125,8 @@ def test_prepare_moves_legacy_values_unchanged_and_leaves_the_old_folder(setup):
         assert creds["users"][name]["label"] == user["label"]
     assert creds["users"]["local-admin"]["groups"] == ["keep-administrators"]
     assert creds["users"]["local-editor"]["groups"] == ["keep-developers"]
-    assert {"local-hebrew", "local-distribution", "local-disabled"} <= set(creds["users"])
+    assert {"local-hebrew", "local-distribution"} <= set(creds["users"])
+    assert "local-disabled" not in creds["users"]
     assert creds["remap"] == {
         "source": "keycloak-local",
         "users": {name: user["id"] for name, user in LEGACY["users"].items()},

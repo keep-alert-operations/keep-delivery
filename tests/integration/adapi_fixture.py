@@ -12,7 +12,8 @@ server on 127.0.0.1 with the sample directory; ``adapi_factory`` starts more wit
 data. The same usernames exist in both, except ``local-unlisted`` (LDAP only, so a correct
 bind finds no ADAPI row).
 
-Requirements: REV-73; plan A9, A11, A13, A19-A22, A25-A27.
+Requirements: REV-73; plan A9, A11, A13, A19-A22, A25-A27. REV-76 (no disabled
+fixture user).
 """
 
 import base64
@@ -41,7 +42,7 @@ MOCK_CLIENT_ID = "test-adapi-client-id"
 SUPERADMIN_GROUP = local_adapi.SUPERADMIN_GROUP
 # Users seeded in OpenLDAP; all but local-unlisted are in local_adapi.sample_directory().
 LDAP_USERS = (
-    "local-admin", "local-editor", "local-viewer", "local-disabled", "local-hebrew",
+    "local-admin", "local-editor", "local-viewer", "local-hebrew",
     "local-unlisted",
 )
 HEBREW_USER = "local-hebrew"
