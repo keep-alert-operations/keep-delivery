@@ -16,10 +16,11 @@ On Linux/macOS use `.venv/bin/python`. Install Python 3.13, Poetry 2.3.1, Node.j
 repositories using your approved credential helper. Open the **parent directory**
 in your agent/editor; `AGENTS.md` there covers the complete system.
 
-## Codex and Claude Code guidance
+## Agent guidance
 
-Open the parent workspace in either agent. Both use the shared root `AGENTS.md`;
-`CLAUDE.md` imports it with `@AGENTS.md`. The shared guidance routes agents to each
+Open the parent workspace in your coding agent. Agents use the shared root
+`AGENTS.md`; Claude Code reaches it through `CLAUDE.md`, which imports it with
+`@AGENTS.md`. The shared guidance routes agents to each
 affected repository's scoped `AGENTS.md`, README, CI and existing specifications.
 Global skills and personal agent settings remain outside these repositories.
 
@@ -35,21 +36,21 @@ When commands, ownership or requirements change, update their existing authority
 and the corresponding guidance references. The concise entrypoint links the
 [detailed engineering policies](agent-workflows.md), which preserve the original
 workspace requirements and remain binding when applicable. Preserve manual guidance
-when maintaining the bounded `eng-project-setup` section. Validate with
+when refreshing the entrypoint's Navigation and maintenance section. Validate with
 `python qualification/verify_documents.py` from delivery and
 `python scripts/check_docs.py` from design; check that both installed files match
 their canonical copies and that the Claude import resolves to the root AGENTS.md.
 The context catalog is project navigation; it adds no model configuration, plugin,
 personal runtime or second requirements authority.
 
-Both agents must follow the [repeatable verification workflow](runbooks/development.md#repeatable-verification-workflow).
+Agents must follow the [repeatable verification workflow](runbooks/development.md#repeatable-verification-workflow).
 It records the user-agreed critical smoke journeys, startup/readiness, isolated
 fixtures, assertions, coverage gaps and cleanup. File/import validation establishes
-discoverability, not proof that a new Codex or Claude session followed the guidance.
+discoverability, not proof that a new agent session followed the guidance.
 Keep actual command results in dated delivery evidence; the setup validation is
 recorded in [the 2026-10-12 setup report](../qualification/agent-verification-setup-2026-10-12.md).
 
-For future updates, ask: "Use eng-project-setup to refresh this workspace's agent
+For future updates, ask: "Use setup-project to refresh this workspace's agent
 guidance from current requirements and CI; preserve existing instructions and keep
 the delivery canonical copies and installed root files consistent."
 
@@ -88,7 +89,7 @@ as pointers without their text. A
 saved plan is a snapshot: regenerate it after source changes or a handoff. Reading
 plans and source hashes do not prove that an agent read, understood or complied
 with a requirement. Keep decisions, source revisions, progress and unresolved
-questions in the existing task checkpoint.
+questions in the task's plan file in `.plans/` at the workspace root.
 
 `render` generates [map.md](../../keep-design/context/map.md), linked topic pages
 and the index block between the markers in the canonical workspace AGENTS.md; run
@@ -130,7 +131,8 @@ handoff, without committing local editable overrides.
 Bootstrap clones the ten sibling repositories at the manifest's exact commits.
 Existing checkouts and branches are preserved; inspect inventory mismatches before
 releasing. The parent is not a Git repository. Commit, review and push changes in
-each affected child separately. Use `codex/` for new work branches.
+each affected child separately. Name new work branches by the kind of work, such
+as `feat/` or `fix/` (see [Git and local execution](agent-workflows.md#git-and-local-execution)).
 
 `install` resolves the committed delivery lock. `--editable` then installs local
 Python sources from every sibling into delivery's environment without changing

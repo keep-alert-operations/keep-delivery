@@ -1,9 +1,10 @@
 # Keep workspace guidance
 
 Open the parent directory containing the eleven independent Keep Git repositories.
-This is the shared entrypoint for Codex and Claude Code. Read each affected
-repository's AGENTS.md and scoped instructions explicitly, even if the client did
-not load them automatically. Paths below are relative to this workspace root.
+This is the shared entrypoint for coding agents; Claude Code loads it through
+`CLAUDE.md`. Read each affected repository's AGENTS.md and scoped instructions
+explicitly, even if the client did not load them automatically. Paths below are
+relative to this workspace root.
 
 ## Start with any request
 
@@ -110,7 +111,9 @@ where applicable. Read the following sections when their trigger applies:
 ## Constraints that apply across tasks
 
 - Do not initialize a parent Git repository, move repositories or introduce submodules
-  incidentally. Keep commits/reviews per repository; use `codex/` for new branches.
+  incidentally. Keep commits/reviews per repository. Name new branches by the kind of
+  work: `feat/`, `fix/`, `docs/`, `refactor/`, `test/` or `chore/` plus a short
+  kebab-case description, such as `fix/incident-count-cursor`.
 - PostgreSQL is transactional authority; Elasticsearch is a rebuildable current-alert
   projection, Kafka the alert pipeline and Redis a hint transport. Preserve tenant
   scoping/RLS, idempotency, revisions, lock order, atomic history/proof and recovery fences.
@@ -139,11 +142,11 @@ where applicable. Read the following sections when their trigger applies:
   Publishing, merging, messaging, production deployment and shared-service changes
   need existing authorization. Dedicated teams retain infrastructure ownership.
 - Delegate independent work when useful, at most three children; no recursive
-  delegation. Use `eng-coordinate`, bounded ownership and no user-visible internal chats.
-  Keep focused fixes small. Substantial tasks use the existing checkpoint mechanism;
-  preserve objective, decisions, source revisions, progress and next actions on handoff.
+  delegation. Use `parallel-build` with bounded ownership for parallel packages, and
+  keep internal work in subagents rather than separate sessions. Keep focused fixes
+  small. Substantial tasks keep their plan file in `.plans/` at the workspace root and
+  record the objective, decisions, source revisions, progress and next actions there.
 
-<!-- eng-project-setup -->
 ## Navigation and maintenance
 
 - Architecture: `keep-design/architecture/README.md`.
@@ -167,7 +170,6 @@ Maintain this file in `keep-delivery/workspace/AGENTS.md` and the thin CLAUDE.md
 import beside it. Reconcile root edits before running delivery's
 `python scripts/workspace.py bootstrap`; preserve any existing backup. Keep installed
 and canonical copies consistent. The context index above is generated from the
-catalog by `context.py render`; edit the catalog, not the block. Generic eng-*
-workflows stay global. The context layer changes project navigation, not model
-selection, native permissions or hooks.
-<!-- /eng-project-setup -->
+catalog by `context.py render`; edit the catalog, not the block. Generic workflow
+skills (planning, verification, review) stay in the global agent setup. The context
+layer changes project navigation, not model selection, native permissions or hooks.
