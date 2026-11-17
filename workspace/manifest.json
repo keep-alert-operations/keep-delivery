@@ -8,7 +8,7 @@
     },
     "keep-domain": {
       "url": "https://github.com/keep-alert-operations/keep-domain.git",
-      "revision": "762f122926be82cb0d2e1910ddda382f5ffe1a1b"
+      "revision": "28b0471e70225577464ecb57443385c4dd413ff7"
     },
     "keep-migrations": {
       "url": "https://github.com/keep-alert-operations/keep-migrations.git",
@@ -16,23 +16,23 @@
     },
     "keep-api": {
       "url": "https://github.com/keep-alert-operations/keep-api.git",
-      "revision": "43324844f5340f3277185835414e58abf507d88d"
+      "revision": "cda3707dd0fd9b946c92482abbf6558a31d279aa"
     },
     "keep-ingestion": {
       "url": "https://github.com/keep-alert-operations/keep-ingestion.git",
-      "revision": "d27b398f758c4b4e330815f219c0364185b29721"
+      "revision": "885f1929f3513ea5cff90fa4f79141e8c3056941"
     },
     "keep-processor": {
       "url": "https://github.com/keep-alert-operations/keep-processor.git",
-      "revision": "8a28964943498a46aaa92a8bf585c77eb19b33e5"
+      "revision": "0b742ee71a93f1744e2ba76394cdace7b28141c0"
     },
     "keep-correlation": {
       "url": "https://github.com/keep-alert-operations/keep-correlation.git",
-      "revision": "ceb8c8c7a3ec0adc00909a84db44bca14b430303"
+      "revision": "f41d1f1905a610b0a63bb326b1934122d93a727d"
     },
     "keep-indexer": {
       "url": "https://github.com/keep-alert-operations/keep-indexer.git",
-      "revision": "bdd15d528e6b66f9de3031038aa52786327c2fff"
+      "revision": "d9d6603cae85c7fb167bde6a4eb896caced6ceb8"
     },
     "keep-frontend": {
       "url": "https://github.com/keep-alert-operations/keep-frontend.git",
@@ -40,7 +40,7 @@
     },
     "keep-design": {
       "url": "https://github.com/keep-alert-operations/keep-design.git",
-      "revision": "06a64eaa40c8405b330d4ead04055d68f66de9dc"
+      "revision": "d32e864b971982dd91381cc788000cc6998e2e7a"
     },
     "keep-delivery": {
       "url": "https://github.com/keep-alert-operations/keep-delivery.git",

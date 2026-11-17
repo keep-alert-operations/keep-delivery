@@ -4,10 +4,11 @@
 
 The directory refresh now runs once a day as an OpenShift CronJob, and Keep no longer
 handles people the directory reports disabled or no longer finds. Branch
-`feat/daily-directory-refresh` in design (from `0290d21`), domain (from `dd868be`),
-api (from `7f7fa11`) and delivery (from `88c376d`); not pushed or merged. The services
-still pin keep-domain `762f122` and delivery pins keep-api `4332484`: the re-pin needs
-the branches pushed first.
+`feat/daily-directory-refresh` in design (from `0290d21`, #47), domain (from
+`dd868be`, #34), api (from `7f7fa11`, #31) and delivery (from `88c376d`); not merged.
+keep-api and ingestion (#27), processor (#26), correlation (#25) and indexer (#30) pin
+keep-domain `28b0471`. This change pins the pushed heads in `pyproject.toml`, the lock
+and the workspace manifest.
 
 - REV-75: `deploy/openshift/directory-refresh.template.json` runs
   `python -m keep.identity.worker --once --budget-seconds ${RUN_BUDGET_SECONDS}` at
@@ -48,8 +49,8 @@ the branches pushed first.
 - Not verified: a27's 1 s guard-hold bound is timing noise on this machine (it
   passed in the last run; earlier alternating runs gave 0.8–1.6 s on main and the
   branch alike); the cause of the one a25 failure; the smoke baseline and the
-  S1 browser journey on branch code (the running local stack runs main); CI and the
-  re-pins (not pushed); the real ADAPI and Active Directory, including the 404 answer;
+  S1 browser journey on branch code (the running local stack runs main); CI on the
+  PRs; the real ADAPI and Active Directory, including the 404 answer;
   the CronJob on a cluster.
 
 ## 2026-11-16 Lighthouse logo
