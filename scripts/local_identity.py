@@ -50,14 +50,15 @@ GROUPS = (
      "distribution": True},
     {"sAMAccountName": "keep-observers", "cn": "Observers", "displayName": "Observers"},
 )
-# username, label, direct groups, disabled (userAccountControl 514 in the mock).
+# username, label, direct groups. REV-76: Keep doesn't handle disabled people, so there
+# is no disabled fixture user; an earlier setup's local-disabled stays in .local/identity
+# as an ordinary person until it is removed by hand.
 USERS = (
-    ("local-admin", "Local Administrator", (SUPERADMIN_GROUP,), False),
-    ("local-editor", "Local Editor", ("keep-developers",), False),
-    ("local-viewer", "Local Viewer", ("keep-observers",), False),
-    ("local-hebrew", "משתמש Local Hebrew", ("keep-developers",), False),
-    ("local-distribution", "Local Distribution", ("keep-dev-announce",), False),
-    ("local-disabled", "Local Disabled", ("keep-dev-announce",), True),
+    ("local-admin", "Local Administrator", (SUPERADMIN_GROUP,)),
+    ("local-editor", "Local Editor", ("keep-developers",)),
+    ("local-viewer", "Local Viewer", ("keep-observers",)),
+    ("local-hebrew", "משתמש Local Hebrew", ("keep-developers",)),
+    ("local-distribution", "Local Distribution", ("keep-dev-announce",)),
 )
 # One-time move from the earlier local identity provider (REV-73). Its principals used
 # source "keycloak-local" and UUID object ids; its groups are keyed by their real labels.
@@ -199,13 +200,12 @@ def moved_credentials(legacy):
 def complete(creds):
     """Add only values that never existed; existing ones are never replaced."""
     users = creds.setdefault("users", {})
-    for username, label, groups, disabled in USERS:
+    for username, label, groups in USERS:
         if username not in users:
             users[username] = {
                 "password": generated_password(username),
                 "label": label,
                 "groups": list(groups),
-                **({"disabled": True} if disabled else {}),
             }
     creds.setdefault("ldap_admin_password", secrets.token_urlsafe(32))
     creds.setdefault("adapi_client_id", secrets.token_urlsafe(32))
@@ -226,8 +226,7 @@ def directory_data(creds):
         groups.append(entry)
     groups.extend({"sAMAccountName": name, "members": names} for name, names in members.items())
     users = [
-        {"sAMAccountName": username, "displayName": user["label"],
-         **({"disabled": True} if user.get("disabled") else {})}
+        {"sAMAccountName": username, "displayName": user["label"]}
         for username, user in creds["users"].items()
     ]
     return {"users": users, "groups": groups}

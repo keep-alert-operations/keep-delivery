@@ -24,7 +24,7 @@ Require a validated, versioned environment manifest with each service's supporte
 | Kafka team | Topic namespaces, logical-key received/tenant-key changed ordering, idempotent/transactional producer fencing, read_committed consumers, stable partition topology, message limits, offsets/replay/retention and allocation. No PG ingress queue; Kafka retention can lose accepted unprocessed inputs. |
 | Redis team | Authenticated Pub/Sub namespace and connection limits. Failure selects PG reconciliation/polling, not data loss. |
 | Kong/Grafana owners | Installed Keep policy plugin, all-serving-node generation/digest/expiry proof, trusted host clocks, operator supplement's auth/private context, credential IDs, supported management APIs, exact Unicode routing-label round trip and external writer safety. Unsupported remote contract keeps operations pending. |
-| AD/LDAP and ADAPI owners | LDAP host, port and encryption setting; the bind name format and WhoAmI answer, confirmed by one real sign-in; ADAPI `/users`, `/groups` and recursive-members response shapes, `ClientId` binding, 1,000-row search cap and error behavior, confirmed by one real call per route; stable samAccountNames, nested memberships and AD's own lockout policy. Unknown facts never become trusted memberships. |
+| AD/LDAP and ADAPI owners | LDAP host, port and encryption setting; the bind name format and WhoAmI answer, confirmed by one real sign-in; ADAPI `/users`, `/users/user` (including its answer for a name nobody has), `/groups` and recursive-members response shapes, `ClientId` binding, 1,000-row search cap and error behavior, confirmed by one real call per route; stable samAccountNames, nested memberships and AD's own lockout policy. Unknown facts never become trusted memberships. |
 | OpenShift/security/observability owners | Workload model/allocation, secret protection, trust, probes/grace, SSE flush/timeouts, metrics/traces/log interfaces and existing on-call routes. |
 | Recovery-evidence owner | Independently protected ordered append/checkpoint interface and demonstrable rollback survival for minimal fences. Deletion/restore gates remain enforced until verified. |
 
@@ -135,6 +135,19 @@ immutable identity binding, nested membership, unknown-user/team refusal,
 last-trusted authorization and session/restore safeguards remain required. This
 does not close any DEL item or qualify company AD or ADAPI. See
 [worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
+
+## REV-75 daily directory refresh
+
+The manual refresh now also runs once a day from the `keep-directory-refresh`
+CronJob ([`directory-refresh.template.json`](../deploy/openshift/directory-refresh.template.json),
+[runbook](../docs/runbooks/openshift.md#daily-directory-refresh-rev-75)). Before
+release, the team that operates the cluster deploys it after the first bootstrap
+refresh, admits its label at Keep PostgreSQL, gives it egress to the ADAPI address,
+and sets alerts on a failed Job and on no successful run in 26 hours. Qualify one
+manual run (`oc create job --from=cronjob/keep-directory-refresh`) and one group
+change reaching Keep. The template is checked only as rendered: no OpenShift run,
+scheduling, Forbid, deadline or environment-precedence evidence exists. The records
+reach the pod's stderr only until Keep's OpenShift Fluent Bit exists (REV-74).
 
 ## REV-36 live publishing scope
 

@@ -5,10 +5,12 @@ Each test gets a fresh database cloned from a migrated template (needs
 KEEP_IDENTITY_TEST_ADMIN_URL) and a fresh mock ADAPI (scripts/local_adapi.py).
 
 Requirements: REV-73; identity configuration 6-8, 12; worker scope 4; plan A13, A21,
-A25, A27 and "Concurrent publications", "Refresh command".
+A25, A27 and "Concurrent publications", "Refresh command". REV-76; plan (REV-75/76) B4-B6,
+B9.
 """
 
 import base64
+import json
 import os
 import subprocess
 import sys
@@ -241,13 +243,16 @@ def test_bootstrap_opens_human_auth_only_from_the_super_admin_group_evidence(
     assert not principal(database, "local-admin")["super_admin"]
 
 
-def test_a13_refresh_disables_ends_sessions_audits_and_keeps_groups(database, mock_adapi):
-    """Requirements: REV-73; identity configuration 7-8; worker scope 4; plan A13.
+def test_a13_refresh_changes_memberships_audits_and_keeps_groups(database, mock_adapi):
+    """Requirements: REV-73; identity configuration 7-8; worker scope 4; plan A13. REV-76;
+    plan (REV-75/76) B4 (no publication ends sessions), B9 (people are read in /users
+    batches, never one by one).
 
-    Disabling a user in ADAPI makes the refresh mark them ineligible, end their
-    sessions and record the access change; a granted group root stays a group (not a
-    tombstone); a group whose members a /users batch omits still publishes, the
-    omitted members keeping the members route's userAccountControl and their name.
+    Removing a user from a granted group makes the refresh drop the membership and
+    record the access change, while the user stays eligible and their sessions stay
+    open; a granted group root stays a group (not a tombstone); a group whose members a
+    /users batch omits still publishes, the omitted members being eligible people under
+    their names.
     """
     assert run_cycle(database, config(mock_adapi), SUPERADMIN, bootstrap_qualified=True).ok
     developers = save(database, mock_adapi, "keep-developers", "team")
@@ -265,14 +270,20 @@ def test_a13_refresh_disables_ends_sessions_audits_and_keeps_groups(database, mo
     assert roots[principal_key("keep-developers")] == "team"
     assert roots[principal_key("local-editor")] == "user"
 
-    mock_adapi.disable_user("local-editor")
+    mock_adapi.remove_member("keep-developers", "local-editor")
     before = checkpoint(database, "keep-developers")
+    mock_adapi.reset_log()
     summary = run_cycle(database, config(mock_adapi), SUPERADMIN)
     assert summary.ok, summary.failed
+    assert mock_adapi.count("users") >= 1 and mock_adapi.count("user") == 0
     editor = principal(database, "local-editor")
-    assert not editor["eligible"] and not editor["deleted"]
-    assert live_sessions(database, editor["id"]) == 0
+    assert editor["eligible"] and not editor["deleted"]
+    assert live_sessions(database, editor["id"]) == 2
     assert live_sessions(database, hebrew["id"]) == 1
+    with database.transaction() as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM auth_sessions WHERE revoked_at IS NOT NULL"
+        ).fetchone()["n"] == 0
     with database.transaction() as conn:
         audit = conn.execute(
             """SELECT evidence FROM audit_events WHERE kind='directory_access_changed'
@@ -294,14 +305,16 @@ def test_a13_refresh_disables_ends_sessions_audits_and_keeps_groups(database, mo
     # A /users batch that omits members (the search returns one row per call).
     mock_adapi.set_search_cap(1)
     before = checkpoint(database, "keep-developers")
+    mock_adapi.reset_log()
     omitted = run_cycle(database, config(mock_adapi), SUPERADMIN)
     mock_adapi.set_search_cap(local_adapi.SEARCH_CAP)
     assert omitted.ok, omitted.failed
+    # A person root the capped batch omitted is read exactly (B9), never by a filter.
+    exact = [r["query"] for r in mock_adapi.log()["requests"] if r["route"] == "user"]
+    assert all("customFilter" not in str(q) and "samAccountName" in str(q) for q in exact), exact
     assert checkpoint(database, "keep-developers") > before
     distribution = principal(database, "local-distribution")
     assert distribution["display_name"] == "local-distribution" and distribution["eligible"]
-    disabled = principal(database, "local-disabled")
-    assert not disabled["eligible"] and not disabled["deleted"]
     with database.transaction() as conn:
         assert (
             conn.execute(
@@ -442,12 +455,15 @@ def _scale_database(database, users, teams):
 
 
 def test_a25_company_size_refresh_and_one_bad_team(database, adapi_factory):
-    """Requirements: REV-73; worker scope 4; identity configuration 9; plan A25.
+    """Requirements: REV-73; REV-75; worker scope 4; identity configuration 9;
+    observability 2 and 4; plan A25, A3 and A8.
 
     With 50 ms per ADAPI call, 3,000 users with open sessions and 20 granted groups of
     200 publish one evidence for the users and one per group, each within 60 s, using at
     most 60 + 20 x 6 calls. One group failing (500) or over its cap fails alone: the
     other groups and the users still publish, and the command exits non-zero naming it.
+    Both entry points write the same REV-75 records (service api, role
+    directory-refresh) and print neither the DSN, the ADAPI address nor the ClientId.
     """
     data = local_adapi.build_directory(users=3000, groups=20, members_per_group=200)
     names = [row["sAMAccountName"] for row in data["users"]]
@@ -499,6 +515,9 @@ def test_a25_company_size_refresh_and_one_bad_team(database, adapi_factory):
                 "KEEP_ADAPI_URL": mock.base_url,
                 "KEEP_ADAPI_CLIENT_ID": mock.client_id,
                 "KEEP_SUPERADMIN_GROUP": "TEAM01",
+                "KEEP_LOG_FORMAT": "json",
+                "KEEP_LOG_LEVEL": "INFO",
+                "KEEP_LOG_SHIP_URL": "",
             },
             capture_output=True,
             text=True,
@@ -507,8 +526,23 @@ def test_a25_company_size_refresh_and_one_bad_team(database, adapi_factory):
         assert command.returncode == 1
         assert "directory_root_failed root=team05 reason=directory_unavailable" in command.stdout
         assert command.stdout.count("directory_root_failed") == 1
-        assert mock.client_id not in command.stdout + command.stderr
-        assert database.dsn not in command.stdout + command.stderr
+        output = command.stdout + command.stderr
+        assert mock.client_id not in output
+        assert database.dsn not in output
+        assert mock.base_url not in output
+        records = [json.loads(line) for line in command.stderr.splitlines()
+                   if line.startswith("{")]
+        events = {}
+        for record in records:
+            events.setdefault(record.get("event", {}).get("action"), []).append(record)
+        (failed,) = events["directory_root_failed"]
+        assert failed["keep"]["root"] == "team05"
+        assert failed["keep"]["reason"] == "directory_unavailable"
+        (completed,) = events["directory_refresh_completed"]
+        assert (completed["service"]["name"], completed["keep"]["role"]) == (
+            "api", "directory-refresh")
+        assert (completed["keep"]["units"], completed["keep"]["published"],
+                completed["keep"]["failed_roots"]) == (21, 20, 1)
         printed.append([line for line in command.stdout.splitlines() if line.startswith("directory_")])
     assert printed[0] == printed[1]
     assert printed[1][-1].startswith("directory_refresh units=21 published=20 failed_roots=1 ")
@@ -554,8 +588,9 @@ def test_a27_large_publication_holds_the_identity_guard_briefly(database, adapi_
 
     Publishing a group at the 10,000-object cap (the group and 9,999 members) holds the
     identity guard for under one second, measured from taking the guard to commit, both
-    on first save and on a republication that revokes half the members; a concurrent
-    loop of grant mutations (which take the same guard) sees no lock_timeout.
+    on first save and on a republication that removes half the members (5,000 membership
+    changes); a concurrent loop of grant mutations (which take the same guard) sees no
+    lock_timeout. REV-76; plan (REV-75/76) B4: the removed members' sessions stay open.
     """
     large = local_adapi.large_group("huge-team", members=9999, distribution_members=100)
     mock = adapi_factory(local_adapi.merge_directories(local_adapi.sample_directory(), large))
@@ -582,7 +617,7 @@ def test_a27_large_publication_holds_the_identity_guard_briefly(database, adapi_
                 errors.append(type(error).__name__)
             time.sleep(0.01)
 
-    def timed_publication():
+    def timed_publication(objects):
         with database.transaction() as conn:
             generation = allocate_generation(conn)
         evidence = verify_root(
@@ -590,7 +625,7 @@ def test_a27_large_publication_holds_the_identity_guard_briefly(database, adapi_
             deadline_seconds=60, call_cap=5,
         )
         assert evidence.complete, evidence.failures
-        assert len(evidence.objects) == 10000
+        assert len(evidence.objects) == objects
         with database.transaction() as conn:
             lock_identity(conn)
             held = time.monotonic()
@@ -602,7 +637,7 @@ def test_a27_large_publication_holds_the_identity_guard_briefly(database, adapi_
     loop = threading.Thread(target=mutate)
     loop.start()
     try:
-        first, _ = timed_publication()
+        first, _ = timed_publication(10000)
         team = principal(database, "huge-team")
         grant(database, tenants[2], team["id"], "edit")
         members = [row["sAMAccountName"] for row in large["users"]]
@@ -615,22 +650,28 @@ def test_a27_large_publication_holds_the_identity_guard_briefly(database, adapi_
                 ).fetchall()
             ]
         open_sessions(database, ids)
-        for row in large["users"][::2]:
-            row["disabled"] = True
+        removed = {row["sAMAccountName"] for row in large["users"][::2]}
+        for group in large["groups"]:
+            group["members"] = [m for m in group["members"] if m not in removed]
         mock.load(local_adapi.merge_directories(local_adapi.sample_directory(), large))
-        second, result = timed_publication()
+        # The team and the 4,999 members left.
+        second, result = timed_publication(5000)
     finally:
         stop.set()
         loop.join(30)
-    print(f"A27 guard hold: first save {first:.3f}s, revoking republication {second:.3f}s")
+    print(f"A27 guard hold: first save {first:.3f}s, republication removing 5,000 members "
+          f"{second:.3f}s")
     assert first < 1.0 and second < 1.0
-    assert len(result.revoked_principals) == 5000 and len(result.changed_access) == 5000
+    assert len(ids) == 5000 and len(result.changed_access) == 5000
     assert errors == [] and mutations[0] > 0
     with database.transaction() as conn:
         assert conn.execute(
+            "SELECT count(*) AS n FROM directory_memberships WHERE team_id=%s", (team["id"],)
+        ).fetchone()["n"] == 4999
+        assert conn.execute(
             "SELECT count(*) AS n FROM auth_sessions WHERE revoked_at IS NULL AND principal_id=ANY(%s)",
             (ids,),
-        ).fetchone()["n"] == 0
+        ).fetchone()["n"] == 5000
 
 
 def test_pending_saves_are_refreshed_and_removed_when_published(database, mock_adapi):
@@ -662,3 +703,61 @@ def test_pending_saves_are_refreshed_and_removed_when_published(database, mock_a
         ).fetchall()
     assert [row["object_id"] for row in left] == ["keep-developers"]
     assert PUBLICATION_INCOMPLETE == "directory_publication_incomplete"
+
+
+def test_a_pending_person_pick_that_no_longer_exists_does_not_fail_its_chunk(
+    database, mock_adapi
+):
+    """Requirements: REV-76; worker scope 4; plan (REV-75/76) B5, B9.
+
+    Two pending person picks share one chunk and one account no longer exists. The
+    chunk's evidence completes: the existing person is saved, the missing one gets no
+    row, and both requests are deleted. Absence is proved by exact reads of both
+    endpoints (``/users/user`` and ``/groups``) after the ``/users`` batch.
+    """
+    with database.transaction() as conn:
+        conn.execute(
+            """INSERT INTO directory_verification_requests(source,object_id,kind,last_failure)
+            VALUES('adapi','local-hebrew','user',NULL),('adapi','no-such-user','user',NULL)"""
+        )
+    mock_adapi.reset_log()
+    summary = run_cycle(database, config(mock_adapi), SUPERADMIN)
+    assert summary.ok and summary.failed == {}
+    chunk = [unit for unit in summary.units if unit.kind == "user"]
+    assert [unit.roots for unit in chunk] == [("local-hebrew", "no-such-user")]
+    assert chunk[0].published
+    hebrew = principal(database, "local-hebrew")
+    assert hebrew["eligible"] and not hebrew["deleted"] and hebrew["verified_at"] is not None
+    assert principal(database, "no-such-user") is None
+    with database.transaction() as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM directory_verification_requests"
+        ).fetchone()["n"] == 0
+    routes = [r["route"] for r in mock_adapi.log()["requests"] if "no-such-user" in str(r["query"])]
+    assert routes == ["users", "user", "groups"]
+
+
+def test_the_refresh_lifts_people_stored_ineligible_or_deleted(database, mock_adapi):
+    """Requirements: REV-76; identity configuration 7-8; plan (REV-75/76) B6 (c).
+
+    Rows an older version wrote (a disabled person ineligible, a missing one deleted)
+    become eligible and not deleted when the refresh re-reads the person, as a tracked
+    person root or as a member of a tracked group.
+    """
+    assert run_cycle(database, config(mock_adapi), SUPERADMIN, bootstrap_qualified=True).ok
+    assert save(database, mock_adapi, "keep-developers", "team").saved
+    grant(database, new_tenant(database), principal(database, "keep-developers")["id"], "edit")
+    assert save(database, mock_adapi, "local-viewer", "user").saved
+    grant(database, new_tenant(database), principal(database, "local-viewer")["id"], "view")
+    with database.transaction() as conn:
+        conn.execute(
+            """UPDATE principals SET eligible=false,deleted=(object_id<>'local-editor')
+            WHERE directory_source='adapi' AND object_id IN ('local-viewer','local-editor','local-hebrew')"""
+        )
+    assert not principal(database, "local-editor")["eligible"]
+    assert principal(database, "local-viewer")["deleted"]
+    summary = run_cycle(database, config(mock_adapi), SUPERADMIN)
+    assert summary.ok, summary.failed
+    for name in ("local-viewer", "local-editor", "local-hebrew"):
+        row = principal(database, name)
+        assert row["eligible"] and not row["deleted"], name

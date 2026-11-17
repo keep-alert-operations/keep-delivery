@@ -139,7 +139,12 @@ def test_search_escapes_the_term_and_keeps_it_literal():
         assert params["customFilter"] == ["(displayName=*x\\29\\28objectclass=\\2a*)"]
         # '*', '(' and ')' can't be in a sAMAccountName: the display-name filter only.
         assert "samAccountName" not in params
-    assert search_params("user", "a\\b")[-4] == ("customFilter", "(displayName=*a\\5cb*)")
+    # REV-76: the user attributes no longer end with userAccountControl.
+    assert search_params("user", "a\\b")[-3] == ("customFilter", "(displayName=*a\\5cb*)")
+    assert search_params("user", "a\\b")[-2:] == [
+        ("attributesToLoad", "sAMAccountName"),
+        ("attributesToLoad", "displayName"),
+    ]
     plain = dict(search_params("team", "dev"))
     assert plain["samAccountName"] == "*dev*" and plain["customFilter"] == "(displayName=*dev*)"
 
@@ -147,7 +152,8 @@ def test_search_escapes_the_term_and_keeps_it_literal():
 def test_search_matches_users_and_groups_by_username_or_display_name(adapi):
     """``samAccountName=*term*`` OR ``(displayName=*term*)``, users and groups alike.
 
-    Requirements: REV-73; tenant access 5 (search); plan A11.
+    Requirements: REV-73; tenant access 5 (search); plan A11. REV-76 (a disabled
+    account is an ordinary, selectable person); plan B2.
     """
     search = ADAPISearch(config(adapi.base_url))
     by_name = {o.key.object_id: o for o in search("local-ed").objects}
@@ -162,8 +168,9 @@ def test_search_matches_users_and_groups_by_username_or_display_name(adapi):
     # No security-group filter: the distribution group is found too, labelled by cn.
     assert teams["keep-dev-announce"].label == "Developer Announcements"
     assert {o.key.object_id for o in search("Developers").objects} == {"keep-developers"}
+    adapi.add_user("old-disabled", displayName="Old Disabled", disabled=True)
     disabled = {o.key.object_id: o for o in search("disabled").objects}
-    assert disabled["local-disabled"].eligible is False
+    assert disabled["old-disabled"].eligible is True
     # Computer accounts never become principals.
     assert search("ws-0001").objects == ()
     query = adapi.log()["requests"][0]["query"]

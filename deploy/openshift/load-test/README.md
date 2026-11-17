@@ -47,6 +47,7 @@ commands without `--bootstrap-only`. Do not invent the Global UUID.
 | `35-kafka-cutover.json` | One-off cutover Job derived from the processor pod template. Requires stopped ingestion/legacy/new workers and verified external Kafka inputs; run before activating pipeline traffic. |
 | `36-search-bootstrap.json` | Explicit initial-development search activation using the indexer image, live ES probes and current clock evidence; keep writers stopped until success. |
 | `40-*.json` | Canonical application workloads; all initially zero replicas. |
+| `40-directory-refresh.json` | The daily directory refresh CronJob (REV-75) on the identity login's `keep-identity-env` and `keep-identity-bindings`, rendered suspended. Bootstrap stays the manual exec in the runbook. |
 | `50-routes.json` | Shared application origin for `/`, `/api`, `/auth`; separate v1 and v2 hosts. Apply after TLS/DNS checks. |
 | `allocation.json` | Starting requests/limits and storage; no qualification claim. |
 

@@ -180,7 +180,9 @@ def test_wrong_password_creates_no_session(browser, identity_db):
 
 
 def test_no_idle_timeout_but_absolute_epoch_and_known_disable_end_sessions(browser, identity_db):
-    """Requirements: REV-73; identity configuration 4, 8; plan A7."""
+    """Requirements: REV-73; identity configuration 4, 8; plan A7. REV-76: no publication
+    writes a person ineligible any more, but the read-side guard stays for rows an older
+    version wrote."""
     client, username, principal = browser
     database, _ = identity_db
     sign_in(client, username)
@@ -258,34 +260,42 @@ class Directory:
         self.group, self.user, self.nested = (
             PrincipalKey(source, value) for value in ("admins", "person", "nested")
         )
-        self.disabled = False
+        self.label = "person"
+        self.nested_deleted = False
         self.failed = False
 
     def lookup(self, key):
         from keep.identity.directory import DirectoryUnavailable
 
-        if self.failed and key == self.nested:
+        if self.failed and key == self.user:
             raise DirectoryUnavailable("unavailable")
-        return DirectoryObject(
-            key,
-            "user" if key == self.user else "team",
-            key.object_id,
-            not (key == self.user and self.disabled),
-        )
+        if key == self.user:
+            return DirectoryObject(key, "user", self.label, True)
+        if key == self.nested and self.nested_deleted:
+            return DirectoryObject(key, "team", key.object_id, False, deleted=True)
+        return DirectoryObject(key, "team", key.object_id, True)
 
     def members(self, key):
         return [self.user, self.nested] if key == self.group else [self.group]
 
 
 def test_real_publication_semantic_revisions_partial_negative_and_generation_fence(identity_db):
-    """Requirements: REV-73; identity configuration 7-8 (narrower generation fence)."""
+    """Requirements: REV-73; identity configuration 7-8 (narrower generation fence). REV-76:
+    only a group not found is a negative fact; a person is never negated."""
     database, _ = identity_db
     directory = Directory("publication-" + uuid4().hex)
 
-    def verify():
+    def verify(root=None):
         with database.transaction() as conn:
             generation = allocate_generation(conn)
-        return DirectoryVerifier(directory).verify([directory.group], generation)
+        return DirectoryVerifier(directory).verify([root or directory.group], generation)
+
+    def stored(object_id):
+        with database.transaction() as conn:
+            return conn.execute(
+                "SELECT * FROM principals WHERE directory_source=%s AND object_id=%s",
+                (directory.source, object_id),
+            ).fetchone()
 
     first = verify()
     with database.transaction() as conn:
@@ -300,18 +310,28 @@ def test_real_publication_semantic_revisions_partial_negative_and_generation_fen
         ).fetchone()
         assert user["super_admin"]
     stale = verify()
-    directory.disabled, directory.failed = True, True
-    negative = verify()
+    directory.label = "Person Renamed"
     with database.transaction() as conn:
-        result = publish(conn, negative, superadmin_group=directory.group)
-        assert not result.accepted and str(user["id"]) in result.revoked_principals
+        assert publish(conn, verify(directory.user), superadmin_group=directory.group).accepted
     with database.transaction() as conn:
         # REV-73 narrower fence: the older complete evidence still publishes for its
         # root (no root or team holds a newer generation), but it skips the user leaf
-        # the newer negative fact holds, so it cannot resurrect the disabled person.
+        # the newer sign-in evidence holds, so it cannot restore the older name.
         result = publish(conn, stale, superadmin_group=directory.group)
         assert result.accepted and not result.fenced
-        row = conn.execute(
-            "SELECT eligible,super_admin FROM principals WHERE id=%s", (user["id"],)
-        ).fetchone()
-        assert not row["eligible"] and not row["super_admin"]
+    row = stored("person")
+    assert row["display_name"] == "Person Renamed" and row["eligible"] and row["super_admin"]
+    stale = verify()
+    directory.nested_deleted, directory.failed = True, True
+    negative = verify()
+    with database.transaction() as conn:
+        # Partial evidence publishes its negative facts only: the deleted group.
+        assert not publish(conn, negative, superadmin_group=directory.group).accepted
+    assert stored("nested")["deleted"] and not stored("nested")["eligible"]
+    assert stored("person")["eligible"] and not stored("person")["deleted"]
+    with database.transaction() as conn:
+        # The older complete evidence covers the nested team, which now holds a newer
+        # generation, so it is fenced and cannot resurrect the deleted group.
+        result = publish(conn, stale, superadmin_group=directory.group)
+        assert not result.accepted and result.fenced
+    assert stored("nested")["deleted"]
