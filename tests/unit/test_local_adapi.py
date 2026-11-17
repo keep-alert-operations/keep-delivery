@@ -81,16 +81,16 @@ def test_users_user_answers_one_person_with_the_users_parameters(adapi):
                                         ("attributesToLoad", "sAMAccountName"),
                                         ("attributesToLoad", "displayName")]).json()
     assert shaped == [{"displayName": "Local Editor", "sAMAccountName": "local-editor"}]
-    # A group is not a person, and no match is 200 with an empty list.
-    assert get(adapi, "/users/user", {"samAccountName": "keep-developers"}).json() == []
-    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).json() == []
+    # A group is not a person, and no match is 404, as ADAPI answers (2026-11-17).
+    assert get(adapi, "/users/user", {"samAccountName": "keep-developers"}).status_code == 404
+    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).status_code == 404
     assert get(adapi, "/users/user", {"samAccountName": "local-admin"},
                client_id=None).status_code == 401
     assert get(adapi, "/users/user", {"samAccountName": "local-admin"},
                client_id="wrong").status_code == 401
     assert get(adapi, "/users/user", {"customFilter": "(sAMAccountName=x"}).status_code == 400
-    adapi.set_unknown_user_status(404)
-    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).status_code == 404
+    adapi.set_unknown_user_status(200)
+    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).json() == []
     assert get(adapi, "/users", {"samAccountName": "nobody"}).json() == []
     adapi.fail("user", 503, name="local-viewer", times=1)
     assert get(adapi, "/users/user", {"samAccountName": "local-viewer"}).status_code == 503
@@ -384,7 +384,7 @@ def test_set_hook_over_http(adapi):
         "search_cap": 2,
         "missing_value": None,
         "unknown_group_status": 404,
-        "unknown_user_status": 404,
+        "unknown_user_status": 200,
         "latency": {"groups": 0.01},
         "fail": [{"route": "members", "status": 503, "name": "keep-observers"}],
     }).status_code == 200
@@ -392,7 +392,7 @@ def test_set_hook_over_http(adapi):
     assert viewer["userAccountControl"] == "512" and viewer["ipPhone"] is None
     assert len(get(adapi, "/users").json()) == 2
     assert get(adapi, "/groups/members/user", {"samAccountName": "nobody"}).status_code == 404
-    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).status_code == 404
+    assert get(adapi, "/users/user", {"samAccountName": "nobody"}).json() == []
     path = "/groups/members/user"
     assert get(adapi, path, {"samAccountName": "keep-observers"}).status_code == 503
     assert names(get(adapi, path, {"samAccountName": "ops"})) == ["local-admin", "local-editor"]

@@ -15,8 +15,8 @@ Copies the company AD REST API as the user described it (no real samples exist y
   case-insensitive.
 - ``GET /users/user`` takes the same parameters as ``/users`` and answers the same rows;
   Keep calls it for one person by exact ``samAccountName`` and gets a list holding one
-  object. No match answers 200 with ``[]`` (switchable with ``unknown_user_status``,
-  because the real behavior is unknown).
+  object. No match answers 404, as ADAPI does (``unknown_user_status`` can switch it,
+  for example to 200 with ``[]``).
 - ``/users`` rows carry ``cn, description, displayName, distinguishedName, givenName,
   ipPhone, mail, mailNickname, memberOf, objectGUID, objectSid, sAMAccountName, sn,
   userAccountControl``; disabled accounts (``"514"``) are returned too, and Keep ignores
@@ -712,7 +712,7 @@ class LocalADAPI:
         self.log_stream = log_stream
         self.gate_timeout = gate_timeout
         self.unknown_group_status = 200
-        self.unknown_user_status = 200
+        self.unknown_user_status = 404
         self.missing_value = ""
         self._lock = threading.Lock()
         self._arrival = threading.Condition(self._lock)

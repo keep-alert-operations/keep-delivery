@@ -140,8 +140,8 @@ The mock copies the routes and behavior described in
 `/users` and `/groups` with OR'ed parameters, `/users/user` (one person by exact
 `samAccountName`, with the `/users` parameters, answered as a one-object list),
 `/groups/members/user` with recursive members, the silent 1,000-row search cap
-and non-200 errors. With no match, `/users/user` answers 200 with `[]`; ADAPI's
-real answer isn't confirmed yet, so the `unknown_user_status` hook can change it.
+and non-200 errors. With no match, `/users/user` answers 404, as ADAPI does, and
+Keep reads that as "not found"; the `unknown_user_status` hook can change it.
 Every
 route needs the `ClientId` header, which is `adapi_client_id` in
 `credentials.json`; a missing or wrong value answers 401. Each request writes one
@@ -160,7 +160,7 @@ On loopback the mock also serves test hooks, which don't need the ClientId:
 | `latency` | `{"users": 2.5}` delays a route; `"*"` delays all of them. |
 | `pause`, `release`, `release_all` | Hold matching requests until released. |
 | `remove_user`, `remove_group` | Lists of names. |
-| `unknown_group_status`, `unknown_user_status` | The status `/groups` or `/users/user` answers when nothing matches (default 200 with `[]`). |
+| `unknown_group_status`, `unknown_user_status` | The status `/groups` or `/users/user` answers when nothing matches (defaults: 200 with `[]` for `/groups`, 404 for `/users/user`). |
 | `add_user`, `add_group` | Lists of entries in the `adapi-directory.json` form. |
 | `add_member`, `remove_member` | `[{"group": "keep-observers", "member": "local-viewer"}]`. |
 | `rename` | `[{"name": "local-viewer", "displayName": "New Name"}]`. |
