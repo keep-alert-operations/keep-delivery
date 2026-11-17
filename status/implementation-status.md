@@ -1,5 +1,57 @@
 # Implementation status
 
+## 2026-11-17 Daily directory refresh and no disabled or deleted people (REV-75, REV-76)
+
+The directory refresh now runs once a day as an OpenShift CronJob, and Keep no longer
+handles people the directory reports disabled or no longer finds. Branch
+`feat/daily-directory-refresh` in design (from `0290d21`), domain (from `dd868be`),
+api (from `7f7fa11`) and delivery (from `88c376d`); not pushed or merged. The services
+still pin keep-domain `762f122` and delivery pins keep-api `4332484`: the re-pin needs
+the branches pushed first.
+
+- REV-75: `deploy/openshift/directory-refresh.template.json` runs
+  `python -m keep.identity.worker --once --budget-seconds ${RUN_BUDGET_SECONDS}` at
+  02:00 by default (`concurrencyPolicy: Forbid`, `backoffLimit: 0`, starting and
+  active deadlines from parameters, budget 1,800 s, no bootstrap). Both refresh entry
+  points write REV-74 records with role `directory-refresh` to the Product API's index
+  (`directory_root_failed`, `directory_refresh_completed`,
+  `directory_refresh_failed`), with the logger `keep.identity.worker`. A budget or
+  SIGTERM stops the run between ADAPI calls. The load-test bundle renders the CronJob
+  suspended.
+- REV-76: no `userAccountControl` check, no session ending and no person tombstones.
+  A person the directory doesn't find is never stored or negated; deleted groups keep
+  their handling. Exact single-person reads use ADAPI `GET /users/user`. Its 404 (the
+  user's answer: no such person) reads as "no row"; every other non-200 and every
+  malformed body stays "directory unavailable". Sign-in answers 503
+  `sign_in_unavailable` when the stored person stays unusable after its publication.
+  Sign-in, a pick and the refresh lift a stored ineligible or deleted person row.
+- Executed on 2026-11-17 on the branch heads (design `d32e864`, domain `28b0471`, api
+  `f9ad28b`, delivery `aabc7b2`, editable in delivery's environment): domain unit
+  1,014 passed; delivery unit 374 passed, 63 skipped; the identity integration
+  modules (`test_adapi_fixture`, `test_password_login`, `test_save_on_pick`,
+  `test_adapi_publication`) in one process: 51 passed in the last of three runs. In
+  the first, a25 failed once (the `keep.worker directory --once` subprocess printed
+  nothing and logged `worker_capability_unavailable`; pytest truncated its stderr, so
+  the cause wasn't captured), and the next two runs, which recorded each worker
+  subprocess's full output, passed it. Before the 404 change,
+  `scripts/workspace.py --root .. test` exit 0, and `check_contracts.py` and
+  `verify_boundaries.py` passed. An isolated runtime (own database, dropped after;
+  branch mock ADAPI and branch Product API on spare ports; the refresh with the
+  CronJob's command and environment on the worker login) passed 31 of 31 checks:
+  membership removal and re-adding change access on the next refresh while the
+  session stays open; both entry points' records reach `keep-logs-api`; a stopped
+  ADAPI exits 1 with checkpoints unchanged; a person ADAPI reports disabled signs in
+  with one `/users/user` read; a person ADAPI answers 404 for gets 403
+  `account_not_in_directory` and their stored row is unchanged; no ClientId,
+  password or DSN in the output. `check_docs.py`, `verify_documents.py` and
+  `check_context.py` passed.
+- Not verified: a27's 1 s guard-hold bound is timing noise on this machine (it
+  passed in the last run; earlier alternating runs gave 0.8–1.6 s on main and the
+  branch alike); the cause of the one a25 failure; the smoke baseline and the
+  S1 browser journey on branch code (the running local stack runs main); CI and the
+  re-pins (not pushed); the real ADAPI and Active Directory, including the 404 answer;
+  the CronJob on a cluster.
+
 ## 2026-11-16 Lighthouse logo
 
 The user asked for logo options and, after three rounds, picked the Lighthouse mark: a
