@@ -131,8 +131,9 @@ def test_identity_tooling_uses_the_api_image_and_waits_for_explicit_execution(tm
 
 
 def test_test_identity_is_reachable_only_from_its_consumers(tmp_path):
-    """Requirements: REV-73; identity configuration 14 (LDAP bind for sign-in, ADAPI for
-    the directory); no Keycloak workload, policy, Service or Route remains."""
+    """Requirements: REV-73; REV-75 (the refresh CronJob's label); identity configuration
+    14 (LDAP bind for sign-in, ADAPI for the directory); no Keycloak workload, policy,
+    Service or Route remains. Plan A7."""
     bundle.render(config(), tmp_path)
     items = rendered_items(tmp_path)
     policies = {i["metadata"]["name"]: i["spec"]["ingress"] for i in items
@@ -140,12 +141,14 @@ def test_test_identity_is_reachable_only_from_its_consumers(tmp_path):
     assert policies["keep-openldap"] == [
         bundle.rule([bundle.peer("keep-product-api")], bundle.OPENLDAP_PORT)]
     assert policies["keep-adapi-mock"] == [bundle.rule(
-        [bundle.peer("keep-product-api"), bundle.peer("keep-directory-publication")],
+        [bundle.peer("keep-product-api"), bundle.peer("keep-directory-publication"),
+         bundle.peer("keep-directory-refresh")],
         bundle.ADAPI_MOCK_PORT)]
     assert policies["keep-directory-publication"] == []
+    assert policies["keep-directory-refresh"] == []
     postgres_peers = {p["podSelector"]["matchLabels"]["app"]
                       for p in policies["keep-postgres"][0]["from"]}
-    assert "keep-directory-publication" in postgres_peers
+    assert {"keep-directory-publication", "keep-directory-refresh"} <= postgres_peers
     assert not {"keep-openldap", "keep-adapi-mock"} & postgres_peers
     assert "keycloak" not in json.dumps(policies).lower()
     assert not [i for i in items if "keycloak" in json.dumps(i).lower()]
@@ -169,6 +172,34 @@ def test_test_identity_is_reachable_only_from_its_consumers(tmp_path):
     c = ldap["spec"]["template"]["spec"]["containers"][0]
     assert c["ports"] == [{"name": "ldap", "containerPort": bundle.OPENLDAP_PORT}]
     assert {m["mountPath"]: m["readOnly"] for m in c["volumeMounts"]}["/run/openldap-seed"]
+
+
+def test_the_daily_refresh_cronjob_is_rendered_suspended_on_the_identity_login(tmp_path):
+    """Requirements: REV-75 (the load-test bundle renders the CronJob suspended; bootstrap
+    stays a manual exec); worker scope 4. Plan A7."""
+    bundle.render(config(), tmp_path)
+    params = dict(line.split("=", 1) for line in
+                  (tmp_path / "directory-refresh.params").read_text().splitlines())
+    assert params["SUSPEND"] == "true"
+    assert params["CONFIG_SECRET"] == "keep-identity-env"
+    assert params["BINDING_SECRET"] == "keep-identity-bindings"
+    assert params["PRODUCT_API_IMAGE"] == config()["images"]["api"]
+    assert (params["RUN_BUDGET_SECONDS"], params["ACTIVE_DEADLINE_SECONDS"]) == ("1800", "2100")
+    script = (tmp_path / "render-apps.sh").read_text()
+    assert "directory-refresh.template.json" in script and "40-directory-refresh.json" in script
+    source = (bundle.TEMPLATES / "directory-refresh.template.json").read_text()
+    for name, value in params.items():
+        source = source.replace('"${{' + name + '}}"', value).replace("${" + name + "}", value)
+    (job,) = json.loads(source)["objects"]
+    assert job["kind"] == "CronJob" and job["spec"]["suspend"] is True
+    pod = job["spec"]["jobTemplate"]["spec"]["template"]
+    assert pod["metadata"]["labels"]["app"] == "keep-directory-refresh"
+    assert pod["spec"]["serviceAccountName"] == bundle.SA
+    assert "--bootstrap" not in pod["spec"]["containers"][0]["command"]
+    bootstrap = tmp_path / "bootstrap"
+    values = config()
+    bundle.render(values, bootstrap, bootstrap_only=True)
+    assert not (bootstrap / "directory-refresh.params").exists()
 
 
 def test_hosts_are_exactly_application_v1_and_v2(tmp_path):

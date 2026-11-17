@@ -47,7 +47,10 @@ function Save-Records {
 
 function Start-Owned([hashtable]$Definition) {
     if (@($script:records | Where-Object { $_.Role -eq $Definition.Role -and (Get-OwnedProcess $_) }).Count) { return }
+    # A process with a Metrics port serves /metrics there; the others serve none.
+    if ($Definition.Metrics) { $env:KEEP_METRICS_PORT = $Definition.Metrics } else { Remove-Item Env:KEEP_METRICS_PORT -ErrorAction SilentlyContinue }
     $process = Start-Process -FilePath $Definition.File -ArgumentList $Definition.Arguments -WorkingDirectory $Definition.Directory -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $state "$($Definition.Role).out.log") -RedirectStandardError (Join-Path $state "$($Definition.Role).err.log")
+    Remove-Item Env:KEEP_METRICS_PORT -ErrorAction SilentlyContinue
     $record = [pscustomobject]@{ Role=$Definition.Role; Id=$process.Id; StartTime=$process.StartTime.ToUniversalTime().ToString('o') }
     $script:records = @($script:records | Where-Object { $_.Role -ne $Definition.Role }) + @($record)
     Save-Records
@@ -141,8 +144,10 @@ try {
     Invoke-DirectoryRefresh -Bootstrap
     $node = (Get-Command node).Source
     $definitions = @(
-        @{ Role='Api'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
-        @{ Role='Ingestion'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.ingestion.main:create_app --factory --host 127.0.0.1 --port 58001 --no-access-log' },
+        # Metrics: each process serves /metrics on its own loopback port (REV-74); the
+        # stack's Prometheus scrapes them (deploy/local/prometheus/prometheus.yml).
+        @{ Role='Api'; Metrics='59101'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.main:create_app --factory --host 127.0.0.1 --port 58000 --no-access-log' },
+        @{ Role='Ingestion'; Metrics='59102'; File=$python; Directory=$repository; Arguments='-m uvicorn keep.ingestion.main:create_app --factory --host 127.0.0.1 --port 58001 --no-access-log' },
         @{ Role='Frontend'; File=$node; Directory=(Join-Path (Split-Path -Parent $repository) 'keep-frontend'); Arguments=('node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3443 --experimental-https --experimental-https-cert "' + (Join-Path $state 'tls/localhost.pem') + '" --experimental-https-key "' + (Join-Path $state 'tls/localhost-key.pem') + '"') }
     )
     foreach ($definition in $definitions) { Start-Owned $definition }

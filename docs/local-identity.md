@@ -73,7 +73,11 @@ Remove-Item -LiteralPath 'Cert:\CurrentUser\Root\3FFC616039134C802F5AAECEC737B91
 | `local-viewer` | Local Viewer | `keep-observers` | Ordinary member. |
 | `local-hebrew` | משתמש Local Hebrew | `keep-developers` | Hebrew label and a mixed Hebrew/English password; checks the UTF-8 bind. |
 | `local-distribution` | Local Distribution | `keep-dev-announce` | Reached from `keep-developers` only through a distribution group. |
-| `local-disabled` | Local Disabled | `keep-dev-announce` | `userAccountControl` 514. Its right password gets the same refusal as a wrong one. |
+
+Keep doesn't handle disabled or deleted people (REV-76), so there is no disabled
+test user. A `.local/identity` written by an earlier Start still lists
+`local-disabled`; Keep now treats it as an ordinary person. Remove it from both
+files by hand if you don't want it.
 
 | Group | Label | Notes |
 |---|---|---|
@@ -85,7 +89,7 @@ Remove-Item -LiteralPath 'Cert:\CurrentUser\Root\3FFC616039134C802F5AAECEC737B91
 Usernames and groups don't give tenant roles by themselves. Global gives every
 eligible person edit access. Other tenant roles come from Keep grants to users or
 groups. A grant to `keep-developers` reaches `local-editor`, `local-hebrew` and
-`local-distribution`; `local-disabled` stays ineligible. Start doesn't create the
+`local-distribution`. Start doesn't create the
 `Local Demo` tenant. The S1 smoke journey creates it with admin, edit and view
 grants to `keep-administrators`, `keep-developers` and `keep-observers` when it
 is missing.
@@ -93,7 +97,7 @@ is missing.
 ## Add or change a test user
 
 `credentials.json` feeds OpenLDAP: passwords and names. `adapi-directory.json`
-feeds the mock ADAPI: people, groups, membership and the disabled flag. Start
+feeds the mock ADAPI: people, groups and membership. Start
 writes `adapi-directory.json` only when it is missing, so after that you edit
 both files.
 
@@ -114,7 +118,8 @@ both files.
    {"sAMAccountName": "local-tester", "displayName": "Local Tester"}
    ```
 
-   Add `"disabled": true` for a disabled account (514).
+   `"disabled": true` makes the mock answer `userAccountControl` 514, as ADAPI
+   does for a disabled account. Keep ignores that value (REV-76).
 4. Run `.\scripts\local-identity.ps1 -Action Refresh`. It seeds OpenLDAP again,
    loads `adapi-directory.json` into the mock and runs one directory refresh.
 
@@ -122,18 +127,22 @@ The new user can then sign in; sign-in saves a person Keep doesn't know yet. An
 administrator can also pick the person in the access picker, which saves them on
 pick. Seeding adds or updates OpenLDAP entries and never deletes one.
 
-To move someone between groups or disable them, edit `adapi-directory.json` and
-run Refresh. The refresh rereads what Keep tracks: the super-admin group, granted
-groups and users, users with open sessions, assignees and pending saves. A
-disabled person keeps access until that refresh, which ends their sessions, or
-until their session ends.
+To move someone between groups, edit `adapi-directory.json` and run Refresh. The
+refresh rereads what Keep tracks: the super-admin group, granted groups and users,
+users with open sessions, assignees and pending saves. Someone removed from a group
+keeps that group's access until the refresh. No refresh or sign-in ends a session;
+a session lasts until sign-out or its 24-hour end.
 
 ## Mock ADAPI behavior and test hooks
 
 The mock copies the routes and behavior described in
 [identity configuration 6](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md#6-ldap-bind-adapi-directory-and-stable-identity):
-`/users` and `/groups` with OR'ed parameters, `/groups/members/user` with
-recursive members, the silent 1,000-row search cap and non-200 errors. Every
+`/users` and `/groups` with OR'ed parameters, `/users/user` (one person by exact
+`samAccountName`, with the `/users` parameters, answered as a one-object list),
+`/groups/members/user` with recursive members, the silent 1,000-row search cap
+and non-200 errors. With no match, `/users/user` answers 404, as ADAPI does, and
+Keep reads that as "not found"; the `unknown_user_status` hook can change it.
+Every
 route needs the `ClientId` header, which is `adapi_client_id` in
 `credentials.json`; a missing or wrong value answers 401. Each request writes one
 JSON log line with no ClientId, parameter values or usernames to
@@ -141,8 +150,8 @@ JSON log line with no ClientId, parameter values or usernames to
 
 On loopback the mock also serves test hooks, which don't need the ClientId:
 
-- `GET /__log` lists recent requests and a count per route (`users`, `groups`,
-  `members`).
+- `GET /__log` lists recent requests and a count per route (`users`, `user` for
+  `/users/user`, `groups`, `members`).
 - `POST /__set` takes a JSON object with any of these keys:
 
 | Key | Effect |
@@ -150,7 +159,8 @@ On loopback the mock also serves test hooks, which don't need the ClientId:
 | `fail`, `clear_failures` | `[{"route": "users", "status": 503, "name": "local-admin", "times": 1}]` makes matching requests fail; `name` and `times` are optional. |
 | `latency` | `{"users": 2.5}` delays a route; `"*"` delays all of them. |
 | `pause`, `release`, `release_all` | Hold matching requests until released. |
-| `disable_user`, `enable_user`, `remove_user`, `remove_group` | Lists of names. |
+| `remove_user`, `remove_group` | Lists of names. |
+| `unknown_group_status`, `unknown_user_status` | The status `/groups` or `/users/user` answers when nothing matches (defaults: 200 with `[]` for `/groups`, 404 for `/users/user`). |
 | `add_user`, `add_group` | Lists of entries in the `adapi-directory.json` form. |
 | `add_member`, `remove_member` | `[{"group": "keep-observers", "member": "local-viewer"}]`. |
 | `rename` | `[{"name": "local-viewer", "displayName": "New Name"}]`. |

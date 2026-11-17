@@ -1,4 +1,4 @@
-"""Mock ADAPI directory for local sign-in and directory tests (REV-73).
+"""Mock ADAPI directory for local sign-in and directory tests (REV-73, REV-76).
 
 Copies the company AD REST API as the user described it (no real samples exist yet):
 
@@ -13,9 +13,14 @@ Copies the company AD REST API as the user described it (no real samples exist y
   at 1,000 rows. Empty parameter values are ignored (the parameters are nullable) and
   unknown parameters are ignored, like ASP.NET binding; parameter names are
   case-insensitive.
+- ``GET /users/user`` takes the same parameters as ``/users`` and answers the same rows;
+  Keep calls it for one person by exact ``samAccountName`` and gets a list holding one
+  object. No match answers 404, as ADAPI does (``unknown_user_status`` can switch it,
+  for example to 200 with ``[]``).
 - ``/users`` rows carry ``cn, description, displayName, distinguishedName, givenName,
   ipPhone, mail, mailNickname, memberOf, objectGUID, objectSid, sAMAccountName, sn,
-  userAccountControl``; disabled accounts (``"514"``) are returned too. ``/groups`` rows
+  userAccountControl``; disabled accounts (``"514"``) are returned too, and Keep ignores
+  ``userAccountControl`` (REV-76). ``/groups`` rows
   carry ``cn, description, givenName, distinguishedName, groupType, mail, mailNickName,
   managedBy, memberOf, objectGuid, sAMAccountName`` (note the casing). A group's
   ``displayName``, the computed ``member`` DNs and ``objectClass`` are returned only when
@@ -64,7 +69,7 @@ ACTIVE = "512"
 DISABLED = "514"
 COMPUTER = "4096"
 SUPERADMIN_GROUP = "keep-administrators"
-ROUTES = ("users", "groups", "members")
+ROUTES = ("users", "user", "groups", "members")
 USER_ATTRIBUTES = (
     "cn", "description", "displayName", "distinguishedName", "givenName", "ipPhone",
     "mail", "mailNickname", "memberOf", "objectGUID", "objectSid", "sAMAccountName", "sn",
@@ -526,12 +531,6 @@ class Directory:
             raise KeyError(f"no group {name!r}")
         return positions
 
-    def set_user_control(self, name, value):
-        with self.lock:
-            for row in self._users_named(name):
-                row["userAccountControl"] = str(value)
-            self._index()
-
     def add_user(self, name, **attributes):
         """Append a user; an existing name makes a duplicate (an ambiguous lookup)."""
         with self.lock:
@@ -596,8 +595,8 @@ class Directory:
 
 def sample_directory():
     """The default local data: the three local users and their groups (local-admin in the
-    super-admin group keep-administrators), a disabled user, a user whose password mixes
-    Hebrew and English, a computer account and a distribution-group chain
+    super-admin group keep-administrators), a user whose password mixes Hebrew and
+    English, a computer account and a distribution-group chain
     (keep-developers -> keep-dev-announce (distribution) -> local-distribution).
     """
     return {
@@ -605,8 +604,6 @@ def sample_directory():
             {"sAMAccountName": "local-admin", "displayName": "Local Administrator"},
             {"sAMAccountName": "local-editor", "displayName": "Local Editor"},
             {"sAMAccountName": "local-viewer", "displayName": "Local Viewer"},
-            {"sAMAccountName": "local-disabled", "displayName": "Local Disabled",
-             "disabled": True},
             {"sAMAccountName": "local-hebrew", "displayName": "משתמש Local Hebrew"},
             {"sAMAccountName": "local-distribution", "displayName": "Local Distribution"},
             {"sAMAccountName": "WS-0001$", "displayName": "WS-0001"},
@@ -617,7 +614,7 @@ def sample_directory():
             {"sAMAccountName": "keep-developers", "cn": "Developers", "displayName": "Developers",
              "members": ["local-editor", "local-hebrew", "WS-0001$", "keep-dev-announce"]},
             {"sAMAccountName": "keep-dev-announce", "cn": "Developer Announcements",
-             "distribution": True, "members": ["local-distribution", "local-disabled"]},
+             "distribution": True, "members": ["local-distribution"]},
             {"sAMAccountName": "keep-observers", "cn": "Observers", "displayName": "Observers",
              "members": ["local-viewer"]},
         ],
@@ -699,7 +696,8 @@ def _is_loopback(host):
 class LocalADAPI:
     """In-process mock ADAPI. ``start()`` binds (port 0 picks a free port) and returns
     self; ``stop()`` releases every pause gate and closes the server. A context manager.
-    Routes for hooks and counters: ``users``, ``groups``, ``members`` (``*`` = any).
+    Routes for hooks and counters: ``users``, ``user`` (``/users/user``), ``groups``,
+    ``members`` (``*`` = any).
     """
 
     def __init__(self, directory=None, client_id="local-adapi-client-id", host="127.0.0.1",
@@ -714,6 +712,7 @@ class LocalADAPI:
         self.log_stream = log_stream
         self.gate_timeout = gate_timeout
         self.unknown_group_status = 200
+        self.unknown_user_status = 404
         self.missing_value = ""
         self._lock = threading.Lock()
         self._arrival = threading.Condition(self._lock)
@@ -827,11 +826,8 @@ class LocalADAPI:
     def set_unknown_group_status(self, status):
         self.unknown_group_status = int(status)
 
-    def disable_user(self, name):
-        self.directory.set_user_control(name, DISABLED)
-
-    def enable_user(self, name):
-        self.directory.set_user_control(name, ACTIVE)
+    def set_unknown_user_status(self, status):
+        self.unknown_user_status = int(status)
 
     def add_user(self, name, **attributes):
         self.directory.add_user(name, **attributes)
@@ -890,10 +886,6 @@ class LocalADAPI:
             self.pause(rule["route"], rule.get("name"), skip=int(rule.get("skip", 0)))
         if "data" in body:
             self.load(body["data"])
-        for name in _list(body.get("disable_user")):
-            self.disable_user(name)
-        for name in _list(body.get("enable_user")):
-            self.enable_user(name)
         for user in _list(body.get("add_user")):
             user = dict(user)
             self.add_user(user.pop("sAMAccountName", None) or user.pop("name"), **user)
@@ -916,6 +908,8 @@ class LocalADAPI:
             self.set_search_cap(body["search_cap"])
         if "unknown_group_status" in body:
             self.set_unknown_group_status(body["unknown_group_status"])
+        if "unknown_user_status" in body:
+            self.set_unknown_user_status(body["unknown_user_status"])
         if "missing_value" in body:
             self.missing_value = body["missing_value"]
         if body.get("reset_log"):
@@ -980,7 +974,7 @@ class LocalADAPI:
             if not self.enable_hooks:
                 return 404, {"error": "not found"}, "hooks"
             return None, None, "hooks"
-        route = {"/users": "users", "/groups": "groups",
+        route = {"/users": "users", "/users/user": "user", "/groups": "groups",
                  "/groups/members/user": "members"}.get(path, "other")
         status, body = self._serve(method, route, raw_query, headers)
         self._record(method, route, path, raw_query, status)
@@ -1001,21 +995,25 @@ class LocalADAPI:
             query.setdefault(name, []).extend(v for v in values if v != "")
         if route == "members":
             return self._members(query)
+        # /users/user searches like /users (REV-76); it keeps its own route for hooks.
+        table = "users" if route == "user" else route
         try:
-            rows = self.directory.search(route, query, self.search_cap)
+            rows = self.directory.search(table, query, self.search_cap)
         except FilterError as error:
             return 400, {"error": "invalid customFilter", "detail": str(error)}
         names = {_key(v) for v in query.get("samaccountname", [])}
         names |= {_key(row["sAMAccountName"]) for row in rows}
         self._delay(route)
         if self._wait_gates(route, names):
-            rows = self.directory.search(route, query, self.search_cap)
+            rows = self.directory.search(table, query, self.search_cap)
         rule = self._failure(route, names)
         if rule:
             return rule["status"], rule["body"]
+        if route == "user" and not rows and self.unknown_user_status != 200:
+            return self.unknown_user_status, {"error": "user not found"}
         attributes = [a.strip() for v in query.get("attributestoload", [])
                       for a in v.split(",") if a.strip()]
-        return 200, [self._project(route, row, attributes) for row in rows]
+        return 200, [self._project(table, row, attributes) for row in rows]
 
     def _project(self, route, row, attributes):
         if attributes:

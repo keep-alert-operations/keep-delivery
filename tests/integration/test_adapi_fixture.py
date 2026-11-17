@@ -46,7 +46,7 @@ def test_container_is_the_pinned_image_on_loopback(openldap):
 
 def test_bind_and_who_am_i_name_the_bound_entry(openldap):
     """Requirements: REV-73; plan Login API (bind with WhoAmI), A20 (dn: form passes)."""
-    for username in ("local-admin", "local-editor", "local-disabled"):
+    for username in ("local-admin", "local-editor", "local-viewer"):
         conn = openldap.connect(username, openldap.users[username])
         try:
             assert conn.extend.standard.who_am_i() == (

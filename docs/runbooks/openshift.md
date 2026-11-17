@@ -30,12 +30,16 @@ No company infrastructure or production deployment was changed.
    assignment cleanup and inactivity workers are deferred (REV-34/35); operator
    provisioning and live publishing belong to Product API (REV-34/36). Explicit
    recovery/proof helpers remain separate authorized operational actions.
+   After the first manual directory refresh (private qualification step 4), render
+   `directory-refresh.template.json`: the daily refresh CronJob (REV-75, see
+   [Daily directory refresh](#daily-directory-refresh-rev-75) below).
 6. Render `network.template.json` separately for each workload. Supply actual
    ingress peers/ports and egress rules, including required DNS and approved
    service endpoints. No allow-all network rule is supplied. Configure company
    ingress routing and TLS with the platform team: `/auth` and product `/api`
    paths reach Product API through the frontend proxy, native v1 reaches the
    public ingestion service, and only Kong reaches the private mTLS service.
+   Keep PostgreSQL must also admit `app: keep-directory-refresh`.
 7. Validate rendered resources against the installed API (`oc apply --dry-run=server`)
    before applying them to nonproduction. Exercise the private qualification
    checklist and keep unsupported application capability gates closed.
@@ -89,6 +93,65 @@ and browsers open its new incident form; Keep's server never contacts it, so no
 egress is needed. Leave it out to hide ticket linking; tickets linked earlier still
 show and can be unlinked. Apply migration 0069 before the Product API. A super admin
 sees the address on **Admin › Integrations**.
+
+## Daily directory refresh (REV-75)
+
+`directory-refresh.template.json` renders one CronJob, `keep-directory-refresh`.
+Once a day it runs `python -m keep.identity.worker --once --budget-seconds
+${RUN_BUDGET_SECONDS}` from the Product API image. It re-reads the tracked groups and
+people from ADAPI and publishes them, as the manual refresh does
+([identity configuration 7–9](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md#7-membership-supply-and-the-five-minute-target)).
+The team that operates the cluster deploys it and owns its alerts.
+
+- **Inputs.** `PRODUCT_API_IMAGE` (by digest), `SERVICE_ACCOUNT` and the allocations.
+  `CONFIG_SECRET` is the dedicated identity database login's environment:
+  `KEEP_DATABASE_URL`, `KEEP_DEPLOYMENT_EPOCH`, the wrapping key, `KEEP_ADAPI_URL`,
+  the secret `KEEP_ADAPI_CLIENT_ID` and `KEEP_SUPERADMIN_GROUP`. `BINDING_SECRET`
+  mounts any company CA at `/etc/keep`. `SCHEDULE` (default `0 2 * * *`) is read in
+  the cluster controller's time zone. Keep `RUN_BUDGET_SECONDS` (1,800) at least 60
+  seconds below `ACTIVE_DEADLINE_SECONDS` (2,100). `STARTING_DEADLINE_SECONDS`
+  (3,600) skips a run that cannot start within an hour.
+- **Never bootstraps.** The job sets `KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED=false` and
+  never passes `--bootstrap`, so it cannot open the initial sign-in gate. Run the
+  first, bootstrap refresh by hand as the private qualification checklist says, then
+  apply the CronJob.
+- **No overlap, no retry.** `concurrencyPolicy: Forbid` skips a run while the last
+  one is active. `backoffLimit: 0` leaves a failed run failed until the next day or
+  a manual run.
+- **Network.** The pod accepts no connections. It needs egress to DNS, Keep
+  PostgreSQL and the ADAPI address. Do not render `network.template.json` with an
+  empty `INGRESS_PEERS` for it: Kubernetes reads a rule with no `from` as every
+  source. Use the platform's deny-all ingress policy for `app: keep-directory-refresh`
+  and supply the egress rules, or give the template one peer that matches no pod.
+  Keep PostgreSQL's ingress rules must admit the label.
+- **Suspend or resume.** Render with `SUSPEND=true`, or
+  `oc patch cronjob/keep-directory-refresh -p '{"spec":{"suspend":true}}'` (and
+  `false` to resume). Suspending keeps the CronJob and its history.
+- **Run now.** After a group change that cannot wait for the next day:
+  `oc create job --from=cronjob/keep-directory-refresh keep-directory-refresh-manual-$(date +%s)`.
+  The job runs with the same command, budget and environment; it still never
+  bootstraps.
+- **Reading a run.** Exit 0 means every root published. Exit 1 means at least one
+  root failed or was stopped, or the run could not start. The pod's stdout has the
+  `directory_root_failed root=… reason=…` and `directory_refresh units=…` lines. Its
+  stderr has the REV-74 records under service `api`, role `directory-refresh`:
+  `directory_root_failed` (a team root's name, or a count of people, and the
+  reason), `directory_refresh_completed` (units, published, failed roots, duration)
+  and `directory_refresh_failed` (reason and error class) when it cannot start.
+  `directory_stopped` means the budget ran out or the pod got SIGTERM: units read
+  before the stop stay published. Repeated `directory_stopped` for the same late
+  groups means the budget is too small for the directory. A Job that fails with
+  `DeadlineExceeded` was ended by Kubernetes after `ACTIVE_DEADLINE_SECONDS`: its
+  summary may be missing, and the units it published stay published.
+  `directory_unavailable` points at ADAPI or the network; `directory_group_too_large`
+  at a group above 10,000 objects.
+- **Alerts to ask for.** A failed `keep-directory-refresh` Job; no successful run in
+  the last 26 hours; `directory_refresh_completed` with `failed_roots` above 0 on
+  two days running. A failure never removes access: missed roots keep their
+  last-published memberships, at most two days old.
+- **Logs.** OpenShift has no Fluent Bit for Keep yet (REV-74 item 5), so the
+  records reach the pod's stderr only and last as long as the Job's pods
+  (`failedJobsHistoryLimit` and `successfulJobsHistoryLimit` keep three of each).
 
 For private ingestion, configure the four `KEEP_GATEWAY_*` TLS/peer settings
 documented in `private-qualification.md`; the template binds port 8443 to all pod

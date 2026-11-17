@@ -70,13 +70,15 @@ Kafka changed  --> correlation --> PostgreSQL (when its capability is enabled)
 Product API --> PostgreSQL, Elasticsearch, Redis, OpenLDAP (bind), mock ADAPI
 Product API --> Kong Admin API / external Grafana for operator provisioning
 identity-tooling pod --> mock ADAPI, PostgreSQL (manual directory refresh)
+keep-directory-refresh CronJob (suspended) --> mock ADAPI, PostgreSQL
 Kong --> its PostgreSQL
 ```
 
 Domain and contracts are libraries inside service images, not Deployments.
 The migration image runs a Job. Public and private ingestion share one image but
 have separate configuration and listeners. No operator worker, live worker,
-directory polling worker, retention sweeper or maintenance timer is deployed.
+directory polling worker, retention sweeper or maintenance timer is deployed. The daily
+directory refresh CronJob (REV-75) is rendered suspended; see step 6.
 
 Before applying anything, obtain:
 
@@ -126,6 +128,7 @@ resulting allocation with every test report.
 | OpenLDAP | 100m / 500m | 128Mi / 512Mi | Ephemeral; reseeded from the private LDIF on restart |
 | Mock ADAPI | 100m / 500m | 128Mi / 512Mi | Stateless; data from a ConfigMap |
 | Identity tooling (`keep-directory-publication`) | 100m / 500m | 128Mi / 512Mi | Idle API-image pod; runs the refresh only on explicit command |
+| Directory refresh CronJob (`keep-directory-refresh`) | 100m / 500m | 128Mi / 512Mi | API image, identity login; rendered suspended (REV-75) |
 | Kong | 250m / 1 | 256Mi / 1Gi | Writable temporary prefix |
 | Operator proof | 100m / 500m | 128Mi / 512Mi | Private API-image workload; bounded read-only SQL pool and direct gateway checks |
 | Search bootstrap Job | 250m / 1 | 256Mi / 1Gi | One-off indexer-image tool, before writers start |
@@ -454,8 +457,27 @@ Follow the exact render/apply filenames in the bundle README. The sequence is:
    bootstrap flag cannot lift restore/reconciliation gates. After changing users
    or groups (replace the `keep-adapi-mock-directory` ConfigMap and restart the
    mock), rerun the command without `--bootstrap`. There is no polling daemon.
-   To check disablement, mark a user `"disabled": true` in that data, refresh, and
-   confirm the user's sessions end and sign-in is refused.
+   To check a membership change, remove a user from a granted group in that data,
+   refresh, and confirm the user loses that group's access while their session stays
+   open. Keep ignores `"disabled": true` (REV-76).
+
+   `40-directory-refresh.json` holds the daily refresh CronJob (REV-75), rendered
+   with `SUSPEND=true`, the identity login's `keep-identity-env` and
+   `keep-identity-bindings`, and the default schedule, budget and deadlines. Bootstrap
+   stays this manual exec: the CronJob never bootstraps. To exercise it, apply the
+   file and run it once by hand:
+
+   ```bash
+   oc -n "$NS" create job --from=cronjob/keep-directory-refresh keep-directory-refresh-manual
+   oc -n "$NS" wait --for=condition=complete --timeout=40m job/keep-directory-refresh-manual
+   oc -n "$NS" logs job/keep-directory-refresh-manual
+   ```
+
+   Require exit 0 and a final `directory_refresh … failed_roots=0` line. Resume the
+   schedule only for a test that needs it:
+   `oc -n "$NS" patch cronjob/keep-directory-refresh -p '{"spec":{"suspend":false}}'`.
+   [Daily directory refresh](openshift.md#daily-directory-refresh-rev-75) explains the
+   records, deadlines and failures.
 7. With **all ingestion and consumers still stopped**, apply the rendered
    `35-kafka-cutover.json` one-off Job. It executes the processor image's
    `python -m keep.kafka_cutover --ingress-and-legacy-workers-stopped`
@@ -665,7 +687,7 @@ identity and stale-read limits; it is a separate design change.
 | ImagePullBackOff | Destination digest, registry trust and namespace pull Secret; public Internet is not required |
 | Pending / permission denied | Quota, PVC/class, restricted SCC, assigned UID/fsGroup and writable mount permissions; do not solve by granting privileged SCC |
 | API startup profile error | Environment and actual profile; preserve `qualified=false` for diagnostic development |
-| Sign-in returns 401 for a correct password | Bind format and WhoAmI answer (`dn:` for OpenLDAP), the user's entry in `openldap-users.ldif`, and whether the mock ADAPI marks the user disabled |
+| Sign-in returns 401 for a correct password | Bind format and WhoAmI answer (`dn:` for OpenLDAP) and the user's entry in `openldap-users.ldif` |
 | Sign-in returns 403 or 503 | 403 `account_not_in_directory` or `account_ambiguous`: the mock's data. 503 `sign_in_unavailable`: OpenLDAP or mock ADAPI reachability (network policies), the ClientId, and the bootstrap refresh result |
 | Worker alive but not ready | Real fresh node/PG clock evidence, Kafka advertised addresses/ACLs, DB permissions, gates, cutover/group boundaries |
 | 202 but row not visible | Received lag -> PG commit/proof -> changed lag -> indexer/watermark -> query/render; 202 alone is not completion |

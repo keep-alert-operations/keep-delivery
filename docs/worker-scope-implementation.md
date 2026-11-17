@@ -6,6 +6,12 @@ LDAP directory reader. The identity notes below describe the state on 2026-09-30
 Today the manual refresh is `python -m keep.worker directory --once`, reading ADAPI;
 see [identity configuration](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-identity-configuration.md).
 
+**Later user decision — 2026-11-17 (REV-75):** the same refresh,
+`python -m keep.identity.worker --once`, runs once a day from the OpenShift CronJob
+`keep-directory-refresh` ([`directory-refresh.template.json`](../deploy/openshift/directory-refresh.template.json),
+[Daily directory refresh](runbooks/openshift.md#daily-directory-refresh-rev-75)). It is
+a scheduled one-off run, not a directory worker; the local stack stays manual.
+
 **Later correction — REV-35:** automatic directory synchronization is now
 nice-to-have. The earlier REV-34 identity statements below are historical;
 [current worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have)

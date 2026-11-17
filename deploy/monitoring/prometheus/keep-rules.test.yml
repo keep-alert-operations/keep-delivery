@@ -1,0 +1,106 @@
+# Unit tests for keep-rules.yml, run with `promtool test rules`.
+rule_files:
+  - keep-rules.yml
+
+evaluation_interval: 15s
+
+tests:
+  # A fenced partition alerts at once; a retrying one only after a minute.
+  - interval: 15s
+    input_series:
+      - series: 'keep_kafka_partitions_held{job="keep-processor",state="fenced"}'
+        values: '0 1 1 1 1 1 1 1 1'
+      - series: 'keep_kafka_partitions_held{job="keep-indexer",state="retrying"}'
+        values: '1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 15s
+        alertname: KeepPartitionFenced
+        exp_alerts:
+          - exp_labels:
+              severity: immediate
+              job: keep-processor
+              state: fenced
+            exp_annotations:
+              summary: "keep-processor holds a fenced partition until a reviewed repair"
+      - eval_time: 30s
+        alertname: KeepPartitionHeld
+        exp_alerts: []
+      - eval_time: 90s
+        alertname: KeepPartitionHeld
+        exp_alerts:
+          - exp_labels:
+              severity: urgent
+              job: keep-indexer
+              state: retrying
+            exp_annotations:
+              summary: "keep-indexer has retried one offset for over a minute"
+
+  # Two unconfirmed alerts in every hundred, held for five minutes, is urgent.
+  - interval: 15s
+    input_series:
+      - series: 'keep_events_total{job="keep-ingestion",event="alert_published",outcome="success",reason=""}'
+        values: '0+98x60'
+      - series: 'keep_events_total{job="keep-ingestion",event="alert_unconfirmed",outcome="failure",reason="attempts"}'
+        values: '0+2x60'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: KeepPublishUnconfirmed
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: KeepPublishUnconfirmed
+        exp_alerts:
+          - exp_labels:
+              severity: urgent
+            exp_annotations:
+              summary: "More than 1% of accepted alerts were not confirmed by Kafka"
+
+  # A service that stops answering its scrape for a minute.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="keep-correlation"}'
+        values: '1 1 0 0 0 0 0 0 0 0'
+      - series: 'up{job="keep-api"}'
+        values: '1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: KeepMetricsTargetDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: keep-correlation
+            exp_annotations:
+              summary: "keep-correlation does not answer its metrics scrape"
+
+  # The 2-second correlation objective as a ratio.
+  - interval: 15s
+    input_series:
+      - series: 'keep_event_delay_seconds_bucket{job="keep-correlation",event="alert_correlated",le="2.0"}'
+        values: '0+9x40'
+      - series: 'keep_event_delay_seconds_count{job="keep-correlation",event="alert_correlated"}'
+        values: '0+10x40'
+    promql_expr_test:
+      - expr: keep:correlation_within_2s:ratio_rate5m
+        eval_time: 8m
+        exp_samples:
+          - labels: 'keep:correlation_within_2s:ratio_rate5m'
+            value: 0.9
+
+  # Six unhandled JavaScript errors on one view within ten minutes.
+  - interval: 1m
+    input_series:
+      - series: 'keep_rum_js_errors_total{job="keep-api",kind="error",view="alert"}'
+        values: '0 1 2 3 4 5 6 6 6 6 6'
+      - series: 'keep_rum_js_errors_total{job="keep-api",kind="error",view="alerts"}'
+        values: '0 0 0 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: KeepBrowserErrors
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: KeepBrowserErrors
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              view: alert
+            exp_annotations:
+              summary: "The UI raised more than five unhandled JavaScript errors on the alert view in ten minutes"

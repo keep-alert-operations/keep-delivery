@@ -73,7 +73,7 @@ def snapshot(folder):
 
 
 def test_fresh_prepare_creates_local_users_groups_and_secrets(setup):
-    """Requirements: REV-73; identity configuration 14."""
+    """Requirements: REV-73; identity configuration 14; REV-76 (no disabled fixture user)."""
     setup.prepare()
     state = setup.STATE
     creds = json.loads((state / "credentials.json").read_text())
@@ -92,8 +92,9 @@ def test_fresh_prepare_creates_local_users_groups_and_secrets(setup):
     assert "password" not in json.dumps(data).lower()
     directory = local_adapi.Directory(data)
     names = {row["sAMAccountName"]: row for row in directory.users}
-    assert names["local-disabled"]["userAccountControl"] == local_adapi.DISABLED
-    assert names["local-admin"]["userAccountControl"] == local_adapi.ACTIVE
+    # REV-76: no disabled fixture user; every local person is an ordinary account.
+    assert "local-disabled" not in names
+    assert {row["userAccountControl"] for row in directory.users} == {local_adapi.ACTIVE}
     groups = {row["sAMAccountName"]: row for row in directory.groups}
     assert set(groups) == {"keep-administrators", "keep-developers", "keep-dev-announce",
                            "keep-observers"}
@@ -103,9 +104,9 @@ def test_fresh_prepare_creates_local_users_groups_and_secrets(setup):
         return {row["sAMAccountName"] for row in directory.recursive_members(group)}
 
     assert members(setup.SUPERADMIN_GROUP) == {"local-admin"}
-    # keep-developers -> keep-dev-announce (distribution) -> local-distribution/disabled.
+    # keep-developers -> keep-dev-announce (distribution) -> local-distribution.
     assert members("keep-developers") == {"local-editor", "local-hebrew",
-                                          "local-distribution", "local-disabled"}
+                                          "local-distribution"}
     assert members("keep-observers") == {"local-viewer"}
 
 
@@ -124,7 +125,8 @@ def test_prepare_moves_legacy_values_unchanged_and_leaves_the_old_folder(setup):
         assert creds["users"][name]["label"] == user["label"]
     assert creds["users"]["local-admin"]["groups"] == ["keep-administrators"]
     assert creds["users"]["local-editor"]["groups"] == ["keep-developers"]
-    assert {"local-hebrew", "local-distribution", "local-disabled"} <= set(creds["users"])
+    assert {"local-hebrew", "local-distribution"} <= set(creds["users"])
+    assert "local-disabled" not in creds["users"]
     assert creds["remap"] == {
         "source": "keycloak-local",
         "users": {name: user["id"] for name, user in LEGACY["users"].items()},
@@ -260,3 +262,66 @@ def test_start_order_and_compose_identity_services():
     assert '"127.0.0.1:58389:389"' in compose
     assert ".local/identity/tls/localhost.pem:/tls/localhost.pem:ro" in compose
     assert not (ROOT / "deploy/local/keycloak.compose.yaml").exists()
+
+
+def test_local_processes_ship_their_logs_to_the_stack_fluent_bit(setup, monkeypatch):
+    """Requirements: REV-74; observability 6 and 10."""
+    write_legacy(setup.ROOT)
+    setup.prepare()
+    assert setup.environment()["KEEP_LOG_SHIP_URL"] == "http://127.0.0.1:59880"
+    monkeypatch.setenv("KEEP_LOCAL_LOG_SHIP_PORT", "59881")
+    assert setup.environment()["KEEP_LOG_SHIP_URL"] == "http://127.0.0.1:59881"
+
+    deploy = ROOT / "deploy/local"
+    compose = (deploy / "compose.yaml").read_text()
+    assert "127.0.0.1:${KEEP_LOCAL_LOG_SHIP_PORT:-59880}:9880" in compose
+    # The logs cluster is its own setting; locally it defaults to the stack's.
+    assert "KEEP_LOGS_ELASTICSEARCH_HOST: ${KEEP_LOCAL_LOGS_ELASTICSEARCH_HOST:-elasticsearch}" in compose
+    config = (deploy / "fluent-bit/fluent-bit.conf").read_text()
+    services = (
+        "ingestion", "processor", "correlation", "indexer", "api", "frontend", "browser",
+        "migrations",
+    )
+    for service in services:
+        # One output and one index per service, routed by the request path.
+        assert config.count(f"match                    keep.{service}\n") == 1
+        assert config.count(f"index                    keep-logs-{service}\n") == 1
+    # Fluent Bit's receive time must not replace the application's @timestamp.
+    assert config.count("time_key                 shipped_at") == len(services)
+
+
+def test_local_metrics_ports_match_what_prometheus_scrapes():
+    """Requirements: REV-74; observability 7 and 10."""
+    root = ROOT
+    scrape = (root / "deploy/local/prometheus/prometheus.yml").read_text()
+    launchers = (root / "scripts/local-identity.ps1").read_text() + (
+        root / "scripts/local-runtime.ps1"
+    ).read_text()
+    for job, port in (
+        ("keep-api", "59101"),
+        ("keep-ingestion", "59102"),
+        ("keep-processor", "59103"),
+        ("keep-indexer", "59104"),
+        ("keep-correlation", "59105"),
+    ):
+        # One job and one port per process, set by the launcher that starts it.
+        assert f'job_name: {job}\n    static_configs:\n      - targets: ["host.docker.internal:{port}"]' in scrape
+        assert f"'{port}'" in launchers
+    assert scrape.count("job_name:") == 6 and "fluent-bit:2020" in scrape
+    compose = (root / "deploy/local/compose.yaml").read_text()
+    assert "127.0.0.1:${KEEP_LOCAL_PROMETHEUS_PORT:-59090}:9090" in compose
+    assert "../monitoring/prometheus:/etc/prometheus/rules:ro" in compose
+    assert "../monitoring/grafana:/var/lib/keep-monitoring-dashboards:ro" in compose
+
+    dashboard = json.loads((root / "deploy/monitoring/grafana/keep-pipeline.json").read_text())
+    queries = [t["expr"] for p in dashboard["panels"] for t in p.get("targets", [])]
+    assert len(queries) >= 30
+    # The dashboard follows whichever Prometheus data source it is given.
+    assert all(
+        p["datasource"] == {"type": "prometheus", "uid": "${datasource}"}
+        for p in dashboard["panels"]
+        if p["type"] != "row"
+    )
+    rules = (root / "deploy/monitoring/prometheus/keep-rules.yml").read_text()
+    for name in ("KeepPartitionFenced", "KeepPublishUnconfirmed", "KeepMetricsTargetDown"):
+        assert f"alert: {name}" in rules

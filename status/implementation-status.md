@@ -1,5 +1,126 @@
 # Implementation status
 
+## 2026-11-17 Daily directory refresh and no disabled or deleted people (REV-75, REV-76)
+
+The directory refresh now runs once a day as an OpenShift CronJob, and Keep no longer
+handles people the directory reports disabled or no longer finds. Branch
+`feat/daily-directory-refresh` in design (from `0290d21`, #47), domain (from
+`dd868be`, #34), api (from `7f7fa11`, #31) and delivery (from `88c376d`); not merged.
+keep-api and ingestion (#27), processor (#26), correlation (#25) and indexer (#30) pin
+keep-domain `28b0471`. This change pins the pushed heads in `pyproject.toml`, the lock
+and the workspace manifest.
+
+- REV-75: `deploy/openshift/directory-refresh.template.json` runs
+  `python -m keep.identity.worker --once --budget-seconds ${RUN_BUDGET_SECONDS}` at
+  02:00 by default (`concurrencyPolicy: Forbid`, `backoffLimit: 0`, starting and
+  active deadlines from parameters, budget 1,800 s, no bootstrap). Both refresh entry
+  points write REV-74 records with role `directory-refresh` to the Product API's index
+  (`directory_root_failed`, `directory_refresh_completed`,
+  `directory_refresh_failed`), with the logger `keep.identity.worker`. A budget or
+  SIGTERM stops the run between ADAPI calls. The load-test bundle renders the CronJob
+  suspended.
+- REV-76: no `userAccountControl` check, no session ending and no person tombstones.
+  A person the directory doesn't find is never stored or negated; deleted groups keep
+  their handling. Exact single-person reads use ADAPI `GET /users/user`. Its 404 (the
+  user's answer: no such person) reads as "no row"; every other non-200 and every
+  malformed body stays "directory unavailable". Sign-in answers 503
+  `sign_in_unavailable` when the stored person stays unusable after its publication.
+  Sign-in, a pick and the refresh lift a stored ineligible or deleted person row.
+- Executed on 2026-11-17 on the branch heads (design `d32e864`, domain `28b0471`, api
+  `f9ad28b`, delivery `aabc7b2`, editable in delivery's environment): domain unit
+  1,014 passed; delivery unit 374 passed, 63 skipped; the identity integration
+  modules (`test_adapi_fixture`, `test_password_login`, `test_save_on_pick`,
+  `test_adapi_publication`) in one process: 51 passed in the last of three runs. In
+  the first, a25 failed once (the `keep.worker directory --once` subprocess printed
+  nothing and logged `worker_capability_unavailable`; pytest truncated its stderr, so
+  the cause wasn't captured), and the next two runs, which recorded each worker
+  subprocess's full output, passed it. Before the 404 change,
+  `scripts/workspace.py --root .. test` exit 0, and `check_contracts.py` and
+  `verify_boundaries.py` passed. An isolated runtime (own database, dropped after;
+  branch mock ADAPI and branch Product API on spare ports; the refresh with the
+  CronJob's command and environment on the worker login) passed 31 of 31 checks:
+  membership removal and re-adding change access on the next refresh while the
+  session stays open; both entry points' records reach `keep-logs-api`; a stopped
+  ADAPI exits 1 with checkpoints unchanged; a person ADAPI reports disabled signs in
+  with one `/users/user` read; a person ADAPI answers 404 for gets 403
+  `account_not_in_directory` and their stored row is unchanged; no ClientId,
+  password or DSN in the output. `check_docs.py`, `verify_documents.py` and
+  `check_context.py` passed.
+- Not verified: a27's 1 s guard-hold bound is timing noise on this machine (it
+  passed in the last run; earlier alternating runs gave 0.8–1.6 s on main and the
+  branch alike); the cause of the one a25 failure; the smoke baseline and the
+  S1 browser journey on branch code (the running local stack runs main); CI on the
+  PRs; the real ADAPI and Active Directory, including the 404 answer;
+  the CronJob on a cluster.
+
+## 2026-11-16 Lighthouse logo
+
+The user asked for logo options and, after three rounds, picked the Lighthouse mark: a
+navy tower with a signal-amber light, a blue band and a line of sea. It replaces the
+typed "K" tile in the rail, on the signed-out screen, on the sign-in page and as the
+favicon (`src/app/icon.svg`). Colours come from four brand roles in the frontend
+theme, set separately for light and dark, and signal amber is used only in the mark.
+The frontend's DESIGN.md and PRODUCT.md record the choice. No specification describes
+the logo, and routes, API calls, permissions and copy are unchanged, so no design
+change was needed. Merged with a merge commit after both CI `verify` runs passed:
+frontend #45 (`975af9e`, on top of REV-74's `a5a476e`); this change pins that head
+in the manifest.
+
+- Executed on 2026-11-16 on the branch rebased onto `a5a476e`: `npm ci`, client
+  generation with no diff, Prettier with line endings ignored (the Windows checkout
+  uses CRLF), typecheck and build passed. `navigation-session`, `sign-in`, `theme`,
+  `workspace`, `redesign` and `ui-cleanup` passed 62/62 in Chrome. Light and dark
+  screenshots against a mocked session showed the mark at 34 px in the rail and
+  40 px on sign-in, and the favicon switching colours with the colour scheme. Not
+  checked on the signed-in local stack.
+- The three client-guide screenshots were taken at frontend `1717203` and still show
+  the K mark; they have not been retaken.
+
+## 2026-11-16 Observability: logs, metrics and real user monitoring (REV-74)
+
+The user asked for full logs and metrics on every service, including real user
+monitoring. Every service writes catalogued events as ECS JSON records (the field
+registry and event catalog live in keep-domain), sends them through one Fluent Bit
+to Elasticsearch, one index for each service (`keep-logs-<service>`), and serves
+Prometheus metrics on its own metrics port. An alert leaves its steps inside each
+service, the Product API's actions on an alert are in the same trail, every event
+is counted and timed, the browser reports through `POST /api/rum-events`, and
+every sign-in outcome is an event that names no username. All of it is off unless
+configured. The local stack runs Fluent Bit (127.0.0.1:59880) and Prometheus
+(127.0.0.1:59090) with rules and the pipeline dashboard. What is built and what is
+left is in the [implementation plan](../docs/observability-implementation-plan.md).
+Branch `feat/observability` in design (from `f3cad1e`), contracts (from `3a6d24b`),
+domain (from `a50e628`), api (from `6569e72`), ingestion (from `5be3ba4`),
+processor (from `d121486`), correlation (from `ec92196`), indexer (from `6c792e5`),
+frontend (from `d336c38`) and this repository (from `c1ccf05`); migrations is
+unchanged. keep-domain pins keep-contracts `89adb37`; api and the four services pin
+keep-domain `762f122` (the relock adds prometheus-client); the frontend pins
+keep-contracts `89adb37` and regenerates its client; this repository's
+`pyproject.toml`, lock and workspace manifest pin every branch head. Merge order:
+design, contracts, domain, then api and the four services, frontend, and this
+repository last.
+
+- Executed on 2026-11-16, before the pin commits, against the sibling checkouts
+  through the documented editable override: unit suites domain 988, contracts 58,
+  api 382, ingestion 109, processor 55, correlation 8, indexer 96 and this
+  repository 353 (1 skipped), with unregistered events and fields failing the
+  tests; ruff clean. Real PostgreSQL 18.2 in a throwaway container: the alert-flow,
+  API-command and RUM endpoint tests, 26 pipeline, maintenance and
+  correlation-runtime tests (2 skipped), processor 3 and api 5 (8 skipped).
+  Frontend typecheck and format check pass; the browser suite ran 328 passed, 13
+  skipped and 1 failed (`scalability-users.spec.ts`, "one invalidation uses one
+  feed and one count batch", which fails as often on main: 2 of 8 runs each way).
+  The 21 Prometheus rules pass their unit tests.
+- Local stack on 2026-11-16: eleven containers and six Prometheus targets up; one
+  alert left its eleven ordered steps across the ingestion, processor, correlation
+  and indexer indices; a 38-request mix moved eleven counters by exactly the number
+  sent; a signed-in browser's batch of 22 events was accepted; a rejected and a
+  successful sign-in each left one event and its request record under one request
+  ID; no username or display name of the local directory is in any log index.
+- Not executed: the locks of the pin commits were resolved but the suites were not
+  rerun from them; S1 to S4; anything on OpenShift, where the Fluent Bit
+  Deployment, scrape settings and logs-cluster credentials are not written yet.
+
 ## 2026-11-16 Keep password sign-in and the ADAPI directory replace Keycloak (REV-73)
 
 The user asked to remove Keycloak: people sign in on Keep's own `/sign-in` page with

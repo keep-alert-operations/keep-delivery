@@ -6,7 +6,8 @@ KEEP_IDENTITY_TEST_ADMIN_URL), a fresh mock ADAPI (scripts/local_adapi.py) and t
 Product API in a TestClient, whose lifespan starts and stops the saver thread.
 
 Requirements: REV-73; tenant access 5 (save on pick, polling, background save) and
-12; worker scope 4-6; plan "Save on pick", A12, A21, A22, A26.
+12; worker scope 4-6; plan "Save on pick", A12, A21, A22, A26. REV-76; plan (REV-75/76)
+B2, B6 (b), B9.
 """
 
 import base64
@@ -306,7 +307,7 @@ def test_unknown_group_is_saved_on_pick_and_granted_at_once(site, mock_adapi):
     assert stored(site.db, "keep-observers") is None
     with site.db.transaction() as conn:
         roles = {}
-        for name in ("local-editor", "local-hebrew", "local-distribution", "local-disabled"):
+        for name in ("local-editor", "local-hebrew", "local-distribution"):
             row = conn.execute(
                 "SELECT * FROM principals WHERE directory_source='adapi' AND object_id=%s", (name,)
             ).fetchone()
@@ -316,7 +317,6 @@ def test_unknown_group_is_saved_on_pick_and_granted_at_once(site, mock_adapi):
         "local-editor": "edit",
         "local-hebrew": "edit",
         "local-distribution": "edit",
-        "local-disabled": None,
     }
     assert stored(site.db, "ws-0001$") is None
 
@@ -324,7 +324,9 @@ def test_unknown_group_is_saved_on_pick_and_granted_at_once(site, mock_adapi):
 def test_a_saved_user_and_the_422_cases_save_nothing(site, mock_adapi):
     """Users save inline; unknown, ambiguous, wrong-kind or invalid names save nothing.
 
-    Requirements: REV-73; tenant access 5 (save on pick: 422 with nothing saved).
+    Requirements: REV-73; tenant access 5 (save on pick: 422 with nothing saved). REV-76;
+    plan (REV-75/76) B2 (a missing person is 422 like a missing group), B9 (a person is
+    read with ``/users/user``, never a ``/users`` search).
     """
     mock_adapi.add_user("dup-user", displayName="First")
     mock_adapi.add_user("DUP-USER", displayName="Second")
@@ -332,8 +334,10 @@ def test_a_saved_user_and_the_422_cases_save_nothing(site, mock_adapi):
         saved = resolve(client, site, site.admin, "user", "local-hebrew")
         assert saved.status_code == 200, saved.text
         assert saved.json()["data"]["display_name"] == "משתמש Local Hebrew"
+        mock_adapi.reset_log()
         for kind, name, code in (
             ("team", "no-such-group", "principal_not_in_directory"),
+            ("user", "no-such-user", "principal_not_in_directory"),
             ("user", "dup-user", "principal_ambiguous"),
             ("team", "local-editor", "principal_kind_mismatch"),
         ):
@@ -341,6 +345,8 @@ def test_a_saved_user_and_the_422_cases_save_nothing(site, mock_adapi):
             assert response.status_code == 422, response.text
             assert response.json()["error"]["code"] == code
             assert stored(site.db, name) is None and pending(site.db, name) is None
+        assert requests_naming(mock_adapi, "user", "no-such-user")
+        assert not [r for r in mock_adapi.log()["requests"] if r["route"] == "users"]
         for name in ("a*b", "x@corp", "", "a" * 65, "back\\slash"):
             response = resolve(client, site, site.admin, "user", name)
             assert response.status_code == 422 and response.json()["error"]["code"] == (
@@ -357,6 +363,30 @@ def test_a_saved_user_and_the_422_cases_save_nothing(site, mock_adapi):
         )
         missing = poll(client, site, site.admin, "team", "keep-observers")
         assert missing.status_code == 404
+
+
+def test_a_pick_lifts_a_person_stored_ineligible_or_deleted(site, mock_adapi):
+    """A stored person row an older version wrote (ineligible, or deleted) is not usable,
+    so the pick reads ADAPI again and publishes the person as eligible.
+
+    Requirements: REV-76; tenant access 5 (save on pick); plan (REV-75/76) B6 (b), B9.
+    """
+    with api(site.db, mock_adapi) as client:
+        assert resolve(client, site, site.admin, "user", "local-viewer").status_code == 200
+        for change in ("eligible=false", "eligible=false,deleted=true"):
+            with site.db.transaction() as conn:
+                conn.execute(
+                    f"UPDATE principals SET {change} WHERE directory_source='adapi' AND object_id='local-viewer'"
+                )
+            mock_adapi.reset_log()
+            response = resolve(client, site, site.admin, "user", "local-viewer")
+            assert response.status_code == 200, response.text
+            data = response.json()["data"]
+            assert data["selectable"] and data["verification"] == "verified", change
+            row = stored(site.db, "local-viewer")
+            assert row["eligible"] and not row["deleted"], change
+            assert len(requests_naming(mock_adapi, "user", "local-viewer")) == 1
+            assert mock_adapi.count("users") == 0
 
 
 # --- A22 ----------------------------------------------------------------------------------
