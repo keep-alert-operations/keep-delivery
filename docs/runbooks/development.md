@@ -60,7 +60,12 @@ qualification are nice-to-have under REV-35. Run the refresh explicitly with
 `python -m keep.worker directory --once` (or `python -m keep.identity.worker --once`
 from an API image); set `KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED=true` only on the first,
 bootstrap refresh. It prints one `directory_root_failed` line per failed root and a
-`directory_refresh` totals line, and exits non-zero when any root failed. The
+`directory_refresh` totals line, and exits non-zero when any root failed. Both
+commands also write the REV-75 log records (service `api`, role `directory-refresh`)
+to stderr, and to `keep-logs-api` when `KEEP_LOG_SHIP_URL` is set; `--budget-seconds N`
+stops reading ADAPI after N seconds. In OpenShift the same command runs daily from the
+`keep-directory-refresh` CronJob ([Daily directory refresh](openshift.md#daily-directory-refresh-rev-75));
+locally it stays manual (local Start or `local-identity.ps1 -Action Refresh`). The
 development worker launcher excludes continuous directory startup. Other
 implemented roles are listed in `scripts/dev.ps1` and the relevant domain runbooks;
 each requires its own explicit binding, capacity and readiness prerequisites.

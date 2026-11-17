@@ -31,6 +31,7 @@ STARTING_RESOURCES = {
     "openldap": ("100m", "500m", "128Mi", "512Mi"),
     "adapi-mock": ("100m", "500m", "128Mi", "512Mi"),
     "directory-publication": ("100m", "500m", "128Mi", "512Mi"),
+    "directory-refresh": ("100m", "500m", "128Mi", "512Mi"),
     "kong": ("250m", "1", "256Mi", "1Gi"),
     "api": ("500m", "2", "512Mi", "2Gi"),
     "ingestion": ("250m", "1", "256Mi", "1Gi"),
@@ -195,15 +196,18 @@ def foundation(config):
         "keep-postgres": [rule([peer(name) for name in (
             "keep-product-api", "keep-processor", "keep-indexer", "keep-correlation",
             "keep-bootstrap", "keep-migration", "keep-directory-publication",
-            "keep-search-bootstrap", "keep-operator-proof",
+            "keep-directory-refresh", "keep-search-bootstrap", "keep-operator-proof",
         )], 5432)],
         "keep-kong-db": [rule([peer("keep-kong"), peer("keep-kong-migration")], 5432)],
         "keep-redis": [rule([peer("keep-product-api")], 6379)],
         # Only sign-in binds; the refresh reads people and groups from ADAPI alone.
         "keep-openldap": [rule([peer("keep-product-api")], OPENLDAP_PORT)],
         "keep-adapi-mock": [rule([peer("keep-product-api"),
-                                  peer("keep-directory-publication")], ADAPI_MOCK_PORT)],
+                                  peer("keep-directory-publication"),
+                                  peer("keep-directory-refresh")], ADAPI_MOCK_PORT)],
         "keep-directory-publication": [],
+        # REV-75: the daily refresh CronJob's pods; rendered suspended, nothing calls them.
+        "keep-directory-refresh": [],
         "keep-kong": [rule([router, peer("keep-operator-proof")], 8443),
                          rule([peer("keep-product-api"), peer("keep-bootstrap")], 8444)],
         "keep-operator-proof": [rule([peer("keep-product-api")], 8443)],
@@ -470,6 +474,10 @@ def application_parameters(config, bootstrap_only=False):
         "correlation": ("correlation.template.json", "CORRELATION_IMAGE", "correlation", "keep-correlation"),
         "migrations": ("migration.template.json", "MIGRATIONS_IMAGE", "migrations", "keep-migration"),
         "frontend": ("frontend.template.yaml", None, "frontend", "keep-frontend"),
+        # REV-75: the canonical daily refresh CronJob, suspended, on the identity tooling's
+        # login and bindings. Bootstrap stays a manual exec in the identity-tooling pod.
+        "directory-refresh": ("directory-refresh.template.json", "PRODUCT_API_IMAGE", "api",
+                              "keep-identity"),
     }
     for key, (filename, image_param, image_key, secret_prefix) in definitions.items():
         if bootstrap_only and key != "migrations":
@@ -481,6 +489,12 @@ def application_parameters(config, bootstrap_only=False):
              "EPHEMERAL_STORAGE_LIMIT": "1Gi", "TMP_SIZE_LIMIT": "256Mi"}
         if image_param:
             p[image_param] = config["images"][image_key]
+        if key == "directory-refresh":
+            p.update(CONFIG_SECRET=f"{secret_prefix}-env", BINDING_SECRET=f"{secret_prefix}-bindings",
+                     SCHEDULE="0 2 * * *", SUSPEND="true", RUN_BUDGET_SECONDS="1800",
+                     ACTIVE_DEADLINE_SECONDS="2100", STARTING_DEADLINE_SECONDS="3600")
+            result[key] = (filename, p)
+            continue
         if key != "migrations":
             p["REPLICAS"] = "0"
         if key not in {"migrations", "frontend"}:

@@ -9,6 +9,7 @@ A25, A27 and "Concurrent publications", "Refresh command".
 """
 
 import base64
+import json
 import os
 import subprocess
 import sys
@@ -442,12 +443,15 @@ def _scale_database(database, users, teams):
 
 
 def test_a25_company_size_refresh_and_one_bad_team(database, adapi_factory):
-    """Requirements: REV-73; worker scope 4; identity configuration 9; plan A25.
+    """Requirements: REV-73; REV-75; worker scope 4; identity configuration 9;
+    observability 2 and 4; plan A25, A3 and A8.
 
     With 50 ms per ADAPI call, 3,000 users with open sessions and 20 granted groups of
     200 publish one evidence for the users and one per group, each within 60 s, using at
     most 60 + 20 x 6 calls. One group failing (500) or over its cap fails alone: the
     other groups and the users still publish, and the command exits non-zero naming it.
+    Both entry points write the same REV-75 records (service api, role
+    directory-refresh) and print neither the DSN, the ADAPI address nor the ClientId.
     """
     data = local_adapi.build_directory(users=3000, groups=20, members_per_group=200)
     names = [row["sAMAccountName"] for row in data["users"]]
@@ -499,6 +503,9 @@ def test_a25_company_size_refresh_and_one_bad_team(database, adapi_factory):
                 "KEEP_ADAPI_URL": mock.base_url,
                 "KEEP_ADAPI_CLIENT_ID": mock.client_id,
                 "KEEP_SUPERADMIN_GROUP": "TEAM01",
+                "KEEP_LOG_FORMAT": "json",
+                "KEEP_LOG_LEVEL": "INFO",
+                "KEEP_LOG_SHIP_URL": "",
             },
             capture_output=True,
             text=True,
@@ -507,8 +514,23 @@ def test_a25_company_size_refresh_and_one_bad_team(database, adapi_factory):
         assert command.returncode == 1
         assert "directory_root_failed root=team05 reason=directory_unavailable" in command.stdout
         assert command.stdout.count("directory_root_failed") == 1
-        assert mock.client_id not in command.stdout + command.stderr
-        assert database.dsn not in command.stdout + command.stderr
+        output = command.stdout + command.stderr
+        assert mock.client_id not in output
+        assert database.dsn not in output
+        assert mock.base_url not in output
+        records = [json.loads(line) for line in command.stderr.splitlines()
+                   if line.startswith("{")]
+        events = {}
+        for record in records:
+            events.setdefault(record.get("event", {}).get("action"), []).append(record)
+        (failed,) = events["directory_root_failed"]
+        assert failed["keep"]["root"] == "team05"
+        assert failed["keep"]["reason"] == "directory_unavailable"
+        (completed,) = events["directory_refresh_completed"]
+        assert (completed["service"]["name"], completed["keep"]["role"]) == (
+            "api", "directory-refresh")
+        assert (completed["keep"]["units"], completed["keep"]["published"],
+                completed["keep"]["failed_roots"]) == (21, 20, 1)
         printed.append([line for line in command.stdout.splitlines() if line.startswith("directory_")])
     assert printed[0] == printed[1]
     assert printed[1][-1].startswith("directory_refresh units=21 published=20 failed_roots=1 ")

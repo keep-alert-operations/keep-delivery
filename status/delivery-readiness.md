@@ -136,6 +136,19 @@ last-trusted authorization and session/restore safeguards remain required. This
 does not close any DEL item or qualify company AD or ADAPI. See
 [worker scope](https://github.com/keep-alert-operations/keep-design/blob/main/specs/spec-worker-scope.md#4-directory-synchronization-is-nice-to-have).
 
+## REV-75 daily directory refresh
+
+The manual refresh now also runs once a day from the `keep-directory-refresh`
+CronJob ([`directory-refresh.template.json`](../deploy/openshift/directory-refresh.template.json),
+[runbook](../docs/runbooks/openshift.md#daily-directory-refresh-rev-75)). Before
+release, the team that operates the cluster deploys it after the first bootstrap
+refresh, admits its label at Keep PostgreSQL, gives it egress to the ADAPI address,
+and sets alerts on a failed Job and on no successful run in 26 hours. Qualify one
+manual run (`oc create job --from=cronjob/keep-directory-refresh`) and one group
+change reaching Keep. The template is checked only as rendered: no OpenShift run,
+scheduling, Forbid, deadline or environment-precedence evidence exists. The records
+reach the pod's stderr only until Keep's OpenShift Fluent Bit exists (REV-74).
+
 ## REV-36 live publishing scope
 
 The Product API owns Redis hint publication and SSE; remove the separate live

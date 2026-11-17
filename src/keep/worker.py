@@ -275,6 +275,12 @@ def main():
             parser.error("Maintenance proof/warmup requires --tenant with a canonical UUID")
     elif args.tenant:
         parser.error("--tenant is used only for maintenance proof/warmup roles")
+    if args.role == "directory":
+        from keep.identity.worker import configure_refresh_logging
+
+        # REV-75: the same records as `python -m keep.identity.worker --once`
+        # (service api, role directory-refresh), before any setting is read.
+        configure_refresh_logging()
     settings = Settings(role=args.role)
     from keep.worker_health import WorkerHealth
 
@@ -486,7 +492,10 @@ def main():
                     # KEEP_ADAPI_URL/KEEP_ADAPI_CLIENT_ID, KEEP_SUPERADMIN_GROUP (a
                     # samAccountName) and KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED=true.
                     summary = refresh(
-                        db, settings, bootstrap_qualified=bootstrap_from_environment()
+                        db,
+                        settings,
+                        bootstrap_qualified=bootstrap_from_environment(),
+                        stop=stopped,
                     )
                     if not summary.ok:
                         raise unavailable("directory_publication_incomplete")

@@ -1,0 +1,217 @@
+{
+  "apiVersion": "template.openshift.io/v1",
+  "kind": "Template",
+  "metadata": {
+    "name": "keep-directory-refresh",
+    "annotations": {
+      "description": "REV-75: the daily ADAPI directory refresh, one run of python -m keep.identity.worker --once per day. Never bootstraps; runs never overlap; a failed run is not retried."
+    }
+  },
+  "parameters": [
+    {
+      "name": "PRODUCT_API_IMAGE",
+      "description": "The Product API image, by digest; it carries keep.identity.worker.",
+      "required": true
+    },
+    {
+      "name": "CONFIG_SECRET",
+      "description": "Environment of the dedicated identity database login: KEEP_DATABASE_URL, KEEP_DEPLOYMENT_EPOCH, the wrapping key, KEEP_ADAPI_URL, KEEP_ADAPI_CLIENT_ID and KEEP_SUPERADMIN_GROUP.",
+      "required": true
+    },
+    {
+      "name": "BINDING_SECRET",
+      "description": "Read-only files mounted at /etc/keep, such as a company CA.",
+      "required": true
+    },
+    {
+      "name": "SERVICE_ACCOUNT",
+      "required": true
+    },
+    {
+      "name": "SCHEDULE",
+      "description": "Cron schedule in the cluster controller's time zone.",
+      "value": "0 2 * * *",
+      "required": true
+    },
+    {
+      "name": "SUSPEND",
+      "description": "true stops new runs without deleting the CronJob.",
+      "value": "false",
+      "required": true
+    },
+    {
+      "name": "RUN_BUDGET_SECONDS",
+      "description": "After this many seconds the refresh stops reading ADAPI; unread roots fail as directory_stopped. Keep it below ACTIVE_DEADLINE_SECONDS.",
+      "value": "1800",
+      "required": true
+    },
+    {
+      "name": "ACTIVE_DEADLINE_SECONDS",
+      "description": "Kubernetes ends a run that lasts longer (DeadlineExceeded).",
+      "value": "2100",
+      "required": true
+    },
+    {
+      "name": "STARTING_DEADLINE_SECONDS",
+      "description": "A run that cannot start within this many seconds of its time is skipped.",
+      "value": "3600",
+      "required": true
+    },
+    {
+      "name": "CPU_REQUEST",
+      "required": true
+    },
+    {
+      "name": "CPU_LIMIT",
+      "required": true
+    },
+    {
+      "name": "MEMORY_REQUEST",
+      "required": true
+    },
+    {
+      "name": "MEMORY_LIMIT",
+      "required": true
+    },
+    {
+      "name": "EPHEMERAL_STORAGE_REQUEST",
+      "required": true
+    },
+    {
+      "name": "EPHEMERAL_STORAGE_LIMIT",
+      "required": true
+    },
+    {
+      "name": "TMP_SIZE_LIMIT",
+      "required": true
+    }
+  ],
+  "objects": [
+    {
+      "apiVersion": "batch/v1",
+      "kind": "CronJob",
+      "metadata": {
+        "name": "keep-directory-refresh",
+        "labels": {
+          "app": "keep-directory-refresh",
+          "app.kubernetes.io/part-of": "keep"
+        }
+      },
+      "spec": {
+        "schedule": "${SCHEDULE}",
+        "suspend": "${{SUSPEND}}",
+        "concurrencyPolicy": "Forbid",
+        "startingDeadlineSeconds": "${{STARTING_DEADLINE_SECONDS}}",
+        "successfulJobsHistoryLimit": 3,
+        "failedJobsHistoryLimit": 3,
+        "jobTemplate": {
+          "metadata": {
+            "labels": {
+              "app": "keep-directory-refresh",
+              "app.kubernetes.io/part-of": "keep"
+            }
+          },
+          "spec": {
+            "backoffLimit": 0,
+            "activeDeadlineSeconds": "${{ACTIVE_DEADLINE_SECONDS}}",
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "keep-directory-refresh",
+                  "app.kubernetes.io/part-of": "keep"
+                }
+              },
+              "spec": {
+                "serviceAccountName": "${SERVICE_ACCOUNT}",
+                "automountServiceAccountToken": false,
+                "terminationGracePeriodSeconds": 60,
+                "restartPolicy": "Never",
+                "containers": [
+                  {
+                    "name": "directory-refresh",
+                    "image": "${PRODUCT_API_IMAGE}",
+                    "command": [
+                      "python",
+                      "-m",
+                      "keep.identity.worker",
+                      "--once",
+                      "--budget-seconds",
+                      "${RUN_BUDGET_SECONDS}"
+                    ],
+                    "envFrom": [
+                      {
+                        "secretRef": {
+                          "name": "${CONFIG_SECRET}"
+                        }
+                      }
+                    ],
+                    "env": [
+                      {
+                        "name": "KEEP_DIRECTORY_BOOTSTRAP_QUALIFIED",
+                        "value": "false"
+                      },
+                      {
+                        "name": "KEEP_POOL_SIZE",
+                        "value": "2"
+                      }
+                    ],
+                    "securityContext": {
+                      "allowPrivilegeEscalation": false,
+                      "readOnlyRootFilesystem": true,
+                      "runAsNonRoot": true,
+                      "seccompProfile": {
+                        "type": "RuntimeDefault"
+                      },
+                      "capabilities": {
+                        "drop": [
+                          "ALL"
+                        ]
+                      }
+                    },
+                    "resources": {
+                      "requests": {
+                        "cpu": "${CPU_REQUEST}",
+                        "memory": "${MEMORY_REQUEST}",
+                        "ephemeral-storage": "${EPHEMERAL_STORAGE_REQUEST}"
+                      },
+                      "limits": {
+                        "cpu": "${CPU_LIMIT}",
+                        "memory": "${MEMORY_LIMIT}",
+                        "ephemeral-storage": "${EPHEMERAL_STORAGE_LIMIT}"
+                      }
+                    },
+                    "volumeMounts": [
+                      {
+                        "name": "tmp",
+                        "mountPath": "/tmp"
+                      },
+                      {
+                        "name": "bindings",
+                        "mountPath": "/etc/keep",
+                        "readOnly": true
+                      }
+                    ]
+                  }
+                ],
+                "volumes": [
+                  {
+                    "name": "tmp",
+                    "emptyDir": {
+                      "sizeLimit": "${TMP_SIZE_LIMIT}"
+                    }
+                  },
+                  {
+                    "name": "bindings",
+                    "secret": {
+                      "secretName": "${BINDING_SECRET}"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
