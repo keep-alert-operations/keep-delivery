@@ -171,22 +171,6 @@ def verify():
                 raise RuntimeError(
                     "Private listener accepted a connection without a certificate"
                 )
-            response = http.post(
-                endpoint, json={}, headers={"X-API-Key": key, **forged}
-            )
-            expect(
-                response,
-                422 if gate["ready"] else 503,
-                "kong_mtls_identity_and_secret_stripping",
-            )
-            if (
-                not gate["ready"]
-                and response.json().get("error", {}).get("code")
-                != "v2_ingest_not_ready"
-            ):
-                raise RuntimeError(
-                    "The authenticated request did not reach the v2 readiness gate"
-                )
             checks.append("normal_operator_saga_verified_remote_setup")
             expect(
                 http.post(
@@ -239,6 +223,15 @@ def verify():
                     raise RuntimeError(
                         "Local operator did not activate after verified bootstrap"
                     )
+            # Kong's keep-policy answers 401 for a prepared key before any upstream
+            # call, and activation is fenced until the gate opens. So only an
+            # activated key can show that Kong replaces forged identity headers and
+            # reaches private ingestion over pinned mTLS.
+            expect(
+                http.post(endpoint, json={}, headers={"X-API-Key": key, **forged}),
+                422,
+                "kong_mtls_identity_and_secret_stripping",
+            )
             expect(
                 http.post(endpoint, json={}, headers={"X-API-Key": key}),
                 422,

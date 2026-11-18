@@ -1,5 +1,6 @@
 """Development bootstrap cannot change nonlocal/recovery authority or leak probe keys."""
 
+from contextlib import contextmanager
 import importlib
 import json
 from pathlib import Path
@@ -130,6 +131,84 @@ def test_login_posts_the_password_sign_in_and_keeps_the_csrf_token(monkeypatch, 
     assert calls == [("POST", "/auth/login"), ("GET", "/auth/session")]
 
 
+def operator_api(monkeypatch, tmp_path, operators):
+    """Local Demo's operator API; a retry or create leaves that operator ready."""
+    tenant = str(uuid4())
+    base = f"/api/tenants/{tenant}/operators"
+    posts = []
+
+    def respond(request):
+        if request.method == "GET":
+            assert request.url.path == base
+            return httpx.Response(200, json={"data": operators})
+        posts.append(request.url.path)
+        if request.url.path == base:
+            name = json.loads(request.content)["name"]
+            operators.append(
+                {"id": str(uuid4()), "name": name, "lifecycle": "ready", "revision": 1})
+            return httpx.Response(201, json={"data": {}})
+        operator = next(
+            o for o in operators if request.url.path.startswith(f"{base}/{o['id']}/"))
+        operator["lifecycle"] = "ready"
+        operator.pop("operation")
+        return httpx.Response(202, json={"data": {}})
+
+    monkeypatch.setattr(local, "STATE", tmp_path)
+    monkeypatch.setattr(
+        local, "client", lambda **kwargs: httpx.Client(transport=httpx.MockTransport(respond))
+    )
+    monkeypatch.setattr(
+        local, "login", lambda _: {"tenants": [{"id": tenant, "name": "Local Demo"}]})
+    monkeypatch.setattr(local.time, "sleep", lambda _: None)
+    return tenant, posts
+
+
+def pending(name, error_code):
+    return {"id": str(uuid4()), "name": name, "lifecycle": "setup_pending", "revision": 2,
+            "operation": {"id": str(uuid4()), "error_code": error_code}}
+
+
+def test_setup_resumes_the_sender_named_in_demo_json(monkeypatch, tmp_path):
+    """Requirements: operator operations 29; verification plan, Operators (repeated
+    Start preserves credentials, operator IDs and remote data)."""
+    stuck = pending("Local Demo Sender", "operator_capabilities_unverified")
+    chosen = pending("Local Demo Sender 2", "v2_activation_fenced")
+    retry = f"/{chosen['id']}/operations/{chosen['operation']['id']}/retry"
+    tenant, posts = operator_api(monkeypatch, tmp_path, [stuck, chosen])
+    demo = {"tenant_id": tenant, "operator_id": chosen["id"]}
+    local.save(tmp_path / "demo.json", demo)
+    local.setup_operator()
+    assert posts == [f"/api/tenants/{tenant}/operators" + retry]
+    assert stuck["lifecycle"] == "setup_pending"
+    assert local.read(tmp_path / "demo.json") == demo
+
+
+def test_first_setup_creates_local_demo_sender(monkeypatch, tmp_path):
+    """Requirements: operator operations 29."""
+    operators = []
+    tenant, posts = operator_api(monkeypatch, tmp_path, operators)
+    local.setup_operator()
+    assert posts == [f"/api/tenants/{tenant}/operators"]
+    assert [o["name"] for o in operators] == ["Local Demo Sender"]
+    assert local.read(tmp_path / "demo.json") == {
+        "tenant_id": tenant, "operator_id": operators[0]["id"]}
+
+
+@pytest.mark.parametrize("field", ["operator_id", "tenant_id"])
+def test_setup_refuses_demo_json_from_another_database(monkeypatch, tmp_path, field):
+    """Requirements: operator operations 29; verification plan, Operators (repeated
+    Start preserves operator IDs; setup does not adopt or recreate a remote fleet)."""
+    sender = {"id": str(uuid4()), "name": "Local Demo Sender", "lifecycle": "ready",
+              "revision": 1}
+    tenant, posts = operator_api(monkeypatch, tmp_path, [sender])
+    demo = {"tenant_id": tenant, "operator_id": sender["id"], field: str(uuid4())}
+    local.save(tmp_path / "demo.json", demo)
+    with pytest.raises(RuntimeError, match="demo.json"):
+        local.setup_operator()
+    assert posts == []
+    assert local.read(tmp_path / "demo.json") == demo
+
+
 def test_send_verifies_kafka_admission_search_and_tenant_isolation(monkeypatch):
     demo = {"tenant_id": str(uuid4()), "operator_id": str(uuid4())}
     global_id = str(uuid4())
@@ -230,6 +309,142 @@ def test_bootstrap_refuses_restore_and_foreign_gates(restore, gate):
     assert not any(
         call.args[0].startswith(("UPDATE", "INSERT")) for call in conn.execute.call_args_list
     )
+
+
+PREPARED_KEY, ACTIVE_KEY = "vena_prepared", "vena_active"
+# Checks that back the initial gate: none of them needs an active key.
+GATE_EVIDENCE = [
+    "missing_key_rejected",
+    "forged_identity_rejected",
+    "invalid_key_rejected",
+    "duplicate_native_key_rejected",
+    "duplicate_grafana_bearer_rejected",
+    "query_key_rejected",
+    "body_key_rejected",
+    "native_bearer_rejected",
+    "public_listener_has_no_v2_route",
+    "product_api_has_no_ingestion_route",
+    "private_listener_requires_client_certificate",
+    "normal_operator_saga_verified_remote_setup",
+    "readiness_probe_requires_worker_secret",
+    "proof_service_requires_worker_secret",
+]
+AFTER_ENABLE = [
+    "kong_mtls_identity_and_secret_stripping",
+    "authenticated_native_validation_after_enable",
+    "grafana_bearer_adapter_authenticated",
+]
+
+
+def fake_local_stack(monkeypatch, *, ready):
+    """Local Kong as verify() meets it: keep-policy denies a prepared key before upstream."""
+    demo = {"tenant_id": str(uuid4()), "operator_id": str(uuid4())}
+    stack = SimpleNamespace(ready=ready, active=ready, events=[], audits=[], saved={})
+
+    def respond(request):
+        port, path = request.url.port, request.url.path
+        if port == 58444:
+            raise httpx.ConnectError("client certificate required", request=request)
+        if port in {58001, 3443}:
+            return httpx.Response(404)
+        if port == 58446 or path == "/__local/operator-check":
+            return httpx.Response(401)
+        if path == "/api/ingest/v2/grafana":
+            values = request.headers.get_list("authorization")
+            if len(values) != 1:
+                return httpx.Response(400, json={"message": "Bad request"})
+            key = values[0].removeprefix("Bearer ")
+        else:
+            values = request.headers.get_list("x-api-key")
+            if len(values) != 1:
+                return httpx.Response(401)
+            key = values[0]
+        if key not in {PREPARED_KEY, ACTIVE_KEY}:
+            return httpx.Response(401)
+        if key == PREPARED_KEY or not stack.active:
+            return httpx.Response(401, json={"message": "Credential inactive"})
+        if "x-consumer-id" in request.headers:
+            stack.events.append("stripping_checked")
+        if not stack.ready:
+            return httpx.Response(503, json={"error": {"code": "v2_ingest_not_ready"}})
+        status = 422 if path.endswith("/alerts") else 400
+        return httpx.Response(status, json={"error": {"code": "invalid_request"}})
+
+    class Connection:
+        def execute(self, sql, params=None):
+            if sql.startswith("UPDATE capability_gates"):
+                stack.ready = True
+                stack.events.append("gate_opened")
+            elif sql.startswith("INSERT INTO audit_events"):
+                # psycopg serializes the evidence when the row is written.
+                stack.audits.append(list(params[0].obj["checks"]))
+            return self
+
+    class Database:
+        @contextmanager
+        def transaction(self, *args):
+            yield Connection()
+
+        def close(self):
+            pass
+
+    def demo_key(_, *, allow_prepared=False):
+        if stack.active:
+            return demo, ACTIVE_KEY
+        if allow_prepared:
+            return demo, PREPARED_KEY
+        raise RuntimeError("Local operator setup is not verified")
+
+    def setup_operator():
+        if not stack.ready:
+            raise AssertionError("Activation is fenced while the v2 gate is closed")
+        stack.active = True
+        stack.events.append("sender_activated")
+
+    monkeypatch.setattr(local, "environment", lambda: None)
+    monkeypatch.setattr(local, "database", Database)
+    monkeypatch.setattr(
+        local, "client", lambda **kwargs: httpx.Client(transport=httpx.MockTransport(respond))
+    )
+    monkeypatch.setattr(local, "login", lambda _: {})
+    monkeypatch.setattr(
+        local, "read", lambda _: {"kong_version": "3.9.1", "grafana_version": "11.6.0"}
+    )
+    monkeypatch.setattr(local, "save", lambda _, value: stack.saved.update(value))
+    monkeypatch.setattr(local, "setup_operator", setup_operator)
+    monkeypatch.setattr(
+        verification,
+        "check_initial_gate",
+        lambda _: {
+            "ready": stack.ready,
+            "reason": local.REASON if stack.ready else "trusted_gateway_required",
+        },
+    )
+    monkeypatch.setattr(verification, "demo_key", demo_key)
+    return stack
+
+
+def test_first_bootstrap_proves_stripping_with_the_activated_key(monkeypatch):
+    """Requirements: operator operations 29; verification plan, Operators (prepared keys
+    stay unusable until normal activation; public headers cannot replace pinned mTLS)."""
+    stack = fake_local_stack(monkeypatch, ready=False)
+    verification.verify()
+    assert stack.events == ["gate_opened", "sender_activated", "stripping_checked"]
+    assert stack.audits == [GATE_EVIDENCE]
+    assert stack.saved["checks"] == [
+        *GATE_EVIDENCE, "prepared_key_rejected_before_activation", *AFTER_ENABLE]
+    assert PREPARED_KEY not in json.dumps(stack.saved)
+    assert ACTIVE_KEY not in json.dumps(stack.saved)
+
+
+def test_rerun_with_open_gate_leaves_gate_and_sender_unchanged(monkeypatch):
+    """Requirements: operator operations 29; verification plan, Operators (repeated Start
+    preserves operator identity)."""
+    stack = fake_local_stack(monkeypatch, ready=True)
+    verification.verify()
+    assert stack.events == ["stripping_checked"]
+    assert stack.audits == []
+    assert stack.saved["checks"] == [*GATE_EVIDENCE, *AFTER_ENABLE]
 
 
 @pytest.mark.parametrize("change", ["generation", "policy_generation", "consumer", "missing"])

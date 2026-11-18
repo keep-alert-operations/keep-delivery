@@ -324,7 +324,7 @@ by title alone. Preserve generated reports before another run overwrites them.
 
 S1 creates Local Demo and its group grants if missing and may temporarily remove
 and restore the local viewer's `keep-observers` membership in the mock ADAPI. Run
-serially against this dedicated local directory with no competing identity tests. S3 uses the existing Local Demo Sender;
+serially against this dedicated local directory with no competing identity tests. S3 uses the existing sender that `.local/operators/demo.json` names (`Local Demo Sender` by default);
 key Copy is audited, and gateway verification can bootstrap the initial local gate
 and retry provisioning. It is not a read-only probe. On an unprepared stack, follow
 [local v2 setup](../local-v2.md#synchronous-provisioning-startup-rev-34), including

@@ -641,12 +641,36 @@ def login(http):
 
 
 def setup_operator():
+    """Provision or resume the Local Demo sender.
+
+    demo.json, once written, names the sender by ID, so a sender chosen there keeps
+    being used. Without demo.json, the first Start creates `Local Demo Sender`.
+    """
+    path = STATE / "demo.json"
+    demo = read(path) if path.exists() else None
     with client(app=True) as http:
         session = login(http)
         tenant = next(t for t in session["tenants"] if t["name"] == "Local Demo")
+        if demo and demo["tenant_id"] != tenant["id"]:
+            raise RuntimeError(
+                "demo.json names another tenant; keep .local/operators with its database"
+            )
+        if demo:
+            def chosen(o):
+                return o["id"] == demo["operator_id"]
+        else:
+            def chosen(o):
+                return o["name"] == "Local Demo Sender"
         base = ORIGIN + f"/api/tenants/{tenant['id']}/operators"
         rows = checked(http.get(base))["data"]
-        operator = next((o for o in rows if o["name"] == "Local Demo Sender"), None)
+        operator = next((o for o in rows if chosen(o)), None)
+        if not operator and demo:
+            # Setup never silently replaces the sender recorded with these keys.
+            raise RuntimeError(
+                "demo.json names an operator Local Demo does not have; keep "
+                ".local/operators with its database, or remove demo.json to create "
+                "Local Demo Sender"
+            )
         if not operator:
             checked(
                 http.post(
@@ -666,7 +690,7 @@ def setup_operator():
             )
         for _ in range(90):
             rows = checked(http.get(base))["data"]
-            operator = next(o for o in rows if o["name"] == "Local Demo Sender")
+            operator = next(o for o in rows if chosen(o))
             if operator["lifecycle"] == "ready":
                 break
             if (
@@ -679,12 +703,9 @@ def setup_operator():
             raise RuntimeError(
                 "Operator setup pending; inspect sanitized operator operation diagnostics"
             )
-        save(
-            STATE / "demo.json",
-            {"tenant_id": tenant["id"], "operator_id": operator["id"]},
-        )
+        save(path, {"tenant_id": tenant["id"], "operator_id": operator["id"]})
     print(
-        "Local Demo Sender remote setup verified; local readiness controls activation."
+        f"{operator['name']} remote setup verified; local readiness controls activation."
     )
 
 

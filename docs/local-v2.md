@@ -26,12 +26,20 @@ these services alongside Keep PostgreSQL, Elasticsearch, Kafka, Redis and
 OpenLDAP. Start provisions `Local Demo Sender` in `Local Demo` using the normal local-admin
 sign-in (`POST /auth/login`) and operator API. The normal Product API request provisions and verifies the Kong
 Consumer/key, Grafana contact point, exact `Keep - Local Demo Sender` policy,
-and authenticated serving-member identity. The initial bootstrap checks transport
-and authentication before opening only the initial local v2 gate; prepared keys
-remain rejected until the normal worker activates them. Restore fences and other
-gate reasons cannot be cleared by this launcher.
+and authenticated serving-member identity. The initial bootstrap runs the
+key-rejection and listener checks before opening only the initial local v2 gate.
+Prepared keys stay rejected until normal activation, which the gate fences. Kong
+denies a prepared key before any upstream call, so the check that Kong replaces
+forged identity headers and reaches private ingestion over pinned mTLS runs once
+the sender is active. Restore fences and other gate reasons cannot be cleared by
+this launcher.
 
 Repeated Start preserves keys, operator identity, data and running processes.
+The first Start records the sender's tenant and operator IDs in
+`.local/operators/demo.json`. Later Starts, `verify` and `send` use the sender
+that file names, whatever its name. To use another sender in `Local Demo`, set its
+`operator_id` there. If the file names an operator or tenant the database does not
+have, Start stops instead of creating a new sender.
 Restart reloads the managed helper processes. Once setup succeeds, the main
 `local-runtime.ps1` launcher also starts/stops these services. Containers have
 separate project-scoped volumes; Stop preserves them. Keep `.local/operators`
@@ -88,7 +96,8 @@ profile expects an empty rule inventory and preserves its initial fallback
 policy. Use the regular company integration qualification for a shared instance.
 
 Native clients send one `X-API-Key` header. Copy the current key from **Local Demo
-→ Operators → Local Demo Sender**. Keys in a query/body and native Bearer auth
+→ Operators**, on the sender that `demo.json` names (`Local Demo Sender` unless you
+changed it). Keys in a query/body and native Bearer auth
 are rejected. Grafana uses one Bearer header on its dedicated route. Kong strips
 client identity headers, authenticates the key, strips the secret and supplies
 policy-bound operator/tenant context over pinned mTLS. Private ingestion validates
