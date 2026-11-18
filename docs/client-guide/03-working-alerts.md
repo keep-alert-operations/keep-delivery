@@ -8,7 +8,7 @@ Use alert detail to understand the problem, take ownership, document your invest
 
 1. Open the alert from **Feed** or a preset.
 2. Read its message, severity, status, assignee and any **Suppressed** badge.
-3. Check **Details** for application, component, node, site, impact and receipt times. **First received** describes when this logical alert was first received; **Last received** describes its latest source receipt.
+3. Check **Details** for application, component, node, site, impact and receipt times. A Global (v1) alert shows its own fields instead: application, object, node, operator and provider. **First received** describes when this logical alert was first received; **Last received** describes its latest source receipt.
 4. Read **Notes** and **History** to understand work already done. If a linked incident appears, open it for the wider investigation.
 5. Use **Open runbook** when a runbook link is supplied.
 

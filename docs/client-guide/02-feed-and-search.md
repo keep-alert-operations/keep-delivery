@@ -12,7 +12,7 @@ Use **Feed** to answer a question now: what needs attention, what happened to an
 
 One row represents a **logical alert**. Repeated deliveries update that alert rather than creating a row for every message. If it resolves and later fires again, it starts another **occurrence** on the same alert. Consequently, “20 matching alerts” means 20 logical alerts, not 20 deliveries or failures.
 
-An alert's severity expresses urgency: **Critical**, **High** or **Warning**. Status expresses its current working state:
+An alert's severity expresses urgency. Alerts keep the words their source sent: in a tenant's own alerts (v2) these are **Critical**, **High** or **Warning**; in **Global**, which receives v1 alerts, they are **Error**, **Major** or **Warning**. Status expresses its current working state:
 
 | Status | What it means for your work |
 | --- | --- |
@@ -28,7 +28,7 @@ Occasionally severity is **Clear** when the first message seen was a legacy reso
 
 1. Check the selected tenant, then open **Feed**.
 2. Keep the CEL expression `true` for an unrestricted starting query.
-3. Select a quick view. **Critical**, **High** and **Warning** narrow by severity. **Firing** shows only unassigned firing alerts and **Acknowledged** shows firing alerts with an assignee. **Resolved** is useful for checking completed work. **Assigned to me** shows the alerts currently assigned to you. Press the selected quick view again, or select **All**, to remove the quick-view restriction; your other filters stay.
+3. Select a quick view. **Critical**, **High** and **Warning** narrow by severity; in Global they are **Error**, **Major** and **Warning**. **Firing** shows only unassigned firing alerts and **Acknowledged** shows firing alerts with an assignee. **Resolved** is useful for checking completed work. **Assigned to me** shows the alerts currently assigned to you. Press the selected quick view again, or select **All**, to remove the quick-view restriction; your other filters stay.
 4. Review severity, message, assignee and receipt time. Open an alert's message link to inspect it before acting.
 
 One quick view applies at a time, and each shows its exact count. Quick views combine with the expression, text search and **Include suppressed** already applied. They do not replace those filters. If you selected Resolved while your expression requires firing, no alerts can match both. There is no quick view for every firing alert: to see assigned and unassigned firing alerts together, select **All** and run `status == "firing"`.
@@ -50,6 +50,8 @@ Use the **CEL expression** bar for precise field conditions. CEL is a small expr
 | --- | --- |
 | Which alerts belong to the payments application? | `application == "payments"` |
 | Which critical or high alerts are still active? | `status == "firing" && severity in ["critical", "high"]` |
+| In Global, which error or major alerts are still active? | `status == "firing" && severity in ["error", "major"]` |
+| In Global, which alerts concern the disk object? | `object == "disk"` |
 | Which firing alerts have an owner? | `display_status == "acknowledged"` |
 | Which alerts received source updates in the last hour? | `timestamp >= now() - duration("1h")` |
 | Which application names contain this text? | `application.contains("payments")` |
@@ -79,10 +81,10 @@ Counts describe the current filter and snapshot. **Count unavailable**, an error
 
 ## Group results by one field
 
-Use **Group by**, to the right of the quick views, to show one table per value of a field: for example, one table per application during a wide outage. Choose **Severity**, **Status**, **Application**, **Component**, **Node**, **Site**, **Assignee** or **Incident**. **No grouping** returns to a single table.
+Use **Group by**, to the right of the quick views, to show one table per value of a field: for example, one table per application during a wide outage. Choose **Severity**, **Status**, **Application**, **Component**, **Node**, **Site**, **Assignee** or **Incident**; in Global, **Object** takes the place of Component and there is no Site. **No grouping** returns to a single table.
 
 - Each group's heading shows its value, its exact alert count and a summary: status counts for severity groups, severity counts for the others. The grouped column is hidden inside the groups, and rows follow the current sort.
-- Severity groups run Critical, High, Warning, then Clear; Status groups run Firing, Acknowledged, then Resolved. For other fields, the group with the most alerts comes first. Alerts without a value come last, as **Unassigned**, **No incident** or **No value**.
+- Severity groups run Critical, Error, High, Major, Warning, then Clear; Status groups run Firing, Acknowledged, then Resolved. For other fields, the group with the most alerts comes first. Alerts without a value come last, as **Unassigned**, **No incident** or **No value**.
 - A group shows five rows at first; use **Show 5 more** to continue and **Show fewer** to return. Ten groups show at first; use **Show 10 more groups** for the rest. Select a group's heading to collapse or expand it, or use **Collapse all** and **Expand all** for the groups shown.
 - Grouping works with the expression, Search text, the quick view and **Include suppressed**. Each group's own select-all checkbox selects only that group's shown rows.
 - If alerts change after you loaded more rows or groups, **New results available** appears; use **Back to first groups**.

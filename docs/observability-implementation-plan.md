@@ -690,7 +690,7 @@ the `keep_` prefix. Every record about an alert carries the alert fields of
 | Liveness and readiness probes | `readiness_failed` W (on change only) | `readiness_checks_total{service,outcome,code}`, `ready{service}` |
 | SLI classification of each request | — | `sli_requests_total{sli,outcome,reason}`, `sli_latency_seconds{sli}` |
 
-`sli` is one of `ingest_v1`, `ingest_v2`, `ingest_grafana`, `read`, `command`,
+`sli` is one of `ingest_v1`, `ingest_v1_grafana` (REV-77), `ingest_v2`, `ingest_grafana`, `read`, `command`,
 `search`, `operator_command`, `validate`, `auth`, `live`, `rum`, `admin`,
 `health`. `outcome` follows reliability section 3: `good`; `bad` for 5xx,
 capacity 429/503, timeouts and disconnects after full receipt; `excluded` for
