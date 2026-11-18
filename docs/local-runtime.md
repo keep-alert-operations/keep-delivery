@@ -75,7 +75,8 @@ live browser check received this alert through native v1, waited for processing
 and Elasticsearch search, then acknowledged it and added a note through the UI.
 `Local Demo` is a separate tenant with admin/editor/viewer group grants. Native
 v1 always routes to Global. [Local v2 setup](local-v2.md) now provides authenticated
-ingestion into Local Demo through its managed `Local Demo Sender` operator.
+ingestion into Local Demo through the managed sender that `.local/operators/demo.json`
+names (`Local Demo Sender` by default).
 
 ## Start, inspect and stop
 
