@@ -1,5 +1,54 @@
 # Implementation status
 
+## 2026-11-18 V1 alerts kept as sent, shown as v1, and Grafana v1 (REV-77)
+
+V1 alerts are stored as sent (`object`; error, major, warning and clear) instead of
+being mapped into v2 words. Global shows v1 fields in details, columns, sort,
+group-by and quick views. Grafana's standard webhook posts to `POST /api/ingest/v1/grafana`
+into Global. Branch `feat/v1-alerts-as-sent` in design (#48), contracts (#24),
+migrations (#19, `0071_v1_native_fields`), domain (#35), api (#32), ingestion (#28),
+frontend (#46) and delivery, all from current `main`. Processor (#27), correlation
+(#26) and indexer (#31) only pin keep-domain `db5c14a`. This change pins the pushed
+heads in `pyproject.toml`, the lock and the workspace manifest; not merged.
+
+- Deploy order: 0071, the services, a search rebuild (the strict mapping gains
+  `object`), then `python -m keep.v1_native_conversion --actor <uuid> --dry-run`,
+  then the real run. Old rows read as v1 until converted, and the source processor
+  converts a row on its next update. A row stays in the old words while a started
+  maintenance window written in them would change its match; `--reverse` restores
+  the old words.
+- Executed on 2026-11-18 on the branch code (editable in delivery's environment):
+  - Unit tests: contracts 73, migrations 5, api 384, ingestion 114, processor 55,
+    correlation 8, indexer 96 and delivery 374 (63 skipped) passed. Domain passed
+    1,046 of 1,047; the failure was the one-second CEL compile deadline under load,
+    and that test passed 3 of 3 alone.
+  - Integration: migrations 49 and api conversion 3 passed. `check_contracts.py`,
+    `verify_boundaries.py`, `verify_documents.py` (REV-01..77), `check_context.py`
+    and design `check_docs.py` passed.
+  - Full Playwright: 338 passed, 13 skipped and 1 failed (`scalability-users`
+    under load). That spec passed 15 of 15 on base and on the branch on an idle
+    machine.
+- Local stack, after a `pg_dump` backup:
+  - Migrated to 0071, search rebuilt, and the conversion run. It converted 81
+    Global alerts and 3 presets, and a rerun changed 0.
+  - A native v1 alert is stored with `object`, no `component`, and `major`. A
+    Grafana firing then resolved alert gives provider `grafana` with `major`
+    kept. A missing `object` label returns 422 at index 0 with `labels.object`.
+  - Smoke checks: S1 7/7 and S2 1/1 passed, and S4 passed in the browser on
+    Global.
+  - A manual browser check of Global read quick views Error 72, Major 8 and
+    Warning 6. Group by and columns offer Object, and details show Object with
+    no Component. Local Demo is unchanged.
+- Not verified:
+  - S3 (v2 sending): the Local Demo sender operator has been in setup
+    `operator_capabilities_unverified` since 2026-11-10, before this change.
+  - CI on the PRs.
+  - Indexer integration: it fails 21 tests on base and branch alike
+    (`bootstrap_development_https_quiescence_required`).
+  - The client guide `index.html` is not rebuilt (`marked` is not installed
+    locally).
+  - Production: 0071's CHECK scans `alerts` under ACCESS EXCLUSIVE.
+
 ## 2026-11-17 Daily directory refresh and no disabled or deleted people (REV-75, REV-76)
 
 The directory refresh now runs once a day as an OpenShift CronJob, and Keep no longer
