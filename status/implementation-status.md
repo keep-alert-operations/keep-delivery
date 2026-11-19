@@ -1,5 +1,59 @@
 # Implementation status
 
+## 2026-11-19 Noisy presets sound on dashboards (REV-78)
+
+A dashboard sounds the shared REV-58 alarm once while any unmuted Alert count or
+Alert table panel on a noisy preset has matching alerts. Each such panel has a
+bell at the end of its title row that mutes it on this screen, and a status chip
+beside the dashboard name (and in the fullscreen bar) shows the alarm's state with
+Mute all / Unmute all. Mutes last for the browser tab, including leaving the
+dashboard and coming back, and are never saved; a reload unmutes. The count batch and the
+dashboard preview gain `preset_noisy` on each counted panel result; the response
+is not in the OpenAPI contract, so contracts don't change. Branch
+`feat/noisy-dashboard-panels` in design (from `35fce72`), api (from `0a8b68a`),
+frontend (from `6f3a661`) and delivery (from `f536f1b`); not committed or pushed.
+No migration and no head pins yet.
+
+- Executed on 2026-11-19 on the branch code, in `.wt/noisy-dashboard/` worktrees:
+  - keep-api: the new `test_noisy_dashboard_panels.py` (count batch and preview
+    through `_dashboard_counts`) failed with `KeyError: 'preset_noisy'` before the
+    change and passes after; unit 386 passed; ruff passed.
+  - keep-frontend: typecheck, prettier on the changed files and `npm run build`
+    passed. The new `dashboard-noisy-panels.spec.ts` (13 tests in view and edit
+    roles, with an Audio stub counting instances and `play()` calls) passed 26 of
+    26 with `--repeat-each 2`. Fifteen existing dashboard and preset specs (136
+    tests, including `noisy-presets`) passed one file at a time.
+  - An independent verifier re-ran the checks and probes (stretched-link clicks,
+    failed and slow table loads, blocked sound, fullscreen after a draft edit) and
+    found one gap: a mute was lost when leaving the dashboard and coming back in
+    the same tab. Mutes now stay for the tab; the spec step that checks it failed
+    without the fix ("Alarm playing · 1 panel") and passes with it. After the
+    fix, the new spec, `dashboard-counts`, `dashboard-table-panels`,
+    `dashboard-layout`, `configuration-history` and `noisy-presets` passed again.
+  - One unrelated API unit test (`test_alert_ownership.py`, a lifecycle filter
+    case) failed once in the verifier's first full run and passed alone and in
+    the next full run (386 passed); the cause wasn't captured.
+  - Design `check_docs.py`, and delivery `verify_documents.py` (REV-01..78) and
+    `check_context.py`, passed.
+- Local stack, worktree API on 58110 and worktree UI on 3447 against the shared
+  database:
+  - Two noisy Global presets with 57 and 72 matching alerts on one dashboard:
+    the count batch carried `"preset_noisy": true` for both. One audio element
+    played, and the header read "Alarm playing · 2 panels".
+  - Each bell muted only its panel (icon only, URL unchanged). Mute all paused
+    the element; Unmute all played it again.
+  - Fullscreen showed the same chip and bells, with no new element or `play()`.
+  - Turning one preset's Noisy off in its editor removed that panel's bell after
+    a refresh ("Alarm playing · 1 panel").
+- Smoke runs `8c00c61c`, `e0c06f73` and `4e7261c0` (after the final code edit)
+  passed S1–S4 against the main stack, so they don't include this change
+  (`stack_includes_change: no`).
+- The journey's dashboard "REV-78 journey" and its two presets stay in local
+  Global: the local stack refuses dashboard and preset deletes with
+  `recovery_not_ready` (its recovery capability gate is off).
+- Not verified: CI, and sound on a real wall screen that never gets a click
+  (the "waiting for a click" chip is covered only with a stubbed refusal).
+
 ## 2026-11-19 One-command smoke run and a mandatory Haiku smoke-runner
 
 `scripts/smoke.py run` runs S1–S4 against the running local stack and writes a
