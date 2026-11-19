@@ -302,7 +302,14 @@ def stack_includes_change(
     active = [c for c in checkouts if c["work_in_progress"].get("active")]
     if not active:
         return "yes", "no work in progress outside origin/main in any app checkout"
-    outside = [c for c in active if not c["stack"]]
+    # A worktree with the same content as its stack checkout carries no other work.
+    in_stack = {c["repo"]: c.get("fingerprint") for c in checkouts if c["stack"]}
+    outside = [
+        c
+        for c in active
+        if not c["stack"]
+        and (c.get("fingerprint") is None or c["fingerprint"] != in_stack.get(c["repo"]))
+    ]
     if outside:
         return "no", "work in progress outside the stack checkouts: " + ", ".join(
             c["path"] for c in outside

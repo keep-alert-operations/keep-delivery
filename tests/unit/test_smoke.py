@@ -398,6 +398,16 @@ def test_work_in_a_worktree_is_not_in_the_stack():
     assert value == "no" and "C:/ws/.wt/task/keep-api" in reason
 
 
+def test_a_worktree_with_the_stack_checkouts_content_is_in_the_stack():
+    """A branch checked out in the stack, with its worktree detached at the same content."""
+    main = checkout(path="C:/ws/keep-frontend", repo="keep-frontend") | {"fingerprint": "v1:a"}
+    worktree = main | {"path": "C:/ws/.wt/task/keep-frontend", "stack": False}
+    assert smoke.stack_includes_change([main, worktree], {}, editable_from("x"))[0] == "yes"
+    changed = worktree | {"fingerprint": "v1:b"}
+    value, reason = smoke.stack_includes_change([main, changed], {}, editable_from("x"))
+    assert value == "no" and "C:/ws/.wt/task/keep-frontend" in reason
+
+
 def test_a_change_after_the_service_started_needs_a_restart():
     value, reason = smoke.stack_includes_change(
         [checkout(newest=400.0)], {"Api": 300.0}, editable_from("C:/ws/keep-api")
