@@ -1,5 +1,47 @@
 # Implementation status
 
+## 2026-11-19 One-command smoke run and a mandatory Haiku smoke-runner
+
+`scripts/smoke.py run` runs S1–S4 against the running local stack and writes a
+report; S3's browser check and the S4 incident lifecycle are now written tests
+(`local-v2-browser.spec.ts`, `local-incident.spec.ts`), and S1/S2 assert what the
+runbook listed as manual. Bootstrap installs a `smoke-runner` subagent (Haiku) and
+the `smoke_gate.py` hooks at the workspace root: after an app change a session
+can't finish until that subagent has run the command on the current content. See
+the development runbook, "One command and the finish gate". Branch
+`feat/smoke-runner` in frontend and delivery; tooling only, no REV entry.
+
+- Executed on 2026-11-19 on the branch code:
+  - Delivery unit tests: 475 passed, 1 skipped (a symlink case this Windows host
+    doesn't permit) in about 70 seconds, including 49 for `smoke.py`, 37 for the
+    gate and 9 for the install. Ruff passed on the smoke scripts and `workspace.py`.
+  - Bootstrap in the real workspace installed the agent, the hooks (keeping
+    `enabledPlugins` and the worktree hooks) and the allow rule; a second run
+    changed no root file.
+  - From the main checkouts on the branch: run `65889c27` passed in 166 seconds.
+    Three headless Claude Code sessions at the workspace root (two editing the
+    main delivery checkout, one a `.wt` worktree) were each blocked once, ran the
+    smoke-runner on Haiku in the background without a permission prompt, were
+    allowed to stop while it ran, and finished after runs `3d5644fd`, `48cb13d3`
+    and `f1c070cd` passed.
+  - The sessions and a review found five gate problems, each fixed with a test
+    that fails without the fix: the CLI writes no `finished` flag for subagents;
+    follow-up questions counted as waiting for the user; parallel hooks could
+    lose a worktree baseline; any background task mentioning "smoke" held the
+    gate open; `<synthetic>` model entries disqualified a Haiku run.
+  - Docs and context checks, frontend typecheck, and each local Playwright config
+    without its opt-in (all skipped, exit 0) passed.
+- A session already open when bootstrap runs gets the hooks but not the subagent
+  (agents load at session start); its gate lets it finish after five blocks.
+  - Each new or changed spec passed on its own against the local stack from the
+    worktree; S4 passed with the S2 alert and with its own alert, and a cleanup
+    of an incident whose title wasn't the ledger's was refused.
+  - Full run `aa406489` from the worktree: S1 7 tests, S2 1, S3 (verify and send,
+    then 1 browser test) and S4 1 passed, in 164 seconds; the membership repair
+    found "ok" at start and end.
+- Each run keeps five or six synthetic alerts and one resolved incident in the
+  local stack, named with its run ID (accepted retention, 2026-10-12).
+
 ## 2026-11-18 V1 alerts kept as sent, shown as v1, and Grafana v1 (REV-77)
 
 V1 alerts are stored as sent (`object`; error, major, warning and clear) instead of
