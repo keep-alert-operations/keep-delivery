@@ -163,12 +163,26 @@ def test_a_missing_gate_script_never_blocks(tmp_path, event):
         [git_bash(), "-c", command], input="{}", capture_output=True, text=True, env=env, timeout=60
     )
     assert (result.returncode, result.stdout) == (0, "")
-    # With the script present the same command runs the gate, which ignores this folder.
+    # Positive control: with the script present the same command finds it and runs
+    # the gate, which records this session's state.
     scripts = tmp_path / "keep-delivery/scripts"
     scripts.mkdir(parents=True)
     for name in ("smoke_gate.py", "smoke_state.py"):
         shutil.copyfile(DELIVERY / "scripts" / name, scripts / name)
+    payload = {
+        "session_id": f"probe-{event}",
+        "cwd": str(tmp_path),
+        "transcript_path": str(tmp_path / "transcript.jsonl"),
+        "tool_name": "Write",
+        "tool_input": {"file_path": str(scripts / "probe.py")},
+    }
     result = subprocess.run(
-        [git_bash(), "-c", command], input="{}", capture_output=True, text=True, env=env, timeout=60
+        [git_bash(), "-c", command],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
     )
-    assert (result.returncode, result.stdout) == (0, "")
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / f"keep-delivery/.local/smoke/sessions/probe-{event}.json").is_file()

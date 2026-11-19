@@ -304,7 +304,9 @@ In a Claude Code session opened at the workspace root (not inside one repository
 - While the subagent runs, a stop is allowed. A passed report allows finishing; a
   failed, partial or blocked one sends the agent back once to handle it.
 - A missing run blocks every stop, except once per code state when the agent is
-  waiting for the user's answer. After five blocks in one code state the gate lets
+  waiting for the user's answer: its last message says so, or the app's wrap_up is
+  blocked on the user. A follow-up question at the end of a finished report doesn't
+  count. After five blocks in one code state the gate lets
   the stop through with a message, so a broken stack can't trap a session.
 - Committing tested content keeps it covered. A change to the fingerprint
   algorithm (`ALGORITHM_VERSION` in `scripts/smoke_state.py`) invalidates older

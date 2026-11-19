@@ -12,9 +12,10 @@ Claude Code runs this from the workspace's ``.claude/settings.json`` hooks:
   content, made in this session by the ``smoke-runner`` subagent on Haiku:
 
   - no covering run: block, naming the subagent and the exact command. The only
-    exception is a stop whose last message waits for the user's answer, allowed
-    once per code state. After five blocks on one state the gate gives up and lets
-    the stop through with a notice, so a broken setup can't loop forever;
+    exception is a stop that waits for the user's answer (its last message says
+    so, or the app's wrap_up is blocked on the user), allowed once per code state.
+    After five blocks on one state the gate gives up and lets the stop through
+    with a notice, so a broken setup can't loop forever;
   - a covering run that failed, was partial or was blocked: block once with its
     results, then allow;
   - a covering run that passed: allow;
@@ -22,14 +23,16 @@ Claude Code runs this from the workspace's ``.claude/settings.json`` hooks:
 
 The fingerprint is ``smoke_state.fingerprint``, the same one the smoke report
 records, so a commit of tested content stays covered. Session state lives in
-``<workspace>/keep-delivery/.local/smoke/sessions/<session id>.json``. The gate
-never fails a hook: on any internal error it lets the call through.
+``<workspace>/keep-delivery/.local/smoke/sessions/<session id>.json``; hooks of
+parallel subagents change it under a lock file beside it. The gate never fails a
+hook: on any internal error it lets the call through.
 
 Standard library only.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -47,11 +50,16 @@ RUNNING_FRESH_SECONDS = 15 * 60
 RUN_ID = re.compile(r"run_id: ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
 WINDOWS_PATH = re.compile(r"[A-Za-z]:[\\/][^\s\"'`|;&<>()]*")
 GIT_BASH_PATH = re.compile(r"(?<![\w:])/([a-zA-Z])/[^\s\"'`|;&<>()]*")
+# Q1: only an explicit statement counts, as the block message asks for. A follow-up
+# question at the end of a final report ("Should I push?") is not waiting.
 WAITING = re.compile(
-    r"waiting for (your|the user)|your (answer|approval|go-ahead|decision|input|choice)"
-    r"|let me know|should i\b|do you want|would you like|shall i\b|which (option|one)",
+    r"waiting (?:for|on) (?:your|their|the user(?:['’]s)?) "
+    r"(?:answer|reply|response|decision|input|go-ahead|approval|choice|confirmation)",
     re.IGNORECASE,
 )
+SYNTHETIC_MODEL = "<synthetic>"  # Claude Code's placeholder for errors and interrupts
+STATE_LOCK_WAIT_SECONDS = 10
+STATE_LOCK_STALE_SECONDS = 30
 PATH_KEYS = ("file_path", "notebook_path", "path")
 
 
@@ -79,9 +87,75 @@ def load(workspace: Path, session: str) -> dict | None:
 def save(workspace: Path, session: str, state: dict) -> None:
     path = state_path(workspace, session)
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
+    temporary = path.with_suffix(f".{os.getpid()}.tmp")
     temporary.write_text(json.dumps(state, indent=2), encoding="utf-8")
-    os.replace(temporary, path)
+    for attempt in range(20):
+        try:
+            os.replace(temporary, path)
+            return
+        except PermissionError:  # Windows: another hook is reading the file
+            if attempt == 19:
+                raise
+            time.sleep(0.05)
+
+
+@contextlib.contextmanager
+def state_lock(workspace: Path, session: str):
+    """Serializes read-modify-write of one session's state across parallel hooks.
+
+    A hook never hangs on it: after the wait it carries on without the lock, and a
+    lock left by a killed hook is taken over once stale.
+    """
+    path = state_path(workspace, session).with_suffix(".lock")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.monotonic() + STATE_LOCK_WAIT_SECONDS
+    held = False
+    while not held and time.monotonic() < deadline:
+        try:
+            os.close(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            held = True
+        except FileExistsError:
+            try:
+                if time.time() - path.stat().st_mtime > STATE_LOCK_STALE_SECONDS:
+                    path.unlink()
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.02)
+        except OSError:
+            break
+    try:
+        yield
+    finally:
+        if held:
+            with contextlib.suppress(OSError):
+                path.unlink()
+
+
+def update(workspace: Path, session: str, change, fresh=None):
+    """Applies ``change`` to the latest saved state under the lock, saves, returns its result.
+
+    ``fresh`` builds the state when none is saved yet (default: an empty one).
+    """
+    with state_lock(workspace, session):
+        current = load(workspace, session)
+        if current is None:
+            current = fresh() if fresh else new_state(workspace)
+        result = change(current)
+        save(workspace, session, current)
+    return result
+
+
+def add_once(field: str, value: str):
+    """A state change that records ``value`` once; True when it was new."""
+
+    def change(state: dict) -> bool:
+        if value in state[field]:
+            return False
+        state[field].append(value)
+        return True
+
+    return change
 
 
 def new_state(workspace: Path) -> dict:
@@ -97,18 +171,28 @@ def new_state(workspace: Path) -> dict:
     }
 
 
-def baseline(state: dict, checkout: smoke_state.Checkout) -> None:
-    if checkout.key in state["baselines"]:
-        return
+def measure(checkout: smoke_state.Checkout | None) -> str | None:
+    if checkout is None:
+        return None
     try:
-        fingerprint = smoke_state.fingerprint(checkout)
+        return smoke_state.fingerprint(checkout)
     except Exception:  # noqa: BLE001 - a checkout git can't read isn't watched
+        return None
+
+
+def record(state: dict, checkout: smoke_state.Checkout, fingerprint: str | None) -> None:
+    if fingerprint is None or checkout.key in state["baselines"]:
         return
     state["baselines"][checkout.key] = {
         "path": str(checkout.path),
         "repo": checkout.repo,
         "fingerprint": fingerprint,
     }
+
+
+def baseline(state: dict, checkout: smoke_state.Checkout) -> None:
+    if checkout.key not in state["baselines"]:
+        record(state, checkout, measure(checkout))
 
 
 def baseline_workspace(workspace: Path) -> dict:
@@ -125,7 +209,8 @@ def baseline_workspace(workspace: Path) -> dict:
 def on_session_start(payload: dict, workspace: Path) -> dict | None:
     session = payload.get("session_id")
     if session and load(workspace, session) is None:
-        save(workspace, session, baseline_workspace(workspace))
+        first = baseline_workspace(workspace)
+        update(workspace, session, lambda state: None, fresh=lambda: first)
     return None
 
 
@@ -152,22 +237,32 @@ def on_pre_tool_use(payload: dict, workspace: Path) -> dict | None:
     candidates = [path for path in candidates if smoke_state.inside(path, workspace)]
     if not candidates:
         return None
-    state = load(workspace, session) or baseline_workspace(workspace)
-    changed = False
+    known = load(workspace, session)
+    # Fingerprint new checkouts outside the lock (git can take seconds), then merge.
+    found: dict[str, tuple[smoke_state.Checkout | None, str | None]] = {}
     for path in candidates:
         root = smoke_state.checkout_root(path)
         if root is None or not smoke_state.inside(root, workspace):
             continue
         key = smoke_state.path_key(root)
-        if key in state["roots"]:
+        if key in found or (known is not None and key in known["roots"]):
             continue
         checkout = smoke_state.describe(root)
-        state["roots"][key] = checkout is not None
-        if checkout is not None:
-            baseline(state, checkout)
-        changed = True
-    if changed:
-        save(workspace, session, state)
+        found[key] = (checkout, measure(checkout))
+    if known is not None and not found:
+        return None
+
+    def merge(state: dict) -> None:
+        for key, (checkout, fingerprint) in found.items():
+            if key in state["roots"]:
+                continue
+            state["roots"][key] = checkout is not None
+            if checkout is not None:
+                record(state, checkout, fingerprint)
+
+    # A missing state (the session began before the hooks) gets its baseline now,
+    # before this tool call changes anything.
+    update(workspace, session, merge, fresh=lambda: baseline_workspace(workspace))
     return None
 
 
@@ -258,6 +353,7 @@ def smoke_runners(payload: dict) -> tuple[list[dict], list[str]]:
             if entry.get("type") == "assistant" and isinstance(entry.get("message"), dict)
         }
         runner["models"] = sorted(models)
+        models.discard(SYNTHETIC_MODEL)
         runner["haiku"] = bool(models) and all("haiku" in model for model in models)
         runner["run_ids"] = sorted(
             {m for e in entries for m in RUN_ID.findall(tool_result_text(e))}
@@ -272,7 +368,13 @@ def smoke_runners(payload: dict) -> tuple[list[dict], list[str]]:
 
 
 def waiting_for_user(payload: dict) -> bool:
-    """True when the last turn ends by asking the user something."""
+    """True when the turn ends waiting for the user's answer (plan Q1).
+
+    That is: the turn's last tool call is the app's wrap_up with ``blocked: true``,
+    or its last text says it is waiting for the user's answer. A question asked and
+    answered earlier in the turn, a non-blocking wrap_up question and a follow-up
+    question in a final report don't count.
+    """
     transcript = payload.get("transcript_path")
     if not transcript:
         return False
@@ -280,7 +382,8 @@ def waiting_for_user(payload: dict) -> bool:
         entries = read_lines(Path(transcript))[-400:]
     except OSError:
         return False
-    texts: list[str] = []
+    final_text: str | None = None
+    last_tool: dict | None = None
     for entry in reversed(entries):
         message = entry.get("message")
         content = message.get("content") if isinstance(message, dict) else None
@@ -293,22 +396,37 @@ def waiting_for_user(payload: dict) -> bool:
             continue
         if entry.get("type") != "assistant" or not isinstance(content, list):
             continue
-        for block in content:
+        for block in reversed(content):
             if not isinstance(block, dict):
                 continue
-            if block.get("type") == "tool_use":
-                name = str(block.get("name") or "")
-                tool_input = block.get("input") or {}
-                if name == "AskUserQuestion":
-                    return True
-                if name.endswith("wrap_up") and (
-                    tool_input.get("blocked") or tool_input.get("ask")
-                ):
-                    return True
-            elif block.get("type") == "text" and not texts:
-                texts.append(str(block.get("text") or ""))
-    final = texts[0].strip() if texts else ""
-    return final.endswith("?") or bool(WAITING.search(final[-600:]))
+            if block.get("type") == "tool_use" and last_tool is None:
+                last_tool = block
+            elif block.get("type") == "text" and final_text is None:
+                final_text = str(block.get("text") or "")
+        if final_text is not None and last_tool is not None:
+            break
+    if (
+        last_tool is not None
+        and str(last_tool.get("name") or "").endswith("wrap_up")
+        and (last_tool.get("input") or {}).get("blocked") is True
+    ):
+        return True
+    return bool(WAITING.search((final_text or "")[-600:]))
+
+
+def running_smoke_task(payload: dict) -> bool:
+    """True when ``background_tasks`` lists a smoke-runner (its task ID names its meta file)."""
+    directory = subagent_dir(payload)
+    if directory is None:
+        return False
+    for task in payload.get("background_tasks") or []:
+        task_id = str(task.get("task_id") or "") if isinstance(task, dict) else ""
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", task_id):
+            continue
+        meta = smoke_state.read_object(directory / f"agent-{task_id}.meta.json")
+        if meta is not None and meta.get("agentType") == "smoke-runner":
+            return True
+    return False
 
 
 # ------------------------------------------------------------------ stop
@@ -376,12 +494,13 @@ def on_stop(payload: dict, workspace: Path) -> dict | None:
     session = payload.get("session_id")
     if not session:
         return None
-    state = load(workspace, session)
-    if state is None:
-        save(workspace, session, baseline_workspace(workspace))
-        return {
-            "systemMessage": "Smoke gate started late in this session; earlier changes are not checked."
-        }
+    with state_lock(workspace, session):
+        state = load(workspace, session)
+        if state is None:
+            save(workspace, session, baseline_workspace(workspace))
+            return {
+                "systemMessage": "Smoke gate started late in this session; earlier changes are not checked."
+            }
     changed: dict[str, str] = {}
     paths: list[str] = []
     for key, base in state["baselines"].items():
@@ -405,7 +524,7 @@ def on_stop(payload: dict, workspace: Path) -> dict | None:
         lock, time.time()
     ):
         return None
-    if any("smoke" in json.dumps(task).lower() for task in payload.get("background_tasks") or []):
+    if running_smoke_task(payload):
         return None
 
     reports = []
@@ -420,11 +539,10 @@ def on_stop(payload: dict, workspace: Path) -> dict | None:
         latest = max(covering, key=lambda r: str(r.get("finished_at") or ""))
         if latest.get("result") == "passed":
             return None
-        key = f"result:{digest}:{latest['run_id']}"
-        if key in state["notified"]:
+        if not update(
+            workspace, session, add_once("notified", f"result:{digest}:{latest['run_id']}")
+        ):
             return None
-        state["notified"].append(key)
-        save(workspace, session, state)
         change = latest.get("stack_includes_change") or {}
         return {
             "decision": "block",
@@ -438,10 +556,7 @@ def on_stop(payload: dict, workspace: Path) -> dict | None:
         }
 
     if problems:
-        key = f"format:{digest}"
-        if key not in state["notified"]:
-            state["notified"].append(key)
-            save(workspace, session, state)
+        if update(workspace, session, add_once("notified", f"format:{digest}")):
             return {
                 "decision": "block",
                 "reason": "Smoke gate can't read this session's subagent files ("
@@ -450,14 +565,16 @@ def on_stop(payload: dict, workspace: Path) -> dict | None:
             }
         return None
 
-    if waiting_for_user(payload) and digest not in state["waiting_allowed"]:
-        state["waiting_allowed"].append(digest)
-        save(workspace, session, state)
+    if waiting_for_user(payload) and update(
+        workspace, session, add_once("waiting_allowed", digest)
+    ):
         return None
 
-    count = state["missing_blocks"].get(digest, 0) + 1
-    state["missing_blocks"][digest] = count
-    save(workspace, session, state)
+    def count_block(current: dict) -> int:
+        current["missing_blocks"][digest] = current["missing_blocks"].get(digest, 0) + 1
+        return current["missing_blocks"][digest]
+
+    count = update(workspace, session, count_block)
     if count > MAX_MISSING_BLOCKS:
         return {
             "systemMessage": f"Smoke gate: no smoke run after {MAX_MISSING_BLOCKS} reminders; "

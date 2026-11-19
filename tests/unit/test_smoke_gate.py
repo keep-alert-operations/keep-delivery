@@ -103,8 +103,11 @@ class Session:
         in_tool_result=True,
         transcript=True,
         meta_flag=True,
-    ) -> None:
-        """A smoke-runner's files. ``meta_flag=False`` is the CLI's shape: no finished flag."""
+    ) -> str:
+        """A smoke-runner's files; returns its agent ID (the CLI's background task ID).
+
+        ``meta_flag=False`` is the CLI's shape: no finished flag in the meta file.
+        """
         self.subagents.mkdir(parents=True, exist_ok=True)
         name = f"agent-a{uuid4().hex[:16]}"
         meta = {"agentType": agent_type, "isBuiltIn": False, "requestShape": "background"}
@@ -112,7 +115,7 @@ class Session:
             meta["finished"] = True
         (self.subagents / f"{name}.meta.json").write_text(json.dumps(meta), encoding="utf-8")
         if not transcript:
-            return
+            return name.removeprefix("agent-")
         output = f"run_id: {run_id}\nresult: passed" if run_id else ""
         lines = [
             {"type": "user", "message": {"role": "user", "content": "Run: smoke"}},
@@ -152,6 +155,13 @@ class Session:
         (self.subagents / f"{name}.jsonl").write_text(
             "\n".join(json.dumps(line) for line in lines), encoding="utf-8"
         )
+        return name.removeprefix("agent-")
+
+    def turn(self, *entries: dict) -> None:
+        """Appends one user turn followed by these transcript entries."""
+        lines = [{"type": "user", "message": {"role": "user", "content": "please do it"}}]
+        with open(self.transcript, "a", encoding="utf-8") as out:
+            out.write("".join(json.dumps(line) + "\n" for line in [*lines, *entries]))
 
     def say(self, text: str = "", tool: dict | None = None) -> None:
         """Appends one user turn and the assistant's last message to the main transcript."""
@@ -380,7 +390,7 @@ def test_unreadable_subagent_files_block_once_with_the_reason(session):
 
 def test_a_question_to_the_user_is_allowed_once_per_code_state(session):
     session.edit()
-    session.say("Should I also update the guide?")
+    session.say("Should I also update the guide? I'm waiting for your answer before I go on.")
     assert session.stop() is None
     assert is_block(session.stop())
     session.edit("value = 4\n")
@@ -397,6 +407,113 @@ def test_a_plain_finish_is_not_waiting(session):
     session.edit()
     session.say("Done. All tests pass.")
     assert is_block(session.stop())
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Done. Follow-ups: should I push the branch and open PRs?",
+        "Changed the handler; let me know if you want the docs updated too.",
+        "All checks pass. Would you like me to commit?",
+    ],
+)
+def test_a_final_report_with_a_follow_up_question_is_not_waiting(session, text):
+    """Q1 allows only a stop whose last message says it waits for the user's answer."""
+    session.edit()
+    session.say(text)
+    assert is_block(session.stop())
+
+
+def test_a_wrap_up_question_that_does_not_block_is_not_waiting(session):
+    session.edit()
+    session.say("Recap.", tool={"name": "mcp__ccd_turn__wrap_up", "input": {"ask": "Commit?"}})
+    assert is_block(session.stop())
+
+
+def test_a_question_answered_earlier_in_the_turn_is_not_waiting(session):
+    session.edit()
+    ask = {"type": "tool_use", "id": "t1", "name": "AskUserQuestion", "input": {}}
+    answer = {"type": "tool_result", "tool_use_id": "t1", "content": "Option A"}
+    session.turn(
+        {"type": "assistant", "message": {"role": "assistant", "content": [ask]}},
+        {"type": "user", "message": {"role": "user", "content": [answer]}},
+        {
+            "type": "assistant",
+            "message": {"role": "assistant", "content": [{"type": "text", "text": "Done."}]},
+        },
+    )
+    assert is_block(session.stop())
+
+
+# ------------------------------------------------------------- review round 1
+
+
+def test_only_a_smoke_runner_in_background_tasks_counts_as_running(session):
+    """A background shell or another agent that mentions smoke doesn't hold the gate open."""
+    session.edit()
+    tasks = [
+        {
+            "task_id": "b1",
+            "task_type": "local_bash",
+            "description": "pytest tests/unit/test_smoke_gate.py",
+        },
+        {"task_id": "a2", "task_type": "local_agent", "description": "Review smoke runner change"},
+    ]
+    assert is_block(session.stop(background_tasks=tasks))
+    runner = session.subagent(None, finished=False)
+    old = __import__("time").time() - 2 * gate.RUNNING_FRESH_SECONDS
+    for path in session.subagents.glob("*"):
+        os.utime(path, (old, old))  # its files alone no longer look fresh
+    listed = {"task_id": runner, "task_type": "local_agent", "description": "Run smoke"}
+    assert session.stop(background_tasks=[listed]) is None
+
+
+def test_a_synthetic_entry_in_a_haiku_runner_still_counts(session):
+    """Claude Code writes "<synthetic>" model entries for errors and interrupts."""
+    session.edit()
+    runner = session.subagent(session.report())
+    synthetic = {"type": "assistant", "message": {"model": "<synthetic>", "content": []}}
+    with open(session.subagents / f"agent-{runner}.jsonl", "r+", encoding="utf-8") as handle:
+        lines = handle.read().splitlines()
+        lines.insert(2, json.dumps(synthetic))
+        handle.seek(0)
+        handle.write("\n".join(lines))
+    assert session.stop() is None
+
+
+def test_parallel_first_touches_of_two_worktrees_are_both_watched(session, monkeypatch):
+    """Two subagents' first edits in different worktrees at once: neither baseline is lost."""
+    import threading
+
+    trees = [session.ws / ".wt/one/keep-api", session.ws / ".wt/two/keep-api"]
+    for tree in trees:
+        git(session.api, "worktree", "add", "-q", "--detach", str(tree))
+    real = state.fingerprint
+    both_loaded = threading.Barrier(2)
+
+    def slow(checkout):
+        value = real(checkout)
+        both_loaded.wait(timeout=20)
+        return value
+
+    monkeypatch.setattr(state, "fingerprint", slow)
+    hooks = [
+        threading.Thread(
+            target=gate.on_pre_tool_use,
+            args=(
+                session.payload(tool_name="Write", tool_input={"file_path": str(t / "src/app.py")}),
+                session.ws,
+            ),
+        )
+        for t in trees
+    ]
+    for hook in hooks:
+        hook.start()
+    for hook in hooks:
+        hook.join(timeout=60)
+    saved = json.loads(gate.state_path(session.ws, session.id).read_text())
+    for tree in trees:
+        assert state.path_key(tree) in saved["baselines"]
 
 
 # ------------------------------------------------------------- entry point and A13
