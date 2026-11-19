@@ -258,7 +258,16 @@ def test_an_unreachable_api_blocks_the_run_without_running_anything(tmp_path):
     executed = []
     runner = make_runner(tmp_path, execute=lambda *args: executed.append(args) or (0, False))
     runner.repair = lambda stage: {}
+    probed = []
+
+    def status(url, timeout=5):
+        # Probe the API for real; Windows takes seconds to refuse each loopback port.
+        probed.append(url)
+        return smoke.Runner.http_status(url, timeout) if len(probed) == 1 else None
+
+    runner.http_status = status
     result = runner.run()
+    assert probed[0] == "http://127.0.0.1:1/livez"
     assert result["result"] == "blocked"
     assert all(s["result"] == "blocked" for s in result["scenarios"].values())
     assert "api is not ready at http://127.0.0.1:1/livez" in result["scenarios"]["S1"]["reason"]
@@ -268,6 +277,7 @@ def test_an_unreachable_api_blocks_the_run_without_running_anything(tmp_path):
 
 def test_a_frontend_without_playwright_names_npm_ci(tmp_path):
     runner = make_runner(tmp_path, playwright=False)
+    runner.http_status = lambda url, timeout=5: 200
     problems = runner.check_readiness()
     assert any("run npm ci there" in problem for problem in problems)
 
