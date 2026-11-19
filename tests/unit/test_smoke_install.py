@@ -147,8 +147,14 @@ def git_bash() -> str | None:
     if os.name != "nt":
         return shutil.which("bash")
     git = shutil.which("git")
-    candidate = Path(git).resolve().parents[1] / "bin/bash.exe" if git else None
-    return str(candidate) if candidate and candidate.exists() else None
+    if not git:
+        return None
+    # git.exe is in <Git>\cmd from PowerShell and <Git>\mingw64\bin from Git Bash.
+    for folder in list(Path(git).resolve().parents)[:3]:
+        candidate = folder / "bin/bash.exe"
+        if candidate.exists():
+            return str(candidate)
+    return None
 
 
 @pytest.mark.skipif(git_bash() is None, reason="Git Bash runs Claude Code hooks on Windows")

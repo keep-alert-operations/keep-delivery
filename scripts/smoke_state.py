@@ -286,12 +286,21 @@ def pid_alive(pid) -> bool:
 
 # A holder older than the longest possible run is stale even if its PID was reused.
 LOCK_STALE_SECONDS = 660
+# A run creates the lock file first and writes its holder right after; until then
+# the file is empty, and it is held unless it stays empty this long.
+LOCK_WRITE_GRACE_SECONDS = 10
 
 
 def lock_holder(path: Path, now: float, alive=None) -> dict | None:
     """The live holder recorded in a smoke lock file, or None when free or stale."""
     holder = read_json(path)
     if not isinstance(holder, dict):
+        try:
+            created = Path(path).stat().st_mtime
+        except OSError:
+            return None
+        if now - created < LOCK_WRITE_GRACE_SECONDS:
+            return {"run_id": "starting", "pid": None, "started_at": created}
         return None
     started = holder.get("started_at")
     if not isinstance(started, (int, float)) or now - started > LOCK_STALE_SECONDS:

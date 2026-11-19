@@ -316,6 +316,17 @@ def test_a_dead_or_stale_lock_holder_is_taken_over(tmp_path, monkeypatch, alive,
     assert not runner.paths.lock.exists()
 
 
+def test_a_lock_file_not_yet_written_counts_as_held(tmp_path):
+    """A8: between creating the lock and writing its holder, another run must wait."""
+    lock = tmp_path / "lock"
+    lock.write_text("")
+    created = lock.stat().st_mtime
+    holder = state.lock_holder(lock, created + 1)
+    assert holder is not None and holder["run_id"] == "starting"
+    assert state.lock_holder(lock, created + state.LOCK_WRITE_GRACE_SECONDS + 1) is None
+    assert state.lock_holder(tmp_path / "missing", created) is None
+
+
 def test_scenarios_past_the_budget_are_blocked(tmp_path):
     """A8: the whole run fits 540 s; what doesn't fit is blocked, not skipped."""
     clock = Clock()
