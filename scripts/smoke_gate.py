@@ -50,6 +50,8 @@ RUNNING_FRESH_SECONDS = 15 * 60
 RUN_ID = re.compile(r"run_id: ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
 WINDOWS_PATH = re.compile(r"[A-Za-z]:[\\/][^\s\"'`|;&<>()]*")
 GIT_BASH_PATH = re.compile(r"(?<![\w:])/([a-zA-Z])/[^\s\"'`|;&<>()]*")
+# Read only off Windows, where a shell names checkouts by absolute POSIX paths.
+POSIX_PATH = re.compile(r"(?<![\w:/.~-])/[^\s\"'`|;&<>()]+")
 # Q1: only an explicit statement counts, as the block message asks for. A follow-up
 # question at the end of a final report ("Should I push?") is not waiting.
 WAITING = re.compile(
@@ -224,6 +226,8 @@ def named_paths(payload: dict) -> list[str]:
             f"{match.group(1).upper()}:/{match.group(0)[3:]}"
             for match in GIT_BASH_PATH.finditer(command)
         ]
+        if os.name != "nt":
+            found += POSIX_PATH.findall(command)
         if payload.get("cwd"):
             found.append(str(payload["cwd"]))
     return found

@@ -252,8 +252,10 @@ def test_an_edit_in_a_worktree_named_by_a_tool_counts(session):
 def test_a_shell_command_naming_a_worktree_baselines_it(session):
     worktree = session.ws / ".wt/task/keep-api"
     git(session.api, "worktree", "add", "-q", str(worktree), "-b", "task")
-    bash_path = "/" + worktree.as_posix()[0].lower() + worktree.as_posix()[2:]
-    for command in (f'cd "{bash_path}" && sed -i s/1/2/ src/app.py', f"git -C {worktree} status"):
+    # The path as the shell spells it: Git Bash's /c/... on Windows, the native path elsewhere.
+    posix = worktree.as_posix()
+    shell_path = "/" + posix[0].lower() + posix[2:] if os.name == "nt" else posix
+    for command in (f'cd "{shell_path}" && sed -i s/1/2/ src/app.py', f"git -C {worktree} status"):
         gate.state_path(session.ws, session.id).unlink()
         session.start()
         pre = session.payload(tool_name="Bash", tool_input={"command": command})
