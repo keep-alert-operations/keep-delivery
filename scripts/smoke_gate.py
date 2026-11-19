@@ -211,6 +211,20 @@ def subagent_dir(payload: dict) -> Path | None:
     return transcript.parent / transcript.stem / "subagents"
 
 
+def ended(entries: list[dict]) -> bool:
+    """True when a subagent transcript ends with the subagent's final answer."""
+    for entry in reversed(entries):
+        if entry.get("type") not in ("assistant", "user"):
+            continue
+        message = entry.get("message")
+        return (
+            entry.get("type") == "assistant"
+            and isinstance(message, dict)
+            and message.get("stop_reason") in ("end_turn", "stop_sequence")
+        )
+    return False
+
+
 def smoke_runners(payload: dict) -> tuple[list[dict], list[str]]:
     """This session's smoke-runner subagents: id, finished, haiku, run_ids, fresh."""
     directory = subagent_dir(payload)
@@ -249,6 +263,8 @@ def smoke_runners(payload: dict) -> tuple[list[dict], list[str]]:
             {m for e in entries for m in RUN_ID.findall(tool_result_text(e))}
         )
         runner["fresh"] = now - mtime < RUNNING_FRESH_SECONDS
+        # The desktop app marks finished subagents in the meta file; the CLI doesn't.
+        runner["finished"] = runner["finished"] or ended(entries)
         if runner["finished"] and not models:
             problems.append(f"{transcript.name} has no assistant messages with a model")
         runners.append(runner)

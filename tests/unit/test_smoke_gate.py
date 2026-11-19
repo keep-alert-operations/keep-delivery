@@ -102,11 +102,13 @@ class Session:
         agent_type="smoke-runner",
         in_tool_result=True,
         transcript=True,
+        meta_flag=True,
     ) -> None:
+        """A smoke-runner's files. ``meta_flag=False`` is the CLI's shape: no finished flag."""
         self.subagents.mkdir(parents=True, exist_ok=True)
         name = f"agent-a{uuid4().hex[:16]}"
         meta = {"agentType": agent_type, "isBuiltIn": False, "requestShape": "background"}
-        if finished:
+        if finished and meta_flag:
             meta["finished"] = True
         (self.subagents / f"{name}.meta.json").write_text(json.dumps(meta), encoding="utf-8")
         if not transcript:
@@ -119,6 +121,7 @@ class Session:
                 "message": {
                     "role": "assistant",
                     "model": model,
+                    "stop_reason": "tool_use",
                     "content": [{"type": "tool_use", "name": "PowerShell", "input": {}}],
                 },
             },
@@ -139,10 +142,13 @@ class Session:
                 "message": {
                     "role": "assistant",
                     "model": model,
+                    "stop_reason": "end_turn",
                     "content": [{"type": "text", "text": f"run_id: {run_id}"}],
                 },
             },
         ]
+        if not finished:
+            lines = lines[:2]  # still waiting for its command
         (self.subagents / f"{name}.jsonl").write_text(
             "\n".join(json.dumps(line) for line in lines), encoding="utf-8"
         )
@@ -341,6 +347,24 @@ def test_a_covering_run_that_did_not_pass_blocks_once(session, result):
     assert is_block(first)
     assert f"Smoke run {run_id} {result}" in first["reason"]
     assert session.stop() is None
+
+
+def test_a_cli_runner_without_a_finished_flag_counts_once_its_answer_is_written(session):
+    """The Claude Code CLI writes no finished flag; the transcript's final answer shows it."""
+    session.edit()
+    session.subagent(session.report(), meta_flag=False)
+    assert session.stop() is None
+    session.edit("value = 3\n")
+    failed = session.report(result="failed")
+    for path in session.subagents.glob("*"):
+        path.unlink()
+    session.subagent(None, finished=False, meta_flag=False)
+    assert session.stop() is None  # still running
+    for path in session.subagents.glob("*"):
+        path.unlink()
+    session.subagent(failed, meta_flag=False)
+    result = session.stop()
+    assert is_block(result) and f"Smoke run {failed} failed" in result["reason"]
 
 
 def test_unreadable_subagent_files_block_once_with_the_reason(session):
