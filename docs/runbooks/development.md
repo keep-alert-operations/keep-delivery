@@ -202,8 +202,9 @@ that is not ready returns `kafka_publish_unconfirmed` or
 
 Other suites have their own bindings. The frontend BrowserReal smoke uses
 `KEEP_REAL_BROWSER_DATABASE_ADMIN_URL`, plus `KEEP_REAL_BROWSER_PYTHON` when
-delivery's environment is not `.venv`. The S1/S2 suites opt in with
-`KEEP_LOCAL_IDENTITY_TEST` and `KEEP_LOCAL_RUNTIME_TEST`. Repository suites
+delivery's environment is not `.venv`. The S1–S4 suites opt in with
+`KEEP_LOCAL_IDENTITY_TEST`, `KEEP_LOCAL_RUNTIME_TEST`, `KEEP_LOCAL_V2_BROWSER_TEST`
+and `KEEP_LOCAL_INCIDENT_TEST`; `scripts/smoke.py` sets them for its own run only. Repository suites
 use `KEEP_TEST_DATABASE_URL` and, where they need a disposable cluster,
 `KEEP_MIGRATION_TEST_ADMIN_URL` (migrations), `KEEP_PROOF_TEST_POSTGRES_ADMIN_DSN`
 (api operator proof) and `KEEP_BOOTSTRAP_TEST_POSTGRES_ADMIN_DSN` (indexer, with
@@ -244,6 +245,70 @@ per-run ledger. Scenario outcomes come from existing specifications, not new
 product decisions. Procedures and automated coverage below were inspected in
 source; their presence is not an executed pass. The setup task ran only the
 checks listed in its [validation report](../../qualification/agent-verification-setup-2026-10-12.md).
+
+### One command and the finish gate
+
+`scripts/smoke.py` runs S1–S4 below against the running local stack, in order, and
+writes a report. Run it from the stack's own `keep-delivery`, the checkout whose
+`.local/` and dev server form the running stack:
+
+```powershell
+& "<workspace>\keep-delivery\.venv\Scripts\python.exe" "<workspace>\keep-delivery\scripts\smoke.py" run --workspace "<workspace>"
+```
+
+- **Before the scenarios.** It takes the lock `.local/smoke/lock`: it waits up to
+  120 seconds for a live holder and takes over a dead or stale one. It repairs what
+  a killed run left: local-viewer's `keep-observers` membership (with a directory
+  refresh) and the cleanup of an unfinished S4 incident. Then it checks readiness:
+  Node and the frontend's Playwright, credentials, both `/livez`, the UI, the mock
+  ADAPI and fresh worker heartbeats. A stack that isn't ready is reported
+  `blocked`, and no scenario runs.
+- **Order and results.** S1 not passing blocks S2–S4. S2 failing still runs S3, and
+  S4 then sends its own alert. A skipped Playwright test makes the scenario
+  `partial`, which counts as failed. The whole run, lock wait included, has 540
+  seconds; the first full run on 2026-11-19 took 164.
+- **Output.** Exit 0 means passed, 1 failed and 2 blocked. The report is
+  `<workspace>/keep-delivery/.local/smoke/latest.json`, with a copy in
+  `reports/<run_id>.json`. It holds per-scenario results, counts, IDs and evidence
+  paths, the content fingerprint of every app repo checkout, and
+  `stack_includes_change`. The run ledger is `.local/verification/<run_id>/` in the
+  stack's delivery.
+- **What it tests.** The stack as it runs: it never starts, stops or reloads
+  services. `stack_includes_change` (`yes`, `no` or `unknown`) says whether the
+  running processes load the changed checkouts; a change that lives only in a
+  worktree is `no`. Reload the affected processes first when the change itself
+  must be tested.
+- **Data kept per run.** S2 keeps one alert, S3 four (three v2 and one through
+  Grafana) and S4 one resolved incident, plus its own alert when the S2 alert
+  already has an active incident: five or six alerts and one incident, each named
+  with the run ID.
+
+**The finish gate.** `python scripts/workspace.py bootstrap` installs three things
+at the workspace root from `workspace/.claude/`:
+
+- the `smoke-runner` subagent (`.claude/agents/smoke-runner.md`: Haiku, PowerShell
+  and Read only, runs the command above once and returns its table);
+- the `scripts/smoke_gate.py` hooks in `.claude/settings.json`;
+- an allow rule for the exact command above in `.claude/settings.local.json`.
+
+In a Claude Code session opened at the workspace root (not inside one repository):
+
+- The gate records each app repo checkout's content fingerprint when the session
+  starts (main checkouts) or when a tool call first names it (worktrees such as
+  `.wt/<task>/<repo>`). Any content change counts as an app change except
+  `*.md`, `docs/`, `.github/` and `.claude/`, and in delivery `workspace/`,
+  `status/` and `qualification/`. `keep-design` is never an app repository.
+- After an app change, finishing is blocked until a report covers the current
+  content and its `run_id` appears in a finished `smoke-runner` subagent of the
+  session that ran on Haiku. The block message names the subagent and the command.
+- While the subagent runs, a stop is allowed. A passed report allows finishing; a
+  failed, partial or blocked one sends the agent back once to handle it.
+- A missing run blocks every stop, except once per code state when the agent is
+  waiting for the user's answer. After five blocks in one code state the gate lets
+  the stop through with a message, so a broken stack can't trap a session.
+- Committing tested content keeps it covered. A change to the fingerprint
+  algorithm (`ALGORITHM_VERSION` in `scripts/smoke_state.py`) invalidates older
+  reports. A missing gate script never blocks.
 
 ### Environment, startup and readiness
 
@@ -334,10 +399,10 @@ prepare/API reload/Start; never point it at shared company Kong/Grafana.
 
 | ID | Steps through actual entry points | Required observable results | Existing coverage / limits |
 |---|---|---|---|
-| S1 Identity and access | Run the local identity suite; on the Keep `/sign-in` page sign in as admin/editor/viewer with passwords from `.local/identity/credentials.json`, inspect Local Demo roles, remove/restore the viewer's group membership with a refresh after each change, try a wrong password, sign out. | Each username/password sign-in produces the expected principal; `local-admin` is a global super-admin. Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200. A wrong password gets 401 `authentication_rejected` with no session. After sign-out the old session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` runs against the real local OpenLDAP, mock ADAPI, API and PostgreSQL. Any case it skips or doesn't cover is partial coverage, not an S1 pass; check it by hand in the browser. |
-| S2 Native v1 and alert work | Run the local-runtime browser suite: submit its unique native v1 alert, wait for search, open Global Feed/detail, Assign to me, add a note, reload. | Admission returns 202 only after Kafka acknowledgement; exactly the created alert becomes visible in Global, Feed appears and live delivery reports connected with no update notice (REV-43), assignment acknowledges it, note survives reload and acknowledged CEL search includes its ID. A 202 alone does not prove processing/search. | `local-runtime.spec.ts` uses real login, ingestion, workers, Elasticsearch and browser. Its note reload is automated; additionally reload and confirm the assignee remains the acting user. The connected live status proves connection, not every SSE recovery path. |
-| S3 Native v2 isolation | Run gateway `verify`, then `send`; open the resulting IDs in Local Demo Feed/detail through the browser. | Missing/invalid/forged credentials rejected; duplicate/unsupported key transport rejected, direct private listener requires mTLS. Valid batch has 3 accepted results with 202; all 3 become searchable with expected components and names (REV-54), detail works only in the owning tenant, the same IDs under Global return 404. Browser shows the matching records. | `local_v2_verify.py` automates gateway/API/search assertions, including 401/400/404/422 distinctions; the final browser inspection is manual. No receipt lookup. It does not test Grafana's scheduled delivery or fleet propagation. |
-| S4 Manual incident lifecycle | As editor/admin in the S2 alert's tenant, open Incidents → New incident, enter a unique title and explicit severity, and create. Confirm open/unassigned state; use Link alerts on detail to select the run's unowned alert. Add a uniquely tagged note, reload, resolve, reload, reopen and reload. | Created incident, subsequent link and note persist after reload; severity remains immutable; resolve leaves alert status unchanged. With no competing owner, reopen succeeds, starts a new lifecycle cycle and retains the link/history. Inspect detail plus its normal API/history responses for results not visible in the UI. | Manual real-stack procedure; no dedicated automated end-to-end suite was found. Mocked creation/note tests and PG integration tests cover parts, not the full journey. Follow the authoritative [incident rules](../../../keep-design/specs/spec-incident-operations.md). |
+| S1 Identity and access | Run the local identity suite; on the Keep `/sign-in` page sign in as admin/editor/viewer with passwords from `.local/identity/credentials.json`, inspect Local Demo roles, remove/restore the viewer's group membership with a refresh after each change, try a wrong password, sign out. | Each username/password sign-in produces the expected principal; `local-admin` is a global super-admin. Local Demo roles are admin/edit/view. Non-admin permission management returns 403. Revoked tenant access returns 404, restoration returns 200. A wrong password gets 401 `authentication_rejected` with no session. After sign-out the old session returns 401. Global retains its separate edit baseline. | `local-identity.spec.ts` runs against the real local OpenLDAP, mock ADAPI, API and PostgreSQL and asserts every result in this row, including the 401 code, the old session replayed after sign-out and Global's edit baseline. A skipped test is a partial, not an S1 pass. |
+| S2 Native v1 and alert work | Run the local-runtime browser suite: submit its unique native v1 alert, wait for search, open Global Feed/detail, Assign to me, add a note, reload. | Admission returns 202 only after Kafka acknowledgement; exactly the created alert becomes visible in Global, Feed appears and live delivery reports connected with no update notice (REV-43), assignment acknowledges it, note survives reload and acknowledged CEL search includes its ID. A 202 alone does not prove processing/search. | `local-runtime.spec.ts` uses real login, ingestion, workers, Elasticsearch and browser. It asserts the note and the assignee (the acting user) after a reload. The connected live status proves connection, not every SSE recovery path. |
+| S3 Native v2 isolation | Run gateway `verify`, then `send`; open the resulting IDs in Local Demo Feed/detail through the browser. | Missing/invalid/forged credentials rejected; duplicate/unsupported key transport rejected, direct private listener requires mTLS. Valid batch has 3 accepted results with 202; all 3 become searchable with expected components and names (REV-54), detail works only in the owning tenant, the same IDs under Global return 404. Browser shows the matching records. | `local_v2_verify.py` automates gateway/API/search assertions, including 401/400/404/422 distinctions. `local-v2-browser.spec.ts` then opens each `alerts-evidence.json` ID in Local Demo Feed and detail as local-admin, and checks that the same ID under Global returns 404 and shows no detail. No receipt lookup. It does not test Grafana's scheduled delivery or fleet propagation. |
+| S4 Incident lifecycle | As editor/admin in the S2 alert's tenant, open Incidents → New incident, enter a unique title and explicit severity, and create. Confirm open/unassigned state; use Link alerts on detail to select the run's unowned alert. Add a uniquely tagged note, reload, resolve, reload, reopen and reload. | Created incident, subsequent link and note persist after reload; severity remains immutable; resolve leaves alert status unchanged. With no competing owner, reopen succeeds, starts a new lifecycle cycle and retains the link/history. Inspect detail plus its normal API/history responses for results not visible in the UI. | `local-incident.spec.ts` runs it through the HTTPS UI as local-editor with Low severity. It links the S2 alert when that alert has no active incident, otherwise its own `smoke-<run>` v1 alert, and reports `blocked` with the owning incident when that one is owned too; it never takes another incident's alert. Cleanup runs in `finally` and touches only the incident in its ledger. Follow the authoritative [incident rules](../../../keep-design/specs/spec-incident-operations.md). |
 
 For S4, record incident/alert IDs and statuses before/after every transition. If
 linking or reopening conflicts, inspect active ownership and the authoritative
@@ -348,28 +413,35 @@ retention cases in the [verification plan](../../../keep-design/verification/ver
 For affected layouts, repeat the relevant journey at a narrow viewport and with
 keyboard interaction, using the existing UI acceptance requirements.
 
-Execute S1 and S2 from `keep-frontend`, serially. Restore prior opt-in variable
+Use [the one command](#one-command-and-the-finish-gate) for the baseline. To
+diagnose one scenario, run its parts by hand, serially: S1, S2, the S3 browser
+spec and S4 from the stack's `keep-frontend`, and the S3 helper from its
+`keep-delivery` after the v2 setup prerequisites. Restore prior opt-in variable
 values afterward (use a dedicated test terminal if simpler):
 
 ```powershell
+# keep-frontend
 $env:KEEP_LOCAL_IDENTITY_TEST='1'
 node node_modules/@playwright/test/cli.js test --config playwright.local-identity.config.ts
 # Inspect exit status and skipped tests before proceeding.
 $env:KEEP_LOCAL_RUNTIME_TEST='1'
 node node_modules/@playwright/test/cli.js test --config playwright.local-runtime.config.ts
-```
-
-Execute S3 from `keep-delivery` after the v2 setup prerequisites:
-
-```powershell
+# keep-delivery
 .venv/Scripts/python.exe scripts/local_v2_verify.py verify
 .venv/Scripts/python.exe scripts/local_v2_verify.py send
+# keep-frontend, after send
+$env:KEEP_LOCAL_V2_BROWSER_TEST='1'
+node node_modules/@playwright/test/cli.js test --config playwright.local-v2.config.ts
+# Without KEEP_SMOKE_S2_ALERT, S4 sends and links its own alert.
+$env:KEEP_LOCAL_INCIDENT_TEST='1'
+node node_modules/@playwright/test/cli.js test --config playwright.local-incident.config.ts
 ```
 
 Stop on a failed scenario, preserve its evidence and diagnose before dependent
-steps. S2 retains one synthetic alert; S3 retains three. Do not run the senders in
-a retry loop or assume repeating client IDs deduplicates admission. S4 is performed
-in the normal HTTPS UI, not by directly mutating the database.
+steps. S2 retains one synthetic alert; S3 retains four (three v2 and one through
+Grafana). Do not run the senders in a retry loop or assume repeating client IDs
+deduplicates admission. S4 works in the normal HTTPS UI, not by directly mutating
+the database.
 
 ### Automated coverage and impact-based regressions
 
@@ -378,7 +450,7 @@ in the normal HTTPS UI, not by directly mutating the database.
 | Python repositories | Owned CI runs Poetry lock/install, Ruff, unit tests and wheel build; migrations CI additionally provisions PostgreSQL and runs its tests. | Run changed repository checks and affected shared-package consumers; service CI is not system E2E. |
 | Delivery | CI bootstraps pinned siblings and runs contract, boundary and document checks; `verify.ps1` provides Unit/Build/Browser/Database/BrowserReal. | Use affected PG/Kafka/search integration cases, explicit isolated bindings and real entry points. `All` can skip Database/BrowserReal and does not establish S1–S4. |
 | Frontend | CI runs generation/drift, format, typecheck and build; `npm test` has controlled-route browser scenarios for alerts, incidents, navigation, dashboards/presets and access loss. | CI currently does not run Playwright. Run affected browser files locally plus S1–S4; mocked routes cannot establish persistence or real authentication. Keep local opt-ins unset for the controlled suite. |
-| Real local stack | Separate opt-in S1/S2 suites and S3 helper. | Outside default CI. Serial S1 runs, S3 manual browser inspection and S4 manual lifecycle remain explicit obligations. BrowserReal seeds through the source step without a broker or real sign-in. |
+| Real local stack | `scripts/smoke.py` runs the opt-in S1–S4 suites and the S3 helper in order; the finish gate requires it after app changes. | Outside default CI. It tests the running stack as is, and the report says whether that includes the change. BrowserReal seeds through the source step without a broker or real sign-in. |
 | Release qualification | Existing capability, replay, recovery, capacity and private-integration cases in design/delivery. | Smoke is not release qualification; preserve all existing gates, deferred-worker corrections and stronger regression requirements. |
 
 When shared commands/domain/auth/contracts change, broaden to affected producers,
@@ -389,8 +461,8 @@ browser journey. Dashboards/presets add save/reload, count correctness, draft/co
 and relevant responsive checks when affected. Serialize heavy CEL, builds and
 browser suites. Documentation-only work uses document/context/import checks.
 
-Smallest follow-ups: automate S4 using the existing real local harness; add a
-reviewed CI/browser environment with isolated data if CI smoke is requested.
+Smallest follow-up: add a reviewed CI/browser environment with isolated data if
+CI smoke is requested.
 This setup does not install a framework, provision CI services or claim those gaps
 are fixed. See [engineering policies](../agent-workflows.md#documentation-and-verification)
 for the binding selection and repair rules.
@@ -475,8 +547,9 @@ in `qualification/`, with their package commits.
 ### Evidence, cleanup and completion
 
 Record each command with working directory, exit status, pass/fail/skip counts,
-test snapshot and environment. For manual S3/S4 record steps, expected/observed
-outcomes and redacted screenshots or API result fields. S2 writes
+test snapshot and environment; `scripts/smoke.py` records these in its report and
+ledger. For any manual check record steps, expected/observed outcomes and redacted
+screenshots or API result fields. S2 writes
 `.local/runtime/browser-evidence.json`, `alerts.png` and `alert-detail.png`; S3 writes
 `.local/operators/verification.json` and `alerts-evidence.json`. Copy safe results
 into the run ledger before rerunning. Standard Playwright uses `playwright-report/`
@@ -487,6 +560,8 @@ status documents only when they establish new implementation evidence.
 
 Restore any test-changed memberships/grants even after failure; S1 has a restoration
 finally block, but an interrupted process still needs an explicit check/publication.
+`scripts/smoke.py` does that check and the unfinished S4 cleanup at the start and
+end of each run.
 For S4 cleanup, while the test incident is active unlink only the ledger's alert,
 then resolve the test incident and confirm the alert status is unchanged. This
 releases its ownership while retaining history. Leave S2/S3 synthetic alerts and

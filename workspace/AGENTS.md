@@ -158,6 +158,12 @@ where applicable. Read the following sections when their trigger applies:
   baseline plus impact-based checks; backend changes affecting UI also require
   browser journeys. Report blocked/skipped checks and repair/retest failures.
   Documentation-only changes use documentation/discovery checks.
+- Finish rule: after an app change (anything but docs, CI and agent files), run the
+  `smoke-runner` subagent with the command the smoke gate names before finishing;
+  the gate blocks finishing without a covering run. Handle its result: fix and rerun
+  a failure the change caused, report a stack problem or a block with its reason, and
+  state `stack_includes_change` in the final report. See the runbook's "One command
+  and the finish gate".
 - Executed evidence: `keep-delivery/status/implementation-status.md` and `keep-delivery/status/delivery-readiness.md`.
 - Context checks: `python qualification/check_context.py` in delivery.
 - Documentation checks: `python qualification/verify_documents.py` in delivery;
@@ -171,5 +177,7 @@ import beside it. Reconcile root edits before running delivery's
 `python scripts/workspace.py bootstrap`; preserve any existing backup. Keep installed
 and canonical copies consistent. The context index above is generated from the
 catalog by `context.py render`; edit the catalog, not the block. Generic workflow
-skills (planning, verification, review) stay in the global agent setup. The context
-layer changes project navigation, not model selection, native permissions or hooks.
+skills (planning, verification, review) stay in the global agent setup. Bootstrap
+also installs the `smoke-runner` subagent, the smoke gate hooks and one allow rule
+from `workspace/.claude/`. The context layer itself changes project navigation, not
+model selection, native permissions or hooks.

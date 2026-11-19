@@ -1,6 +1,7 @@
 """Bootstrap and verify the sibling repositories without a parent Git repository."""
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -86,7 +87,111 @@ def bootstrap(root, manifest):
         if differs:
             shutil.copyfile(installed, backup)
         shutil.copyfile(canonical, installed)
+    for line in install_agent_setup(root):
+        print(line)
     print("Workspace prepared; existing branches and local changes were preserved.")
+
+
+SMOKE_GATE = "smoke_gate.py"
+INSTALLED_RECORD = ".claude/keep-bootstrap.json"
+
+
+def smoke_command(root):
+    """The smoke-runner's command, from the module the finish gate uses."""
+    name = "_keep_smoke_state"
+    module = sys.modules.get(name)
+    if module is None:
+        spec = importlib.util.spec_from_file_location(
+            name, Path(__file__).resolve().with_name("smoke_state.py"))
+        module = importlib.util.module_from_spec(spec)
+        # Dataclasses resolve string annotations through sys.modules.
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return module.smoke_command(root, root / "keep-delivery")
+
+
+def _write_json(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def _backup_once(path):
+    backup = path.with_name(path.name + ".before-bootstrap")
+    if path.exists() and not backup.exists():
+        shutil.copyfile(path, backup)
+
+
+def merge_hooks(settings, hooks):
+    """Settings with the smoke gate's hook entries replaced and everything else kept."""
+    merged = json.loads(json.dumps(settings))
+    events = merged.setdefault("hooks", {})
+    for event, entries in hooks.items():
+        kept = [entry for entry in events.get(event, [])
+                if not any(SMOKE_GATE in str(hook.get("command", "")) for hook in entry.get("hooks", []))]
+        events[event] = kept + entries
+    return merged
+
+
+def install_agent_setup(root, delivery=None, python=None):
+    """Installs the workspace's Claude Code smoke-runner agent and smoke finish gate.
+
+    From `workspace/.claude/` in delivery:
+    * `agents/*.md` go to the root `.claude/agents/`. A file edited locally since
+      bootstrap installed it is kept as `<name>.before-bootstrap` first;
+    * the hooks in `settings.hooks.json` merge into the root `.claude/settings.json`:
+      earlier smoke-gate entries are replaced, all other keys and hooks are kept;
+    * the root `.claude/settings.local.json` gets one permission rule allowing the
+      exact smoke command, so a smoke run never waits on a prompt (user decision
+      2026-11-19). Nothing else in it changes.
+    Each settings file is backed up once before its first change. A repeated run
+    changes nothing. Returns what changed.
+    """
+    delivery = Path(delivery or DELIVERY)
+    canonical = delivery / "workspace/.claude"
+    if not canonical.is_dir():
+        return []
+    python = Path(python or sys.executable).as_posix()
+    changes = []
+    record_path = root / INSTALLED_RECORD
+    record = json.loads(record_path.read_text(encoding="utf-8")) if record_path.exists() else {}
+    for source in sorted((canonical / "agents").glob("*.md")):
+        target = root / ".claude/agents" / source.name
+        wanted = entrypoint_text(source)
+        if target.exists() and entrypoint_text(target) == wanted:
+            continue
+        name = f"agents/{source.name}"
+        if target.exists() and hashlib.sha256(entrypoint_text(target)).hexdigest() != record.get(name):
+            backup = target.with_name(target.name + ".before-bootstrap")
+            if backup.exists():
+                raise ValueError(f"Root .claude/{name} differs; reconcile it with delivery before bootstrap")
+            shutil.copyfile(target, backup)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+        record[name] = hashlib.sha256(wanted).hexdigest()
+        changes.append(f"Installed .claude/{name}")
+    if changes:
+        _write_json(record_path, record)
+
+    template = (canonical / "settings.hooks.json").read_text(encoding="utf-8")
+    hooks = json.loads(template.replace("{python}", python))["hooks"]
+    settings_path = root / ".claude/settings.json"
+    settings = json.loads(settings_path.read_text(encoding="utf-8")) if settings_path.exists() else {}
+    merged = merge_hooks(settings, hooks)
+    if merged != settings:
+        _backup_once(settings_path)
+        _write_json(settings_path, merged)
+        changes.append("Merged the smoke gate hooks into .claude/settings.json")
+
+    local_path = root / ".claude/settings.local.json"
+    local = json.loads(local_path.read_text(encoding="utf-8")) if local_path.exists() else {}
+    rule = f"PowerShell({smoke_command(root)})"
+    allow = local.setdefault("permissions", {}).setdefault("allow", [])
+    if rule not in allow:
+        _backup_once(local_path)
+        allow.append(rule)
+        _write_json(local_path, local)
+        changes.append("Allowed the smoke command in .claude/settings.local.json")
+    return changes
 
 
 def inventory(root, manifest):
