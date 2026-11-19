@@ -16,7 +16,7 @@
     },
     "keep-api": {
       "url": "https://github.com/keep-alert-operations/keep-api.git",
-      "revision": "26d89c418b605c00b7c6cb7b6900f3d777664b6b"
+      "revision": "2ac5e424208a3630a0b2b0328fda9dff0968c137"
     },
     "keep-ingestion": {
       "url": "https://github.com/keep-alert-operations/keep-ingestion.git",
@@ -36,11 +36,11 @@
     },
     "keep-frontend": {
       "url": "https://github.com/keep-alert-operations/keep-frontend.git",
-      "revision": "6f3a6616ac9e1c25afb9bbb2fb289b30f0d54495"
+      "revision": "09c067d912d8cc52fca0affab246a3c0313b2792"
     },
     "keep-design": {
       "url": "https://github.com/keep-alert-operations/keep-design.git",
-      "revision": "e4e819753045efa48dbdf10666a5cbab220f0e0f"
+      "revision": "668a1093532ab226fbed9e8b37839f5f30f1fc89"
     },
     "keep-delivery": {
       "url": "https://github.com/keep-alert-operations/keep-delivery.git",
